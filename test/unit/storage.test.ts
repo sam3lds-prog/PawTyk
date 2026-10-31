@@ -4,6 +4,7 @@ import {
   V1_BACKUP_KEY,
   V1_KEY,
   V1_RULES_KEY,
+  SESSIONS_SIDE_KEY,
   V2_KEY,
   defaultSave,
   loadSave,
@@ -197,20 +198,49 @@ describe('v2 normalization', () => {
       expect(s.sessions).toEqual({ level: null, daily: null, zen: Z });
     });
 
-    it('a rollback round trip: a board an older build saved wins, a board it finished is not offered again', () => {
-      // This build saved L3 and D (D newest). An older build then played: it only knows `lastSession`.
-      const stored = { progressVersion: 2, sessions: { level: L3, daily: D, zen: null }, lastSession: D };
-      // (a) it saved a newer Journey board there: that board replaces the stale level slot; the Daily is kept.
+    /**
+     * What a pre-D38 build does to a save: it reads it into its own shape (no `sessions` key), plays, and writes it
+     * back with its one `lastSession`. Modelled on the real code path: a JSON round trip that drops `sessions`.
+     */
+    function olderBuildWrites(kv: MemoryKV, lastSession: SavedSession | null): void {
+      const old = JSON.parse(kv.getItem(V2_KEY)!) as Record<string, unknown>;
+      delete old.sessions;
+      old.lastSession = lastSession;
+      kv.setItem(V2_KEY, JSON.stringify(old));
+    }
+
+    it('a rollback round trip, for real: a board an older build saved wins, a board it finished is not offered again, the rest survive', () => {
+      // This build saved L3 and D (D newest).
+      const kv = new MemoryKV();
+      const s = defaultSave(NOW);
+      setSavedSession(s, L3.mode, L3);
+      setSavedSession(s, D.mode, D);
+      saveSave(s, kv);
+      expect(kv.getItem(SESSIONS_SIDE_KEY)).not.toBeNull();
+      // (a) An older build then saved a newer Journey board: it replaces the stale level slot; the Daily is kept.
       const L5 = board({ kind: 'level', level: 5 }, '2026-11-01T08:00:00.000Z');
-      const a = normalizeSave({ ...stored, lastSession: L5 }, NOW);
+      olderBuildWrites(kv, L5);
+      expect(JSON.parse(kv.getItem(V2_KEY)!).sessions).toBeUndefined();
+      const a = loadSave(kv, NOW).save;
       expect(a.sessions).toEqual({ level: L5, daily: D, zen: null });
-      // (b) it finished the board it knew (the newest, D) and set lastSession to null: D is not brought back.
-      const b = normalizeSave({ ...stored, lastSession: null }, NOW);
+      // (b) From the same starting point, the older build finished the board it knew (the newest, D): D is not brought
+      // back, L3 is still there.
+      saveSave(s, kv);
+      olderBuildWrites(kv, null);
+      const b = loadSave(kv, NOW).save;
       expect(b.sessions).toEqual({ level: L3, daily: null, zen: null });
       expect(b.lastSession).toEqual(L3);
-      // A save that never had the field at all is left alone.
-      const c = normalizeSave({ progressVersion: 2, sessions: { level: L3, daily: D, zen: null } }, NOW);
-      expect(c.sessions).toEqual({ level: L3, daily: D, zen: null });
+      // (c) The older build left the board alone: everything as it was.
+      saveSave(s, kv);
+      olderBuildWrites(kv, D);
+      expect(loadSave(kv, NOW).save.sessions).toEqual({ level: L3, daily: D, zen: null });
+      // Once this build saves again, the save carries `sessions` and the copy beside it matches.
+      const c = loadSave(kv, NOW).save;
+      saveSave(c, kv);
+      expect(JSON.parse(kv.getItem(SESSIONS_SIDE_KEY)!)).toEqual(c.sessions);
+      // A save that never had the field (a genuine pre-D38 save, no copy beside it) just migrates its one board.
+      const fresh = new MemoryKV({ [V2_KEY]: JSON.stringify({ progressVersion: 2, lastSession: D }) });
+      expect(loadSave(fresh, NOW).save.sessions).toEqual({ level: null, daily: D, zen: null });
     });
   });
 
