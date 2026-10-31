@@ -25,6 +25,12 @@ export const V2_KEY = 'pawtopia.save.v2';
 export const V1_BACKUP_KEY = 'pawtopia.backup.cvd.progress.v1';
 /** A copy of a save as it was before D35 moved its levels up (written once, never read by the app). */
 export const PRE_D35_BACKUP_KEY = 'pawtopia.backup.v2.pre-d35';
+/**
+ * The saved boards, kept beside the save as well (D38). A build from before D38 rewrites the save without `sessions`,
+ * so after a rollback this copy is what tells the slots apart from the one board that build knew (`normSessions`).
+ * Written with every save; never read while the save itself carries `sessions`.
+ */
+export const SESSIONS_SIDE_KEY = 'pawtopia.sessions.v1';
 export const APP_KEY_PREFIXES = ['pawtopia.', 'cvd.'];
 
 // ------------------------------------------------------------------ v1 (legacy) shape
@@ -566,8 +572,9 @@ function normSavedSession(x: unknown): SavedSession | null {
  *  - a save from this build: `sessions` holds the boards and `lastSession` mirrors the newest;
  *  - a save from before D38: no `sessions`, one board in `lastSession` → it takes its mode's slot (the one-time
  *    migration; running it again changes nothing, since the mirror then equals that slot);
- *  - a save a pre-D38 build touched after this build wrote it (a rollback): that build only knew `lastSession`. A
- *    board it saved there is newer than its slot, so it replaces it; a `lastSession` it set to null means it finished
+ *  - a save a pre-D38 build touched after this build wrote it (a rollback): that build only knew `lastSession` and
+ *    rewrote the save without `sessions`, so `loadSave` puts the slots back from `SESSIONS_SIDE_KEY` first. A board it
+ *    saved in `lastSession` is newer than its slot, so it replaces it; a `lastSession` it set to null means it finished
  *    or dropped the board it knew — the newest one — so that slot is emptied rather than offering a finished board.
  */
 function normSessions(x: Record<string, unknown>): SavedSessions {
@@ -887,14 +894,19 @@ export interface LoadResult {
 export function loadSave(kv: KV = platformKV(), now = new Date()): LoadResult {
   const rawV2 = kv.getItem(V2_KEY);
   if (rawV2 !== null) {
-    const parsed = safeParse<unknown>(rawV2);
+    let parsed = safeParse<unknown>(rawV2);
     if (isObj(parsed) && parsed.progressVersion === 2) {
+      // A save rewritten by a pre-D38 build has no `sessions`: the copy kept beside it has the slots (rollback, D38).
+      if (!('sessions' in parsed)) {
+        const side = safeParse<unknown>(kv.getItem(SESSIONS_SIDE_KEY));
+        if (isObj(side)) parsed = { ...parsed, sessions: side };
+      }
       const save = normalizeSave(parsed, now);
       if (save.journey.ladder !== 4) {
         // Keep the save as it was (once), then move its levels up for D35 and write it back.
         if (kv.getItem(PRE_D35_BACKUP_KEY) === null) kv.setItem(PRE_D35_BACKUP_KEY, rawV2);
         upgradeLadder(save);
-        kv.setItem(V2_KEY, JSON.stringify(save));
+        saveSave(save, kv);
       }
       return { save, source: 'v2' };
     }
@@ -908,7 +920,7 @@ export function loadSave(kv: KV = platformKV(), now = new Date()): LoadResult {
     const migrated = migrateV1(safeParse<unknown>(rawV1), seenRules, now);
     upgradeLadder(migrated);
     const json = JSON.stringify(migrated);
-    kv.setItem(V2_KEY, json);
+    saveSave(migrated, kv);
     // Round-trip check: what we read back must equal what we wrote.
     const back = kv.getItem(V2_KEY);
     if (back !== json) return { save: migrated, source: 'migrated-v1' };
@@ -918,7 +930,9 @@ export function loadSave(kv: KV = platformKV(), now = new Date()): LoadResult {
 }
 
 export function saveSave(save: SaveV2, kv: KV = platformKV()): boolean {
-  return kv.setItem(V2_KEY, JSON.stringify(save));
+  const ok = kv.setItem(V2_KEY, JSON.stringify(save));
+  kv.setItem(SESSIONS_SIDE_KEY, JSON.stringify(save.sessions));
+  return ok;
 }
 
 /**
