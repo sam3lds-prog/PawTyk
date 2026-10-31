@@ -691,15 +691,18 @@ displaced by playing a Daily (and vice versa). Confirmed with a failing test aga
   them.
 - **Mirror for older builds** (`lastSession`): still written, as the newest of the slots (`syncSessionMirror`), so a
   build from before D38 finds the latest board. `normalizeSave` folds a legacy `lastSession` into its mode's slot (the
-  one-time migration; idempotent), and handles a rollback round trip: a board an older build saved there replaces its
-  stale slot, and a `lastSession` an older build set to `null` empties the newest slot (it finished that board) rather
-  than offering a finished board again. `upgradeLadder` (D35) moves the Journey slot, not the mirror.
+  one-time migration; idempotent). A rollback round trip is handled for real: an older build rewrites the save *without*
+  `sessions`, so `saveSave` also keeps the slots beside it (`SESSIONS_SIDE_KEY`, which that build never touches) and
+  `loadSave` puts them back; then a board the older build saved in `lastSession` replaces its stale slot, and a
+  `lastSession` it set to `null` empties the newest slot (it finished that board) rather than offering a finished board
+  again. (The independent review caught the first cut of this, which only worked on a shape no build writes.)
+  `upgradeLadder` (D35) moves the Journey slot, not the mirror.
 - **The guard at the boundary** (`gameFlow.playMode` → `heldBoardFor` → `askAboutHeldBoard`): within a mode there is
   still one slot, so before a *different* board of the same mode would take it from one with real progress
   (`hasMeaningfulProgress`), one sheet asks: *Resume* the saved board, *Start* the new one, or *Not now*. Every "play
   this" button goes through `playMode` — the Journey hub, "Play level N instead", the level path, the World, the Farm and
-  the Pet Garden, the Daily card, the Zen sizes — so the hub's own confirm (PR 3) is gone and no screen can throw a board
-  away on its own. The Zen seed is consumed in `startGame` (`nextZenMode` / `zenSeed`), so a Zen tap that is answered
+  the Pet Garden, the Daily card, the Zen sizes, the win sheet's next level — so the hub's own confirm (PR 3) is gone and
+  no screen can throw a board away on its own. The Zen seed is consumed in `startGame` (`nextZenMode` / `zenSeed`), so a Zen tap that is answered
   with *Resume* or *Not now* spends nothing.
 - **The hub lists every saved board**: the Journey board is Continue; a saved Daily and a saved Zen each get their own
   "in progress" line (`resumableSessions`). `buildHereMessage` is honest about several held boards.
