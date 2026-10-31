@@ -800,9 +800,15 @@ existing synchronous `KV` interface.
 
 - `services/kv.ts::NativeKV`: reads come from memory after one hydration (`hydrate()` reads every key before the save
   is loaded); writes go to memory, to the WebView's localStorage (so a rollback build still finds the save) and, in
-  order, to the store (a write-behind queue). The first run on a device copies the game's own keys (`pawtopia.*`,
-  `cvd.*`) from localStorage into the store, so every existing player carries their progress over; the store's copy
-  wins afterwards. A store that fails leaves the game on localStorage, as before.
+  order, to the store (a write-behind queue), with a write counter (`KV_SEQ_KEY`) on both sides. Hydration reconciles
+  the two, for the game's own keys only (`pawtopia.*`, `cvd.*`): a key only the WebView has is copied to the store
+  (every existing player's save, the first time); a key only the store has stays (the WebView was evicted — the reason
+  for all this); a key both have with different values takes the WebView's unless its count is *behind* the store's.
+  The WebView is written first and the store after, so the WebView can only be ahead (the app was killed before the
+  queue drained) or level with a different value (a pre-D38 build played on; it knows neither store nor counter), and
+  in both cases it is the newer side; only an evicted or reset WebView is behind. (The independent review found the
+  first cut always preferred the store, which lost the last move after a kill and all progress after a rollback.) A
+  store that fails leaves the game on localStorage, as before.
 - `hydratePlatformKV()` swaps the platform store on a native platform only; `main.ts` awaits it and then imports the
   app (`boot.ts`), so nothing reads a save before the store is ready. Browsers and the single-file artifact are
   unchanged (localStorage).

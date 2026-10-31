@@ -113,18 +113,27 @@ export interface AsyncStore {
   remove(o: { key: string }): Promise<void>;
 }
 
+/** Where the native adapter counts its writes, on both sides, so hydration can tell which side is newer. */
+export const KV_SEQ_KEY = 'pawtopia.kv.seq';
+
 /**
  * Native store (D38): synchronous reads and writes, like the rest of the game expects, backed by an async store.
  *  - `hydrate()` reads every key once, before the save is loaded, so reads never wait.
- *  - Writes go to memory first, then to the store one after another (a write-behind queue keeps order), and to the
- *    WebView's localStorage too, so a build from before this one still finds the save after a rollback.
- *  - The first time it runs on a device, whatever the WebView's localStorage holds that the store doesn't (the save
- *    of every player before this build) is copied over. Only the game's own keys are touched.
+ *  - Writes go to memory first, to the WebView's localStorage (the mirror) at once, then to the store one after another
+ *    (a write-behind queue keeps order). A write counter (`KV_SEQ_KEY`) goes with every write, on both sides.
+ *  - At hydration the two sides are reconciled key by key, for the game's own keys only: a key only the mirror has is
+ *    copied to the store (every player's save from before this build); a key only the store has stays (the WebView's
+ *    storage was evicted — the case this adapter exists for); a key both have, with different values, takes the
+ *    mirror's value unless the mirror's counter is *behind* the store's. The mirror is written first and the store
+ *    after, so the mirror can be ahead (the app was killed before the queue drained) or level with a different value
+ *    (a build from before this one, which never touches the store or the counter, played on), and in both cases it is
+ *    the newer one; only an evicted or reset mirror is behind.
  */
 export class NativeKV implements KV {
   private map = new Map<string, string>();
   private queue: Promise<unknown> = Promise.resolve();
   private failures = 0;
+  private seq = 0;
 
   constructor(
     private readonly store: AsyncStore,
@@ -132,7 +141,11 @@ export class NativeKV implements KV {
     private readonly ownPrefixes: readonly string[] = ['pawtopia.', 'cvd.'],
   ) {}
 
-  /** Loads the store into memory and copies the WebView's own keys over, once. Resolves even if the store fails. */
+  private own(k: string): boolean {
+    return k !== KV_SEQ_KEY && this.ownPrefixes.some((p) => k.startsWith(p));
+  }
+
+  /** Loads the store into memory and reconciles it with the WebView's copy. Resolves even if the store fails. */
   async hydrate(): Promise<void> {
     try {
       const { keys } = await this.store.keys();
@@ -140,13 +153,26 @@ export class NativeKV implements KV {
         const { value } = await this.store.get({ key: k });
         if (value !== null) this.map.set(k, value);
       }
+      const storeSeq = Number(this.map.get(KV_SEQ_KEY) ?? 0) || 0;
+      const mirrorSeq = Number(this.mirror.getItem(KV_SEQ_KEY) ?? 0) || 0;
+      const mirrorWins = mirrorSeq >= storeSeq;
+      this.seq = Math.max(storeSeq, mirrorSeq);
+      let copied = false;
       for (const k of this.mirror.keys()) {
-        if (!this.ownPrefixes.some((p) => k.startsWith(p)) || this.map.has(k)) continue;
+        if (!this.own(k)) continue;
         const v = this.mirror.getItem(k);
         if (v === null) continue;
+        const inStore = this.map.get(k);
+        if (inStore === v || (inStore !== undefined && !mirrorWins)) continue;
         this.map.set(k, v);
         this.enqueue(() => this.store.set({ key: k, value: v }));
+        copied = true;
       }
+      // Both sides leave hydration on the same count.
+      const n = String(this.seq);
+      this.map.set(KV_SEQ_KEY, n);
+      this.mirror.setItem(KV_SEQ_KEY, n);
+      if (copied || mirrorSeq !== storeSeq) this.enqueue(() => this.store.set({ key: KV_SEQ_KEY, value: n }));
     } catch {
       // The store is unusable: fall back to whatever the WebView holds, so the game still plays.
       for (const k of this.mirror.keys()) {
@@ -176,10 +202,19 @@ export class NativeKV implements KV {
     return this.map.has(key) ? (this.map.get(key) as string) : null;
   }
 
+  /** Counts a write on both sides: the mirror now, the store after the write it belongs to. */
+  private bump(): void {
+    const n = String(++this.seq);
+    this.map.set(KV_SEQ_KEY, n);
+    this.mirror.setItem(KV_SEQ_KEY, n);
+    this.enqueue(() => this.store.set({ key: KV_SEQ_KEY, value: n }));
+  }
+
   setItem(key: string, value: string): boolean {
     this.map.set(key, value);
     this.mirror.setItem(key, value);
     this.enqueue(() => this.store.set({ key, value }));
+    this.bump();
     return true;
   }
 
@@ -187,10 +222,11 @@ export class NativeKV implements KV {
     this.map.delete(key);
     this.mirror.removeItem(key);
     this.enqueue(() => this.store.remove({ key }));
+    this.bump();
   }
 
   keys(): string[] {
-    return [...this.map.keys()];
+    return [...this.map.keys()].filter((k) => k !== KV_SEQ_KEY);
   }
 }
 
