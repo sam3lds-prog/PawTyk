@@ -115,13 +115,18 @@ export function playMode(mode: ModeRef): boolean {
   return startGame(mode);
 }
 
-/** One line naming a saved board for the question: "level 3", "Saturday's Daily", "6×6 Zen". */
+/** A saved board, the way the question names it: "level 3", "Friday's Daily", "6×6 Zen". */
 function boardName(s: SavedSession): string {
   const m = s.mode;
   if (m.kind === 'level') return `level ${m.level}`;
-  if (m.kind === 'daily') return `the Daily from ${new Date(`${m.dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long' })}`;
+  if (m.kind === 'daily') return `${new Date(`${m.dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long' })}'s Daily`;
   if (m.kind === 'zen') return `${m.size}×${m.size} Zen`;
   return modeTitle(m);
+}
+
+/** The same board as the subject of a sentence: "your level 3 board", "Friday's Daily board". */
+function boardPhrase(s: SavedSession): string {
+  return s.mode.kind === 'daily' ? `${boardName(s)} board` : `your ${boardName(s)} board`;
 }
 
 /** What the player is about to start, in the same words. */
@@ -141,12 +146,13 @@ export function askAboutHeldBoard(held: SavedSession, mode: ModeRef): void {
   if (!scope) return;
   const placed = held.snap.history?.length ?? 0;
   const heldName = boardName(held);
+  const phrase = boardPhrase(held);
   const kindWord = mode.kind === 'level' ? 'Journey' : mode.kind === 'daily' ? 'Daily' : 'Zen';
   const sh = openSheet(scope, {
     title: `Start ${newBoardName(mode)}?`,
     center: true,
     className: 'held-board',
-    body: `<p class="sheet__lead">Your ${esc(heldName)} board${placed ? ` (${plural(placed, 'move')} so far)` : ''} will be cleared. One ${kindWord} board is kept at a time.</p>
+    body: `<p class="sheet__lead">${esc(phrase.charAt(0).toUpperCase() + phrase.slice(1))}${placed ? ` (${plural(placed, 'move')} so far)` : ''} will be cleared. One ${kindWord} board is kept at a time.</p>
       <div class="sheet__actions">
         <button class="btn btn--block" data-act="resume" data-autofocus>Resume ${esc(heldName)}</button>
         <button class="btn btn--secondary btn--block" data-act="go">Start ${esc(newBoardName(mode))}</button>

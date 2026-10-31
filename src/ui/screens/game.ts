@@ -13,7 +13,7 @@
  */
 
 import { app } from '../../app/app';
-import { restartGame, startGame } from '../../app/gameFlow';
+import { playMode, restartGame } from '../../app/gameFlow';
 import { CAT, DOG, type Species } from '../../engine/types';
 import { fmtClock } from '../../game/dates';
 import { CUP_HEARTS, modeKey, nextAfterWin, rulesFor, type ModeRef } from '../../game/modes';
@@ -1456,7 +1456,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       }
       // Celebration first, always. An interstitial (if any network is live) can only follow the player's tap.
       await maybeInterstitial();
-      if (typeof next === 'object') startGame(next);
+      // Through playMode like every other play button (D38): this board's slot was just cleared, so it starts fresh.
+      if (typeof next === 'object') playMode(next);
       else app.router.back({ screen: next === 'cup' ? 'challenges' : 'journey' });
     });
   }
