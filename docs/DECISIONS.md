@@ -761,7 +761,8 @@ Policy A in D36, so **this one is only to be merged if that decision changes**.
 - **Migration once** (`upgradeGrowthPolicy`, run by `reconcileWorld` at startup): every level already cleared and every
   Daily already done is marked as grown, so replaying them grows nothing more. Growth counts, arrivals, stages and
   gifts already earned are untouched. Coins, Paw Points, stars, best times and leaderboard scoring are unchanged and
-  separate.
+  separate. A v1 → v2 migration starts on policy 1 on purpose so the same backfill covers its clears, and a tester's
+  *Skip to level N* marks the skipped levels as grown (the independent review caught both gaps).
 - **The ordinary win shows the step** (`game.ts::nextFriendMarkup`): *Farm +1 · Truffle the piglet: 3 → 2 puzzles away*,
   and the animal's bar starts where it was and slides to where it is now (900 ms, a beat after the results rise; a tap
   settles it at once; reduced motion shows the end state). The milestone win (hero first) is as PR 4 left it. A replay

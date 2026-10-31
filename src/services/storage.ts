@@ -777,6 +777,9 @@ export function migrateV1(v1raw: unknown, seenRules: boolean, now = new Date()):
   s.migratedFrom = 'v1';
   // v1 numbered the two-animal levels from 1; `loadSave` moves them up for D35 (`upgradeLadder`).
   s.journey.ladder = 3;
+  // v1 grew nothing, but its cleared levels must not grow the world on a replay: the startup reconcile moves this save
+  // to growth policy 2 and marks them (world.upgradeGrowthPolicy), as it does for any save from before D38.
+  s.world.policy = 1;
   s.onboarding.seenRules = seenRules;
   if (!isObj(v1raw)) return s;
   const v1 = v1raw as Partial<ProgressV1>;

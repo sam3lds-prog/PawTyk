@@ -36,7 +36,8 @@ import {
 import { regionScene, REGION_DECOR_ART } from '../../src/ui/art/regions';
 import { hasDecorArt } from '../../src/ui/art/sanctuary';
 import { projectLonLat } from '../../src/ui/art/worldMap';
-import { defaultSave, normalizeSave, type SaveV2 } from '../../src/services/storage';
+import { defaultSave, migrateV1, normalizeSave, upgradeLadder, type SaveV2 } from '../../src/services/storage';
+import { skipToLevel } from '../../src/app/qaTools';
 
 const NOW = new Date(2026, 9, 28, 12, 0, 0);
 
@@ -230,6 +231,25 @@ describe('growing a sanctuary', () => {
       expect(alreadyGrown(t, 'L3')).toBe(true);
       // And a round trip keeps it.
       expect(normalizeSave(JSON.parse(JSON.stringify(t)), NOW).world.grown).toEqual(t.world.grown);
+    });
+
+    it('a v1 player\'s cleared levels and a tester\'s skipped levels never grow the world on a replay (review defect 2)', () => {
+      // v1 → v2: the save starts on policy 1 on purpose, so the startup reconcile backfills its clears.
+      const v1 = migrateV1({ level: 6, bestTimes: {}, dailyDone: { '2026-10-20': true }, streak: 1, lastDailyDate: null, installDate: '2026-10-01T00:00:00.000Z', removeAds: false, settings: { autoMark: true, haptics: true, sound: true } }, true, NOW);
+      upgradeLadder(v1);
+      expect(v1.world.policy).toBe(1);
+      reconcileWorld(v1, NOW);
+      expect(v1.world.policy).toBe(GROWTH_POLICY);
+      for (let L = 21; L <= 25; L++) expect(alreadyGrown(v1, `L${L}`)).toBe(true);
+      expect(alreadyGrown(v1, 'D2026-10-20')).toBe(true);
+      expect(alreadyGrown(v1, 'L26')).toBe(false);
+      expect(creditSolve(v1, { boardSanctuary: 'farm', openedBefore: openRegions(v1), receipt: 'r1', puzzle: 'L21' }, NOW)).toBeNull();
+      expect(creditSolve(v1, { boardSanctuary: 'farm', openedBefore: openRegions(v1), receipt: 'r2', puzzle: 'L26' }, NOW)?.growth).toBe(1);
+      // A tester's skip marks the skipped levels too.
+      const q = defaultSave(NOW);
+      skipToLevel(q, 11, NOW);
+      for (let L = 1; L <= 10; L++) expect(alreadyGrown(q, `L${L}`)).toBe(true);
+      expect(alreadyGrown(q, 'L11')).toBe(false);
     });
 
     it('a board whose sanctuary was finished while it sat saved helps the one being built now, and says so', () => {
