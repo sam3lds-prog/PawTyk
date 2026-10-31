@@ -12,11 +12,15 @@ import { FIRST_PAIR_LEVEL } from '../game/modes';
 import { growOnSolve, openRegions } from '../meta/world';
 import type { AnimalId } from '../meta/animals';
 
-/** Marks levels 1..(next-1) solved (clean, three stars, one minute each) and makes `next` the next level. */
+/**
+ * Marks levels 1..(next-1) solved (clean, three stars, one minute each) and makes `next` the next level. The skipped
+ * levels count as having grown the world (growth policy 2, D38), so replaying them grows nothing — as if they were played.
+ */
 export function skipToLevel(save: SaveV2, next: number, now = new Date()): void {
   const at = now.toISOString();
   for (let L = 1; L < next; L++) {
     const key = `L${L}`;
+    (save.world.grown ??= {})[key] ??= at;
     if (save.journey.clears[key]) continue;
     save.journey.clears[key] = { firstClearAt: at, bestSeconds: 60, bestMistakes: 0, clean: true, hintFree: true, stars: 3 };
     save.journey.bestTimes[key] ??= 60;
