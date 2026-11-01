@@ -60,7 +60,8 @@ See it: `npx tsx scripts/species-gallery.ts out.html --module path/to/file.ts`, 
 Four hex colors, no `#`: **fur** (coat), **light** (belly, muzzle, inner ear, bib), **dark** (nose, hooves, details),
 **accent** (every marking: stripes, spots, mask, crest, wings on a bird's body). Optional: `beak:HEX` (beak, bill and
 bird feet), `eye:HEX` (iris for `big`, `owl` and `bulge` eyes), `head:HEX` (a head colored unlike the body: bald eagle,
-mallard, vulture). Use the animal's real colors, a touch softened for the storybook palette; keep dark details
+mallard, vulture), `wing:HEX` (a bird's or bat's wings when they aren't the marking color), `shell:HEX` (a tortoise's or
+turtle's shell when it isn't the marking color). Use the animal's real colors, a touch softened for the storybook palette; keep dark details
 readable against the fur.
 
 ## What it eats (`eats`): pick the treat-group it fits

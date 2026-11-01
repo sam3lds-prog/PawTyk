@@ -20,7 +20,8 @@ const onlyIdx = args.indexOf('--only');
 async function load(): Promise<SpeciesDef[]> {
   if (modIdx >= 0) {
     const m = await import(pathToFileURL(resolve(args[modIdx + 1])).href);
-    return Object.values(m).find(Array.isArray) as SpeciesDef[];
+    // Every exported list of species (a landscape file also exports names and place words).
+    return (Object.values(m).filter(Array.isArray).flat() as SpeciesDef[]).filter((s) => s && typeof s === 'object' && 'form' in s);
   }
   const m = await import('../src/meta/catalogs/species/index');
   return [...m.SPECIES];

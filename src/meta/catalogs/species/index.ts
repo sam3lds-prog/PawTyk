@@ -4,6 +4,8 @@
  */
 
 import { DRAWN_SPECIES } from './drawn';
+import { NAMES_COAST, PLACE_WORDS_COAST, SPECIES_COAST } from './coast';
+import { NAMES_WETLAND, PLACE_WORDS_WETLAND, SPECIES_WETLAND } from './wetland';
 import type { BiomeId, SpeciesDef, SpeciesId } from './types';
 
 /** Each landscape's file: its species, names for its animals, and (for the new landscapes) words for place names. */
@@ -13,7 +15,10 @@ interface BiomeFile {
   placeWords?: { readonly adjectives: readonly string[]; readonly nouns: readonly string[] };
 }
 
-const FILES: Partial<Record<BiomeId, BiomeFile>> = {};
+const FILES: Partial<Record<BiomeId, BiomeFile>> = {
+  wetland: { species: SPECIES_WETLAND, names: NAMES_WETLAND, placeWords: PLACE_WORDS_WETLAND },
+  coast: { species: SPECIES_COAST, names: NAMES_COAST, placeWords: PLACE_WORDS_COAST },
+};
 
 export const SPECIES: readonly SpeciesDef[] = [...DRAWN_SPECIES, ...Object.values(FILES).flatMap((f) => f!.species)];
 

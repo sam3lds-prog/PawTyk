@@ -173,6 +173,10 @@ export interface KitColors {
   eye?: string;
   /** The head's own color when it differs from the body (a bald eagle's white head, a mallard's green one). */
   head?: string;
+  /** A bird's or a bat's wings, when not the marking color (a crane's grey wings under its red cap). */
+  wing?: string;
+  /** A tortoise's or a turtle's shell, when not the marking color. */
+  shell?: string;
 }
 
 export interface SpeciesDef {

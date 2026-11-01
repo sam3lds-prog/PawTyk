@@ -5,7 +5,7 @@
  *      'medium', 'ears:round snout:cat mark:rosettes tail:bushy x:whiskers', 'E8E4DC FBF8F2 3B3A3C 6B6A6E')
  *
  * Parts not given take the defaults below; `x:` adds an extra (repeatable). Colors are fur, light, dark, accent, then
- * optionally `beak:HEX`, `eye:HEX` and `head:HEX` (a head colored unlike the body). `test/unit/species.test.ts` checks every word against the vocabulary.
+ * optionally `beak:HEX`, `eye:HEX`, `head:HEX` (a head colored unlike the body), `wing:HEX` and `shell:HEX`. `test/unit/species.test.ts` checks every word against the vocabulary.
  */
 
 import type { AnimalKind } from '../foods';
@@ -36,6 +36,8 @@ export function colorsOf(words: string): KitColors {
   if (named.beak) c.beak = hex(named.beak);
   if (named.eye) c.eye = hex(named.eye);
   if (named.head) c.head = hex(named.head);
+  if (named.wing) c.wing = hex(named.wing);
+  if (named.shell) c.shell = hex(named.shell);
   return c;
 }
 

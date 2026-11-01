@@ -285,7 +285,7 @@ function marks(s: SpeciesDef, p: KitPal, g: Geo, ey: number): string {
       return `<path d="M${f1(cx - rx * 0.98)} ${f1(cy + 1)} C${f1(cx - rx * 0.6)} ${f1(cy + ry * 0.75)} ${f1(cx - 4)} ${f1(cy + ry)} ${cx} ${f1(cy + ry)} C${f1(cx + 4)} ${f1(cy + ry)} ${f1(cx + rx * 0.6)} ${f1(cy + ry * 0.75)} ${f1(cx + rx * 0.98)} ${f1(cy + 1)} C${f1(cx + rx * 0.5)} ${f1(cy + 7)} ${f1(cx - rx * 0.5)} ${f1(cy + 7)} ${f1(cx - rx * 0.98)} ${f1(cy + 1)} Z" fill="${p.light}"/>`;
     case 'eyeline':
       return isBeaked(s)
-        ? `<path d="M${f1(cx - rx * 0.95)} ${f1(ey)} L${f1(cx - 3)} ${f1(ey - 0.5)} M${f1(cx + 3)} ${f1(ey - 0.5)} L${f1(cx + rx * 0.95)} ${f1(ey)}" stroke="${a}" stroke-width="3" stroke-linecap="round"/>`
+        ? `<path d="M${f1(cx - ex - 2.6)} ${f1(ey + 0.6)} L${f1(cx - rx * 0.92)} ${f1(ey + 1.6)} M${f1(cx + ex + 2.6)} ${f1(ey + 0.6)} L${f1(cx + rx * 0.92)} ${f1(ey + 1.6)}" stroke="${a}" stroke-width="1.8" stroke-linecap="round"/>`
         : `<path d="M${f1(cx - ex + 1)} ${f1(ey + 3)} q-1.2 4 -3.8 8 M${f1(cx + ex - 1)} ${f1(ey + 3)} q1.2 4 3.8 8" stroke="${a}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
     case 'hood':
       return `<path d="M${f1(cx - rx)} ${f1(cy + 2)} C${f1(cx - rx)} ${f1(top - 0.5)} ${f1(cx + rx)} ${f1(top - 0.5)} ${f1(cx + rx)} ${f1(cy + 2)} C${f1(cx + rx * 0.6)} ${f1(ey - 3)} ${f1(cx + 3)} ${f1(ey - 4)} ${cx} ${f1(ey - 1)} C${f1(cx - 3)} ${f1(ey - 4)} ${f1(cx - rx * 0.6)} ${f1(ey - 3)} ${f1(cx - rx)} ${f1(cy + 2)} Z" fill="${a}"/>`;
@@ -781,7 +781,8 @@ export function kitBody(s: SpeciesDef, p: KitPal, x: number, y: number, H: numbe
       const L = lift / H;
       const egg = `<ellipse cx="${x}" cy="${f1(y - lift - H * 0.3)}" rx="${f1(H * 0.26)}" ry="${f1(H * 0.31)}" fill="${p.fur}" ${ol()}/>`;
       const chest = `<ellipse cx="${x}" cy="${f1(y - lift - H * 0.26)}" rx="${f1(H * 0.15)}" ry="${f1(H * 0.19)}" fill="${p.light}"/>`;
-      const wings = `<path d="M${P(-0.24, -0.42 - L)} C${P(-0.36, -0.26 - L)} ${P(-0.3, -0.08 - L)} ${P(-0.17, -0.06 - L)}" stroke="${p.accent}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M${P(0.24, -0.42 - L)} C${P(0.36, -0.26 - L)} ${P(0.3, -0.08 - L)} ${P(0.17, -0.06 - L)}" stroke="${p.accent}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      const wc = s.colors.wing ?? p.accent;
+      const wings = `<path d="M${P(-0.24, -0.42 - L)} C${P(-0.36, -0.26 - L)} ${P(-0.3, -0.08 - L)} ${P(-0.17, -0.06 - L)}" stroke="${wc}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M${P(0.24, -0.42 - L)} C${P(0.36, -0.26 - L)} ${P(0.3, -0.08 - L)} ${P(0.17, -0.06 - L)}" stroke="${wc}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
       const legs =
         s.body === 'wader'
           ? `<path d="M${P(-0.06, 0)} L${P(-0.05, -0.46)} M${P(0.06, 0)} L${P(0.05, -0.46)}" stroke="${beak}" stroke-width="${f1(Math.max(1.4, H * 0.03))}" stroke-linecap="round"/>`
@@ -813,7 +814,7 @@ export function kitBody(s: SpeciesDef, p: KitPal, x: number, y: number, H: numbe
       break;
     }
     case 'shell': {
-      const sh = `<path d="M${P(-0.34, -0.06)} C${P(-0.34, -0.48)} ${P(0.38, -0.48)} ${P(0.38, -0.06)} Z" fill="${p.accent}" ${ol()}/><g fill="none" stroke="${p.dark}" stroke-width="1" opacity=".45"><path d="M${P(-0.12, -0.08)} L${P(-0.1, -0.3)} L${P(0.12, -0.3)} L${P(0.14, -0.08)}"/><path d="M${P(-0.1, -0.3)} L${P(-0.24, -0.2)} M${P(0.12, -0.3)} L${P(0.28, -0.2)}"/></g><rect x="${f1(x - H * 0.36)}" y="${f1(y - H * 0.09)}" width="${f1(H * 0.76)}" height="${f1(H * 0.06)}" rx="${f1(H * 0.03)}" fill="${p.light}" ${ol(0.8)}/>`;
+      const sh = `<path d="M${P(-0.34, -0.06)} C${P(-0.34, -0.48)} ${P(0.38, -0.48)} ${P(0.38, -0.06)} Z" fill="${s.colors.shell ?? p.accent}" ${ol()}/><g fill="none" stroke="${p.dark}" stroke-width="1" opacity=".45"><path d="M${P(-0.12, -0.08)} L${P(-0.1, -0.3)} L${P(0.12, -0.3)} L${P(0.14, -0.08)}"/><path d="M${P(-0.1, -0.3)} L${P(-0.24, -0.2)} M${P(0.12, -0.3)} L${P(0.28, -0.2)}"/></g><rect x="${f1(x - H * 0.36)}" y="${f1(y - H * 0.09)}" width="${f1(H * 0.76)}" height="${f1(H * 0.06)}" rx="${f1(H * 0.03)}" fill="${p.light}" ${ol(0.8)}/>`;
       body = `${shadow(0.42)}<g fill="${p.fur}" ${ol(0.8)}><ellipse cx="${f1(x - H * 0.24)}" cy="${f1(y - H * 0.03)}" rx="${f1(H * 0.07)}" ry="${f1(H * 0.045)}"/><ellipse cx="${f1(x + H * 0.28)}" cy="${f1(y - H * 0.03)}" rx="${f1(H * 0.07)}" ry="${f1(H * 0.045)}"/></g>${sh}`;
       headTop = y - H * 0.92;
       headX = x - H * 0.82;
@@ -834,7 +835,7 @@ export function kitBody(s: SpeciesDef, p: KitPal, x: number, y: number, H: numbe
       headTop = y - H * 0.24 - H * 0.82;
       break;
     case 'bat':
-      body = `${shadow(0.3)}<path d="M${P(-0.08, -0.36)} C${P(-0.3, -0.5)} ${P(-0.5, -0.42)} ${P(-0.56, -0.26)} C${P(-0.46, -0.3)} ${P(-0.4, -0.22)} ${P(-0.36, -0.16)} C${P(-0.3, -0.22)} ${P(-0.22, -0.2)} ${P(-0.16, -0.12)} Z" fill="${p.dark}" ${ol(0.8)}/><path d="M${P(0.08, -0.36)} C${P(0.3, -0.5)} ${P(0.5, -0.42)} ${P(0.56, -0.26)} C${P(0.46, -0.3)} ${P(0.4, -0.22)} ${P(0.36, -0.16)} C${P(0.3, -0.22)} ${P(0.22, -0.2)} ${P(0.16, -0.12)} Z" fill="${p.dark}" ${ol(0.8)}/><ellipse cx="${x}" cy="${f1(y - H * 0.2)}" rx="${f1(H * 0.15)}" ry="${f1(H * 0.2)}" fill="${p.fur}" ${ol()}/>`;
+      body = `${shadow(0.3)}<path d="M${P(-0.08, -0.36)} C${P(-0.3, -0.5)} ${P(-0.5, -0.42)} ${P(-0.56, -0.26)} C${P(-0.46, -0.3)} ${P(-0.4, -0.22)} ${P(-0.36, -0.16)} C${P(-0.3, -0.22)} ${P(-0.22, -0.2)} ${P(-0.16, -0.12)} Z" fill="${s.colors.wing ?? p.dark}" ${ol(0.8)}/><path d="M${P(0.08, -0.36)} C${P(0.3, -0.5)} ${P(0.5, -0.42)} ${P(0.56, -0.26)} C${P(0.46, -0.3)} ${P(0.4, -0.22)} ${P(0.36, -0.16)} C${P(0.3, -0.22)} ${P(0.22, -0.2)} ${P(0.16, -0.12)} Z" fill="${s.colors.wing ?? p.dark}" ${ol(0.8)}/><ellipse cx="${x}" cy="${f1(y - H * 0.2)}" rx="${f1(H * 0.15)}" ry="${f1(H * 0.2)}" fill="${p.fur}" ${ol()}/>`;
       headTop = y - H * 0.36 - H * 0.82;
       break;
     default: {
