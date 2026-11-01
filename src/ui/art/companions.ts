@@ -20,7 +20,8 @@ const OUT = 'rgba(40,52,52,0.32)';
 const SHADOW = 'rgba(40,52,52,0.13)';
 const INK = '#2F2A27';
 
-export type CompanionMood = 'idle' | 'happy' | 'sleepy';
+/** `beam`: eyes shut in two happy arcs and a big smile, the expression a Good friend unlocks (D40 PR B). */
+export type CompanionMood = 'idle' | 'happy' | 'sleepy' | 'beam';
 
 export interface Pal {
   fur: string;
@@ -78,8 +79,9 @@ export interface HeadDef {
 }
 
 export function face(mood: CompanionMood, o: FaceOpts = {}): string {
+  const beam = mood === 'beam';
   const closed = mood === 'sleepy';
-  const happy = mood === 'happy';
+  const happy = mood === 'happy' || beam;
   const [lx, ly, rx, ry] = o.eyes ?? [24, 33, 40, 33];
   const [er, eh] = o.eyeR ?? [2.7, 3.3];
   const fill = o.eyeFill ?? INK;
@@ -103,6 +105,15 @@ export function face(mood: CompanionMood, o: FaceOpts = {}): string {
     shut = `<g class="sp-eyes-closed" style="opacity:${closed ? 1 : 0}" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round">
       <path d="M${lx - 2.8} ${ly + 0.4} q2.8 2.4 5.6 0"/><path d="M${rx - 2.8} ${ry + 0.4} q2.8 2.4 5.6 0"/></g>`;
   }
+  // The beaming eyes (D40 PR B): two arcs that curve up, shown for the beam mood and, in a scene, by a close friend's
+  // hello (styles/sanctuary-life.css). Hidden otherwise, so every face can switch to it without new markup.
+  const w = o.kind === 'owl' ? 4 : o.kind === 'side' ? 3.2 : 2.9;
+  const arc = (x: number, y: number) => `<path d="M${x - w} ${y + 0.8} q${w} ${-w * 0.95} ${2 * w} 0"/>`;
+  const beamEyes = `<g class="sp-eyes-beam" style="opacity:${beam ? 1 : 0}" fill="none" stroke="${INK}" stroke-width="1.7" stroke-linecap="round">${o.kind === 'side' ? arc(lx, ly) : arc(lx, ly) + arc(rx, ry)}</g>`;
+  if (beam) {
+    open = open.replace('style="opacity:1"', 'style="opacity:0"');
+    shut = shut.replace(/style="opacity:\d"/, 'style="opacity:0"');
+  }
   const my = o.mouthY === undefined ? 45.4 : o.mouthY;
   const mouth =
     my === null
@@ -114,8 +125,8 @@ export function face(mood: CompanionMood, o: FaceOpts = {}): string {
   const blush =
     o.kind === 'side'
       ? ''
-      : `<ellipse cx="${lx - 4.5}" cy="${by}" rx="3" ry="1.8" fill="#F09C98" opacity="${happy ? 0.55 : 0.3}"/><ellipse cx="${rx + 4.5}" cy="${by}" rx="3" ry="1.8" fill="#F09C98" opacity="${happy ? 0.55 : 0.3}"/>`;
-  return `${blush}${open}${shut}${o.nose ?? ''}${mouth}`;
+      : `<ellipse cx="${lx - 4.5}" cy="${by}" rx="3" ry="1.8" fill="#F09C98" opacity="${beam ? 0.7 : happy ? 0.55 : 0.3}"/><ellipse cx="${rx + 4.5}" cy="${by}" rx="3" ry="1.8" fill="#F09C98" opacity="${beam ? 0.7 : happy ? 0.55 : 0.3}"/>`;
+  return `${blush}${open}${shut}${beamEyes}${o.nose ?? ''}${mouth}`;
 }
 
 const HEADS: Record<CompanionId, HeadDef> = {

@@ -1,12 +1,16 @@
 /**
- * The friendship panel on a resident's or wildlife friend's card: friendship level, today's pat, and feeding from the
- * pantry. Cosmetic only (D27).
+ * The friendship panel on a resident's or wildlife friend's card: its temperament, friendship level and what the next
+ * level brings (D40), today's pat, and feeding from the pantry. Cosmetic only (D27).
  */
 
 import { app } from '../../app/app';
 import { FOODS, FOOD_BY_ID, isFavorite, type FoodId } from '../../meta/catalogs/foods';
 import { animalKindOf, feedAnimal, foodCount, fedToday, FOOD_AFFECTION_PER_DAY, friendship } from '../../meta/feeding';
 import { patFriend, pattedToday } from '../../meta/sanctuary';
+import { BOND_UNLOCKS, nextUnlock } from '../../meta/bonds';
+import { TEMPERAMENT_INFO, temperamentOf } from '../../meta/temperament';
+import { afterHearts } from './bonding';
+import { sayHello } from './hello';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
 import { foodIcon } from '../art/foods';
@@ -31,18 +35,26 @@ export function friendPanelMarkup(animal: string, name: string): string {
   const owned = FOODS.filter((x) => foodCount(app.save, x.id) > 0);
   const full = fedToday(app.save, animal) >= FOOD_AFFECTION_PER_DAY;
   const patted = pattedToday(app.save, animal);
+  const t = TEMPERAMENT_INFO[temperamentOf(animal)];
+  const next = nextUnlock(app.save, animal);
+  // What friendship has brought so far, and what's still to come: a row of small marks, never a to-do list.
+  const unlocks = BOND_UNLOCKS.map((u, lvl) =>
+    u ? `<li class="${f.level >= lvl ? 'is-on' : ''}">${f.level >= lvl ? ICON.check : ICON.heart}<span>${esc(u.short)}</span></li>` : '',
+  ).join('');
   return `<div class="friend-panel" data-friend-panel="${esc(animal)}">
+    <p class="friend-panel__temper"><span class="chip chip--temper" data-temper="${temperamentOf(animal)}">${esc(t.label)}</span><span>${esc(name)} ${esc(t.greets)}.</span></p>
     <div class="friend-panel__level">
       <span class="affection">${ICON.heart}<span class="num">${aff}</span></span>
-      <span class="friend-panel__name"><b>${esc(f.name)}</b>${f.next !== null ? `<small>${f.next - aff} hearts to the next level</small>` : '<small>As close as can be</small>'}</span>
+      <span class="friend-panel__name"><b>${esc(f.name)}</b>${next ? `<small>${next.hearts} ${next.hearts === 1 ? 'heart' : 'hearts'} to ${esc(next.level)}: ${esc(next.name.charAt(0).toLowerCase() + next.name.slice(1))}</small>` : '<small>As close as can be</small>'}</span>
     </div>
     <span class="rank-bar" role="progressbar" aria-label="${esc(name)} friendship" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></span>
+    <ul class="friend-panel__unlocks" aria-label="What friendship brings">${unlocks}</ul>
     <button class="btn btn--secondary btn--block" data-act="pat" ${patted ? 'disabled' : ''}>${ICON.heart}${patted ? 'Patted today' : `Give ${esc(name)} a pat`}</button>
     <div class="friend-panel__feed">
       <b class="friend-panel__title">Feed ${esc(name)}</b>
       ${
         full
-          ? `<p class="muted">${esc(name)} has had plenty today. Come back tomorrow.</p>`
+          ? `<p class="muted">${esc(name)} has had plenty for today, and is very content.</p>`
           : owned.length
             ? `<ul class="feed-row">${owned
                 .map((x) => {
@@ -66,17 +78,20 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
     const t = e.target as HTMLElement;
     const pat = t.closest('[data-act="pat"]') as HTMLButtonElement | null;
     if (pat && !pat.disabled) {
+      const before = app.save.sanctuary.affection[animal] ?? 0;
       if (patFriend(app.save, animal)) {
         app.persist();
-        feel('hello');
+        sayHello(animal);
         ev.onPat?.();
         rerender();
+        afterHearts(scope, animal, before);
       }
       return;
     }
     const fb = t.closest('[data-feed]') as HTMLElement | null;
     if (!fb) return;
     const food = fb.dataset.feed as FoodId;
+    const before = app.save.sanctuary.affection[animal] ?? 0;
     const r = feedAnimal(app.save, animal, food);
     if (r.ok) {
       app.persist();
@@ -84,7 +99,8 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
       track('animal_fed', { food, favorite: r.favorite });
       toast(`${name} ${r.favorite ? 'loved' : 'enjoyed'} the ${FOOD_BY_ID[food].name}! +${r.gained}`, ICON.heart);
       ev.onFed?.(food, r.favorite);
-    } else toast(r.reason === 'full' ? `${name} has had plenty today.` : 'None left in your pantry.');
+    } else toast(r.reason === 'full' ? `${name} has had plenty for today.` : 'None left in your pantry.');
     rerender();
+    if (r.ok) afterHearts(scope, animal, before);
   });
 }

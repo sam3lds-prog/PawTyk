@@ -1,5 +1,6 @@
 /** Resident detail sheet and portrait helpers, shared by the Pets tab and the sanctuary. */
 
+import { hasUnlock } from '../../meta/bonds';
 import { app } from '../../app/app';
 import { PET_BY_ID, type PetId } from '../../meta/catalogs/pets';
 import { arrivalLine } from '../../meta/world';
@@ -43,7 +44,7 @@ export function showPetSheet(scope: Scope, id: PetId, opts: { onChange?: () => v
     className: 'pet-sheet',
     onClose: opts.onClose,
     body: `
-      <div class="pet-sheet__hero">${portrait(id, owned ? 'happy' : 'idle', !owned)}</div>
+      <div class="pet-sheet__hero">${portrait(id, owned ? (hasUnlock(app.save, id, 'expression') ? 'celebrate' : 'happy') : 'idle', !owned)}</div>
       <p class="pet-sheet__trait">${esc(p.trait)}</p>
       ${owned ? `<p class="sheet__lead">${esc(p.bio)}</p>` : `<p class="sheet__lead">${esc(arrivalLine(app.save, id))}</p>`}
       ${

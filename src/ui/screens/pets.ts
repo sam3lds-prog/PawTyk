@@ -17,6 +17,9 @@ import { wireFolds } from '../components/fold';
 import { animalInfo, animalsOf, isHome, kindsMet, KINDS_TOTAL, nextArrivalIn } from '../../meta/animals';
 import { activeSanctuary, arrivalProgress, isOpen, worldIds } from '../../meta/world';
 import { friendPortrait, showFriendSheet } from './sanctuary';
+import { portraits } from '../../meta/bonds';
+import { animalPortrait, animalTint } from '../art/animals';
+import type { AnimalId } from '../../meta/animals';
 
 type Filter = 'all' | 'home' | 'fav';
 let lastFilter: Filter = 'all';
@@ -58,6 +61,30 @@ export const petsScreen: ScreenDef = {
         .join('');
     }
     wireFolds(scope, el, (key) => cardsOf(sanctuaryDef(key as SanctuaryId)));
+
+    /** Best friends' portraits (D40 PR B), the newest last; a golden frame for family. */
+    function portraitsMarkup(): string {
+      const save = app.save;
+      const list = portraits(save, (id) => isHome(save, id as PetId));
+      if (!list.length) return '';
+      const when = (iso: string, kind: string) => {
+        const d = new Date(iso);
+        return iso && !Number.isNaN(d.getTime()) ? `Since ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : kind;
+      };
+      return `<section class="album__portraits" aria-label="Best friends' portraits">
+        <div class="section-head"><h3>Best friends</h3><span class="muted num">${list.length}</span></div>
+        <ul class="portrait-row">${list
+          .map((p) => {
+            const a = animalInfo(p.id as AnimalId);
+            const attr = isPetId(p.id) ? `data-pet="${p.id}"` : `data-friend="${p.id}"`;
+            return `<li><button class="portrait-card card card--tap${p.golden ? ' is-golden' : ''}" ${attr} aria-label="${esc(`${a.name} the ${a.noun}'s portrait. Best friends${p.since ? ` ${when(p.since, a.kind).toLowerCase()}` : ''}${p.golden ? ', golden frame' : ''}`)}">
+              <span class="portrait portrait--frame" style="--tint:${animalTint(p.id as AnimalId) ?? 'var(--surface-2)'}">${animalPortrait(p.id as AnimalId, 'beam')}</span>
+              <b>${esc(a.name)}</b><small>${esc(when(p.since, a.kind))}</small>
+            </button></li>`;
+          })
+          .join('')}</ul>
+      </section>`;
+    }
 
     function render(): void {
       const save = app.save;
@@ -112,6 +139,7 @@ export const petsScreen: ScreenDef = {
               })()
             : ''
         }
+        ${portraitsMarkup()}
         <div class="segmented" role="tablist" aria-label="Filter animals">
           ${filters.map(([f, l]) => `<button role="tab" data-filter="${f}" aria-selected="${lastFilter === f}">${l}</button>`).join('')}
         </div>

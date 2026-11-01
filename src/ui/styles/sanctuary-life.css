@@ -318,6 +318,181 @@
   opacity: 1 !important;
 }
 
+/* D40 PR B: every animal greets in its temperament's own way (a tap, an arrival hello), in the same 1.4 s.
+   Playful keeps the two happy hops above. Residents' faces follow in sceneLife.ts; friends' faces here. */
+/* Shy: turns away for a moment, then comes round with a small hop and a smile. */
+.sanctuary__scene.is-live .sanctuary__pet[data-temper='shy'].is-greet {
+  animation: sp-greet-shy 1400ms ease-out;
+}
+@keyframes sp-greet-shy {
+  0%,
+  100% {
+    transform: none;
+  }
+  10%,
+  30% {
+    transform: scaleX(-1) translateX(-2px);
+  }
+  38% {
+    transform: none;
+  }
+  54% {
+    transform: translateY(-4px);
+  }
+  68% {
+    transform: scale(1.02, 0.98);
+  }
+  80% {
+    transform: none;
+  }
+}
+.sanctuary__scene .sanctuary__friend[data-temper='shy'].is-greet .sp-mouth--idle,
+.sanctuary__scene .sanctuary__friend[data-temper='shy'].is-greet .sp-mouth--happy,
+.sanctuary__scene .sanctuary__friend[data-temper='shy'][data-beam].is-greet .sp-eyes-beam {
+  transition-delay: 480ms;
+}
+/* Sleepy: a slow blink and a drowsy nod. */
+.sanctuary__scene.is-live .sanctuary__pet[data-temper='sleepy'].is-greet {
+  animation: sp-greet-sleepy 1400ms ease-in-out;
+}
+@keyframes sp-greet-sleepy {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(1px) rotate(-3deg);
+  }
+  62% {
+    transform: translateY(-2px) rotate(2deg);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__friend[data-temper='sleepy'].is-greet .sp-eyes-open {
+  animation: sp-slow-blink-open 1400ms ease-in-out;
+}
+.sanctuary__scene.is-live .sanctuary__friend[data-temper='sleepy'].is-greet .sp-eyes-closed {
+  animation: sp-slow-blink-shut 1400ms ease-in-out;
+}
+@keyframes sp-slow-blink-open {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  18%,
+  52% {
+    opacity: 0;
+  }
+}
+@keyframes sp-slow-blink-shut {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  18%,
+  52% {
+    opacity: 1;
+  }
+}
+/* Proud: stands tall and holds it, eyes shut, pleased. */
+.sanctuary__scene.is-live .sanctuary__pet[data-temper='proud'].is-greet {
+  animation: sp-greet-proud 1400ms ease-out;
+}
+@keyframes sp-greet-proud {
+  0%,
+  100% {
+    transform: none;
+  }
+  22%,
+  76% {
+    transform: translateY(-2px) scale(1.02, 1.07);
+  }
+}
+.sanctuary__scene .sanctuary__friend[data-temper='proud'].is-greet .sp-eyes-open {
+  opacity: 0 !important;
+}
+.sanctuary__scene .sanctuary__friend[data-temper='proud'].is-greet .sp-eyes-closed {
+  opacity: 1 !important;
+}
+/* Bouncy: three quick hops, it can hardly keep still. */
+.sanctuary__scene.is-live .sanctuary__pet[data-temper='energetic'].is-greet {
+  animation: sp-greet-bouncy 1400ms ease-out;
+}
+@keyframes sp-greet-bouncy {
+  0%,
+  100% {
+    transform: none;
+  }
+  10% {
+    transform: translateY(-7px);
+  }
+  20% {
+    transform: scale(1.05, 0.94);
+  }
+  32% {
+    transform: translateY(-7px) rotate(-3deg);
+  }
+  42% {
+    transform: scale(1.05, 0.94);
+  }
+  54% {
+    transform: translateY(-6px) rotate(3deg);
+  }
+  64% {
+    transform: scale(1.03, 0.97);
+  }
+  74% {
+    transform: none;
+  }
+}
+/* Gentle: leans in, slowly, and back. */
+.sanctuary__scene.is-live .sanctuary__pet[data-temper='gentle'].is-greet {
+  animation: sp-greet-gentle 1400ms ease-in-out;
+}
+@keyframes sp-greet-gentle {
+  0%,
+  100% {
+    transform: none;
+  }
+  35%,
+  70% {
+    transform: translateY(-2px) rotate(-4deg);
+  }
+}
+/* A friend (D40 PR B): a warmer hello, its heart bigger and floating higher. */
+.sanctuary__scene.is-live .sanctuary__pet[data-warm].is-greet .sp-heart,
+.sanctuary__scene.is-live .sanctuary__pet[data-warm].is-love .sp-heart {
+  animation: sp-heart-warm 1400ms ease-out 200ms;
+}
+@keyframes sp-heart-warm {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(1.2);
+  }
+}
+/* A good friend (D40 PR B): it beams when it sees you, eyes shut in two happy arcs. */
+.sanctuary__scene .sanctuary__friend .sp-eyes-beam {
+  transition: opacity 120ms ease-out;
+}
+.sanctuary__scene .sanctuary__friend[data-beam].is-greet .sp-eyes-open,
+.sanctuary__scene .sanctuary__friend[data-beam].is-greet .sp-eyes-closed,
+.sanctuary__scene .sanctuary__friend[data-beam].is-love .sp-eyes-open,
+.sanctuary__scene .sanctuary__friend[data-beam].is-love .sp-eyes-closed {
+  opacity: 0 !important;
+  animation: none;
+}
+.sanctuary__scene .sanctuary__friend[data-beam].is-greet .sp-eyes-beam,
+.sanctuary__scene .sanctuary__friend[data-beam].is-love .sp-eyes-beam {
+  opacity: 1 !important;
+}
+
 /* A stage just reached grows in. */
 .sanctuary__scene.is-live .sp-stage.is-new {
   transform-box: fill-box;

@@ -719,6 +719,23 @@ try {
     ),
   );
 
+  // D40 PR B: every figure greets in its temperament's way; a hello counts a heart once a day; a best friend's portrait.
+  await page.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
+  await page.waitForSelector('.sanctuary__scene [data-friend="cotton"]', { timeout: 8000 }).catch(() => {});
+  const bond = await page.evaluate(async () => {
+    const s = window.__pt.app.save;
+    const temper = document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.getAttribute('data-temper');
+    const before = s.sanctuary.affection.cotton ?? 0;
+    s.sanctuary.greeted = {};
+    const tapIt = () => document.querySelector('.sanctuary__scene [data-friend="cotton"] path').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    tapIt();
+    await new Promise((r) => setTimeout(r, 1600));
+    tapIt();
+    return { temper, gained: (s.sanctuary.affection.cotton ?? 0) - before };
+  });
+  check('a tapped animal greets its own way (Cotton is sleepy) and a hello counts one heart a day (D40)', bond.temper === 'sleepy' && bond.gained === 1, JSON.stringify(bond));
+  await page.keyboard.press('Escape');
+
   // D40 PR A: every moment's sound plays in a real browser without a fault, and Sound off makes none.
   const sound = await page.evaluate(async () => {
     const f = await import('/src/services/feel.ts');

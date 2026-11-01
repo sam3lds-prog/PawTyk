@@ -178,6 +178,10 @@ export interface SaveV2 {
     patted: Record<string, string>;
     /** Resident id → affection gained from food today (capped per day, so feeding stays a small daily pleasure). */
     fed: Record<string, { day: string; n: number }>;
+    /** Animal id → local date of the last hello in a scene that counted (one a day each, D40). */
+    greeted: Record<string, string>;
+    /** Animal id → when it became a best friend (its portrait in the album, D40). */
+    bestSince: Record<string, string>;
   };
   /** Reward videos watched today (all placements share one gentle daily cap). */
   ads: { day: string | null; rewarded: number };
@@ -433,7 +437,7 @@ export function defaultSave(now = new Date()): SaveV2 {
     zen: { solved: 0, nextSeed: 1 },
     cup: { attempts: {}, open: {} },
     inventory: { ledger: [], pets: {}, accents: {}, equippedAccent: {}, favorites: {}, decor: {}, items: [], companions: {}, tricks: {} },
-    sanctuary: { hidden: {}, visits: 0, affection: {}, patted: {}, fed: {} },
+    sanctuary: { hidden: {}, visits: 0, affection: {}, patted: {}, fed: {}, greeted: {}, bestSince: {} },
     ads: { day: null, rewarded: 0 },
     world: { active: null, growth: {}, visited: {}, credits: {}, unseen: {}, grown: {}, policy: 2 },
     leaderboard: defaultLeaderboard(),
@@ -710,6 +714,8 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       affection: rec(san.affection, numItem),
       patted: rec(san.patted, strItem),
       fed: rec(san.fed, (v) => (isObj(v) && typeof v.day === 'string' ? { day: v.day, n: int(v.n, 0, 0, 1000) } : undefined)),
+      greeted: rec(san.greeted, strItem),
+      bestSince: rec(san.bestSince, strItem),
     },
     ads: { day: isObj(x.ads) ? strOrNull(x.ads.day) : null, rewarded: isObj(x.ads) ? int(x.ads.rewarded, 0, 0, 1000) : 0 },
     world: {

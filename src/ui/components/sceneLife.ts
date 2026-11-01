@@ -14,6 +14,8 @@ import type { FaceMood } from '../animation/faceMachine';
 import { applyFace } from '../art/pets';
 import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { sayHello } from './hello';
+import { temperamentOf } from '../../meta/temperament';
+import { hasUnlock } from '../../meta/bonds';
 
 /** What each wildlife friend likes to do (the sleepy ones mostly blink and stretch). */
 const FRIEND_ACTIONS: Record<string, AmbientAction[]> = {
@@ -83,10 +85,50 @@ export function greetAll(life: SceneLife, schedule: (fn: () => void, ms: number)
   life.figures().forEach((f, i) => schedule(() => life.play(f, big ? 'greet' : i % 2 ? 'wag' : 'hop'), 450 + i * 480));
 }
 
+/**
+ * D40 PR B: marks a figure with its temperament (how it greets, styles/sanctuary-life.css) and what friendship has
+ * unlocked (a warmer hello, a beaming smile). Read again on every tap, since a hello can lift a friendship a level.
+ */
+function markCharacter(node: Element): void {
+  const el = node as HTMLElement;
+  const id = el.dataset.pet ?? el.dataset.friend;
+  if (!id) return;
+  el.dataset.temper = temperamentOf(id);
+  el.toggleAttribute('data-warm', hasUnlock(app.save, id, 'greeting'));
+  el.toggleAttribute('data-beam', hasUnlock(app.save, id, 'expression'));
+}
+
+/** A resident's face through a hello, by its temperament: [mood, look, ms] steps (the last one holds to the end). */
+function helloFaces(petId: string, beam: boolean): Array<[FaceMood, [number, number], number]> {
+  const smile: FaceMood = beam ? 'celebrate' : 'happy';
+  switch (temperamentOf(petId)) {
+    case 'shy':
+      return [
+        ['curious', [1.4, 0.4], 460],
+        [smile, [0, 0], 0],
+      ];
+    case 'sleepy':
+      return [
+        ['sleepy', [0, 0], 520],
+        [smile, [0, 0], 0],
+      ];
+    case 'proud':
+      return [[beam ? 'celebrate' : 'proud', [0, 0], 0]];
+    default:
+      return [[smile, [0, 0], 0]];
+  }
+}
+
 export function startSceneLife(svg: Element, seedKey: string): SceneLife {
   const actors = new Map<string, Element>();
   const baseMood = new Map<string, FaceMood>();
   const figs: string[] = [];
+  const faceTimers = new Map<string, number>();
+  const clearFace = (id: string) => {
+    const tm = faceTimers.get(id);
+    if (tm !== undefined) clock.clear(tm);
+    faceTimers.delete(id);
+  };
   const play = (id: string, action: AmbientAction) => {
     const node = actors.get(id);
     if (!node) return;
@@ -94,9 +136,19 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     if ((node as HTMLElement).dataset?.trick || node.classList.contains('is-away')) return;
     const rig = node.querySelector('g.pet') as SVGElement | null;
     const petId = (node as HTMLElement).dataset?.pet as PetId | undefined;
-    if (rig && petId && (action === 'blink' || action === 'look' || action === 'yawn' || action === 'love' || action === 'greet')) {
+    if (rig && petId && (action === 'love' || action === 'greet')) {
+      // A hello in the resident's own way (D40 PR B): a shy one glances away first, a sleepy one blinks slowly.
+      clearFace(id);
+      const steps = helloFaces(petId, node.hasAttribute('data-beam'));
+      const show = (i: number) => {
+        const [mood, look, ms] = steps[i];
+        applyFace(rig, petId, { mood, blinking: false, look });
+        if (ms && i + 1 < steps.length) faceTimers.set(id, clock.set(() => show(i + 1), ms));
+      };
+      show(0);
+    } else if (rig && petId && (action === 'blink' || action === 'look' || action === 'yawn')) {
       const base = baseMood.get(id) ?? 'idle';
-      const mood: FaceMood = action === 'yawn' ? 'sleepy' : action === 'look' ? 'curious' : action === 'love' || action === 'greet' ? 'happy' : base;
+      const mood: FaceMood = action === 'yawn' ? 'sleepy' : action === 'look' ? 'curious' : base;
       applyFace(rig, petId, { mood, blinking: action === 'blink', look: action === 'look' ? [hashString(id) % 2 ? 1.2 : -1.2, 0] : [0, 0] });
     }
     node.classList.add(`is-${action}`);
@@ -104,6 +156,7 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
   const end = (id: string, action: AmbientAction) => {
     const node = actors.get(id);
     if (!node) return;
+    clearFace(id);
     node.classList.remove(`is-${action}`);
     const rig = node.querySelector('g.pet') as SVGElement | null;
     const petId = (node as HTMLElement).dataset?.pet as PetId | undefined;
@@ -111,6 +164,7 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
   };
   const ambient = new AmbientDirector({ clock, seed: hashString(`${seedKey}-${localDateKey()}`), reducedMotion: app.reducedMotion, play, end });
 
+  for (const g of svg.querySelectorAll('.sanctuary__pet')) markCharacter(g);
   for (const g of svg.querySelectorAll('.sanctuary__pet[data-pet]')) {
     const id = (g as HTMLElement).dataset.pet as PetId;
     actors.set(id, g);
@@ -147,12 +201,16 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
   return {
     tap: (fig) => {
       // D40: the animal answers out loud too, a tiny hello of its own (sound and haptic behind their switches).
+      markCharacter(fig);
       sayHello(fig.dataset.pet ?? fig.dataset.friend ?? '');
       if (!ambient.trigger(figureId(fig), 'greet')) ambient.trigger(figureId(fig), 'love');
     },
     play: (id, action) => ambient.trigger(id, action) || (action === 'greet' && ambient.trigger(id, 'love')),
     figures: () => [...figs],
     setLive: (on) => ambient.setLive(on),
-    dispose: () => ambient.dispose(),
+    dispose: () => {
+      for (const id of [...faceTimers.keys()]) clearFace(id);
+      ambient.dispose();
+    },
   };
 }

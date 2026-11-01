@@ -34,6 +34,7 @@ import type { Route, ScreenDef } from '../router';
 import { friendPortrait, isEvening, offerStarterGift, showFriendSheet } from './sanctuary';
 import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
+import { greetInScene } from '../components/bonding';
 
 export const regionScreen: ScreenDef = {
   tab: 'world',
@@ -260,6 +261,8 @@ export const regionScreen: ScreenDef = {
       const fig = t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null;
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
+        // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
+        greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
         life?.tap(fig);
         tray.open(fig as unknown as SVGGElement);
         return;

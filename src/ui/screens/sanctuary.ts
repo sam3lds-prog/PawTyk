@@ -5,6 +5,8 @@
  * player picks one of two free starter gifts (here or on the Farm, whichever they visit first).
  */
 
+import { hasUnlock } from '../../meta/bonds';
+import { greetInScene } from '../components/bonding';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, decorOf, type DecorId } from '../../meta/catalogs/decor';
@@ -57,7 +59,9 @@ export function sceneMarkup(id: string): string {
 
 /** Portrait for a wildlife friend, matching resident portraits. */
 export function friendPortrait(id: FriendId, locked = false): string {
-  return `<span class="portrait${locked ? ' is-locked' : ''}" style="--tint:${animalTint(id) ?? 'var(--surface-2)'}">${companionSvg(id, locked ? 'idle' : 'happy')}</span>`;
+  // A good friend (D40 PR B) beams on its card.
+  const mood = locked ? 'idle' : hasUnlock(app.save, id, 'expression') ? 'beam' : 'happy';
+  return `<span class="portrait${locked ? ' is-locked' : ''}" style="--tint:${animalTint(id) ?? 'var(--surface-2)'}">${companionSvg(id, mood)}</span>`;
 }
 
 export const sanctuaryScreen: ScreenDef = {
@@ -237,6 +241,8 @@ export const sanctuaryScreen: ScreenDef = {
       const fig = t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null;
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
+        // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
+        greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
         life?.tap(fig);
         tray.open(fig as unknown as SVGGElement);
         return;

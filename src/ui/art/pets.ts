@@ -17,6 +17,7 @@
 import { CAT, type Species } from '../../engine/types';
 import { FOUNDING, PET_BY_ID, type PetDefinition, type PetId } from '../../meta/catalogs/pets';
 import { clampLook, type FaceMood, type FaceView, type Look } from '../animation/faceMachine';
+import { temperamentOf, type Temperament } from '../../meta/temperament';
 
 export type EyeState = 'open' | 'closed' | 'wink';
 export type MouthShape = 'idle' | 'smile' | 'grin' | 'o' | 'flat';
@@ -90,10 +91,50 @@ const PERSONALITY: Record<PetId, Partial<Record<Exclude<FaceMood, 'blink'>, Part
   },
 };
 
-/** The pose for a face. Residents bring their personality; every other animal uses the shared poses. */
+/**
+ * Temperament (D40 PR B): how every other animal's face departs from the shared poses. A playful one grins, a sleepy
+ * one is a little heavy-lidded and smiles with its eyes shut, a shy one smiles with a sideways glance and a deep blush,
+ * a proud one closes its eyes with its chin up, a bouncy one beams with its brows high, a gentle one smiles softly.
+ */
+const TEMPER_POSE: Record<Temperament, Partial<Record<Exclude<FaceMood, 'blink'>, Partial<Pose>>>> = {
+  playful: {
+    happy: { mouth: 'grin', cheek: 0.9 },
+    curious: { bly: -2, bry: -2, mouth: 'o' },
+    celebrate: { eyes: 'wink' },
+  },
+  sleepy: {
+    idle: { lid: 0.22 },
+    curious: { lid: 0.2 },
+    happy: { eyes: 'closed', lid: 0, mouth: 'smile', cheek: 0.6 },
+    focused: { lid: 0.44 },
+  },
+  shy: {
+    idle: { cheek: 0.45 },
+    happy: { px: 1.2, py: 0.5, lid: 0.12, mouth: 'smile', cheek: 1 },
+    proud: { cheek: 1 },
+    celebrate: { mouth: 'smile', cheek: 1 },
+  },
+  proud: {
+    happy: { eyes: 'closed', lid: 0, bly: -1.6, bry: -1.6, mouth: 'smile', cheek: 0.65 },
+    proud: { mouth: 'grin', bly: -1.5, bry: -1.5 },
+    celebrate: { eyes: 'wink', mouth: 'grin' },
+  },
+  energetic: {
+    happy: { mouth: 'grin', cheek: 0.95, bly: -1.8, bry: -1.8 },
+    curious: { bly: -2.2, bry: -2.2 },
+    proud: { mouth: 'grin' },
+  },
+  gentle: {
+    happy: { lid: 0.12, mouth: 'smile', cheek: 0.8 },
+    celebrate: { mouth: 'smile' },
+  },
+};
+
+/** The pose for a face. Residents bring their own hand-made personality; every other animal its temperament's. */
 export function poseFor(petId: string, mood: FaceMood, blinking = false, look: Look = [0, 0]): Pose {
   const m = mood === 'blink' ? 'idle' : mood;
-  const p: Pose = { ...BASE[m], ...((PERSONALITY as Record<string, (typeof PERSONALITY)[PetId] | undefined>)[petId]?.[m] ?? {}) };
+  const own = (PERSONALITY as Record<string, (typeof PERSONALITY)[PetId] | undefined>)[petId];
+  const p: Pose = { ...BASE[m], ...((own ? own[m] : TEMPER_POSE[temperamentOf(petId)][m]) ?? {}) };
   if (m === 'curious' || m === 'confused') {
     const [lx, ly] = clampLook(look);
     if (lx !== 0 || ly !== 0) {

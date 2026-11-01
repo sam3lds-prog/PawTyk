@@ -1047,3 +1047,37 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
   every hello style and size), `test/unit/gameScreen.dom.test.ts` (the press, the wrong-guess words, the offer once and
   the switch).
 
+### PR B — every animal a character; friendships that bring something
+- **Six temperaments** (`meta/temperament.ts`): playful, sleepy, shy, proud, bouncy (energetic) and gentle. The six
+  residents and twenty-one hand-made friends are chosen from their own traits (Truffle playful, Cotton sleepy, Juniper
+  and Ember shy, Clover proud, Biscuit bouncy…); every other kind by its name (otters and penguins playful, owls and big
+  cats proud, sloths and pythons sleepy, deer and hedgehogs shy, squirrels and wolves bouncy, whales and tortoises
+  gentle), then by its shape. A kind keeps one temperament everywhere; no randomness, nothing saved. Across the 545
+  kinds: 115 playful, 47 sleepy, 61 shy, 116 proud, 132 bouncy, 74 gentle (a test keeps every one at 40 or more and
+  none above 30%).
+- **Faces on the board** (`ui/art/pets.ts::TEMPER_POSE`): a friend's happy face is its temperament's — a playful grin,
+  a sleepy closed-eye smile, a shy sideways glance with a deep blush, a proud chin-up, a bouncy beam with high brows, a
+  gentle soft smile; proud ones wink after a solve. Residents keep their own hand-made faces. Faces only (D11).
+- **Greetings in the scenes** (`sceneLife.ts`, `styles/sanctuary-life.css`): a tap or an arrival hello plays the
+  temperament's own 1.4 s greeting — shy turns away, then comes round with a smile; sleepy blinks slowly and nods;
+  proud stands tall with its eyes shut; bouncy hops three times; gentle leans in; playful keeps the two happy hops.
+  Residents' faces follow the same steps (a shy one glances away first). Under reduced motion a tap still changes only
+  the face. The hello sound (PR A) plays in the same rhythm.
+- **Bonding** (`meta/bonds.ts`, `components/bonding.ts`): a hello in a scene now counts a heart (once a day per
+  animal), as a pat and food already did; hearts never go down. Friend (5): a warmer hello (a bigger heart, one more warm
+  note). Good friend (15): a new expression, a beaming smile with two happy arcs for eyes (in the scene, on its card,
+  in the album). Best friend (35): its portrait in the album, announced by a small card (*Best friends!*, *See the
+  album*). Family (70): a golden frame. Each new level is said once, in a toast or that card. Nothing asks the player
+  to come back: the card's line *has had plenty for today, and is very content* replaced *Come back tomorrow*.
+- **The card** (`feedPanel.ts`): the temperament as a chip and a sentence (*Truffle is curious about everything and
+  delighted to see you.*), the hearts to the next level and what it brings (*3 hearts to Good friend: a beaming
+  smile*), and a row of what friendship has brought and will bring.
+- **The album** (`screens/pets.ts`): *Best friends* — framed, beaming portraits, oldest first, with the date; a
+  friendship that reached 35 hearts before this build has its portrait too.
+- Save: `sanctuary.greeted` (the day of each animal's last counted hello) and `sanctuary.bestSince`; both default to
+  empty for older saves.
+- Tests: `test/unit/personality.test.ts` (every animal has a temperament, the named characters, the spread, faces,
+  hellos once a day, the unlock order, no decay, portraits, saves, the beaming face), `test/unit/bonding.dom.test.ts`
+  (figures carry their temperament, a tap counts once a day, a new level is announced and changes the greeting, the
+  best-friend card and the album, the card's lines); e2e: Cotton greets sleepily and a hello counts once.
+
