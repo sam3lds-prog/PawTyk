@@ -28,7 +28,7 @@ import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { SANCTUARY_BY_ID, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
-import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, openRegions, stageOf, type GrowthNews } from '../../meta/world';
+import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
 import { animalInfo, withArticle, type AnimalId } from '../../meta/animals';
 import { castFor, castWord, type Cast } from '../../meta/cast';
@@ -1236,13 +1236,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
    * bar starts where it was and fills to where it is now (one short move, skipped under reduced motion or a tap; D38).
    */
   function nextFriendMarkup(where: SanctuaryId | null, grew = false, before: ReturnType<typeof arrivalProgress> = null): string {
-    if (!where || mode.kind === 'cup') return '';
+    if (mode.kind === 'cup') return '';
+    if (!where) return upNextMarkup(null);
     const p = arrivalProgress(app.save, where);
     const def = SANCTUARY_BY_ID[where];
     const plus = grew ? `<b class="win-plus">${esc(def.short)} +1</b> · ` : '';
     if (!p) {
       const st = nextStage(app.save, where);
-      if (!st) return '';
+      // Finished here: the line points at what the next puzzle helps instead (D39), so a win always says what's next.
+      if (!st) return upNextMarkup(where);
       const left = st.need - st.have;
       return `<div class="win-growth" style="--accent:${def.accent}">${ICON.sprout}<span>${plus}${left === 1 ? 'one more puzzle' : `${left} more puzzles`} to ${esc(st.stage.name.toLowerCase())}</span></div>`;
     }
@@ -1254,6 +1256,32 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
     const line = sameFriend && before.left !== p.left ? `<b>${esc(a.name)} the ${esc(a.noun)}</b>: <span class="num">${before.left} → ${p.left}</span> ${p.left === 1 ? 'puzzle' : 'puzzles'} away` : `<b>${esc(a.name)} the ${esc(a.noun)}</b> is on the way: ${away}`;
     return `<div class="win-next-friend" style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body"><span>${plus}${line}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span></span></div>`;
+  }
+
+  /**
+   * What the next puzzle helps when the sanctuary this board was for has nothing left to grow (D39): the animal on its
+   * way to the home being built now, or the next home to open. Never empty while there is anything left in the world.
+   */
+  function upNextMarkup(finished: SanctuaryId | null): string {
+    const act = activeSanctuary(app.save);
+    if (act && act !== finished) {
+      const def = SANCTUARY_BY_ID[act];
+      const p = arrivalProgress(app.save, act);
+      const st = nextStage(app.save, act);
+      if (p) {
+        const a = animalInfo(p.next.id);
+        const pct = Math.round(((p.have - p.from) / Math.max(1, p.need - p.from)) * 100);
+        const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
+        return `<div class="win-next-friend" data-up-next style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body"><span>Up next at the ${esc(def.short)}: <b>${esc(a.name)} the ${esc(a.noun)}</b>, ${away}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span style="width:${pct}%"></span></span></span></div>`;
+      }
+      if (st) {
+        const left = st.need - st.have;
+        return `<div class="win-growth" data-up-next style="--accent:${def.accent}">${ICON.sprout}<span>Up next at the ${esc(def.short)}: ${left === 1 ? 'one more puzzle' : `${left} more puzzles`} to ${esc(st.stage.name.toLowerCase())}</span></div>`;
+      }
+    }
+    const up = nextToOpen(app.save);
+    if (!up) return '';
+    return `<div class="win-growth" data-up-next style="--accent:${up.def.accent}">${ICON.globe}<span>Next home: the <b>${esc(up.def.name)}</b> opens after level ${up.def.opensAfterLevel} · ${up.left === 1 ? 'one more level' : `${up.left} levels to go`}</span></div>`;
   }
 
   function newsMarkup(nw: MetaNews): string {
@@ -1383,7 +1411,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           ${rewardsMarkup(rewards)}
           ${growthMarkup(growth, hero, step)}
           ${newsMarkup(news)}
-          ${growth?.growth ? '' : step.replay ? replayWorldMarkup() : growth ? '' : nextFriendMarkup(activeSanctuary(app.save))}
+          ${growth?.growth ? '' : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save))}
         </div>
         <div class="sheet__actions">
           ${

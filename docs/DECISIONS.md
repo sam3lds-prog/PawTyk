@@ -819,3 +819,27 @@ existing synchronous `KV` interface.
   (iCloud key-value store or Firebase) is a bigger step and not needed for v1.
 - Tests: `test/unit/nativeKv.test.ts` (hydration, write order and removes, the first-run copy and precedence, a store
   that is down, the real save round trip).
+
+## 2026-10-31 · D39 — The loop, made legible; a little "why"; a world that never runs out
+Owner request (2026-10-31): a one-time explanation of the loop; *Meet* as the win's main action with the newcomer easy to
+find and the next arrival always in view; a soft visit offer that never blocks *Next level*; a short "why" and a
+micro-celebration when a line or color is finished; and enough levels, places and animals for players who never stop.
+Read against `main` @ `36d6e93` first: *Meet* as the primary action, the arrival drop-and-greet, the quiet visit button
+on ordinary wins and the finished-line glow already shipped in D36–D38, so this decision builds only the gaps. Five
+PRs (A–E), stacked, each reviewable on its own.
+
+### PR A — the win always says what's next; the newcomer is easy to find
+- **Never a blank "what's next"** (`game.ts::upNextMarkup`): when the sanctuary a board was for has nothing left to grow
+  (the solve that finished it, a replay there, a win that only opened a region), the world line points at what the next
+  puzzle helps instead — *Up next at the Pet Garden: Juniper the bunny, one more puzzle*, with its bar — or, with every
+  open home finished, *Next home: the Outback Sanctuary opens after level 10 · 6 levels to go*. Paw Cup wins stay
+  quiet, as before.
+- **The newcomer, ringed** (`components/newcomer.ts`): arriving from *Meet* (or the "New" marker), the animal who just
+  came home gets a soft ring on the ground under its figure for 2.6 s (an ellipse inside its own figure group, behind the
+  body, so ambient life and the 3D toys are untouched; still under reduced motion, a 400 ms fade either way), and its
+  card in the Animals row carries a *New* chip and "just came home" in its label for the whole visit. The Pet Garden
+  rings its newcomer once the "came home" card is closed, so the moment isn't spent behind a sheet.
+- Unchanged on purpose: *Meet [name]* stays the main action on an arrival (D36), the drop-and-greet stays (D38), and an
+  ordinary win keeps *Play level N* as its one big button with the visit as a quiet link.
+- Tests: `test/unit/gameScreen.dom.test.ts` (finishing a sanctuary, everything open finished, a replay),
+  `test/unit/newcomer.dom.test.ts` (Meet, the "New" marker, an ordinary visit, the Pet Garden after its card).

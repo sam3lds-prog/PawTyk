@@ -499,6 +499,44 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
     expect(sheet()!.textContent).not.toMatch(/\+1/);
   });
 
+  describe('a win always says what is next (D39 PR A)', () => {
+    const home = (ids: string[]) => {
+      for (const id of ids) app.save.inventory.companions[id] = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    };
+    it('the solve that finishes a sanctuary points at the animal on its way to the home being built now', () => {
+      app.save.world.growth.farm = 25; // Hazel arrives at 26, the last stage
+      home(['cotton', 'truffle', 'buttercup', 'pepper', 'marigold']);
+      start(4);
+      solveBoard();
+      const w = sheet()!;
+      expect(w.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/Hazel the pony came home!/);
+      expect(w.textContent).toMatch(/The Meadow Farm is complete!/);
+      expect(w.querySelector('[data-up-next]')?.textContent).toMatch(/Up next at the Pet Garden: Juniper the bunny, one more puzzle/);
+    });
+
+    it('with every open home finished, it names the next home to open and how many levels away', () => {
+      app.save.world.growth.farm = 25;
+      home(['cotton', 'truffle', 'buttercup', 'pepper', 'marigold', 'juniper', 'ember', 'maple']);
+      for (const p of ['biscuit', 'mochi', 'pip', 'nori', 'clover', 'peanut'] as const) app.save.inventory.pets[p] = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+      app.save.world.growth.harmony = 53;
+      start(4);
+      solveBoard();
+      expect(sheet()!.querySelector('[data-up-next]')?.textContent).toMatch(/Next home: the Outback Sanctuary opens after level 10 · 6 levels to go/);
+    });
+
+    it('a replay in a finished sanctuary still says what the next puzzle helps', () => {
+      app.save.world.growth.farm = 25;
+      home(['cotton', 'truffle', 'buttercup', 'pepper', 'marigold']);
+      start(4);
+      solveBoard();
+      (sheet()!.querySelector('[data-act="next"]') as HTMLButtonElement).click();
+      start(4); // a replay, on a board cast for the Pet Garden now
+      solveBoard();
+      expect(sheet()!.querySelector('[data-replay-note]')).not.toBeNull();
+      expect(sheet()!.querySelector('.win-next-friend')?.textContent).toMatch(/Juniper the bunny/);
+    });
+  });
+
   describe('growth you can see, and fair (D38 PR D)', () => {
     it('an ordinary win says the step the animal took and moves its bar from before to after', () => {
       app.save.world.growth.farm = 1; // Truffle (at 4) is three puzzles away

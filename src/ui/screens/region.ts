@@ -32,6 +32,7 @@ import { ICON } from '../icons';
 import type { Route, ScreenDef } from '../router';
 import { friendPortrait, isEvening, offerStarterGift, showFriendSheet } from './sanctuary';
 import { coinPill } from '../components/wallet';
+import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 
 export const regionScreen: ScreenDef = {
   tab: 'world',
@@ -53,6 +54,9 @@ export const regionScreen: ScreenDef = {
       app.persist();
     } else if (news) app.persist();
     track('region_open', { region: id, stage: stageOf(app.save, id) });
+    // Who came home, just now (a win's Meet) or while the player was elsewhere (the "New" marker): their cards say New
+    // and the first one's figure gets a moment in the light (D39).
+    const newcomers = [...new Set([...(route.welcome ?? []), ...((news?.animals ?? []) as AnimalId[])])].filter((w) => isHome(app.save, w));
 
     const el = h(`<div class="sanctuary region" style="--accent:${def.accent}"></div>`);
     root.appendChild(el);
@@ -170,8 +174,9 @@ export const regionScreen: ScreenDef = {
               .map((c) => {
                 const has = welcomed.includes(c.id);
                 const isNext = !has && c.id === nextId;
-                return `<li><button class="resident ${isNext ? 'is-next' : ''}" data-friend-card="${c.id}" aria-label="${esc(has ? `${c.name} the ${c.kind.toLowerCase()}, ${c.trait}` : isNext ? `${c.name} the ${c.kind.toLowerCase()}, coming home next` : `A ${c.kind.toLowerCase()}, arrives later`)}">
-                  ${friendPortrait(c.id, !has && !isNext)}
+                const fresh = has && newcomers.includes(c.id);
+                return `<li><button class="resident ${isNext ? 'is-next' : ''}${fresh ? ' is-new' : ''}" data-friend-card="${c.id}" aria-label="${esc(has ? `${c.name} the ${c.kind.toLowerCase()}, ${fresh ? 'just came home, ' : ''}${c.trait}` : isNext ? `${c.name} the ${c.kind.toLowerCase()}, coming home next` : `A ${c.kind.toLowerCase()}, arrives later`)}">
+                  ${friendPortrait(c.id, !has && !isNext)}${fresh ? NEW_CHIP : ''}
                   <span class="resident__name">${has || isNext ? esc(c.name) : 'Later'}</span>
                 </button></li>`;
               })
@@ -220,11 +225,11 @@ export const regionScreen: ScreenDef = {
     }
     // After the first board: a starter gift for the Farm (if the Pet Garden hasn't offered it already).
     if (isOpen(app.save, id)) offerStarterGift(scope, id, render);
-    // Someone came home, just now or while the player was elsewhere: say so, and let them say hello.
-    const newcomers = [...new Set([...(route.welcome ?? []), ...((news?.animals ?? []) as AnimalId[])])].filter((w) => isHome(app.save, w));
+    // Someone came home, just now or while the player was elsewhere: say so, ring them in the scene, and let them say hello.
     if (newcomers.length) {
       const a = animalInfo(newcomers[0]);
       toast(`${a.name} the ${a.noun} came home to the ${def.short}!`, ICON.heart);
+      spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), newcomers[0]);
       // Straight from the win that brought them (D38): the newcomer settles into place first (≤0.9 s, one time, never
       // under reduced motion), then says hello like any arrival.
       if (route.welcome?.includes(newcomers[0]) && !app.reducedMotion) {

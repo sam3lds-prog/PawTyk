@@ -108,6 +108,13 @@
 - [ ] Simulate storage pressure (Xcode → Device → Storage, or clear website data in Safari settings is *not* this
       app's WebView; use a dev build that clears localStorage on launch): progress survives from Preferences
 
+### D39 PR A — what's next, and the newcomer
+- [ ] Finish a sanctuary (tester shortcuts: grow the Farm to 25, solve one): the sheet says who is up next and where,
+      with a bar; with every open home finished it names the next home and the levels to go
+- [ ] *Meet [name]*: the newcomer drops in, a soft ring glows under it for a moment, its card says *New*; Reduce Motion:
+      the ring is still and goes away
+- [ ] Pet Garden arrival: the ring shows after *Welcome home* closes the card, not behind it
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
