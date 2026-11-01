@@ -177,6 +177,8 @@ export interface KitColors {
   wing?: string;
   /** A tortoise's or a turtle's shell, when not the marking color. */
   shell?: string;
+  /** A monkey's or an ape's bare face (`snout:ape`), when it isn't the belly color. */
+  face?: string;
 }
 
 export interface SpeciesDef {

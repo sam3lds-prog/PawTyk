@@ -300,7 +300,7 @@ function marks(s: SpeciesDef, p: KitPal, g: Geo, ey: number): string {
     case 'hood':
       return `<path d="M${f1(cx - rx)} ${f1(cy + 2)} C${f1(cx - rx)} ${f1(top - 0.5)} ${f1(cx + rx)} ${f1(top - 0.5)} ${f1(cx + rx)} ${f1(cy + 2)} C${f1(cx + rx * 0.6)} ${f1(ey - 3)} ${f1(cx + 3)} ${f1(ey - 4)} ${cx} ${f1(ey - 1)} C${f1(cx - 3)} ${f1(ey - 4)} ${f1(cx - rx * 0.6)} ${f1(ey - 3)} ${f1(cx - rx)} ${f1(cy + 2)} Z" fill="${a}"/>`;
     case 'muzzle':
-      return `<ellipse cx="${cx}" cy="${f1(cy + ry * 0.45)}" rx="${f1(rx * 0.55)}" ry="${f1(ry * 0.42)}" fill="${a}"/>`;
+      return s.snout === 'ape' ? '' : `<ellipse cx="${cx}" cy="${f1(cy + ry * 0.45)}" rx="${f1(rx * 0.55)}" ry="${f1(ry * 0.42)}" fill="${a}"/>`;
     default:
       return '';
   }
@@ -373,13 +373,17 @@ function snout(s: SpeciesDef, p: KitPal, g: Geo, ey: number, beakColor: string):
         mouthY: null,
         blushY: by,
       };
-    case 'ape':
+    case 'ape': {
+      const skin = s.colors.face ?? p.light;
+      // A dark muzzle sits on the bare face (drawn on top of it, not under it).
+      const muzzle = s.mark === 'muzzle' ? `<ellipse cx="${cx}" cy="${f1(ey + 9.5)}" rx="7" ry="5.6" fill="${p.accent}"/>` : '';
       return {
-        art: `<path d="M${cx} ${f1(ey - 7)} C${cx + 4} ${f1(ey - 9)} ${f1(cx + rx * 0.82)} ${f1(ey - 8)} ${f1(cx + rx * 0.8)} ${f1(ey + 1)} C${f1(cx + rx * 0.82)} ${f1(ey + 8)} ${cx + 9} ${f1(cy + ry - 1)} ${cx} ${f1(cy + ry - 1)} C${cx - 9} ${f1(cy + ry - 1)} ${f1(cx - rx * 0.82)} ${f1(ey + 8)} ${f1(cx - rx * 0.8)} ${f1(ey + 1)} C${f1(cx - rx * 0.82)} ${f1(ey - 8)} ${cx - 4} ${f1(ey - 9)} ${cx} ${f1(ey - 7)} Z" fill="${p.light}"/>`,
+        art: `<path d="M${cx} ${f1(ey - 7)} C${cx + 4} ${f1(ey - 9)} ${f1(cx + rx * 0.82)} ${f1(ey - 8)} ${f1(cx + rx * 0.8)} ${f1(ey + 1)} C${f1(cx + rx * 0.82)} ${f1(ey + 8)} ${cx + 9} ${f1(cy + ry - 1)} ${cx} ${f1(cy + ry - 1)} C${cx - 9} ${f1(cy + ry - 1)} ${f1(cx - rx * 0.82)} ${f1(ey + 8)} ${f1(cx - rx * 0.8)} ${f1(ey + 1)} C${f1(cx - rx * 0.82)} ${f1(ey - 8)} ${cx - 4} ${f1(ey - 9)} ${cx} ${f1(ey - 7)} Z" fill="${skin}"/>${muzzle}`,
         nose: `<ellipse cx="${cx - 1.6}" cy="${f1(ey + 7)}" rx="1" ry="1.4" fill="${p.dark}"/><ellipse cx="${cx + 1.6}" cy="${f1(ey + 7)}" rx="1" ry="1.4" fill="${p.dark}"/>`,
         mouthY: ey + 11.5,
         blushY: by,
       };
+    }
     case 'beak':
       return {
         art: '',
