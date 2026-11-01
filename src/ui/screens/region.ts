@@ -177,7 +177,7 @@ export const regionScreen: ScreenDef = {
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
           <button class="scene-tricks" data-act="tricks" aria-controls="${trayHost.id}" aria-expanded="${tray.isOpen}" hidden>${trickBadge('sparkle')}Tricks</button>
         </div>
-        ${freshStage && def.stages[freshStage] ? `<p class="stage-news" data-stage-news style="--accent:${def.accent}">${ICON.sprout}<span><b>New at the ${esc(def.short)}: ${esc(def.stages[freshStage].name)}</b> ${esc(def.stages[freshStage].change)}.</span></p>` : ''}
+        ${freshStage && def.stages[freshStage] ? `<p class="stage-news${stageNewsShown ? '' : ' is-entering'}" data-stage-news style="--accent:${def.accent}">${ICON.sprout}<span><b>New at the ${esc(def.short)}: ${esc(def.stages[freshStage].name)}</b> ${esc(def.stages[freshStage].change)}.</span></p>` : ''}
         <div data-cue-slot></div>
         ${progressCard()}
         <section aria-labelledby="animals-title">
@@ -231,8 +231,11 @@ export const regionScreen: ScreenDef = {
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
       if (goalShown) showNextGoal(el, id);
+      stageNewsShown = true;
     }
     let goalShown = false;
+    // The stage's line rises in once; a re-render (a decoration toggled) keeps it still.
+    let stageNewsShown = false;
     render();
 
     // Arrival: a new stage grows in, then everyone says hello (a bigger hello on the first visit of the day, or right

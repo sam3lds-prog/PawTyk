@@ -106,15 +106,16 @@ export function selectFigure(scope: Scope, scene: HTMLElement, fig: HTMLElement)
   if (text) {
     tag = h(`<span class="scene-tag" data-scene-tag="${id}" aria-hidden="true"></span>`);
     tag.textContent = text;
-    // Over the animal's head, inside the scene's frame.
+    scene.appendChild(tag);
+    // Over the animal's head, kept whole inside the scene's frame (measured once it is in the page).
     const box = fig.getBoundingClientRect();
     const frame = scene.getBoundingClientRect();
     if (box.width && frame.width) {
-      const left = Math.min(Math.max(box.left + box.width / 2 - frame.left, 48), frame.width - 48);
+      const half = tag.offsetWidth / 2 + 4;
+      const left = Math.min(Math.max(box.left + box.width / 2 - frame.left, half), frame.width - half);
       tag.style.left = `${left}px`;
-      tag.style.top = `${Math.max(box.top - frame.top - 6, 4)}px`;
+      tag.style.top = `${Math.max(box.top - frame.top - 6, tag.offsetHeight + 4)}px`;
     }
-    scene.appendChild(tag);
   }
   scope.timeout(() => {
     ring?.remove();

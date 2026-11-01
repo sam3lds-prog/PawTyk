@@ -1488,6 +1488,8 @@
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent);
   font-size: var(--t-sm);
   text-align: left;
+}
+.stage-news.is-entering {
   animation: win-rise 380ms var(--ease) both;
 }
 .stage-news .ico {
