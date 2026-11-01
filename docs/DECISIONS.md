@@ -539,7 +539,8 @@ to **one tap places the selected animal** (an explicit ✕ tool for marking; the
 cycle stay as options and existing players are told once); the bottom bar becomes **four tabs, Journey / World /
 Challenges / Shop**, with Home folded into Journey; the work ships as **five stacked pull requests** (correctness,
 controls, navigation, win flow, delight) and nothing is merged without the owner. World growth keeps **Policy A**:
-every Journey, Daily and Zen solve counts (replays too); the Paw Cup never does.
+every Journey, Daily and Zen solve counts (replays too); the Paw Cup never does. *(Policy A is superseded by D38 PR D:
+each puzzle grows the world once.)*
 
 ### PR 1 — correctness (P0)
 - **A wrong guess leaves the tile as it was** (`game.ts::placeAt`, `::keyApply`): the attempted animal fades as a
@@ -748,16 +749,18 @@ timing to beat.
   homes step back (smaller, paler, quieter names), and *Expand map* doubles its width to pan around, starting on the
   home being built. The home cards below are the reliable touch targets, as before.
 
-### PR D — growth you can see, and fair (P1) — *needs the owner's yes: it changes D36's Policy A*
+### PR D — growth you can see, and fair (P1) — *owner decision: replaces D36's Policy A*
 The audit found that Policy A (every non-Cup solve grows the world) lets replaying one easy level rescue every animal.
-Not a bug: a product choice. This PR implements the audit's proposed rule so it can be play-tested; the owner decided on
-Policy A in D36, so **this one is only to be merged if that decision changes**.
+Not a bug: a product choice. Owner decision (2026-10-31, after the D38 tester build): **growth policy 2 replaces
+Policy A**, and this PR merges with the rest of D38.
 
 - **Growth policy 2** (`world.GROWTH_POLICY`, `save.world.policy`, `save.world.grown`): a puzzle grows the world once,
   keyed by its mode key — each Journey level once, each day's Daily once, each fresh Zen board once (a restarted Zen
   board is the same puzzle). `creditSolve` takes the key (`SolveContext.puzzle`); a replay is still receipted (the win
   is handled once) but grows nothing and says `replayed`. Boards built by hand without a key (tools, the `growOnSolve`
   shorthand, older tests) keep counting. Only the newest 120 Zen keys are kept; levels and dailies are bounded anyway.
+  A solve whose credit is redirected (its sanctuary finished meanwhile, D36 PR 1) still marks the puzzle as grown: one
+  growth per puzzle, whichever sanctuary receives it.
 - **Migration once** (`upgradeGrowthPolicy`, run by `reconcileWorld` at startup): every level already cleared and every
   Daily already done is marked as grown, so replaying them grows nothing more. Growth counts, arrivals, stages and
   gifts already earned are untouched. Coins, Paw Points, stars, best times and leaderboard scoring are unchanged and
