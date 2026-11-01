@@ -1,8 +1,9 @@
 /**
  * The newcomer, made easy to find (D39): when a win's *Meet* (or the "New" marker) brings the player to a sanctuary, the
  * animal who just came home gets a soft ring on the ground under its figure for a moment, and its card in the Animals
- * row says *New*. The ring is an overlay inside the figure's own group (behind the body), so the scene, its ambient
- * life and the 3D toys are untouched; under reduced motion it is still, and it goes away either way.
+ * row says *New*. The ring is drawn just before the figure in the scene (so it sits behind the body), not inside the
+ * figure's group: with 3D toys on, the drawn figures are hidden and the toy stands on the ring instead. The scene, its
+ * ambient life and the toys are untouched; under reduced motion it is still, and it goes away either way.
  */
 
 import type { Scope } from '../router';
@@ -26,7 +27,8 @@ export function spotlightNewcomer(scope: Scope, svg: SVGSVGElement | null, id: s
   ring.setAttribute('rx', (h * 0.62).toFixed(1));
   ring.setAttribute('ry', (h * 0.16).toFixed(1));
   ring.setAttribute('aria-hidden', 'true');
-  fig.insertBefore(ring, fig.firstChild);
+  ring.setAttribute('data-for', id);
+  fig.parentNode?.insertBefore(ring, fig);
   fig.classList.add('is-newcomer');
   // It fades for the last 400 ms (a transition, so reduced motion only drops the pop-in), then leaves.
   scope.timeout(() => ring.classList.add('is-out'), SPOTLIGHT_MS - 400);
