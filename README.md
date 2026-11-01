@@ -10,7 +10,8 @@ to mark it ✕; double-tap to place the animal. A wrong guess costs a heart and 
 Every puzzle you solve builds a sanctuary: the Farm first (a sheep, a piglet, a calf, a goat kid, a chick, a pony),
 then the Pet Garden's bunny, cats and dogs, then the Outback, Savanna, Arctic and Amazon as the Journey opens them.
 After that the world never ends: a new place opens at the end of every chapter (or as soon as every home is finished),
-each with its own name, look and new animals — a silver koala, a ginger piglet, an arctic fox in a neckerchief.
+each in one of fifteen landscapes with its own name and look, and three or four kinds of animal you haven't met —
+a giant panda in a bamboo forest, a fennec fox in the desert, a clownfish off the coast: 545 kinds in all.
 Animals come home one at a time, and the board shows the one you're bringing home. The animals on the board are alive
 in the smallest way: they blink, glance, smile and frown, but only their faces move.
 
@@ -30,7 +31,7 @@ puzzle engine, its tests and every v1 board are preserved, and v1 saves migrate 
 | **Zen Garden** | Any size, no clock, no hearts. |
 | **Paw Cup** | Five fixed two-animal boards per UTC week, two attempts each, no hints, best counts. Opens after level 21. |
 | **Sanctuaries** | The Farm and the Pet Garden from the start, four regions later. Each grows with every puzzle you solve, with its own animals, treats and decorations; animals ride the tire swing, the tractor, the balloon. 3D soft toys. |
-| **Animals** | 27 original animals with personalities that shape their expressions, collected sanctuary by sanctuary in the Animal album. |
+| **Animals** | 27 original animals with personalities that shape their expressions, collected sanctuary by sanctuary in the Animal album; then 545 kinds of real animal across fifteen landscapes of the endless world (D39), each with a true fact, drawn from parts by the animal kit (`docs/species-kit.md`). |
 | **Meta** | Free Paw Coins on an idempotent ledger, 3 daily missions + 1 weekly, 12 badges, a Journal of stats. |
 | **Comfort** | Tap ✕ / double-tap to place (or the timing-free tap cycle); Erase takes ✕ marks back; dots on impossible tiles on Easy boards; left-handed layout, reduced motion, high contrast, region patterns, large board mode, VoiceOver labels, offline play, no sign-in. |
 
