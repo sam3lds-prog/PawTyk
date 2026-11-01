@@ -392,3 +392,164 @@
   background: var(--rc);
   box-shadow: inset -0.5px -0.5px 0 rgba(40, 52, 52, 0.1);
 }
+
+/* ---------- D41: the board in its home's frame ----------
+   The board is a plot of the home it grows: a rim in that home's color with a post at each corner, and a nameplate
+   saying which home and what this board brings closer. The grid inside is unchanged. */
+.board-frame {
+  --frame: color-mix(in srgb, var(--accent) 18%, #ecdcbf);
+  --frame-edge: color-mix(in srgb, var(--accent) 30%, #a7835a);
+  --sel: color-mix(in srgb, var(--accent) 50%, #283434);
+  position: relative;
+  flex: none;
+  padding: 9px; /* FRAME_PAD in game.ts */
+  margin-top: 12px; /* PLATE_ROOM: the nameplate hangs over the top rim */
+  border-radius: 26px;
+  background: var(--frame);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 0 rgba(40, 52, 52, 0.06),
+    0 2px 0 var(--frame-edge),
+    0 22px 40px -22px rgba(40, 52, 52, 0.38);
+}
+.board-frame .board {
+  box-shadow: 0 0 0 3px var(--seam);
+}
+.board-frame__post {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: var(--frame-edge);
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+.board-frame__post--tl {
+  top: -3px;
+  left: -3px;
+}
+.board-frame__post--tr {
+  top: -3px;
+  right: -3px;
+}
+.board-frame__post--bl {
+  bottom: -3px;
+  left: -3px;
+}
+.board-frame__post--br {
+  bottom: -3px;
+  right: -3px;
+}
+/* The nameplate: the home, and what this board brings closer ("Meadow Farm · Truffle in 3"). */
+.board-frame .board-plate {
+  position: absolute;
+  z-index: 5;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 44px);
+  padding: 3px 11px 3px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--frame-edge);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px -3px rgba(40, 52, 52, 0.35);
+}
+.board-frame .board-plate .ico {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.board-plate__goal {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted-ink);
+}
+.board-plate__goal::before {
+  content: '· ';
+}
+.board-frame--plain {
+  --frame: #e9e4d8;
+  --frame-edge: #b9b09c;
+  --sel: #283434;
+}
+:root[data-contrast='high'] .board-frame {
+  --frame: var(--surface);
+  --sel: var(--divider);
+  box-shadow: 0 0 0 2px var(--divider);
+}
+:root[data-contrast='high'] .board-frame .board {
+  box-shadow: 0 0 0 3px var(--divider);
+}
+:root[data-contrast='high'] .board-frame__post {
+  display: none;
+}
+
+/* D41: where you are — the tile last touched (or reached by keyboard) is ringed in the home's color, and its row and
+   column are lifted a little, under the animals and marks. Overlays only: nothing on a tile moves (D11). */
+.board__band,
+.board__sel {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
+}
+.board.has-sel .board__band,
+.board.has-sel .board__sel {
+  opacity: 1;
+}
+.board__band {
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.24);
+}
+.board__band--row {
+  left: 0;
+  right: 0;
+  top: calc(var(--sr, 0) * var(--cell));
+  height: var(--cell);
+}
+.board__band--col {
+  top: 0;
+  bottom: 0;
+  left: calc(var(--sc, 0) * var(--cell));
+  width: var(--cell);
+}
+.board__sel {
+  z-index: 4;
+  top: calc(var(--sr, 0) * var(--cell));
+  left: calc(var(--sc, 0) * var(--cell));
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 0 0 2.5px var(--sel, var(--brand-dark)),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.55);
+}
+:root[data-contrast='high'] .board__band {
+  display: none;
+}
+
+/* D41: a color whose animals are all home settles — its empty tiles soften toward the mat — so the eye goes to the
+   colors still open. Its animals stay as they are. */
+.cell {
+  transition: background-color 320ms ease-out;
+}
+.cell.is-settled {
+  background-color: color-mix(in srgb, var(--rc, var(--r0)) 60%, var(--seam));
+}
+:root[data-contrast='high'] .cell.is-settled {
+  background-color: color-mix(in srgb, var(--rc, var(--r0)) 70%, var(--seam));
+}
+
+/* D41: animals on the board sit a little above their tile (a soft shadow), so they read at a glance. Still art only. */
+.cell__pet > svg {
+  filter: drop-shadow(0 1.5px 1.2px rgba(40, 52, 52, 0.22));
+}

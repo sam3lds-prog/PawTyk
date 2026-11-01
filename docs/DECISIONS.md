@@ -1183,3 +1183,28 @@ progress display and animal styling, never change for its own sake, keep it read
   inert and Tab stays inside, as in a sheet; Journey levels only — a Daily solved first keeps its own results
   (streak, time, Share) with Cotton's *Meet* on them. Tests for each.
 
+### PR B — a board that belongs to its home
+Each change answers a question the player has while playing; none is decoration alone, and the grid itself — its
+cells, colors, seams, marks and the animals' faces — is unchanged.
+- **Whose board is this?** (`game.ts`, `styles/board.css`): the board sits in a frame of the home it grows — a rim in
+  that home's color with a post at each corner — and a nameplate hangs over the top: the home and what this board
+  brings closer (*Farm · Truffle in 3*; *Farm · brings Truffle home* on the board that does; the next stage when every
+  animal is home). It replaces the small *Farm* chip under the board, so the board carries the loop on every level.
+  A replay's plate names the home only; a Paw Cup board has a plain frame. The plate's label reads it in full
+  (*This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.*); long place names end in "…".
+- **Where am I?** (`Board.select`): the tile last touched, or reached by keyboard, is ringed in the home's color, and
+  its row and column are lifted a little (a faint light band under the animals and marks), like a selected cell in a
+  number puzzle. Overlays only, so nothing on a tile moves (D11); it clears when the board is solved; high contrast
+  keeps the ring and drops the bands.
+- **What's left?** (`Board.setSettled`): a color whose animals are all home settles — its empty tiles soften toward the
+  mat — so the eye goes to the colors still open. Animals stay as they are; high contrast softens less.
+- **How far along?**: *3 of 6 animals placed* became a pip per animal that shows the animal's face when it is home
+  (one-animal boards), or each kind's face and count (two-animal boards, and big one-animal boards on a narrow phone).
+  The same words are its label for screen readers.
+- **Which are animals?**: animals on tiles sit a little above their tile (a soft shadow), so they read at a glance
+  against the colors. Still art; no transform or animation (the faces test still holds).
+- Fitting: the frame's rim and plate are taken off the space the board is fitted to, so a 9×9 board still fits a
+  320×568 phone; in Large board mode the frame scrolls with the board.
+- Tests: `test/unit/gameScreen.dom.test.ts` (the frame and plate, the plate for an arrival board and a replay, pips
+  and counts, settling colors, the selection with keyboard and on a solve); e2e: the frame, plate and pips on level 2.
+

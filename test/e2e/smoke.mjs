@@ -186,6 +186,16 @@ try {
   await page.click('.sheet [data-act="play"]');
   check('starter flow continues to level 2', (await title()) === 'Level 2');
   check('level 2 shows the next animal on its way (Truffle)', await page.evaluate(() => window.__pt.app.active.cast.a === 'truffle'));
+  // D41: the board sits in the Farm's frame; its nameplate says the goal; a pip per animal.
+  check(
+    'the board is framed by its home, with the goal on its nameplate and a pip per animal (D41)',
+    await page.evaluate(() => {
+      const plate = document.querySelector('.board-frame .board-plate');
+      const n = window.__pt.app.active.session.size;
+      const box = plate?.getBoundingClientRect();
+      return !!document.querySelector('.board-frame > .board') && /Farm/.test(plate?.textContent ?? '') && /Truffle in 3/.test(plate?.textContent ?? '') && box.width > 0 && box.left >= 0 && box.right <= window.innerWidth && document.querySelectorAll('.progress-track .pip').length === n;
+    }),
+  );
 
   // Next level advances (v1 regression); an ordinary win is quick: one big button, no hero
   await solveActive();

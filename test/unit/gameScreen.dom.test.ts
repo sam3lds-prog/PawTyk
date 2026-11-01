@@ -1197,3 +1197,87 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(document.querySelector('.win-sheet [data-hero="arrived"]')).not.toBeNull();
   });
 });
+
+describe('a board that belongs to its home (D41 PR B)', () => {
+  const plate = () => document.querySelector<HTMLElement>('.board-frame .board-plate');
+
+  it('the board sits in its home’s frame; the nameplate says the home and what this board brings closer', () => {
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(2);
+    expect(document.querySelector('.board-frame > .board')).not.toBeNull();
+    expect(plate()?.querySelector('.status-for__name')?.textContent).toBe('Farm');
+    expect(plate()?.querySelector('.board-plate__goal')?.textContent).toBe('Truffle in 3');
+    expect(plate()?.getAttribute('aria-label')).toBe('This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.');
+    // The board that brings an animal says so.
+    app.active = null;
+    app.save.world.growth.farm = 3;
+    start(5);
+    expect(plate()?.querySelector('.board-plate__goal')?.textContent).toBe('brings Truffle home');
+  });
+
+  it('a replay names the home only; a Paw Cup board has a plain frame', () => {
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    app.save.journey.clears.L2 = { firstClearAt: 'x', bestSeconds: 60, bestMistakes: 0, clean: true, hintFree: true, stars: 3 };
+    app.save.world.grown.L2 = 'farm';
+    start(2);
+    expect(plate()?.querySelector('.board-plate__goal')).toBeNull();
+  });
+
+  it('a pip per animal fills as they come home; a two-animal board counts each kind', () => {
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(5);
+    const s = app.active!.session;
+    const pips = () => [...document.querySelectorAll('.progress-track .pip')];
+    expect(pips()).toHaveLength(s.size);
+    expect(pips().filter((p) => p.classList.contains('is-on'))).toHaveLength(0);
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    dblTap(r, c);
+    expect(pips().filter((p) => p.classList.contains('is-on'))).toHaveLength(1);
+    expect(document.querySelector('[data-progress]')?.getAttribute('aria-label')).toBe(`1 of ${s.size} animals placed`);
+    app.active = null;
+    start(25);
+    const s2 = app.active!.session;
+    expect(document.querySelectorAll('.progress-track .pcount:not(.pcount--solo)')).toHaveLength(2);
+    const [r2, c2] = find((r, c) => s2.puzzle.solution[r][c] === DOG);
+    toolBtn('dog')?.click();
+    dblTap(r2, c2);
+    expect(document.querySelector(`[data-count="${DOG}"]`)?.textContent).toBe(String(s2.cells.flat().filter((v) => v === DOG).length));
+  });
+
+  it('a color whose animal is home settles; the others stay as they are', () => {
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(5);
+    const s = app.active!.session;
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    const reg = s.puzzle.regions[r][c];
+    expect(document.querySelector('.cell.is-settled')).toBeNull();
+    dblTap(r, c);
+    for (let rr = 0; rr < s.size; rr++)
+      for (let cc = 0; cc < s.size; cc++) expect(cell(rr, cc).classList.contains('is-settled'), `${rr},${cc}`).toBe(s.puzzle.regions[rr][cc] === reg);
+  });
+
+  it('the tile last touched is ringed with its row and column; keyboard moves it; a solved board lets it go', () => {
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(5);
+    const b = document.querySelector<HTMLElement>('.board')!;
+    expect(b.classList.contains('has-sel')).toBe(false);
+    tap(2, 3);
+    expect(b.classList.contains('has-sel')).toBe(true);
+    expect([b.style.getPropertyValue('--sr'), b.style.getPropertyValue('--sc')]).toEqual(['2', '3']);
+    cell(2, 3).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect([b.style.getPropertyValue('--sr'), b.style.getPropertyValue('--sc')]).toEqual(['3', '3']);
+    // The ring and bands are overlays: they are not inside any tile, so nothing on a tile moves.
+    expect(b.querySelector('.cell .board__sel, .cell .board__band')).toBeNull();
+    // Solved: the ring goes, so the finished board is clean.
+    const s = app.active!.session;
+    for (let r = 0; r < s.size; r++)
+      for (let c = 0; c < s.size; c++) if (s.puzzle.solution[r][c] === CAT && !s.givenMask[r][c] && s.cells[r][c] !== CAT) dblTap(r, c);
+    expect(s.outcome).toBe('won');
+    expect(b.classList.contains('has-sel')).toBe(false);
+  });
+});

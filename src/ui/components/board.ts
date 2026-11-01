@@ -50,6 +50,8 @@ export interface BoardOptions {
   speciesName?: (species: Species) => string;
   /** Still art of an animal, for the "tried here, wrong" mark on two-animal boards. */
   triedArt?: (species: Species) => string;
+  /** No selected-tile ring (boards that only show, like the rules' examples). */
+  noSelection?: boolean;
 }
 
 const SPECIES_NAME: Record<number, string> = { [CAT]: 'cat', [DOG]: 'dog' };
@@ -102,7 +104,37 @@ export class Board {
       this.cellEls.push(row);
     }
     this.el.appendChild(this.linesSvg());
+    // D41: the tile last touched (or reached by keyboard) and its row and column, as overlays: a ring on the tile and a
+    // faint lift on its lines, under the animals and marks, so a player always sees where they are and what that tile
+    // shares. Nothing on a tile moves (D11).
+    this.el.insertAdjacentHTML('afterbegin', '<span class="board__band board__band--row" aria-hidden="true"></span><span class="board__band board__band--col" aria-hidden="true"></span>');
+    this.el.insertAdjacentHTML('beforeend', '<span class="board__sel" aria-hidden="true"></span>');
     this.bindInput();
+  }
+
+  /** Marks a tile as the selected one (ring) with its row and column (faint bands). */
+  select(r: number, c: number): void {
+    this.el.style.setProperty('--sr', String(r));
+    this.el.style.setProperty('--sc', String(c));
+    this.el.classList.add('has-sel');
+  }
+
+  clearSelection(): void {
+    this.el.classList.remove('has-sel');
+  }
+
+  get selected(): [number, number] | null {
+    if (!this.el.classList.contains('has-sel')) return null;
+    return [Number(this.el.style.getPropertyValue('--sr')), Number(this.el.style.getPropertyValue('--sc'))];
+  }
+
+  /**
+   * D41: colors whose animals are all home settle — their empty tiles soften toward the mat — so the eye goes to the
+   * colors still open. The animals themselves stay as they are.
+   */
+  setSettled(regions: ReadonlySet<number>): void {
+    for (let r = 0; r < this.n; r++)
+      for (let c = 0; c < this.n; c++) this.cellEls[r][c].classList.toggle('is-settled', regions.has(this.puzzle.regions[r][c]));
   }
 
   regionName(reg: number): string {
@@ -283,12 +315,8 @@ export class Board {
   }
 
   focusCell(r: number, c: number): void {
-    this.cellEls[this.focusR][this.focusC].tabIndex = -1;
-    this.focusR = r;
-    this.focusC = c;
-    const el = this.cellEls[r][c];
-    el.tabIndex = 0;
-    el.focus();
+    this.setRoving(r, c);
+    this.cellEls[r][c].focus();
   }
 
   private cellFromPoint(x: number, y: number): [number, number] | null {
@@ -384,6 +412,7 @@ export class Board {
     this.focusR = r;
     this.focusC = c;
     this.cellEls[r][c].tabIndex = 0;
+    if (!this.opts.noSelection) this.select(r, c);
   }
 }
 

@@ -224,6 +224,18 @@
 - [ ] *Skip* early, then wait 5 s: nothing replays behind the goal; keyboard: Tab and Shift+Tab stay on its buttons
 - [ ] *I know how to play* → today's Daily first: the Daily's own results (streak, time, Share) with *Meet Cotton*
 
+### D41 PR B — the board's identity
+- [ ] Level 2: the board sits in a warm frame with corner posts; the nameplate reads *Farm · Truffle in 3*; on the
+      board that brings Truffle it reads *brings Truffle home*; in an Outback board the frame is the Outback's color
+- [ ] Tap a tile: a ring on it and a faint lift on its row and column; arrow keys move it; it never hides a ✕ or an
+      animal, and is gone when the puzzle is solved
+- [ ] Place a color's animal: the rest of that color softens; the open colors stay bright and easy to tell apart
+- [ ] Pips fill with the animal's face as animals come home; a two-animal board shows each kind's count; a 9×9 on a
+      320-wide phone shows a face and a count, and the status row stays on one line
+- [ ] High contrast: plain frame with a dark outline, a dark ring, no bands; region colors still clearly distinct
+- [ ] Large board mode: the frame scrolls with the board; nothing is cut off at the top
+- [ ] A long place name: the plate ends in "…" inside the frame; VoiceOver reads the full sentence
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
