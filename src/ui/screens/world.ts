@@ -28,10 +28,17 @@ const short = (d: SanctuaryDef) => d.short;
 
 type Status = 'building' | 'open' | 'complete' | 'locked';
 
+/**
+ * Every home's status, worked out once per visit (D39): with the endless world a long list asks for each home's status
+ * several times, and asking the world each time would grow with the square of the list.
+ */
+let statusMemo: Map<string, Status> | null = null;
 function statusOf(id: SanctuaryDef['id']): Status {
-  if (!isOpen(app.save, id)) return 'locked';
-  if (isComplete(app.save, id)) return 'complete';
-  return activeSanctuary(app.save) === id ? 'building' : 'open';
+  const hit = statusMemo?.get(id);
+  if (hit) return hit;
+  const st: Status = !isOpen(app.save, id) ? 'locked' : isComplete(app.save, id) ? 'complete' : activeSanctuary(app.save) === id ? 'building' : 'open';
+  statusMemo?.set(id, st);
+  return st;
 }
 
 /** One honest line per sanctuary: locked until a level, complete, building here, or open to build (never "paused"). */
@@ -87,6 +94,8 @@ export const worldScreen: ScreenDef = {
     const save = app.save;
     const building = activeSanctuary(save);
     const upcoming = nextToOpen(save);
+    statusMemo = new Map();
+    scope.onDispose(() => (statusMemo = null));
     // Every home this save's world has: the six hand-made ones, each open place of the endless world, and the next (D39).
     const homes = worldIds(save).map(sanctuaryDef);
     const openCount = homes.filter((d) => isOpen(save, d.id)).length;

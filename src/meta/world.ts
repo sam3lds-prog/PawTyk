@@ -12,7 +12,7 @@
 import type { ModeRef } from '../game/modes';
 import type { SaveV2, UnseenNews } from '../services/storage';
 import { sanctuaryDef, arrivalOf, REGIONS, SANCTUARIES, SANCTUARY_BY_ID, isSanctuaryId, type AnimalId, type Arrival, type RegionId, type SanctuaryDef, type SanctuaryId, type StageDef } from './catalogs/sanctuaries';
-import { MAX_PLACE, isPlaceId, placeDef, placeId, placeIndex, type PlaceId } from './catalogs/places';
+import { FIRST_PLACE_AFTER, LEVELS_PER_PLACE, MAX_PLACE, isPlaceId, placeDef, placeId, placeIndex, type PlaceId } from './catalogs/places';
 import { animalInfo, homeAnimals, homeSince, isHome, nextArrivalIn, welcomeAnimal } from './animals';
 import { grant } from './ledger';
 
@@ -43,18 +43,18 @@ export function isOpen(save: OpenSave, id: SanctuaryId): boolean {
  * always places 1…N; one walk finds N.
  */
 export function openPlaceCount(save: OpenSave): number {
-  const inv = save.inventory;
-  let allBefore = !!inv && SANCTUARIES.every((s) => isComplete({ world: save.world, inventory: inv }, s.id));
   const c = cleared(save);
-  let k = 0;
-  while (k < MAX_PLACE) {
-    const id = placeId(k + 1);
-    const open = c >= placeDef(k + 1).opensAfterLevel || growthOf(save, id) > 0 || allBefore;
-    if (!open) break;
-    k++;
-    allBefore = allBefore && !!inv && isComplete({ world: save.world, inventory: inv }, id);
-  }
-  return k;
+  // Open by level: places 1…n (closed form, nothing to generate).
+  let n = c >= FIRST_PLACE_AFTER ? Math.min(MAX_PLACE, Math.floor((c - FIRST_PLACE_AFTER) / LEVELS_PER_PLACE) + 1) : 0;
+  // Opened earlier by the "everything before is complete" rule: the highest place that has grown.
+  for (const [key, g] of Object.entries(save.world.growth)) if ((g ?? 0) > 0 && isPlaceId(key)) n = Math.max(n, placeIndex(key));
+  // Every home up to n finished: the next one opens now.
+  const inv = save.inventory;
+  if (!inv || n >= MAX_PLACE) return n;
+  const done = (id: SanctuaryId) => isComplete({ world: save.world, inventory: inv }, id);
+  if (!SANCTUARIES.every((s) => done(s.id))) return n;
+  for (let k = 1; k <= n; k++) if (!done(placeId(k))) return n;
+  return n + 1;
 }
 
 /**
@@ -127,8 +127,11 @@ export function progressOf(save: Pick<SaveV2, 'world'>, id: SanctuaryId): number
 export function activeSanctuary(save: WorldSave): SanctuaryId | null {
   const a = save.world.active;
   if (isSanctuaryId(a) && isOpen(save, a) && !isComplete(save, a)) return a;
-  // In building order: the Farm, the Pet Garden, the regions as they open, then the endless world's places.
-  return worldIds(save).find((id) => isOpen(save, id) && !isComplete(save, id)) ?? null;
+  // In building order: the Farm, the Pet Garden, the regions as they open, then the endless world's open places (one
+  // walk each, so a long world stays quick).
+  for (const s of SANCTUARIES) if (isOpen(save, s.id) && !isComplete(save, s.id)) return s.id;
+  for (let k = 1, n = openPlaceCount(save); k <= n; k++) if (!isComplete(save, placeId(k))) return placeId(k);
+  return null;
 }
 
 /** Chooses which open, unfinished sanctuary to build. */
