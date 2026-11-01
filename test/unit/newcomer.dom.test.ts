@@ -41,8 +41,11 @@ describe('the newcomer is easy to find (D39)', () => {
   it('Meet opens the Farm with Truffle ringed in the scene and marked New in the Animals row', () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
-    const ring = document.querySelector('.sanctuary__scene [data-friend="truffle"] .sp-spotlight');
+    const ring = document.querySelector('.sanctuary__scene .sp-spotlight[data-for="truffle"]');
     expect(ring).not.toBeNull();
+    // It is not inside the figure's group, which the 3D toys hide (D34): it sits just before it, so it stays visible.
+    expect(ring!.closest('.sanctuary__pet')).toBeNull();
+    expect(ring!.nextElementSibling?.getAttribute('data-friend')).toBe('truffle');
     const card = document.querySelector<HTMLElement>('.resident.is-new');
     expect(card?.dataset.friendCard).toBe('truffle');
     expect(card?.textContent).toContain('New');
@@ -60,7 +63,7 @@ describe('the newcomer is easy to find (D39)', () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm' });
     expect(document.querySelector<HTMLElement>('.resident.is-new')?.dataset.friendCard).toBe('truffle');
-    expect(document.querySelector('[data-friend="truffle"] .sp-spotlight')).not.toBeNull();
+    expect(document.querySelector('.sp-spotlight[data-for="truffle"]')).not.toBeNull();
   });
 
   it('an ordinary visit marks nobody', () => {
@@ -79,6 +82,6 @@ describe('the newcomer is easy to find (D39)', () => {
     expect(document.querySelector('.sp-spotlight')).toBeNull();
     (document.querySelector('.intro-sheet [data-act="ok"]') as HTMLButtonElement).click();
     vi.advanceTimersByTime(400);
-    expect(document.querySelector('.sanctuary__scene [data-friend="juniper"] .sp-spotlight')).not.toBeNull();
+    expect(document.querySelector('.sanctuary__scene .sp-spotlight[data-for="juniper"]')).not.toBeNull();
   });
 });

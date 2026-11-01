@@ -646,7 +646,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     }
     track('onboarding_step', { step: 'why', unit: u.kind });
     const word = wordOf(sp);
-    const where = unitPhrase(u);
+    // "row 3" stays on one line in the coach (a no-break space before the number).
+    const where = unitPhrase(u).replace(/ (\d+)$/, '\u00a0$1');
     if (completed.some((x) => x.kind === u.kind && x.index === u.index)) return `It was the only spot left there for ${withArticle(word)}.`;
     if (completed.length) return `${capitalize(withArticle(word))} had one spot left in ${where}.`;
     return `Only one spot was left for ${withArticle(word)} in ${where}.`;
