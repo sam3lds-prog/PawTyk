@@ -212,6 +212,16 @@
 - [ ] 3D animals on: the rings and the tag sit with the toys; Reduce Motion: nothing moves, the stage still glows
 - [ ] Older iPhone: the scene scrolls smoothly, nothing new animates on its own
 
+### D41 PR A — the first arrival
+- [ ] Fresh install → *Meet Cotton* → solve the first board: no results sheet; the empty meadow, then the fence grows
+      in and glows, Cotton drops in with the chime and a pulse, says hello, and *Next goal · Bring Truffle the piglet
+      home · 3 more puzzles* rises in with *Play level 2*
+- [ ] *Skip* at any point jumps to the goal (the chime still plays once); *Visit the Farm* opens the Farm with the
+      *Tap Cotton* cue and the starter gift
+- [ ] 320×568: the goal's buttons are on screen when it appears; Reduce Motion: the end state at once, nothing moves
+- [ ] VoiceOver: *Skip* has focus first, the captions are read as they change, then the focus is on *Play level 2*
+- [ ] An existing player updating (with animals at home) never sees it; their next arrival is the usual win sheet
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

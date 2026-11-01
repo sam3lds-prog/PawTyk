@@ -27,7 +27,8 @@ import { finishAttempt } from '../../competitions/localCup';
 import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
-import { sanctuaryDef, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { showFirstArrival } from '../components/arrival';
 import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
@@ -1494,6 +1495,13 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           : `All three stars here. Best time ${fmtClock(app.save.journey.bestTimes[`L${mode.level}`] ?? 0)}.`;
     return `<p class="win-replay">${ICON.target}${esc(text)}</p>`;
   }
+  /** Whether this newcomer is the first animal ever to come home (nobody else lives anywhere yet): D41's first arrival. */
+  function isFirstArrival(id: AnimalId): boolean {
+    const inv = app.save.inventory;
+    const homes = [...Object.keys(inv.companions), ...Object.keys(inv.pets)];
+    return homes.length === 1 && homes[0] === id;
+  }
+
   function showWin(rec: WinRecord, seconds: number, rewards: RewardSummary, news: MetaNews, cupScore: ScoreBreakdown | null, growth: GrowthNews | null, step: WorldStep): void {
     // A visit worth making: a newly opened sanctuary first (that is the news), else a new stage or a new friend.
     const worldVisit: SanctuaryId | null = growth ? (growth.opened[0] ?? (growth.stageUp || growth.arrived.length || growth.completed ? growth.sanctuary : null)) : null;
@@ -1504,6 +1512,27 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // A milestone win puts the event first and the visit as its main action; the next puzzle stays one tap away as a
     // full-size second button. An ordinary win is quick: the next puzzle is the main action, the visit a quiet one.
     const milestone = isMilestone(growth) && mode.kind !== 'cup';
+    // D41: the very first animal to come home (the first puzzle's Cotton) is shown happening, not reported: the Farm as
+    // it was, the change growing in, the newcomer settling in, then the goal for the next animal. Skippable.
+    if (growth && hero?.kind === 'arrived' && isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind !== 'cup') {
+      const holds: string[] = [];
+      if (rewards.coins) holds.push(`+${rewards.coins} coins`);
+      if (rewards.points) holds.push(`+${rewards.points} Paw Points`);
+      if (news.achievements.length) holds.push(plural(news.achievements.length, 'badge'));
+      showFirstArrival(scope, el, {
+        animal: hero.animal,
+        where: growth.sanctuary,
+        stageUp: growth.stageUp ? stageOf(app.save, growth.sanctuary) : null,
+        nextLevel: typeof next === 'object' && next.kind === 'level' ? next.level : null,
+        holds,
+        onPlay: () => {
+          if (typeof next === 'object') playMode(next);
+          else app.router.back({ screen: 'journey' });
+        },
+        onVisit: () => app.router.go({ screen: 'region', id: growth.sanctuary as RegionId }),
+      });
+      return;
+    }
     const nextLabel = typeof next === 'object' && next.kind === 'level' ? `Play level ${next.level}` : next === 'cup' ? 'Back to Paw Cup' : 'Back to Journey';
     const visitAct = hero?.kind === 'opened' ? 'region' : meet ? 'meet' : 'region';
     const visitLabel =

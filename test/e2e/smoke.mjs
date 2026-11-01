@@ -82,7 +82,8 @@ async function solveActive({ stopAfter = Infinity, pace = 0 } = {}) {
       await place(r, c, sol[r][c]);
       placed++;
     }
-  await page.waitForSelector('.win-sheet', { timeout: 5000 });
+  // The very first animal's board ends in its arrival (D41), every other in the win sheet.
+  await page.waitForSelector('.win-sheet, .arrival', { timeout: 5000 });
 }
 
 /** A tile that can't hold an animal on the active board, still empty. */
@@ -159,27 +160,27 @@ try {
   check('the tile never moves or resizes', box0.x === box1.x && box0.y === box1.y && box0.width === box1.width, JSON.stringify([box0, box1]));
 
   await solveActive();
-  check('the first win brings Cotton home and offers to meet her', (await page.textContent('[data-act="meet"]'))?.includes('Meet Cotton') && /Cotton is home!/.test((await page.textContent('.win-sheet h2')) ?? '') && /Your new sheep/.test((await page.textContent('.win-sheet')) ?? ''));
-  // D40: the animal first; time, coins and points wait in a closed fold under the buttons.
+  // D41: the first puzzle's newcomer is shown happening, not reported: the Farm as it was, the change, Cotton, the goal.
+  const caption = () => page.textContent('.arrival [data-caption-title]').catch(() => null);
+  check('the first puzzle shows the Farm as it was, before its change grows in (D41)', !(await page.$('.win-sheet')) && (await caption()) === 'Empty meadow' && (await page.$$('.arrival .sp-stage[data-stage="1"].is-waiting')).length > 0);
+  await page.waitForFunction(() => document.querySelector('.arrival [data-caption-title]')?.textContent === 'Your puzzle grew it!', null, { timeout: 4000 }).catch(() => {});
+  check('then the change the puzzle made grows in (D41)', (await page.$$('.arrival .sp-stage[data-stage="1"].is-waiting')).length === 0);
+  await page.waitForFunction(() => document.querySelector('.arrival [data-caption-title]')?.textContent === 'Cotton is home!', null, { timeout: 4000 }).catch(() => {});
+  check('then Cotton settles in, with her kind and character (D41)', /Your new sheep\. Sleepy/.test((await page.textContent('.arrival')) ?? '') && !(await page.$('.arrival [data-friend="cotton"].is-waiting')));
+  await page.click('.arrival [data-act="skip"]');
   check(
-    'an arrival win shows the animal first and folds the accounting away (D40)',
+    'it ends with a clear goal: Truffle, how many puzzles away, and Play level 2 (D41)',
     await page.evaluate(() => {
-      const w = document.querySelector('.win-sheet');
-      const more = w?.querySelector('[data-win-more]');
-      return !!w?.querySelector('.win-stage-1 [data-hero="arrived"]') && !w.querySelector('.win-stage-1 .stats') && !!more && !more.open && !!more.querySelector('.stats');
+      const g = document.querySelector('.arrival [data-arrival-goal]');
+      return !!g && !g.hidden && /Bring Truffle the piglet home/.test(g.textContent) && /3 more puzzles/.test(g.textContent) && g.querySelector('[data-act="play"]')?.textContent === 'Play level 2';
     }),
   );
-  check('the newcomer is the centerpiece: Meet is the main action and Play level 2 a full second button', await page.evaluate(() => {
-    const blocks = [...document.querySelectorAll('.win-sheet .sheet__actions .btn--block')];
-    return !!document.querySelector('.win-sheet [data-hero="arrived"]') && blocks.length === 2 && blocks[0].dataset.act === 'meet' && blocks[1].dataset.act === 'next' && /level 2/.test(blocks[1].textContent);
-  }));
-  check('the win sheet shows who comes next', /Truffle the piglet/.test((await page.textContent('.win-sheet')) ?? ''));
   const afterFirst = await coins();
   check('first clear pays coins', afterFirst >= 45, String(afterFirst));
-  await page.click('[data-act="meet"]');
+  await page.click('.arrival [data-act="visit"]');
   await page.waitForSelector('.region');
   await page.waitForSelector('.sheet [data-choose="wheelbarrow"]');
-  check('meeting her opens the Farm, with Farm starter gifts', !!(await page.$('[data-choose="trough"]')));
+  check('visiting opens the Farm, with Farm starter gifts', !!(await page.$('[data-choose="trough"]')));
   check('the first visit names an animal to tap, and rings it (D40)', !!(await page.$('.sanctuary__scene .sp-cue-ring')) && /^Tap Cotton to say hello\.$/.test((await page.textContent('[data-scene-cue="tap"]').catch(() => '')) ?? ''));
   await page.click('[data-choose="wheelbarrow"]');
   await page.click('.sheet [data-act="play"]');

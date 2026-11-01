@@ -1505,3 +1505,160 @@
 :root[data-motion='reduce'] .stage-news {
   animation: none;
 }
+
+/* ------------------------------------------------------------------ the first arrival (D41) */
+/* The first puzzle's newcomer, shown happening: the home as it was, the change growing in, the animal settling in, then
+   the goal for the next one. A full-screen moment over the board, skippable; under reduced motion only its end. */
+.arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow-y: auto;
+  background:
+    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--accent) 16%, var(--canvas)) 0%, var(--canvas) 70%),
+    var(--canvas);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--s3)) max(var(--s4), env(safe-area-inset-right, 0px))
+    calc(env(safe-area-inset-bottom, 0px) + var(--s4)) max(var(--s4), env(safe-area-inset-left, 0px));
+  animation: tip-in 260ms ease-out;
+}
+.arrival__inner {
+  max-width: 480px;
+  min-height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.arrival__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 44px;
+}
+.arrival__where {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-ink);
+  font-weight: 800;
+  font-size: var(--t-sm);
+}
+.arrival__where .ico {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+.arrival.is-done .arrival__skip {
+  visibility: hidden;
+}
+.arrival__scene {
+  margin: 0;
+  /* As big as the screen allows, while the caption and the goal still fit under it on a short phone. */
+  width: min(100%, calc(44vh * 1.2));
+  align-self: center;
+  box-shadow:
+    0 0 0 4px var(--surface),
+    0 0 0 6px color-mix(in srgb, var(--accent) 40%, transparent),
+    0 18px 36px -20px rgba(40, 52, 52, 0.5);
+}
+.arrival .is-waiting {
+  opacity: 0;
+}
+.arrival__caption {
+  text-align: center;
+  min-height: 96px;
+}
+@media (max-height: 700px) {
+  .arrival__scene {
+    width: min(100%, calc(36vh * 1.2));
+  }
+  .arrival__caption {
+    min-height: 0;
+  }
+}
+.arrival__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 7vw, 30px);
+  line-height: 1.15;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.arrival__line {
+  margin: 6px auto 0;
+  max-width: 34ch;
+  color: var(--muted-ink);
+  font-weight: 600;
+  text-wrap: balance;
+}
+.arrival__goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent),
+    var(--shadow-1);
+}
+.arrival__goal[hidden] {
+  display: none;
+}
+.arrival.is-done .arrival__goal {
+  animation: win-rise 380ms var(--ease) both;
+}
+.arrival__kicker {
+  margin: 0;
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.arrival__next {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.arrival__next-art {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.arrival__next-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.arrival__next-body b {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.2;
+}
+.arrival__next-body small {
+  color: var(--muted-ink);
+  font-weight: 700;
+  font-size: var(--t-sm);
+}
+.arrival__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.arrival__holds {
+  margin: 0;
+  text-align: center;
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+:root[data-motion='reduce'] .arrival,
+:root[data-motion='reduce'] .arrival.is-done .arrival__goal {
+  animation: none;
+}
