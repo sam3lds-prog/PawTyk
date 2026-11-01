@@ -221,6 +221,8 @@
 - [ ] 320×568: the goal's buttons are on screen when it appears; Reduce Motion: the end state at once, nothing moves
 - [ ] VoiceOver: *Skip* has focus first, the captions are read as they change, then the focus is on *Play level 2*
 - [ ] An existing player updating (with animals at home) never sees it; their next arrival is the usual win sheet
+- [ ] *Skip* early, then wait 5 s: nothing replays behind the goal; keyboard: Tab and Shift+Tab stay on its buttons
+- [ ] *I know how to play* → today's Daily first: the Daily's own results (streak, time, Share) with *Meet Cotton*
 
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement

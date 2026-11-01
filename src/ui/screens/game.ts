@@ -1513,8 +1513,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // full-size second button. An ordinary win is quick: the next puzzle is the main action, the visit a quiet one.
     const milestone = isMilestone(growth) && mode.kind !== 'cup';
     // D41: the very first animal to come home (the first puzzle's Cotton) is shown happening, not reported: the Farm as
-    // it was, the change growing in, the newcomer settling in, then the goal for the next animal. Skippable.
-    if (growth && hero?.kind === 'arrived' && isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind !== 'cup') {
+    // it was, the change growing in, the newcomer settling in, then the goal for the next animal. Skippable. Journey
+    // levels only: a Daily solved first keeps its own results (streak, time, Share), with Cotton's Meet on them.
+    if (growth && hero?.kind === 'arrived' && isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind === 'level') {
       const holds: string[] = [];
       if (rewards.coins) holds.push(`+${rewards.coins} coins`);
       if (rewards.points) holds.push(`+${rewards.points} Paw Points`);

@@ -139,6 +139,8 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     life.play(`friend:${o.animal}`, 'greet');
   };
   const toGoal = (focus = true) => {
+    // Skipped before the newcomer appeared: it is still easy to find (the ring a Meet gives).
+    if (step < 2) spotlightNewcomer(sc, scene, o.animal);
     step = 4;
     for (const g of grown) g.classList.remove('is-waiting', 'is-new');
     fig?.classList.remove('is-waiting', 'is-arriving');
@@ -150,22 +152,33 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     if (focus) el.querySelector<HTMLElement>('[data-act="play"], [data-act="visit"]')?.focus({ preventScroll: true });
   };
 
+  // The steps run in their own scope, so Skip stops the ones still to come (none replays behind the goal).
+  const steps = sc.child();
   if (app.reducedMotion) {
-    // Still: the scene as it is now, the news, the goal. The chime still says someone new is here.
+    // Still: the scene as it is now, the news, the goal (focused, since there is nothing to skip). The chime still
+    // says someone new is here.
     toArrive();
-    toGoal(false);
+    toGoal();
   } else {
     for (const g of grown) g.classList.add('is-waiting');
     fig?.classList.add('is-waiting');
-    sc.timeout(toGrow, ARRIVAL_STEPS.grow);
-    sc.timeout(toArrive, ARRIVAL_STEPS.arrive);
-    sc.timeout(toHello, ARRIVAL_STEPS.hello);
-    sc.timeout(() => step < 4 && toGoal(), ARRIVAL_STEPS.goal);
+    steps.timeout(toGrow, ARRIVAL_STEPS.grow);
+    steps.timeout(toArrive, ARRIVAL_STEPS.arrive);
+    steps.timeout(toHello, ARRIVAL_STEPS.hello);
+    steps.timeout(() => toGoal(), ARRIVAL_STEPS.goal);
+    el.querySelector<HTMLElement>('[data-act="skip"]')?.focus({ preventScroll: true });
   }
-  el.querySelector<HTMLElement>('[data-act="skip"]')?.focus({ preventScroll: true });
+
+  // A modal: what is behind it can't be reached until it closes (the screen is left then, or given back).
+  const behind = [...root.children].filter((n): n is HTMLElement => n !== el && n instanceof HTMLElement && !n.inert);
+  for (const n of behind) n.inert = true;
+  sc.onDispose(() => {
+    for (const n of behind) n.inert = false;
+  });
 
   const skip = () => {
     if (step >= 4) return;
+    steps.dispose();
     if (!chimed) feel('arrival');
     chimed = true;
     track('onboarding_step', { step: 'first_arrival_skipped' });
@@ -184,6 +197,25 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     else if (act.dataset.act === 'visit') close(o.onVisit);
   });
   sc.on(document, 'keydown', (e) => {
-    if ((e as KeyboardEvent).key === 'Escape') skip();
+    const ke = e as KeyboardEvent;
+    if (ke.key === 'Escape') skip();
+    else if (ke.key === 'Tab') {
+      // Tab stays inside, as in a sheet.
+      // Skip is hidden once the goal is up.
+      const items = [...el.querySelectorAll<HTMLElement>('button:not([disabled])')].filter(
+        (b) => !b.closest('[hidden]') && !(b.dataset.act === 'skip' && el.classList.contains('is-done')),
+      );
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = el.contains(document.activeElement);
+      if (ke.shiftKey && (document.activeElement === first || !inside)) {
+        ke.preventDefault();
+        last.focus();
+      } else if (!ke.shiftKey && (document.activeElement === last || !inside)) {
+        ke.preventDefault();
+        first.focus();
+      }
+    }
   });
 }

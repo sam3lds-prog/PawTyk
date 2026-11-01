@@ -1177,4 +1177,9 @@ progress display and animal styling, never change for its own sake, keep it read
   animal already at home never see it.
 - Tests: `test/unit/gameScreen.dom.test.ts` (the four steps in order, Skip, Visit, Play level 2, reduced motion, a later
   arrival keeps the sheet); e2e: the first board ends in the arrival, the change grows in, Cotton settles in, the goal.
+- Review fixes: *Skip* stops the steps still to come (they ran on: the caption flipped back and Cotton dropped in again
+  behind the goal, and focus was pulled back at 4.2 s); under reduced motion the focus starts on *Play level 2* (it
+  was given to the already hidden *Skip*, so it stayed on the game behind); it is a real modal — the game behind is
+  inert and Tab stays inside, as in a sheet; Journey levels only — a Daily solved first keeps its own results
+  (streak, time, Share) with Cotton's *Meet* on them. Tests for each.
 

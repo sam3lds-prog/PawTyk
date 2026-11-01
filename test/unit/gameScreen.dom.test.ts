@@ -1135,13 +1135,21 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(app.active?.mode).toMatchObject({ kind: 'level', level: 2 });
   });
 
-  it('Skip goes straight to the goal; Visit opens the Farm', () => {
+  it('Skip goes straight to the goal and stops the steps still to come; Visit opens the Farm', () => {
     start(1);
     solveBoard();
+    vi.advanceTimersByTime(200);
     (arrival()!.querySelector('[data-act="skip"]') as HTMLButtonElement).click();
     expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
     expect(title()).toBe('Cotton is home!');
     expect(arrival()!.querySelector('.is-waiting')).toBeNull();
+    const play = arrival()!.querySelector<HTMLElement>('[data-act="play"]')!;
+    expect(document.activeElement).toBe(play);
+    // Nothing replays behind the goal: no grow-in, no drop-in, the caption stays.
+    vi.advanceTimersByTime(5000);
+    expect(title()).toBe('Cotton is home!');
+    expect(arrival()!.querySelector('.is-new, .is-arriving')).toBeNull();
+    expect(document.activeElement).toBe(play);
     (arrival()!.querySelector('[data-act="visit"]') as HTMLButtonElement).click();
     expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm' });
   });
@@ -1153,6 +1161,31 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(title()).toBe('Cotton is home!');
     expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
     expect(arrival()!.querySelector('.is-waiting')).toBeNull();
+    // Focus is inside, on the main button (Skip is hidden: there is nothing to skip).
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+  });
+
+  it('is a modal: the game behind it is inert and Tab stays inside', () => {
+    start(1);
+    solveBoard();
+    const screen = arrival()!.parentElement!;
+    const behind = [...screen.children].filter((n) => n !== arrival());
+    expect(behind.length).toBeGreaterThan(0);
+    expect(behind.every((n) => (n as HTMLElement).inert)).toBe(true);
+    (arrival()!.querySelector('[data-act="skip"]') as HTMLButtonElement).click();
+    const visit = arrival()!.querySelector<HTMLElement>('[data-act="visit"]')!;
+    visit.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(visit);
+  });
+
+  it('a Daily solved first keeps its own results, with Cotton to meet on them', () => {
+    startGame({ kind: 'daily', dateKey: '2026-10-31' });
+    solveBoard();
+    expect(arrival()).toBeNull();
+    expect(document.querySelector('.win-sheet')).not.toBeNull();
   });
 
   it('only the first animal ever: a later arrival keeps the win sheet', () => {
