@@ -201,6 +201,17 @@
 - [ ] VoiceOver: the fold reads as *More rewards*, collapsed, with its summary; the stars read "2 of 3 stars"
 - [ ] Reduce Motion: no rise or bar slide; the next goal appears at once
 
+### D40 PR D — visits worth making
+- [ ] Fresh install → first board → *Meet Cotton*: *Tap Cotton to say hello.* and a dashed ring under Cotton; tapping
+      her: her hello, a heart, the cue and the ring go
+- [ ] Tap a little animal (a chick, a bunny, a mouse of a place) a finger's width off to the side or just above its
+      head: it answers; tapping between two animals picks the nearer; a decoration with a sparkle still does its own thing
+- [ ] The tapped animal: a soft ring and *Name · Temperament* over it for a moment; tap another and both move
+- [ ] Reach a new stage (tester shortcuts: grow the Farm, solve one) → *Visit*: the new part glows as it grows in and
+      *New at the Farm: …* says what changed; reach one, go elsewhere, come back via the "New" marker: the same
+- [ ] 3D animals on: the rings and the tag sit with the toys; Reduce Motion: nothing moves, the stage still glows
+- [ ] Older iPhone: the scene scrolls smoothly, nothing new animates on its own
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

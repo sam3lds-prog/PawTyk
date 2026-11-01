@@ -36,6 +36,10 @@ import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
+import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
+
+/** How long a stage that just appeared glows (D40). */
+const STAGE_GLOW_MS = 2600;
 
 export const regionScreen: ScreenDef = {
   tab: 'world',
@@ -49,12 +53,13 @@ export const regionScreen: ScreenDef = {
     const friendsHere = order.map((a) => ({ ...animalInfo(a as AnimalId), id: a as FriendId }));
     // The endless world's places have no decorations (yet): their charm is their animals and their look (D39).
     const hasDecor = !isPlaceId(id);
-    // Which stage just appeared (coming from a solve that reached it), to pop it in.
-    const freshStage = route.fresh ?? 0;
     const today = localDateKey();
     const firstVisitToday = app.save.world.visited[id] !== today;
     // Whatever happened here since the last visit (the "New" marker) is seen now; newcomers get their hello below.
     const news = markSeen(app.save, id);
+    // Which stage just appeared (coming from a solve that reached it, or reached while the player was elsewhere), to
+    // pop it in and say what changed (D40).
+    const freshStage = route.fresh || news?.stage || 0;
     if (isOpen(app.save, id)) {
       app.save.world.visited[id] = today;
       app.persist();
@@ -172,6 +177,7 @@ export const regionScreen: ScreenDef = {
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
           <button class="scene-tricks" data-act="tricks" aria-controls="${trayHost.id}" aria-expanded="${tray.isOpen}" hidden>${trickBadge('sparkle')}Tricks</button>
         </div>
+        ${freshStage && def.stages[freshStage] ? `<p class="stage-news" data-stage-news style="--accent:${def.accent}">${ICON.sprout}<span><b>New at the ${esc(def.short)}: ${esc(def.stages[freshStage].name)}</b> ${esc(def.stages[freshStage].change)}.</span></p>` : ''}
         <div data-cue-slot></div>
         ${progressCard()}
         <section aria-labelledby="animals-title">
@@ -212,9 +218,13 @@ export const regionScreen: ScreenDef = {
       const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       life = svg ? startSceneLife(svg, `region-${id}`) : null;
       acts = svg && open ? startSceneActivities(svg, el.querySelector('[data-chat]'), () => app.reducedMotion, animalName) : null;
-      // One cue at a time, once: tap an animal; later, use a decoration.
+      // One cue at a time, once: tap an animal (by name, the newcomer if there is one, and ringed: D40); later, use a
+      // decoration.
       const slot = el.querySelector('[data-cue-slot]');
-      if (slot) slot.innerHTML = sceneCueMarkup(open ? sceneCue(!!svg?.querySelector('.sanctuary__pet'), !!svg?.querySelector('[data-decor].has-act')) : null);
+      const cue = open ? sceneCue(!!svg?.querySelector('.sanctuary__pet'), !!svg?.querySelector('[data-decor].has-act')) : null;
+      const cued = cue === 'tap' ? cueFigure(svg, newcomers[0]) : null;
+      if (slot) slot.innerHTML = sceneCueMarkup(cue, cued?.dataset.name);
+      ringCued(cued);
       s3d.attach(open ? el.querySelector<HTMLElement>('.sanctuary__scene') : null, svg);
       const btn = tricksBtn();
       if (btn) btn.hidden = !open || !svg?.querySelector('.sanctuary__pet');
@@ -229,7 +239,13 @@ export const regionScreen: ScreenDef = {
     // after a solve that helped this place).
     if (isOpen(app.save, id) && life) {
       const svg = el.querySelector('.sanctuary__scene svg');
-      if (freshStage && svg && !app.reducedMotion) for (const g of svg.querySelectorAll(`.sp-stage[data-stage="${freshStage}"]`)) g.classList.add('is-new');
+      // What changed glows for a moment (also under reduced motion: a glow, not a movement), and a line says what it is.
+      if (freshStage && svg)
+        for (const g of svg.querySelectorAll(`.sp-stage[data-stage="${freshStage}"]`)) {
+          if (!app.reducedMotion) g.classList.add('is-new');
+          g.classList.add('is-fresh');
+          scope.timeout(() => g.classList.remove('is-fresh'), STAGE_GLOW_MS);
+        }
       greetAll(life, (fn, ms) => scope.timeout(fn, ms), route.fresh !== undefined || firstVisitToday);
     }
     // After the first board: a starter gift for the Farm (if the Pet Garden hasn't offered it already). Straight from a
@@ -275,11 +291,16 @@ export const regionScreen: ScreenDef = {
         dismissSceneCue(el, (cueOk.closest('[data-scene-cue]') as HTMLElement).dataset.sceneCue as SceneCue);
         return;
       }
-      const fig = t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null;
+      // An animal, or a tap close to one (D40: little animals are small targets), but never a decoration's own tap.
+      const svgEl = t.closest('.sanctuary__scene svg') as SVGSVGElement | null;
+      const fig =
+        (t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null) ??
+        (svgEl && !t.closest('[data-decor].has-act') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
         // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
         greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
+        selectFigure(scope, el.querySelector<HTMLElement>('.sanctuary__scene')!, fig);
         life?.tap(fig);
         tray.open(fig as unknown as SVGGElement);
         return;

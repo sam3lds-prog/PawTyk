@@ -1108,3 +1108,24 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
   milestone titles), `test/unit/newcomer.dom.test.ts` (the next goal after *Meet*, in the Pet Garden, and what it
   points at as homes fill); e2e: the arrival's first view and its closed fold.
 
+### PR D — visits worth making
+- **A first visit leads straight to a reaction** (`sceneCues.ts`, `components/selection.ts`): the one-time cue names an
+  animal — the newcomer if there is one, else the first animal in the scene — *Tap Cotton to say hello.*, and a
+  dashed ring sits on the ground under that animal until the cue is done. Tapping it plays its hello (PR A), its
+  temperament's greeting (PR B) and counts its heart; the cue and the ring go.
+- **Easy to find and choose** (`selection.ts`): a tap on or near an animal reaches it — a figure's target is its own
+  height and width plus a margin, and never less than 44 scene units (about 44 points on a phone), the nearest animal
+  winning — so a mouse or a chick is as easy to tap as a cow. Decorations' own taps still come first. The tapped
+  animal gets a soft ring on the ground and a name tag over its head (*Truffle · Playful*) for 2.6 s; tapping another
+  moves both. With 3D toys the rings sit under the toys, as the newcomer's ring does (D39).
+- **Every growth milestone is visible** (`region.ts`): a stage that just appeared — from the solve that reached it, or
+  reached while the player was elsewhere (the "New" marker) — glows for 2.6 s (a glow, so also under reduced motion)
+  as it grows in, and a line under the scene says what changed: *New at the Farm: Barn raising · A red barn goes up
+  beside the pasture.*
+- **Ambience, restrained on purpose**: nothing new loops. The scene already plays one small thing every 3.5–9 s, at
+  most three at once, paused when hidden; the only addition is the one-off liveliness of a welcome (PR C). Reduced
+  motion and the drawn (no-WebGL) scenes are unchanged; every new ring and tag is still.
+- Tests: `test/unit/visits.dom.test.ts` (the target geometry, the named cue and its ring, the reaction, moving the
+  selection, a stage's glow and line from a solve and from the "New" marker), `navigation.dom.test.ts` updated; e2e:
+  the named, ringed cue on the first Farm visit, and a tap just above a small animal reaching it in a real browser.
+

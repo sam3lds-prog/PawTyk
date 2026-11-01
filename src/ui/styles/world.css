@@ -1475,3 +1475,31 @@
 :root[data-motion='reduce'] .next-goal {
   animation: none;
 }
+
+/* ------------------------------------------------------------------ what a new stage changed (D40) */
+.stage-news {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent);
+  font-size: var(--t-sm);
+  text-align: left;
+  animation: win-rise 380ms var(--ease) both;
+}
+.stage-news .ico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--accent);
+  margin-top: 1px;
+}
+.stage-news b {
+  display: block;
+}
+:root[data-motion='reduce'] .stage-news {
+  animation: none;
+}

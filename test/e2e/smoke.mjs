@@ -180,7 +180,7 @@ try {
   await page.waitForSelector('.region');
   await page.waitForSelector('.sheet [data-choose="wheelbarrow"]');
   check('meeting her opens the Farm, with Farm starter gifts', !!(await page.$('[data-choose="trough"]')));
-  check('the first visit offers a cue to tap an animal', /Try tapping an animal/.test((await page.textContent('[data-scene-cue="tap"]').catch(() => '')) ?? ''));
+  check('the first visit names an animal to tap, and rings it (D40)', !!(await page.$('.sanctuary__scene .sp-cue-ring')) && /^Tap Cotton to say hello\.$/.test((await page.textContent('[data-scene-cue="tap"]').catch(() => '')) ?? ''));
   await page.click('[data-choose="wheelbarrow"]');
   await page.click('.sheet [data-act="play"]');
   check('starter flow continues to level 2', (await title()) === 'Level 2');
@@ -743,6 +743,21 @@ try {
     return { temper, gained: (s.sanctuary.affection.cotton ?? 0) - before };
   });
   check('a tapped animal greets its own way (Cotton is sleepy) and a hello counts one heart a day (D40)', bond.temper === 'sleepy' && bond.gained === 1, JSON.stringify(bond));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  // D40 PR D: a tap just above an animal's head (on the sky, not the animal) still reaches it, and it is named.
+  const above = await page.evaluate(() => {
+    const g = document.querySelector('.sanctuary__scene [data-friend="truffle"]') ?? document.querySelector('.sanctuary__scene .sanctuary__pet');
+    g.scrollIntoView({ block: 'center' });
+    const b = g.getBoundingClientRect();
+    return { x: b.left + b.width / 2, y: b.top - 3, id: g.dataset.friend ?? g.dataset.pet };
+  });
+  await page.mouse.click(above.x, above.y);
+  await page.waitForTimeout(150);
+  check(
+    'a tap just above a small animal reaches it, and it is ringed and named for a moment (D40)',
+    await page.evaluate((id) => !!document.querySelector(`.sanctuary__scene [data-friend="${id}"].is-selected, .sanctuary__scene [data-pet="${id}"].is-selected`) && !!document.querySelector(`[data-scene-tag="${id}"]`), above.id),
+  );
   await page.keyboard.press('Escape');
 
   // D40 PR A: every moment's sound plays in a real browser without a fault, and Sound off makes none.

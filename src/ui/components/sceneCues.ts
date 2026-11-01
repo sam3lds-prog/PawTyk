@@ -6,6 +6,8 @@
 
 import { app } from '../../app/app';
 import { ICON } from '../icons';
+import { esc } from '../dom';
+import { unringCued } from './selection';
 
 export type SceneCue = 'tap' | 'decor';
 
@@ -17,9 +19,15 @@ export function sceneCue(hasAnimals: boolean, hasActivities: boolean): SceneCue 
   return null;
 }
 
-export function sceneCueMarkup(cue: SceneCue | null): string {
+/** The cue's line. The tap cue names the animal to tap (D40 PR D), so it leads straight to that animal's hello. */
+export function sceneCueMarkup(cue: SceneCue | null, name?: string): string {
   if (!cue) return '';
-  const text = cue === 'tap' ? 'Try tapping an animal: they say hello, and some know tricks.' : 'Tap a decoration with a sparkle: the animals love to use them.';
+  const text =
+    cue === 'tap'
+      ? name
+        ? `Tap ${esc(name)} to say hello.`
+        : 'Try tapping an animal: they say hello, and some know tricks.'
+      : 'Tap a decoration with a sparkle: the animals love to use them.';
   return `<p class="scene-cue" data-scene-cue="${cue}" role="note">${ICON.paw}<span>${text}</span><button class="icon-btn icon-btn--bare" data-act="cue-ok" aria-label="Got it">${ICON.close}</button></p>`;
 }
 
@@ -30,4 +38,5 @@ export function dismissSceneCue(el: HTMLElement, cue: SceneCue): void {
   else ob.decorTipSeen = true;
   app.persist();
   el.querySelector(`[data-scene-cue="${cue}"]`)?.remove();
+  if (cue === 'tap') unringCued(el);
 }
