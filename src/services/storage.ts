@@ -234,6 +234,8 @@ export interface SaveV2 {
     sceneTapTipSeen: boolean;
     /** The sanctuary's "tap a decoration, the animals use it" cue has been acted on or dismissed. */
     decorTipSeen: boolean;
+    /** The one-time line after a first placement explaining the controls (tap ✕, double-tap places; Settings) has been shown (D38). */
+    controlsTipSeen: boolean;
   };
   /**
    * Boards in progress, one slot per mode (D38): the Journey board, the Daily and the latest Zen board. Starting or
@@ -441,6 +443,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       worldTipSeen: false,
       sceneTapTipSeen: false,
       decorTipSeen: false,
+      controlsTipSeen: false,
     },
     sessions: emptySessions(),
     lastSession: null,
@@ -753,6 +756,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       worldTipSeen: bool(ob.worldTipSeen, false),
       sceneTapTipSeen: bool(ob.sceneTapTipSeen, false),
       decorTipSeen: bool(ob.decorTipSeen, false),
+      controlsTipSeen: bool(ob.controlsTipSeen, false),
     },
     sessions,
     lastSession: newestSession({ sessions }),
