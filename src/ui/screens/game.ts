@@ -38,8 +38,7 @@ import { decorIcon } from '../art/sanctuary';
 import { ads, INTERSTITIALS_ENABLED, shouldShowInterstitial } from '../../services/ads';
 import { canOfferVideo, watchVideoFor, type WatchResult } from '../../app/rewarded';
 import { track } from '../../services/analytics';
-import { sfx } from '../../services/audio';
-import { haptic } from '../../services/haptics';
+import { feel } from '../../services/feel';
 import { speciesKey } from '../art/pets';
 import { animalElement, animalPortrait, animalSvg, applyAnimalFace } from '../art/animals';
 import { FaceDirector, lookToward, type Clock } from '../animation/faceDirector';
@@ -57,6 +56,11 @@ import { showSettings } from './settings';
 const MISS_MS = 700;
 /** Two taps on the same tile within this long are a double tap (place the animal). */
 export const DOUBLE_TAP_MS = 380;
+/**
+ * A second tap on the same ✕ that comes after the double-tap window but within this, and so only clears the ✕, was
+ * most likely a double tap that came a little slowly (D40): after two of them, two-step tap is offered, once.
+ */
+export const SLOW_DOUBLE_MS = 900;
 
 /** In-memory ad cadence (resets each launch, which only makes ads rarer). */
 const cadence = { boardsSinceLast: 0, lastShownAt: null as number | null, shownToday: 0, day: '' };
@@ -108,6 +112,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   /** Dots on tiles no animal can reach: a help for Easy boards only (D37); harder boards are the player's to mark. */
   const showDots = settings.autoMark && profile.tier === 'easy';
   let lastTap: { r: number; c: number; t: number; marked: boolean } | null = null;
+  let slowDoubles = 0;
   let hint: { info: HintInfo; tier: 1 | 2 } | null = null;
   let finished = false;
   let sheet: SheetHandle | null = null;
@@ -436,9 +441,11 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       coach(mistakeLine(r, c));
       return null;
     }
+    const slow = !!lastTap && lastTap.r === r && lastTap.c === c && lastTap.marked && v === MARK && now - lastTap.t < SLOW_DOUBLE_MS;
     const res = s.toggleMark(r, c);
     lastTap = s.givenMask[r][c] ? null : { r, c, t: now, marked: !!res.marked };
     handle(res, r, c);
+    if (slow && res.unmarked && ++slowDoubles >= 2) maybeOfferTwoStep();
     if (guide && guide.r === r && guide.c === c && res.marked) coach(`Now tap it again, quickly, to place ${aWord(guide.species)}.`);
     if (res.marked) return 'mark';
     if (res.unmarked) return 'unmark';
@@ -464,7 +471,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   /** Erase: a ✕ comes back off; animals and mistakes stay. Returns whether a ✕ was taken back. */
   function eraseAt(r: number, c: number): boolean {
     if (s.unmarkIfMarked(r, c)) {
-      haptic('tap');
+      feel('unmark');
       afterChange();
       return true;
     }
@@ -489,7 +496,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (m === 'mark' && s.errorsAt(r, c).length) return;
     const changed = m === 'mark' ? s.markIfEmpty(r, c) : s.unmarkIfMarked(r, c);
     if (changed) {
-      haptic('select');
+      feel('drag');
       afterChange();
     }
   }
@@ -553,8 +560,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (res.wrong && res.placed) {
       onMistake(r, c, res.placed);
     } else if (res.placed) {
-      sfx('place');
-      haptic('place');
+      feel('place');
       board.flash([[r, c]], 'is-fresh', 720);
       // The why (D39) is decided before the controls note can cover the coach line on a first placement.
       const why = whyLine(r, c, res.placed, res.completed ?? []);
@@ -582,8 +588,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         };
       }
     } else if (res.marked) {
-      sfx('mark');
-      haptic('tap');
+      feel('mark');
       react = () => glanceFromNeighbor(r, c);
     }
     afterChange(react);
@@ -603,8 +608,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   }
 
   function onMistake(r: number, c: number, sp: Species): void {
-    sfx('oops');
-    haptic('error');
+    feel('miss');
     board.flash([[r, c]], 'is-miss', MISS_MS);
     // The attempted animal appears faintly, puzzled, and fades. It is the only face that reacts to a mistake.
     board.ghost(r, c, animalElement(animalOf(sp), 'confused').el, MISS_MS);
@@ -613,16 +617,17 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       coach(`Not quite. That tile can't hold ${withArticle(word)}.`);
       const g = guide;
       scope.timeout(() => guide === g && coachGuide(g.text), 1800);
-    } else if (!rules.hearts) coach(`Not ${withArticle(word)} spot, so it's marked. No rush: try another row, column or color.`);
-    else if (s.hearts > 0) coach(`Not ${withArticle(word)} spot, so it's marked. ${plural(s.hearts, 'heart')} left.`);
+      // D40: kind words, no scorekeeping. The hearts above the board already show what's left; only the last one is
+      // worth a word, and that word is "take your time".
+    } else if (rules.hearts && s.hearts === 1) coach(`Not ${withArticle(word)} spot. One heart left, so take your time.`);
+    else if (!rules.hearts || s.hearts > 0) coach(`Not ${withArticle(word)} spot. It's marked for you, so there's no need to try it again.`);
   }
 
   function onUnits(units: UnitRef[], why: string | null = null): void {
-    sfx('unit');
+    feel(units.length > 1 ? 'lines' : 'line');
     const cells: Array<[number, number]> = [];
     for (const u of units) cells.push(...s.unitCells(u));
     board.flash(cells, 'is-glow', 950);
-    if (units.length > 1) haptic('success');
     const u = units[0];
     const name = u.kind === 'region' ? `The ${board.regionName(u.index)} region` : `${capitalize(u.kind)} ${u.index + 1}`;
     const done = units.length > 1 ? `${name} and ${units.length - 1} more are complete${units.length > 2 ? ' at once!' : '.'}` : `${name} is complete.`;
@@ -702,7 +707,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   function doUndo(): void {
     if (finished) return;
     if (s.undo()) {
-      haptic('tap');
+      feel('undo');
       faces.activity();
       faces.calmAll();
       afterChange();
@@ -712,7 +717,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   function doRedo(): void {
     if (finished) return;
     if (s.redo()) {
-      haptic('tap');
+      feel('undo');
       faces.activity();
       faces.calmAll();
       afterChange();
@@ -827,7 +832,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (useItem(app.save, `use:life:${modeKey(mode)}:${Date.now()}`, 'life', new Date(), 'Heart') !== 'ok') return false;
     s.addHeart();
     track('extra_life_used', { mode: mode.kind });
-    haptic('success');
+    feel('coin');
     paint();
     app.saveActive();
     return true;
@@ -866,7 +871,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       board.clearHint();
       let reactTo: { key: string; mood: ReactionMood } | null = null;
       if (info) {
-        sfx('place');
+        feel('place');
         board.flash([[info.r, info.c]], 'is-fresh', 720);
         const units = s.completedUnitsAt(info.r, info.c);
         coach(friendlyReason(info.reason));
@@ -924,7 +929,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (t) {
       if (finished) return;
       selectTool(t.dataset.tool as Tool);
-      haptic('select');
+      feel('tool');
       faces.activity();
       if (tool === 'cat' || tool === 'dog') faces.curiousOne(tool, [0, 1.3]);
       coach(toolCoach());
@@ -949,7 +954,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         if (finished) break;
         erasing = !erasing;
         lastTap = null;
-        haptic('select');
+        feel('tool');
         coach(toolCoach());
         paint();
         break;
@@ -962,10 +967,22 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       case 'tip-close':
         el.querySelector('[data-controls-tip]')?.remove();
         break;
+      case 'offer-close':
+        el.querySelector('[data-two-step-offer]')?.remove();
+        break;
       case 'tip-controls':
         el.querySelector('[data-controls-tip]')?.remove();
         pauseBoard();
         showSettings(scope, { inGame: true, onClose: () => app.router.refresh() });
+        break;
+      case 'use-two-step':
+        // The board is saved on every move, so it comes straight back under the new controls.
+        app.settings.controls = 'classic';
+        app.persist();
+        track('onboarding_step', { step: 'two_step_on' });
+        app.saveActive();
+        app.router.refresh();
+        toast('Two-step tap is on: tap marks ✕, tap again places. Change it any time in Settings.');
         break;
     }
   });
@@ -1025,6 +1042,26 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     </div>`);
     foot.prepend(tip);
     scope.timeout(() => tip.remove(), 12_000);
+  }
+
+  /**
+   * D40: a couple of double taps came a little too slowly and only cleared their ✕. Once ever, outside the guided
+   * boards, the two-step scheme is offered (tap marks ✕, tap again places, no timing), with one tap to switch. The
+   * double-tap default stays (D37); nothing changes unless the player chooses it.
+   */
+  function maybeOfferTwoStep(): void {
+    const ob = app.save.onboarding;
+    if (classic || guided || ob.twoStepOffered || el.querySelector('[data-controls-tip], [data-two-step-offer]')) return;
+    ob.twoStepOffered = true;
+    app.persist();
+    track('onboarding_step', { step: 'two_step_offer' });
+    const tip = h(`<div class="control-tip" data-two-step-offer role="note">
+      <span class="control-tip__icon" aria-hidden="true">${ICON.info}</span>
+      <p class="control-tip__text">Double-tap a bit quick? With <b>two-step tap</b>, a second tap places, any time later. <button class="control-tip__link" data-act="use-two-step">Use two-step tap</button></p>
+      <button class="icon-btn icon-btn--bare control-tip__close" data-act="offer-close" aria-label="No thanks">${ICON.close}</button>
+    </div>`);
+    foot.prepend(tip);
+    scope.timeout(() => tip.remove(), 14_000);
   }
 
   /** What a tap does under the player's controls, for the pause sheet. */
@@ -1169,8 +1206,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (mode.kind === 'daily' && rec.newDaily) track('daily_complete', { streak: rec.streak ?? 0 });
     if (growth?.stageUp) track('region_stage', { region: growth.sanctuary, stage: stageOf(app.save, growth.sanctuary) });
     for (const c of growth?.arrived ?? []) track('animal_arrived', { animal: c, sanctuary: growth!.sanctuary });
-    sfx('win');
-    haptic('success');
+    feel('solved');
     coach('Harmony restored.');
     // The board locks and glows for a beat (faces smile in a wave), then the results rise in stages. Nothing waits on
     // the animation: the sheet's buttons work the moment it opens, and a tap reveals everything at once.
@@ -1499,6 +1535,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     });
     const ws = sheet;
     let leaving = false;
+    // D40: a new animal has a sound of its own, a beat after the success melody, as its portrait comes up.
+    if (milestone && hero?.kind === 'arrived') ws.scope.timeout(() => feel('arrival'), app.reducedMotion ? 300 : 900);
     // Paw Points count up while the results rise (skipped with reduced motion or a tap).
     const counter = ws.el.querySelector('[data-count]') as HTMLElement | null;
     // The sanctuary bar moves from where it was to where it is now: one short step, a beat after the results rise.
@@ -1613,7 +1651,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // A lost board isn't resumable (only a refill brings it back), so this clears its save slot.
     app.saveActive();
     track('puzzle_fail', { mode: mode.kind, size: n });
-    haptic('error');
+    feel('lost');
     const canLife = pantryOn && lives() > 0;
     const canRevive = pantryOn && !canLife && canOfferVideo();
     const wrongs = `${numberWord(s.maxHearts)} wrong placements`;

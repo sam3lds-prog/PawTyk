@@ -29,7 +29,7 @@ import { trickBadge } from '../art/tricks';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
 import { afterDecorChange, afterSanctuaryVisit } from '../../app/events';
-import { sfx } from '../../services/audio';
+import { feel } from '../../services/feel';
 import { decorIcon, sanctuaryScene, SCENE_VIEWBOX } from '../art/sanctuary';
 import { portrait, showPetSheet } from '../components/petSheet';
 import { openSheet, toast } from '../components/sheet';
@@ -280,7 +280,7 @@ export const sanctuaryScreen: ScreenDef = {
       else if (a.act === 'play') playMode({ kind: 'level', level: app.save.journey.nextLevel });
       else if (a.act === 'build' && setActive(app.save, 'harmony')) {
         app.persist();
-        sfx('coin');
+        feel('coin');
         track('region_build', { region: 'harmony' });
         toast(buildHereMessage('harmony'));
         render();
@@ -411,7 +411,7 @@ export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () 
     if (chooseStarter(app.save, id)) {
       afterDecorChange();
       app.persist();
-      sfx('coin');
+      feel('coin');
       track('onboarding_step', { step: 'starter_gift', item: id });
       sh.close();
       rerender();

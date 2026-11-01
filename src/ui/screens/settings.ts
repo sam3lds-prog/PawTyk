@@ -7,6 +7,8 @@ import { finishOpenHomes, growActive, setPantry, skipToLevel } from '../../app/q
 import { iap } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
+import { sfx } from '../../services/audio';
+import { haptic } from '../../services/haptics';
 import { leaderboard } from '../../services/leaderboard';
 import { resetLeaderboardLocal } from '../../app/leaderboardSync';
 import { openSheet, toast } from '../components/sheet';
@@ -182,6 +184,9 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       changed = true;
       app.applySettings();
       app.persist();
+      // D40: turning sound or haptics on gives a small sample, so the player knows what they turned on.
+      if (v && key === 'sound') sfx('hello', { style: 'playful' });
+      if (v && key === 'haptics') haptic('light');
       return;
     }
     const ch = t.closest('[data-choice]') as HTMLElement | null;

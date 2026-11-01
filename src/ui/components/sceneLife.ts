@@ -13,6 +13,7 @@ import type { Clock } from '../animation/faceDirector';
 import type { FaceMood } from '../animation/faceMachine';
 import { applyFace } from '../art/pets';
 import { isWildId, wildDef } from '../../meta/catalogs/places';
+import { sayHello } from './hello';
 
 /** What each wildlife friend likes to do (the sleepy ones mostly blink and stretch). */
 const FRIEND_ACTIONS: Record<string, AmbientAction[]> = {
@@ -59,7 +60,7 @@ const PART_ACTIONS: Array<[string, AmbientAction]> = [
 ];
 
 export interface SceneLife {
-  /** A player's tap on a figure: a happy hop and a heart (a heart and a smile only, under reduced motion). */
+  /** A player's tap on a figure: its hello, a happy hop and a heart (a heart and a smile only, under reduced motion). */
   tap(fig: HTMLElement): void;
   /** Plays one action on a figure or part right away (arrival greetings, a reaction to food). Under reduced motion only a face changes. */
   play(id: string, action: AmbientAction): boolean;
@@ -145,6 +146,8 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
 
   return {
     tap: (fig) => {
+      // D40: the animal answers out loud too, a tiny hello of its own (sound and haptic behind their switches).
+      sayHello(fig.dataset.pet ?? fig.dataset.friend ?? '');
       if (!ambient.trigger(figureId(fig), 'greet')) ambient.trigger(figureId(fig), 'love');
     },
     play: (id, action) => ambient.trigger(id, action) || (action === 'greet' && ambient.trigger(id, 'love')),

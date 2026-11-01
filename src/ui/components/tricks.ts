@@ -12,8 +12,7 @@ import { itemBalance } from '../../meta/items';
 import { buyTrick, ownsTrick } from '../../meta/tricks';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
-import { sfx } from '../../services/audio';
-import { haptic } from '../../services/haptics';
+import { feel } from '../../services/feel';
 import { iap } from '../../services/iap';
 import { trickBadge } from '../art/tricks';
 import { performTrick } from './trickPlay';
@@ -189,8 +188,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     const status = host.querySelector('[data-tray-status]');
     const name = animalName(target.id);
     if (s && fig && performTrick(s, fig, id, app.reducedMotion)) {
-      sfx('place');
-      haptic('tap');
+      feel('trick');
       track('trick_played', { trick: id });
       if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!`;
     } else if (fig) {
@@ -310,8 +308,7 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
         busy = false;
         if (r === 'ok') {
           app.persist();
-          sfx('coin');
-          haptic('success');
+          feel('buy');
           track('trick_bought', { trick: id, tier: t.tier, amount: t.price });
           toast(`${t.name} learned! Ask for it in any sanctuary.`);
           opts.onBought?.();

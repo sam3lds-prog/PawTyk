@@ -34,8 +34,8 @@ ladder) → `cast.castFor` (which animals the board shows, D35) → `new Session
 verifier dispatch on it. Paw Cup boards first open an attempt
 (`localCup.startAttempt`), which fails when both attempts are used.
 
-**Playing.** Board input → `Session.apply/tap/place` → `MoveResult` → feedback (sound, haptic, tile overlay, face
-reaction) → `paint()` updates only changed cells → `app.saveActive()` snapshots the board (also on background /
+**Playing.** Board input → `Session.apply/tap/place` → `MoveResult` → feedback (`services/feel.ts` plays the event's
+sound and haptic from one table, D40; tile overlay; face reaction) → `paint()` updates only changed cells → `app.saveActive()` snapshots the board (also on background /
 pagehide) → `session.claimOutcome()` returns win/loss exactly once.
 
 **Winning.** `progression.recordWin` (journey, daily streak, stats, best times per spec) → `rewards.rewardsForWin`

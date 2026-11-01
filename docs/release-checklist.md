@@ -162,6 +162,20 @@
       "In the wild"
 - [ ] The album: "N of 545 kinds met" once places have begun
 
+### D40 PR A — sound and touch
+- [ ] On a device, sound on: ✕ is a quiet tick, a placement a soft pop, a finished row a short rise, a wrong guess one
+      muted note, a solve the little melody, a new animal its own warm chime a beat later; nothing is loud next to
+      other apps' sounds at the same volume
+- [ ] Haptics: a ✕ is barely there, a placement light, a finished row one firm tap, a wrong guess the gentle warning,
+      a new animal one strong pulse; Settings → Haptics off: no buzz at all, sounds unchanged; Sound off: silence, the
+      buzzes unchanged; the ringer switch on silent mutes the sounds
+- [ ] Turning Sound effects on plays a small sample; turning it off mid-arrival-chime stops it at once
+- [ ] A finger on a tile glows at once, before the ✕ appears; drag across a row: no rattle of sounds
+- [ ] Tap animals in the Farm: a mouse-sized one squeaks higher than a cow
+- [ ] Double-tap a little slowly twice on one board: the two-step offer appears once; *Use two-step tap* keeps the
+      board and a ✕ then places with a second tap; it never appears again
+- [ ] Wrong guesses: the coach never counts hearts, says *take your time* on the last one
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

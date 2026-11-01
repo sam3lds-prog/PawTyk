@@ -246,6 +246,8 @@ export interface SaveV2 {
     loopTipSeen: boolean;
     /** How many moves have been explained ("only one spot was left in row 3") without the setting on; the first few always are (D39). */
     whyShown: number;
+    /** The one-time offer of two-step tap, after a few double taps that came a little too slowly, has been shown (D40). */
+    twoStepOffered: boolean;
   };
   /**
    * Boards in progress, one slot per mode (D38): the Journey board, the Daily and the latest Zen board. Starting or
@@ -457,6 +459,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       controlsTipSeen: false,
       loopTipSeen: false,
       whyShown: 0,
+      twoStepOffered: false,
     },
     sessions: emptySessions(),
     lastSession: null,
@@ -775,6 +778,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       controlsTipSeen: bool(ob.controlsTipSeen, false),
       loopTipSeen: bool(ob.loopTipSeen, false),
       whyShown: int(ob.whyShown, 0, 0),
+      twoStepOffered: bool(ob.twoStepOffered, false),
     },
     sessions,
     lastSession: newestSession({ sessions }),

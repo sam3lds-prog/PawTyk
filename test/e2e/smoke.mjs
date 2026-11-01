@@ -127,7 +127,15 @@ try {
 
   // A tap marks ✕ and a second, slow tap clears it again; animals only come with a double tap.
   const free0 = await emptyTile();
-  await tapCell(free0[0], free0[1]);
+  // D40: the finger is acknowledged the moment it lands (a soft glow), and the ✕ comes with it.
+  const at0 = await page.$eval(`.cell[data-r="${free0[0]}"][data-c="${free0[1]}"]`, (el) => {
+    const b = el.getBoundingClientRect();
+    return [b.x + b.width / 2, b.y + b.height / 2];
+  });
+  await page.mouse.move(at0[0], at0[1]);
+  await page.mouse.down();
+  check('a finger on a tile is acknowledged at once (D40)', await page.$eval(`.cell[data-r="${free0[0]}"][data-c="${free0[1]}"]`, (el) => el.classList.contains('is-press')));
+  await page.mouse.up();
   check('a tap marks ✕', (await page.evaluate(([r, c]) => window.__pt.app.active.session.cells[r][c], free0)) === 3);
   await page.waitForTimeout(500);
   await tapCell(free0[0], free0[1]);
@@ -710,6 +718,25 @@ try {
         [...document.querySelectorAll('.sanctuary__scene .sanctuary__pet')].every((g) => getComputedStyle(g).opacity === '1'),
     ),
   );
+
+  // D40 PR A: every moment's sound plays in a real browser without a fault, and Sound off makes none.
+  const sound = await page.evaluate(async () => {
+    const f = await import('/src/services/feel.ts');
+    const a = await import('/src/services/audio.ts');
+    let ok = true;
+    for (const e of Object.keys(f.FEEL)) {
+      try {
+        f.feel(e, { style: 'playful', size: 'tiny' });
+      } catch {
+        ok = false;
+      }
+    }
+    a.setSoundEnabled(false);
+    const off = !a.soundEnabled();
+    a.setSoundEnabled(window.__pt.app.settings.sound);
+    return { ok, off };
+  });
+  check('every sound and haptic in the feel table plays without a fault; Sound off is off (D40)', sound.ok && sound.off);
 
   // Scoped reset
   // Settings → 3D animals off: the drawn animals come back, and no 3D layer is made.
