@@ -245,7 +245,7 @@ describe('facial-only guarantees', () => {
   it('board pets never move: no transform or animation on tile pets, and the miss ghost only fades', () => {
     const css = readFileSync('src/ui/styles/board.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const [, sel, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      if (/cell__pet|\.pet\b/.test(sel)) expect(body).not.toMatch(/transform|animation/);
+      if (/cell__(pet|tried|ghost)|\.pet\b/.test(sel) && !/@keyframes|\.cell__ghost\s*$/.test(sel)) expect(body).not.toMatch(/transform|animation/);
     }
     const ghost = css.match(/@keyframes ghost\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
     expect(ghost).toMatch(/opacity/);

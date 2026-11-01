@@ -252,7 +252,8 @@
 }
 
 /* D40: a finger on a tile, acknowledged at once: a soft light glow, and a mark on the tile gives a little (a fresh ✕
-   settles in from the same squeeze). Animals never move on the board (D11): their tile only glows. Under reduced motion
+   settles in from the same squeeze). Animals never move on the board (D11), not even a struck one: their tile only
+   glows. Under reduced motion
    the animations are cut and only the move itself shows. */
 .cell::after {
   content: '';
@@ -268,8 +269,7 @@
   animation: press-glow 240ms var(--ease) forwards;
 }
 .cell.is-press > .cell__mark,
-.cell.is-press > .cell__err,
-.cell.is-press > .cell__tried {
+.cell.is-press > .cell__err {
   animation: press-give 220ms var(--ease);
 }
 @keyframes press-glow {

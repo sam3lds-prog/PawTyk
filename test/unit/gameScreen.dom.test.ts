@@ -137,9 +137,10 @@ describe('tap marks, double-tap places (D37)', () => {
     expect(cell(r, c).querySelector('.cell__err')).not.toBeNull();
     expect(cell(r, c).querySelector('.cell__mark')).toBeNull();
     expect(cell(r, c).getAttribute('aria-label')).toMatch(/a mistake, no animal here$/);
-    // D40: kind words, no heart count (the hearts above the board show it).
+    // D40: kind words, no heart count on screen (the hearts above the board show it); a screen reader still hears it.
     expect(coach()).toMatch(/It's marked for you/);
-    expect(coach()).not.toMatch(/hearts? left/);
+    expect(document.querySelector('[data-coach]')!.childNodes[0].textContent).not.toMatch(/hearts? left/);
+    expect(document.querySelector('[data-coach] .sr-only')?.textContent).toMatch(/\d hearts left\./);
     // The same guess again, on purpose or a double-fired tap: no second heart, no second event.
     const events = s.events.length;
     dblTap(r, c);
@@ -935,6 +936,18 @@ describe('how the board feels (D40 PR A)', () => {
       expect(el.classList.contains('is-press'), scheme).toBe(true);
       el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 7 }));
     }
+  });
+
+  it('two animals of one kind are told apart by name, and the other may still live on a tile', () => {
+    // Level 21+ casts can be two cats; a wrong one reads "Not Mochi's spot", never "a Mochi spot".
+    start(25);
+    const s = app.active!.session;
+    expect(app.active!.cast?.b).toBeTruthy();
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    toolBtn('cat')?.click();
+    dblTap(r, c);
+    expect(coach()).not.toMatch(/Not a [A-Z]/);
+    expect(coach()).toMatch(/no need to try (the \w[\w ’'-]*|[A-Z]\w+) here again/);
   });
 
   it('a wrong guess is a kind word, and only the last heart is mentioned (take your time)', () => {

@@ -370,8 +370,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     return out;
   }
 
-  function coach(text: string): void {
+  /** The coach line; `sr` is read by a screen reader only (the line is aria-live), after the visible words. */
+  function coach(text: string, sr?: string): void {
     coachEl.textContent = text;
+    if (sr) {
+      const hidden = document.createElement('span');
+      hidden.className = 'sr-only';
+      hidden.textContent = ` ${sr}`;
+      coachEl.appendChild(hidden);
+    }
     coachEl.classList.remove('is-guide');
   }
 
@@ -613,14 +620,22 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // The attempted animal appears faintly, puzzled, and fades. It is the only face that reacts to a mistake.
     board.ghost(r, c, animalElement(animalOf(sp), 'confused').el, MISS_MS);
     const word = wordOf(sp);
+    // Two animals of one kind are told apart by name: "Not Mochi's spot", "a cat spot" otherwise.
+    const named = !!cast.b && animalInfo(cast.a).noun === animalInfo(cast.b).noun;
+    const spot = named ? `${word}'s spot` : `${withArticle(word)} spot`;
+    // A screen reader hears the hearts left; sighted players see them above the board (D40 review).
+    const left = rules.hearts ? `${plural(s.hearts, 'heart')} left.` : undefined;
     if (guide) {
       coach(`Not quite. That tile can't hold ${withArticle(word)}.`);
       const g = guide;
       scope.timeout(() => guide === g && coachGuide(g.text), 1800);
       // D40: kind words, no scorekeeping. The hearts above the board already show what's left; only the last one is
-      // worth a word, and that word is "take your time".
-    } else if (rules.hearts && s.hearts === 1) coach(`Not ${withArticle(word)} spot. One heart left, so take your time.`);
-    else if (!rules.hearts || s.hearts > 0) coach(`Not ${withArticle(word)} spot. It's marked for you, so there's no need to try it again.`);
+      // worth a word, and that word is "take your time". On a two-animal board the other animal may still live here.
+    } else if (rules.hearts && s.hearts === 1) coach(`Not ${spot}. One heart left, so take your time.`);
+    else if (!rules.hearts || s.hearts > 0) {
+      const which = solo ? 'it' : `${named ? word : `the ${word}`} here`;
+      coach(`Not ${spot}. It's marked for you, so there's no need to try ${which} again.`, left);
+    }
   }
 
   function onUnits(units: UnitRef[], why: string | null = null): void {
@@ -1057,7 +1072,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     track('onboarding_step', { step: 'two_step_offer' });
     const tip = h(`<div class="control-tip" data-two-step-offer role="note">
       <span class="control-tip__icon" aria-hidden="true">${ICON.info}</span>
-      <p class="control-tip__text">Double-tap a bit quick? With <b>two-step tap</b>, a second tap places, any time later. <button class="control-tip__link" data-act="use-two-step">Use two-step tap</button></p>
+      <p class="control-tip__text">Double taps coming a little slow? With <b>two-step tap</b>, a second tap places, any time later. <button class="control-tip__link" data-act="use-two-step">Use two-step tap</button></p>
       <button class="icon-btn icon-btn--bare control-tip__close" data-act="offer-close" aria-label="No thanks">${ICON.close}</button>
     </div>`);
     foot.prepend(tip);
