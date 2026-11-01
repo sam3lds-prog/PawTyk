@@ -28,6 +28,7 @@ import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
 import { animalInfo, withArticle, type AnimalId } from '../../meta/animals';
@@ -59,6 +60,12 @@ export const DOUBLE_TAP_MS = 380;
 
 /** In-memory ad cadence (resets each launch, which only makes ads rarer). */
 const cadence = { boardsSinceLast: 0, lastShownAt: null as number | null, shownToday: 0, day: '' };
+
+/** The board's "helps the …" chip: a region's short name; a place's first word (*Marula*), its full name in the label. */
+function chipName(id: SanctuaryId): string {
+  const d = sanctuaryDef(id);
+  return isPlaceId(id) ? d.name.split(' ')[0] : d.short;
+}
 
 export const gameScreen: ScreenDef = {
   tab: null,
@@ -135,7 +142,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
             <span class="status-left"><span data-progress class="num"></span><span class="status-board" aria-hidden="true">${n}×${n} · ${tierName}</span>${
               mode.kind === 'cup'
                 ? ''
-                : `<span class="status-for" data-for="${cast.sanctuary}" style="--accent:${sanctuaryDef(cast.sanctuary).accent}" title="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).short}`)}">${ICON.sprout}${esc(sanctuaryDef(cast.sanctuary).short)}</span>`
+                : `<span class="status-for" data-for="${cast.sanctuary}" style="--accent:${sanctuaryDef(cast.sanctuary).accent}" title="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}`)}">${ICON.sprout}<span class="status-for__name">${esc(chipName(cast.sanctuary))}</span></span>`
             }</span>
             ${rules.timer && settings.showTimer ? `<span class="game-timer num" data-timer aria-label="Time">${ICON.clock}<span>0:00</span></span>` : ''}
           </div>

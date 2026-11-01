@@ -155,6 +155,14 @@
 .world-pin.is-place.is-complete .world-pin__ring {
   --size: 22px;
 }
+/* A finished place (no news) is a check in its own color; its animals are in the album. */
+.world-pin.is-place.is-complete.is-quiet .world-pin__face {
+  color: var(--accent, var(--brand));
+}
+.world-pin.is-place.is-complete.is-quiet .world-pin__face .ico {
+  width: 12px;
+  height: 12px;
+}
 
 /* D39: finished homes, folded at the end of a long list. */
 .world-finished {
@@ -772,6 +780,32 @@
 .album__group h3 {
   margin: 0;
   font-size: var(--t-md);
+}
+/* A finished home's group in a long album (D39): one row that opens to its animals. */
+.album__fold > summary {
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.album__fold > summary::-webkit-details-marker {
+  display: none;
+}
+.album__fold > summary h3 {
+  flex: 1;
+  min-width: 0;
+}
+.album__fold > summary .ico {
+  width: 16px;
+  height: 16px;
+  color: var(--muted-ink);
+  transition: transform 160ms ease-out;
+}
+.album__fold[open] > summary .ico {
+  transform: rotate(90deg);
+}
+:root[data-motion='reduce'] .album__fold > summary .ico {
+  transition: none;
 }
 .win-world .reward-item__art {
   background: var(--canvas-deep);

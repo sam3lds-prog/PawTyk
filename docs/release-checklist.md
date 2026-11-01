@@ -141,6 +141,14 @@
 - [ ] A place's look (golden, autumn, blossom, misty, dusk) and a mirrored place look right on an older iPhone, with
       smooth scrolling (the looks are one static filter on the sky and land)
 - [ ] Journey path, chapter 5 and later: a real chapter name, and *Finish it and the … opens on the map*
+- [ ] While a place is being built: Shop → Decor and Treats open on the hand-made region of its biome, with a chip
+      selected and items to buy
+- [ ] 320-wide phone, a board for a place with a long name: the chip under the board ends in "…", nothing scrolls
+      sideways, the timer is whole
+- [ ] *Finish every open home* a few times, then World: the *Finished homes* row opens to its cards with no pause;
+      the album's finished homes are one row each and open to their animals
+- [ ] A toucan or seal of a place: its card never mentions a neckerchief; a kangaroo's toy has the big feet
+- [ ] 3D animals on: *Meet* after an arrival rings the ground under the newcomer's toy
 
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement

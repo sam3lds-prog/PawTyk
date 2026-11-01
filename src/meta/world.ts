@@ -33,8 +33,24 @@ type OpenSave = Pick<SaveV2, 'journey' | 'world'> & Partial<Pick<SaveV2, 'invent
  * everything always has somewhere new to build.
  */
 export function isOpen(save: OpenSave, id: SanctuaryId): boolean {
-  if (isPlaceId(id)) return placeIndex(id) <= openPlaceCount(save);
+  if (isPlaceId(id)) {
+    // Most places are open by level or because they have grown (cheap); only the one after those needs the full walk.
+    const k = placeIndex(id);
+    const n = placesOpenSoFar(save);
+    return k <= n || (k === n + 1 && openPlaceCount(save) > n);
+  }
   return cleared(save) >= sanctuaryDef(id).opensAfterLevel || growthOf(save, id) > 0;
+}
+
+/**
+ * Places open by level (closed form, nothing to generate) or because they have grown: the highest place that has grown
+ * was opened by the "everything before is complete" rule, and anything that has grown stays open (never take away).
+ */
+function placesOpenSoFar(save: OpenSave): number {
+  const c = cleared(save);
+  let n = c >= FIRST_PLACE_AFTER ? Math.min(MAX_PLACE, Math.floor((c - FIRST_PLACE_AFTER) / LEVELS_PER_PLACE) + 1) : 0;
+  for (const [key, g] of Object.entries(save.world.growth)) if ((g ?? 0) > 0 && isPlaceId(key)) n = Math.max(n, placeIndex(key));
+  return n;
 }
 
 /**
@@ -43,11 +59,7 @@ export function isOpen(save: OpenSave, id: SanctuaryId): boolean {
  * always places 1…N; one walk finds N.
  */
 export function openPlaceCount(save: OpenSave): number {
-  const c = cleared(save);
-  // Open by level: places 1…n (closed form, nothing to generate).
-  let n = c >= FIRST_PLACE_AFTER ? Math.min(MAX_PLACE, Math.floor((c - FIRST_PLACE_AFTER) / LEVELS_PER_PLACE) + 1) : 0;
-  // Opened earlier by the "everything before is complete" rule: the highest place that has grown.
-  for (const [key, g] of Object.entries(save.world.growth)) if ((g ?? 0) > 0 && isPlaceId(key)) n = Math.max(n, placeIndex(key));
+  const n = placesOpenSoFar(save);
   // Every home up to n finished: the next one opens now.
   const inv = save.inventory;
   if (!inv || n >= MAX_PLACE) return n;

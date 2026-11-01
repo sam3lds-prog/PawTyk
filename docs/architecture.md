@@ -131,10 +131,12 @@ region's own art, `ui/art/regions.ts::lookDefs`), mirroring, a pin inside the bi
 natives (new individuals of the biome's drawn species: name, coat, sometimes a neckerchief, a trait and a bio) plus,
 every other place of some biomes, a guest kind. `sanctuaryDef(id)` resolves any sanctuary; `world.isOpen` opens place k
 after level 60 + 20k or as soon as every home before it is complete (`openPlaceCount`, one walk; open places are always
-1…N); `world.worldIds` lists what this save's world has (the next place shows once every hand-made home is open). Art
+1…N, and any place that has grown counts as open, so nothing built is ever hidden); `world.worldIds` lists what this save's world has (the next place shows once every hand-made home is open). Art
 draws a wild animal as its species with its coat (`ui/art/companions.ts::artOf`), and its 3D toy is the species' toy
 recolored (`three/species.ts::wildToy`). Saves keep places and animals by id, so a shipped place must never change:
-`test/unit/fixtures/places-v1.json` pins the first forty (`scripts/places-fixture.ts`).
+`test/unit/fixtures/places-v1.json` pins the first forty (`scripts/places-fixture.ts`). A long world's folds (the World's
+finished homes, the album's finished groups) draw their contents on first open (`ui/components/fold.ts`); the Shop
+sells for the hand-made homes and opens on the one matching the biome being built.
 
 ## World map
 

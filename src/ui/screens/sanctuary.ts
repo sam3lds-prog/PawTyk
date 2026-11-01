@@ -14,7 +14,7 @@ import { bindFriendPanel, friendPanelMarkup, type FeedEvents } from '../componen
 import { unlockedCompanions, unlockedPets } from '../../meta/rewards';
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
-import { companionSvg, type FriendId } from '../art/companions';
+import { companionSvg, wearsNeckerchief, type FriendId } from '../art/companions';
 import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { animalInfo, animalsOf, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
 import { activeSanctuary, arrivalLine, arrivalProgress, markSeen, setActive } from '../../meta/world';
@@ -342,7 +342,7 @@ function habitatLabel(id: FriendId): string {
   if (isWildId(id)) {
     const w = wildDef(id);
     const where = sanctuaryDef(w.place);
-    return `${where.name}, ${where.place}${w.neckerchief ? '. Wears a neckerchief' : ''}`;
+    return `${where.name}, ${where.place}${wearsNeckerchief(id) ? '. Wears a neckerchief' : ''}`;
   }
   const c = COMPANION_BY_ID[id];
   if (c.sanctuary !== 'harmony') return `${sanctuaryDef(c.sanctuary).name}, ${sanctuaryDef(c.sanctuary).place.replace(/ · beginner$/, '')}`;

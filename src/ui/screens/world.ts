@@ -23,6 +23,7 @@ import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
 import { dismissLoopCoach, loopCoachMarkup, shouldShowLoopCoach } from '../components/loopCoach';
 import { sceneMarkup } from './sanctuary';
+import { wireFolds } from '../components/fold';
 
 const short = (d: SanctuaryDef) => d.short;
 
@@ -60,7 +61,10 @@ function statusLine(def: SanctuaryDef): string {
 
 /** The friend who stands for a sanctuary on its map pin: the first one home there, if any. */
 function pinFace(def: SanctuaryDef): string {
-  if (statusOf(def.id) === 'locked') return ICON.lock;
+  const st = statusOf(def.id);
+  if (st === 'locked') return ICON.lock;
+  // A finished place is a small check on the map (a long world has many; their faces are in the album).
+  if (st === 'complete' && isPlaceId(def.id) && !unseenIn(app.save, def.id)) return ICON.check;
   const first = homeAnimals(app.save, def.id)[0];
   return first ? animalPortrait(first, 'happy') : def.beginner ? ICON.home : ICON.sprout;
 }
@@ -98,7 +102,7 @@ export const worldScreen: ScreenDef = {
     scope.onDispose(() => (statusMemo = null));
     // Every home this save's world has: the six hand-made ones, each open place of the endless world, and the next (D39).
     const homes = worldIds(save).map(sanctuaryDef);
-    const openCount = homes.filter((d) => isOpen(save, d.id)).length;
+    const openCount = homes.filter((d) => statusOf(d.id) !== 'locked').length;
     const finishedCount = homes.filter((d) => statusOf(d.id) === 'complete').length;
     const level = save.journey.nextLevel;
 
@@ -171,7 +175,7 @@ export const worldScreen: ScreenDef = {
       withNews
         .slice(0, 3)
         .map((d) => `<button class="now-pill now-pill--news" data-go="${d.id}" style="--accent:${d.accent}">${ICON.sparkle}<span>${esc(newsLine(d.id).replace(/^New: /, ''))} · ${esc(short(d))}</span></button>`)
-        .join('') + (withNews.length > 3 ? `<button class="now-pill now-pill--news" data-act="others">${ICON.sparkle}<span>News in ${withNews.length - 3} more ${withNews.length - 3 === 1 ? 'home' : 'homes'}</span></button>` : '');
+        .join('') + (withNews.length > 3 ? `<button class="now-pill now-pill--news" data-act="more-news">${ICON.sparkle}<span>News in ${withNews.length - 3} more ${withNews.length - 3 === 1 ? 'home' : 'homes'}</span></button>` : '');
     const nextPill =
       upcoming && !unseenIn(save, upcoming.id)
         ? `<button class="now-pill now-pill--next" data-go="${upcoming.id}" style="--accent:${upcoming.def.accent}">${ICON.lock}<span>Next to open: ${esc(short(upcoming.def))} · after level ${upcoming.def.opensAfterLevel}</span></button>`
@@ -198,18 +202,18 @@ export const worldScreen: ScreenDef = {
     // Once the endless world has begun, the list leads with what's being built, then what's open, then what's next, with
     // the finished homes last; a long world keeps them in one fold, so the list doesn't grow with every home (D39). The
     // six hand-made homes alone keep their map order, as before.
+    // A finished home with news stays in the list until it is visited, so every news pill lands on a card you can see.
+    // The fold's cards are drawn when it opens: each has a thumbnail, and a long world has many (review of D39).
     const rank: Record<Status, number> = { building: 0, open: 1, locked: 2, complete: 3 };
     const ordered = homes.length > 6 ? [...homes].sort((a, b) => rank[statusOf(a.id)] - rank[statusOf(b.id)]) : homes;
-    const fold = homes.length > 8 && finishedCount > 0;
+    const folded = (d: SanctuaryDef) => homes.length > 8 && statusOf(d.id) === 'complete' && !unseenIn(save, d.id);
+    const foldedHomes = homes.filter(folded);
     const cards = ordered
-      .filter((d) => !fold || statusOf(d.id) !== 'complete')
+      .filter((d) => !folded(d))
       .map(card)
       .join('');
-    const finished = fold
-      ? `<details class="world-finished"><summary>${ICON.check}Finished homes <span class="num">${finishedCount}</span></summary><ul class="world-list">${homes
-          .filter((d) => statusOf(d.id) === 'complete')
-          .map(card)
-          .join('')}</ul></details>`
+    const finished = foldedHomes.length
+      ? `<details class="world-finished" data-fold="finished"><summary>${ICON.check}Finished homes <span class="num">${foldedHomes.length}</span></summary><ul class="world-list" data-fold-body></ul></details>`
       : '';
 
     // The loop, once (D39), wherever the player looks first; then, the first time here, one line on how the World works.
@@ -248,6 +252,7 @@ export const worldScreen: ScreenDef = {
         <button class="btn btn--secondary btn--block" data-act="album">${ICON.paw}Animal album</button>
       </div>`);
     root.appendChild(el);
+    wireFolds(scope, el, () => foldedHomes.map(card).join(''));
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
@@ -263,6 +268,14 @@ export const worldScreen: ScreenDef = {
       if (a.dataset.act === 'play') playMode({ kind: 'level', level: app.save.journey.nextLevel });
       else if (a.dataset.act === 'album') app.router.go({ screen: 'pets' });
       else if (a.dataset.act === 'others') el.querySelector('#sanct-title')?.scrollIntoView({ block: 'start', behavior: app.reducedMotion ? 'auto' : 'smooth' });
+      else if (a.dataset.act === 'more-news') {
+        // "News in N more homes" lands on the first of them (a home with news is always in the list, never in the fold).
+        const rest = new Set(withNews.slice(3).map((d) => d.id));
+        const first = [...el.querySelectorAll<HTMLElement>('.world-card')].find((c) => rest.has(c.dataset.go as SanctuaryDef['id'])) ?? null;
+        const target = first ?? el.querySelector<HTMLElement>('#sanct-title');
+        target?.scrollIntoView({ block: first ? 'center' : 'start', behavior: app.reducedMotion ? 'auto' : 'smooth' });
+        first?.focus({ preventScroll: true });
+      }
       else if (a.dataset.act === 'expand') {
         // A bigger map to pan around (twice the width, scrolled from the home being built); nothing else moves.
         const wrap = el.querySelector('[data-map-wrap]') as HTMLElement;

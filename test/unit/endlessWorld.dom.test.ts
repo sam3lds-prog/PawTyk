@@ -11,8 +11,9 @@ import { worldScreen } from '../../src/ui/screens/world';
 import { regionScreen } from '../../src/ui/screens/region';
 import { petsScreen } from '../../src/ui/screens/pets';
 import { journeyScreen } from '../../src/ui/screens/journey';
+import { shopScreen } from '../../src/ui/screens/shop';
 import { defaultSave } from '../../src/services/storage';
-import { SANCTUARIES } from '../../src/meta/catalogs/sanctuaries';
+import { SANCTUARIES, sanctuaryDef as sanctuaryDefOf } from '../../src/meta/catalogs/sanctuaries';
 import { PETS } from '../../src/meta/catalogs/pets';
 import { placeDef } from '../../src/meta/catalogs/places';
 import { finishOpenHomes, skipToLevel } from '../../src/app/qaTools';
@@ -25,8 +26,8 @@ function mount(): void {
   document.body.innerHTML = '<div id="app"></div>';
   router = new Router(document.getElementById('app')!);
   const reg = {} as Record<CanonicalRoute['screen'], ScreenDef>;
-  for (const k of ['shop', 'gallery', 'profile', 'sanctuary', 'game', 'challenges', 'welcome'] as const) reg[k] = blank;
-  router.register({ ...reg, world: worldScreen, region: regionScreen, pets: petsScreen, journey: journeyScreen });
+  for (const k of ['gallery', 'profile', 'sanctuary', 'game', 'challenges', 'welcome'] as const) reg[k] = blank;
+  router.register({ ...reg, shop: shopScreen, world: worldScreen, region: regionScreen, pets: petsScreen, journey: journeyScreen });
   app.router = router;
 }
 
@@ -72,13 +73,54 @@ describe('the endless world on screen (D39)', () => {
     skipToLevel(app.save, 141); // places 1–4 open by level
     finishOpenHomes(app.save);
     router.go({ screen: 'world' });
-    const fold = document.querySelector('details.world-finished')!;
+    const fold = document.querySelector<HTMLDetailsElement>('details.world-finished')!;
     expect(fold).not.toBeNull();
-    expect(fold.querySelectorAll('.world-card').length).toBeGreaterThanOrEqual(10);
+    // Its cards (each with a thumbnail) are drawn when it opens, not before.
+    expect(fold.querySelectorAll('.world-card').length).toBe(0);
+    (fold.querySelector('summary') as HTMLElement).click();
+    expect(fold.querySelectorAll('.world-card').length).toBeGreaterThanOrEqual(6);
+    expect(fold.querySelectorAll('.world-card.is-complete').length).toBe(fold.querySelectorAll('.world-card').length);
     // What's being built is in the open list, above the fold.
     const building = document.querySelector('.world-list > li .world-card.is-building');
     expect(building).not.toBeNull();
     expect(fold.contains(building)).toBe(false);
+  });
+
+  it('a finished home with news stays in the list until it is visited, so every news pill lands on a card', () => {
+    skipToLevel(app.save, 141);
+    finishOpenHomes(app.save);
+    const news = ['p1', 'p2', 'p3', 'farm', 'savanna'] as const;
+    app.save.world.unseen = {};
+    for (const id of news) app.save.world.unseen[id] = { animals: [], stage: null, opened: true, at };
+    router.go({ screen: 'world' });
+    const fold = document.querySelector('details.world-finished')!;
+    for (const id of news) {
+      const c = document.querySelector(`.world-card[data-go="${id}"]`);
+      expect(c, id).not.toBeNull();
+      expect(fold.contains(c)).toBe(false);
+    }
+    const more = document.querySelector<HTMLButtonElement>('[data-act="more-news"]')!;
+    expect(more.textContent).toMatch(/News in 2 more homes/);
+    more.click();
+    expect(['farm', 'savanna', 'p1', 'p2', 'p3']).toContain((document.activeElement as HTMLElement).dataset.go);
+  });
+
+  it('a long album folds each finished home into one row that opens to its animals', () => {
+    skipToLevel(app.save, 141);
+    finishOpenHomes(app.save);
+    router.go({ screen: 'pets' });
+    const farm = document.querySelector<HTMLDetailsElement>('details.album__fold[data-fold="farm"]')!;
+    expect(farm).not.toBeNull();
+    expect(farm.querySelectorAll('.pet-card').length).toBe(0);
+    (farm.querySelector('summary') as HTMLElement).click();
+    expect(farm.querySelectorAll('.pet-card').length).toBe(sanctuaryDefOf('farm').arrivals.length);
+    // The home being built is open as before.
+    const building = activeSanctuary(app.save)!;
+    expect(document.querySelector(`section.album__group[aria-label="${sanctuaryDefOf(building).name}"] .pet-card`)).not.toBeNull();
+    // Favorites aren't folded.
+    (document.querySelector('[data-filter="fav"]') as HTMLButtonElement).click();
+    expect(document.querySelector('details.album__fold')).toBeNull();
+    (document.querySelector('[data-filter="all"]') as HTMLButtonElement).click();
   });
 
   it("a place's screen shows its animals and its look, and no decorations", () => {
@@ -110,5 +152,17 @@ describe('the endless world on screen (D39)', () => {
     app.save.journey.nextLevel = 85;
     router.go({ screen: 'journey', view: 'path', chapter: 4 } as never);
     expect(document.querySelector('.chapter__place')?.textContent).toMatch(new RegExp(`Finish it and the ${placeDef(2).name} opens on the map`));
+  });
+
+  it('the Shop, while a place is being built, opens on the hand-made home of the same biome', () => {
+    const p1 = placeDef(1);
+    router.go({ screen: 'shop', tab: 'decor' } as never);
+    const chip = document.querySelector<HTMLElement>('.place-chip[aria-selected="true"]');
+    expect(chip?.dataset.place).toBe(p1.biome);
+    expect(document.querySelectorAll('.shop-section').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.shop-card[data-decor]').length).toBeGreaterThan(0);
+    // A stale link to a place's decor lands there too.
+    router.go({ screen: 'shop', sanctuary: 'p1' } as never);
+    expect(document.querySelector<HTMLElement>('.place-chip[aria-selected="true"]')?.dataset.place).toBe(p1.biome);
   });
 });

@@ -13,7 +13,7 @@ import { DECOR, DECOR_BY_ID, decorHome, decorTier, type DecorId, type DecorTier 
 import { FOODS, FOOD_BY_ID, foodsOf, type FoodId } from '../../meta/catalogs/foods';
 import { chapterAt } from '../../meta/chapters';
 import { buyDecor, decorPrice, decorUnlocked, owns, walletBalance } from '../../meta/sanctuary';
-import { sanctuaryDef, SANCTUARIES, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { biomeOfRegion, sanctuaryDef, SANCTUARIES, isBaseSanctuaryId, isRegionId, type BaseSanctuaryId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { activeSanctuary, isOpen } from '../../meta/world';
 import { buyFood, foodCount, FOOD_CAP_EACH } from '../../meta/feeding';
 import { grantGemPurchase, isGemPack } from '../../meta/gems';
@@ -41,7 +41,15 @@ type Tab = 'decor' | 'food' | 'tricks' | 'gems';
 const TAB_LABEL: Record<Tab, string> = { decor: 'Decor', food: 'Food', tricks: 'Tricks', gems: 'Gems' };
 /** The tab and sanctuary the player last looked at, for this app session. */
 let lastTab: Tab = 'decor';
-let lastPlace: SanctuaryId | null = null;
+let lastPlace: BaseSanctuaryId | null = null;
+
+/**
+ * The Shop sells for the hand-made homes only (D39: places of the endless world have no decorations). While a place is
+ * being built, the Shop opens on the hand-made region of the same biome: its decor, and the treats its animals know.
+ */
+function shopHome(id: SanctuaryId): BaseSanctuaryId {
+  return isBaseSanctuaryId(id) ? id : biomeOfRegion(id);
+}
 
 const placeShort = (id: SanctuaryId) => sanctuaryDef(id).short;
 /** Where a decoration's sanctuary is shown: the Pet Garden's screen, or the Farm's or a region's. */
@@ -67,11 +75,11 @@ export const shopScreen: ScreenDef = {
     let tab: Tab = lastTab;
     if (route.screen === 'shop' && route.sanctuary) {
       tab = lastTab = 'decor';
-      lastPlace = route.sanctuary;
+      lastPlace = shopHome(route.sanctuary);
     }
     if (route.screen === 'shop' && route.tab) tab = lastTab = route.tab;
     // The sanctuary you're building comes first, until you pick another.
-    let place: SanctuaryId = lastPlace ?? activeSanctuary(app.save) ?? 'farm';
+    let place: BaseSanctuaryId = lastPlace ?? shopHome(activeSanctuary(app.save) ?? 'farm');
     let products: ProductInfo[] = PRODUCT_CATALOG.map((p) => ({ ...p, price: null }));
     void iap.products().then((ps) => {
       if (!scope.alive) return;
@@ -288,7 +296,7 @@ export const shopScreen: ScreenDef = {
       }
       const pc = t.closest('[data-place]') as HTMLElement | null;
       if (pc) {
-        place = lastPlace = pc.dataset.place as SanctuaryId;
+        place = lastPlace = pc.dataset.place as BaseSanctuaryId;
         render();
         (el.querySelector(`[data-place="${place}"]`) as HTMLElement | null)?.focus();
         return;

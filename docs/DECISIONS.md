@@ -923,3 +923,26 @@ a solve grew nothing. For players who never stop, the world now keeps going.
   level and by finishing, the board's cast, reload and reconcile, the shortcut, chapters, drawing, coats on portrait,
   board face and toy), `test/unit/endlessWorld.dom.test.ts` (World, the fold, a place's screen, the album, the chapter
   card), `test/unit/difficulty.test.ts` (levels 300, 1000 and 5000 are sound boards).
+
+### Review fixes (independent review of the stack)
+- **The Shop while a place is being built** (its Decor tab was blank): the Shop sells for the hand-made homes only, so while a
+  place is being built it opens on the hand-made region of the same biome (its decor and the treats its animals know).
+  A stale link to a place's decor lands there too.
+- **The newcomer's ring under 3D toys** (PR A): it was drawn inside the figure's group, which the toys hide; it now
+  sits just before the figure in the scene, still behind the body, and the toy stands on it.
+- **The board's status chip at 320 px**: place names are long, so the chip shows a place's first word (*Marula*; its
+  label has the full name) and, if even that doesn't fit, gives way with "…"; the timer and progress count never shrink.
+- **A long world stays light**: the World's fold of finished homes and the album's finished groups draw their cards
+  (a thumbnail or a row of portraits per home) the first time they open (`ui/components/fold.ts`). A finished home with
+  news stays in the list until it is visited, so *News in N more homes* always lands on a card you can see (it now has
+  its own action, so *Build elsewhere* still goes to the list). Favorites in the album are never folded.
+- **Neckerchiefs**: some kinds have no chin to tie one under (a toucan, a seal); an animal of those kinds never wears its
+  own, and now its card no longer says it does (`companions.ts::wearsNeckerchief`, the same test the art uses). The
+  recipe (and the fixture) are unchanged.
+- **3D toys of new animals keep their species' shape**: a recolored toy keeps its species' id, so the builder's
+  per-species touches (a kangaroo's big feet) apply.
+- **"Never take away" for places**: `openPlaceCount` also counts any place that has grown, so a save that somehow grew a
+  later place (an edited save, a future rule) opens everything up to it rather than hiding a home the player built.
+- Measured: at 150 places the World's first draw was about 2.3 MB of markup (1.9 MB of it the fold) and 0.8–0.9 s on a
+  4× slowed CPU; the fold is now empty until opened. Looking far ahead (place 9999) the first time walks every place
+  before it once (about 1.6 s); only tools do that today, and the walk is cached.

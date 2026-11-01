@@ -37,7 +37,7 @@ import { chapterAt, placeAfterChapter } from '../../src/meta/chapters';
 import { animalKindOf } from '../../src/meta/feeding';
 import { defaultSave, normalizeSave, type SaveV2 } from '../../src/services/storage';
 import { regionScene } from '../../src/ui/art/regions';
-import { companionSvg, friendRigBody } from '../../src/ui/art/companions';
+import { companionSvg, friendRigBody, wearsNeckerchief } from '../../src/ui/art/companions';
 import { toySpec } from '../../src/three/species';
 import { finishOpenHomes, skipToLevel } from '../../src/app/qaTools';
 
@@ -271,9 +271,26 @@ describe('drawing the endless world', () => {
     expect(companionSvg(w.id)).toContain('class="sp-neck"');
     expect(friendRigBody(w.id)).toContain('class="sp-neck"');
     const toy = toySpec(w.id)!;
-    expect(toy.id).toBe(w.id);
+    expect(toy.id).toBe(w.base); // built as its species
     expect(toy.fur).toBe(w.coat.fur);
     expect(toy.fur).not.toBe(toySpec(w.base)!.fur);
+  });
+
+  it("an animal's card says it wears a neckerchief only when one is drawn", () => {
+    const all = Array.from({ length: 40 }, (_, i) => placeDef(i + 1).animals).flat();
+    const drawn = all.filter((a) => a.neckerchief && wearsNeckerchief(a.id));
+    const undrawn = all.filter((a) => a.neckerchief && !wearsNeckerchief(a.id));
+    expect(drawn.length).toBeGreaterThan(0);
+    expect(undrawn.length).toBeGreaterThan(0); // a toucan, say: no chin to tie it under
+    for (const a of undrawn) expect(companionSvg(a.id)).not.toContain('class="sp-neck"');
+    for (const a of drawn) expect(companionSvg(a.id)).toContain('class="sp-neck"');
+    expect(all.filter((a) => !a.neckerchief).every((a) => !wearsNeckerchief(a.id))).toBe(true);
+  });
+
+  it("a kangaroo of the endless world keeps the kangaroo's big feet as a toy", () => {
+    const roo = Array.from({ length: 60 }, (_, i) => placeDef(i + 1).animals).flat().find((a) => a.base === 'skipper');
+    expect(roo).toBeDefined();
+    expect(toySpec(roo!.id)!.id).toBe('skipper');
   });
 
   it('every place in the first hundred draws without throwing', () => {

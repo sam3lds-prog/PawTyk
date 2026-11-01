@@ -446,6 +446,14 @@ function artOf(id: FriendId): { base: CompanionId; p: Pal; neck: string | null }
   return { base: id, p: PAL[id], neck: null };
 }
 
+/**
+ * Whether a friend is drawn with a neckerchief: some kinds have no chin to tie one under (a toucan, a seal), so an animal
+ * of those kinds never wears its own, and nothing should say it does (review of D39).
+ */
+export function wearsNeckerchief(id: FriendId): boolean {
+  return artOf(id).neck !== null;
+}
+
 /** The friend's name, for figures' data attributes. */
 function friendName(id: FriendId): string {
   return isWildId(id) ? wildDef(id).name : COMPANION_BY_ID[id].name;

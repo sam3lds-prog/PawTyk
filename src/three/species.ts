@@ -516,7 +516,8 @@ const wildCache = new Map<string, ToySpec>();
 /**
  * An animal of the endless world as a toy (D39): its species' toy, with every color that came from the species' 2D
  * palette swapped for the coat's (fur, its shade, light, dark, accent); colors that aren't the coat (a beak's pattern,
- * the eyes, the cheeks) stay. The neckerchief is 2D only for now.
+ * the eyes, the cheeks) stay. The neckerchief is 2D only for now. The spec keeps its species' id: the toy builder
+ * shapes some species by id (a kangaroo's big feet), and the stage keys its toys by the figure, not the spec.
  */
 function wildToy(id: string): ToySpec | null {
   const hit = wildCache.get(id);
@@ -539,7 +540,7 @@ function wildToy(id: string): ToySpec | null {
     if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
     return v;
   };
-  const spec = { ...(walk(base) as ToySpec), id };
+  const spec = { ...(walk(base) as ToySpec), id: base.id };
   wildCache.set(id, spec);
   return spec;
 }

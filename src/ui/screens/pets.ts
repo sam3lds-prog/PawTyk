@@ -12,7 +12,8 @@ import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
 import type { CompanionId } from '../../meta/catalogs/companions';
-import { sanctuaryDef } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef, type SanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { wireFolds } from '../components/fold';
 import { animalInfo, animalsOf, isHome, nextArrivalIn } from '../../meta/animals';
 import { activeSanctuary, arrivalProgress, isOpen, worldIds } from '../../meta/world';
 import { friendPortrait, showFriendSheet } from './sanctuary';
@@ -27,6 +28,37 @@ export const petsScreen: ScreenDef = {
     const el = h(`<div class="pets"></div>`);
     root.appendChild(el);
 
+    const show = (id: string) => {
+      const save = app.save;
+      return lastFilter === 'all' ? true : lastFilter === 'home' ? isHome(save, id as PetId) : !!save.inventory.favorites[id];
+    };
+    function cardsOf(sd: SanctuaryDef): string {
+      const save = app.save;
+      const nextId = nextArrivalIn(save, sd.id)?.id;
+      const open = isOpen(save, sd.id);
+      return animalsOf(sd.id)
+        .filter(show)
+        .map((id) => {
+          const a = animalInfo(id);
+          const ownsIt = isHome(save, id);
+          const fav = !!save.inventory.favorites[id];
+          const isNext = !ownsIt && id === nextId;
+          const when = !open ? `Opens after level ${sd.opensAfterLevel}` : isNext ? 'Coming home next' : 'Arrives later';
+          const attr = isPetId(id) ? `data-pet="${id}"` : `data-friend="${id}"`;
+          const shown = ownsIt || (isNext && open);
+          const art = isPetId(id) ? portrait(id, ownsIt ? 'happy' : 'idle', !shown) : friendPortrait(id as CompanionId, !shown);
+          return `<li><button class="pet-card card card--tap ${ownsIt ? '' : 'is-locked'}" ${attr} aria-label="${esc(ownsIt ? `${a.name} the ${a.noun}, ${a.trait}${fav ? ', favorite' : ''}` : `${shown ? a.name : `A ${a.noun}`}. ${when}`)}">
+                ${fav ? `<span class="pet-card__fav" aria-hidden="true">${ICON.heart}</span>` : ''}
+                ${art}
+                <span class="pet-card__name">${shown ? esc(a.name) : '???'}</span>
+                <span class="pet-card__trait">${ownsIt ? esc(a.trait) : esc(when)}</span>
+                <span class="chip">${esc(a.kind)}</span>
+              </button></li>`;
+        })
+        .join('');
+    }
+    wireFolds(scope, el, (key) => cardsOf(sanctuaryDef(key as SanctuaryId)));
+
     function render(): void {
       const save = app.save;
       const building = activeSanctuary(save);
@@ -40,34 +72,21 @@ export const petsScreen: ScreenDef = {
         ['home', 'Home'],
         ['fav', 'Favorites'],
       ];
-      const show = (id: string) => (lastFilter === 'all' ? true : lastFilter === 'home' ? isHome(save, id as PetId) : !!save.inventory.favorites[id]);
+      // A long world (D39) folds each finished home's group; its cards are drawn when it opens. Favorites stay unfolded.
+      const long = homes.length > 8 && lastFilter !== 'fav';
       const groups = homes.map((sd) => {
         const ids = animalsOf(sd.id).filter(show);
         if (!ids.length) return '';
         const n = animalsOf(sd.id).filter((a) => isHome(save, a)).length;
-        const nextId = nextArrivalIn(save, sd.id)?.id;
-        const open = isOpen(save, sd.id);
+        const head = `<h3>${esc(sd.name)}</h3><span class="muted num">${n} of ${sd.arrivals.length}</span>`;
+        if (long && n === sd.arrivals.length)
+          return `<details class="album__group album__fold" data-fold="${sd.id}" aria-label="${esc(sd.name)}">
+            <summary class="section-head">${head}${ICON.chevron}</summary>
+            <ul class="pet-grid" data-fold-body></ul>
+          </details>`;
         return `<section class="album__group" aria-label="${esc(sd.name)}">
-          <div class="section-head"><h3>${esc(sd.name)}</h3><span class="muted num">${n} of ${sd.arrivals.length}</span></div>
-          <ul class="pet-grid">${ids
-            .map((id) => {
-              const a = animalInfo(id);
-              const ownsIt = isHome(save, id);
-              const fav = !!save.inventory.favorites[id];
-              const isNext = !ownsIt && id === nextId;
-              const when = !open ? `Opens after level ${sd.opensAfterLevel}` : isNext ? 'Coming home next' : 'Arrives later';
-              const attr = isPetId(id) ? `data-pet="${id}"` : `data-friend="${id}"`;
-              const shown = ownsIt || (isNext && open);
-              const art = isPetId(id) ? portrait(id, ownsIt ? 'happy' : 'idle', !shown) : friendPortrait(id as CompanionId, !shown);
-              return `<li><button class="pet-card card card--tap ${ownsIt ? '' : 'is-locked'}" ${attr} aria-label="${esc(ownsIt ? `${a.name} the ${a.noun}, ${a.trait}${fav ? ', favorite' : ''}` : `${shown ? a.name : `A ${a.noun}`}. ${when}`)}">
-                ${fav ? `<span class="pet-card__fav" aria-hidden="true">${ICON.heart}</span>` : ''}
-                ${art}
-                <span class="pet-card__name">${shown ? esc(a.name) : '???'}</span>
-                <span class="pet-card__trait">${ownsIt ? esc(a.trait) : esc(when)}</span>
-                <span class="chip">${esc(a.kind)}</span>
-              </button></li>`;
-            })
-            .join('')}</ul>
+          <div class="section-head">${head}</div>
+          <ul class="pet-grid">${cardsOf(sd)}</ul>
         </section>`;
       }).join('');
       el.innerHTML = `
