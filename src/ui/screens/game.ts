@@ -32,6 +32,7 @@ import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
 import { animalInfo, withArticle, type AnimalId } from '../../meta/animals';
+import { TEMPERAMENT_INFO, temperamentOf } from '../../meta/temperament';
 import { castFor, castWord, type Cast } from '../../meta/cast';
 import { queueSolve, syncLeaderboard } from '../../app/leaderboardSync';
 import { decorIcon } from '../art/sanctuary';
@@ -1222,7 +1223,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (growth?.stageUp) track('region_stage', { region: growth.sanctuary, stage: stageOf(app.save, growth.sanctuary) });
     for (const c of growth?.arrived ?? []) track('animal_arrived', { animal: c, sanctuary: growth!.sanctuary });
     feel('solved');
-    coach('Harmony restored.');
+    coach('Puzzle solved!');
     // The board locks and glows for a beat (faces smile in a wave), then the results rise in stages. Nothing waits on
     // the animation: the sheet's buttons work the moment it opens, and a tap reveals everything at once.
     if (queued) void syncLeaderboard();
@@ -1265,6 +1266,21 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     return null;
   }
 
+  /** The milestone's headline, as the win sheet's own title (D40: the reward first, the accounting folded away). */
+  function heroTitle(g: GrowthNews, hero: NonNullable<Hero>): string {
+    const def = sanctuaryDef(g.sanctuary);
+    switch (hero.kind) {
+      case 'opened':
+        return `The ${sanctuaryDef(hero.region).name} is open!`;
+      case 'arrived':
+        return `${animalInfo(hero.animal).name} is home!`;
+      case 'completed':
+        return `The ${def.name} is complete!`;
+      case 'stage':
+        return `${def.short}: ${g.stageUp!.name}!`;
+    }
+  }
+
   /** The milestone, as the centerpiece of the win sheet (in place of the small appreciative face). */
   function heroMarkup(g: GrowthNews, hero: NonNullable<Hero>): string {
     const def = sanctuaryDef(g.sanctuary);
@@ -1274,38 +1290,38 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         const art = isRegionId(hero.region) ? `<svg viewBox="0 40 360 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${regionThumb(hero.region, 0, 'win-hero')}</svg>` : '';
         return `<div class="win-hero win-hero--opened" style="--accent:${r.accent}" data-hero="opened">
           <div class="win-hero__scene">${art}<span class="win-hero__badge">${ICON.globe}New</span></div>
-          <h3 class="win-hero__title">The ${esc(r.name)} is open!</h3>
           <p class="win-hero__sub">${esc(r.blurb)}</p>
         </div>`;
       }
       case 'arrived': {
+        // D40: the animal first. Its face, what it is to you, and one thing about its character.
         const a = animalInfo(hero.animal);
+        const t = TEMPERAMENT_INFO[temperamentOf(hero.animal)];
         return `<div class="win-hero win-hero--arrived" style="--accent:${def.accent}" data-hero="arrived">
           <div class="win-hero__portrait portrait" style="--tint:${def.accent}">${animalPortrait(hero.animal, 'happy')}<span class="win-hero__badge">${ICON.heart}Home</span></div>
-          <h3 class="win-hero__title">${esc(a.name)} the ${esc(a.noun)} came home!</h3>
-          <p class="win-hero__sub">${esc(/[.!?]$/.test(a.trait) ? a.trait : `${a.trait}.`)} Now living at the ${esc(def.short)}.</p>
+          <p class="win-hero__kicker">Your new ${esc(a.noun)}</p>
+          <p class="win-hero__sub">A new little friend has arrived at the ${esc(def.short)}.</p>
+          <p class="win-hero__temper"><span class="chip chip--temper">${esc(t.label)}</span><span>${esc(a.name)} ${esc(t.greets)}.</span></p>
         </div>`;
       }
       case 'completed':
         return `<div class="win-hero win-hero--stage" style="--accent:${def.accent}" data-hero="completed">
           <div class="win-hero__icon">${ICON.sparkle}</div>
-          <h3 class="win-hero__title">The ${esc(def.name)} is complete!</h3>
           <p class="win-hero__sub">Every friend has a home.${g.coins ? ` <b class="num">+${g.coins}</b> Paw Coins.` : ''}</p>
         </div>`;
       case 'stage':
         return `<div class="win-hero win-hero--stage" style="--accent:${def.accent}" data-hero="stage">
           <div class="win-hero__icon">${ICON.sprout}</div>
-          <h3 class="win-hero__title">${esc(def.short)}: ${esc(g.stageUp!.name)}!</h3>
           <p class="win-hero__sub">${esc(g.stageUp!.change)}.</p>
         </div>`;
     }
   }
 
   /**
-   * What this solve did for the world, below the stats: anything the hero didn't already show (a second region, more
-   * arrivals, a stage reached on the same solve as an arrival), then how far the next animal is.
+   * What else this solve did for the world: anything the hero didn't already show (a second region, more arrivals, a
+   * stage reached on the same solve as an arrival). How far the next animal is comes separately (`nextFriendMarkup`).
    */
-  function growthMarkup(g: GrowthNews | null, hero: Hero, step: WorldStep): string {
+  function growthMarkup(g: GrowthNews | null, hero: Hero): string {
     if (!g) return '';
     const parts: string[] = [];
     for (const r of g.opened) {
@@ -1336,7 +1352,6 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         parts.push(
           `<div class="win-growth is-up" style="--accent:${def.accent}">${ICON.sprout}<span><b>${esc(def.short)}: ${esc(g.stageUp.name)}!</b> ${esc(g.stageUp.change)}.</span></div>`,
         );
-      parts.push(nextFriendMarkup(g.sanctuary, true, step.friendBefore));
     }
     return parts.length ? `<div class="win-world">${parts.join('')}</div>` : '';
   }
@@ -1361,13 +1376,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (!where) return upNextMarkup(null);
     const p = arrivalProgress(app.save, where);
     const def = sanctuaryDef(where);
-    const plus = grew ? `<b class="win-plus">${esc(def.short)} +1</b> · ` : '';
+    // D40: the step is its own small celebration ("Meadow Farm +1"), then what it brought closer, in a few words.
+    const plus = grew ? `<p class="win-plus-line" style="--accent:${def.accent}"><b class="win-plus">${esc(def.name)} +1</b></p>` : '';
     if (!p) {
       const st = nextStage(app.save, where);
       // Finished here: the line points at what the next puzzle helps instead (D39), so a win always says what's next.
-      if (!st) return upNextMarkup(where);
+      if (!st) return plus + upNextMarkup(where);
       const left = st.need - st.have;
-      return `<div class="win-growth" style="--accent:${def.accent}">${ICON.sprout}<span>${plus}${left === 1 ? 'one more puzzle' : `${left} more puzzles`} to ${esc(st.stage.name.toLowerCase())}</span></div>`;
+      const away = left === 1 ? 'one more puzzle' : `${left} more puzzles`;
+      return `${plus}<div class="win-growth" style="--accent:${def.accent}">${ICON.sprout}<span class="win-growth__body">${grew ? `<b class="win-closer">One puzzle closer to ${esc(st.stage.name)}!</b><small>${esc(capitalize(away))} to go</small>` : `<span>${esc(capitalize(away))} to ${esc(st.stage.name.toLowerCase())}</span>`}</span></div>`;
     }
     const a = animalInfo(p.next.id);
     const span = Math.max(1, p.need - p.from);
@@ -1375,8 +1392,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const sameFriend = grew && before && before.next.id === p.next.id;
     const pct0 = sameFriend ? Math.round(((before.have - before.from) / Math.max(1, before.need - before.from)) * 100) : pct;
     const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
-    const line = sameFriend && before.left !== p.left ? `<b>${esc(a.name)} the ${esc(a.noun)}</b>: <span class="num">${before.left} → ${p.left}</span> ${p.left === 1 ? 'puzzle' : 'puzzles'} away` : `<b>${esc(a.name)} the ${esc(a.noun)}</b> is on the way: ${away}`;
-    return `<div class="win-next-friend" style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body"><span>${plus}${line}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span></span></div>`;
+    const step = sameFriend && before.left !== p.left ? `${esc(a.name)} the ${esc(a.noun)}: <span class="num">${before.left} → ${p.left}</span> ${p.left === 1 ? 'puzzle' : 'puzzles'} away` : `${esc(a.name)} the ${esc(a.noun)} is on the way: ${away}`;
+    const head = grew ? `<b class="win-closer">One puzzle closer to ${esc(a.name)}!</b>` : '';
+    return `${plus}<div class="win-next-friend" style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body">${head}<span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span>${grew ? `<small>${step}</small>` : `<span>${step.replace(/^([^:]+?)( is on the way|:)/, '<b>$1</b>$2')}</span>`}</span></div>`;
   }
 
   /**
@@ -1500,53 +1518,77 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const badges: string[] = [];
     if (rec.clean) badges.push(`<span class="chip chip--brand">${ICON.check}Clean solve</span>`);
     if (rec.isBest && rec.prevBest !== null) badges.push(`<span class="chip chip--gold">${ICON.sparkle}New best</span>`);
-    if (mode.kind === 'daily' && rec.streak) badges.push(`<span class="chip chip--coral">${ICON.flame}${plural(rec.streak, 'day')} streak</span>`);
     if (rec.usedCozyDay) badges.push(`<span class="chip">Cozy Day kept your streak</span>`);
+    const streak = mode.kind === 'daily' && rec.streak ? `<span class="chip chip--coral">${ICON.flame}${plural(rec.streak, 'day')} streak</span>` : '';
     const stars =
       mode.kind === 'level'
-        ? `<div class="win-stars" role="img" aria-label="${rec.stars} of 3 stars">${[1, 2, 3].map((i) => (i <= rec.stars ? ICON.star : ICON.starOff)).join('')}</div>`
+        ? `<div class="win-stars${milestone ? '' : ' win-stars--small'}" role="img" aria-label="${rec.stars} of 3 stars">${[1, 2, 3].map((i) => (i <= rec.stars ? ICON.star : ICON.starOff)).join('')}</div>`
         : '';
+    const stats = `<div class="stats">
+            <div class="stat"><div class="stat__v">${fmtClock(seconds)}</div><div class="stat__k">${rules.timer ? 'time' : 'time (untimed)'}</div></div>
+            <div class="stat"><div class="stat__v">${s.mistakes}</div><div class="stat__k">${s.mistakes === 1 ? 'mistake' : 'mistakes'}</div></div>
+            <div class="stat"><div class="stat__v">${s.hintsUsed}</div><div class="stat__k">${s.hintsUsed === 1 ? 'hint' : 'hints'}</div></div>
+          </div>`;
+    // What the next puzzle brings closer: the step this solve took, or (a replay, a finished home) what's up next.
+    const nextLine = growth?.growth ? nextFriendMarkup(growth.sanctuary, true, step.friendBefore) : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save));
+    const redirect = growth?.growth && growth.redirectedFrom ? `<p class="win-note muted">${ICON.info}The ${esc(sanctuaryDef(growth.redirectedFrom).name)} is finished, so this board helped the ${esc(sanctuaryDef(growth.sanctuary).short)} instead.</p>` : '';
+    // D40: the first view is the reward. A milestone: the event itself (the newcomer, a new home), and any other news of
+    // this solve. An ordinary win: the stars, the step the world took, and what it brought closer. Everything else (time,
+    // badges, coins, points, missions) is one tap away in a fold under the buttons, with what it holds in its summary.
+    const first =
+      milestone && hero && growth
+        ? `${heroMarkup(growth, hero)}${growthMarkup(growth, hero)}`
+        : `${winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}${stars}${streak ? `<div class="win-badges">${streak}</div>` : ''}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}`;
+    const details = [
+      milestone ? stars : '',
+      milestone && streak ? `<div class="win-badges">${streak}</div>` : '',
+      stats,
+      badges.length ? `<div class="win-badges">${badges.join('')}</div>` : '',
+      skillMarkup(),
+      step.replay ? '' : replayMarkup(rec, seconds),
+      pointsMarkup(rewards),
+      rewardsMarkup(rewards),
+      newsMarkup(news),
+      milestone ? `<div class="win-world">${nextLine}</div>` : step.replay ? nextLine : '',
+      `<div class="win-secondary"><button class="btn btn--quiet" data-act="share" aria-label="Share result">${ICON.share}Share</button></div>`,
+    ].join('');
+    // The fold's summary says what's inside, so nothing is hidden by surprise.
+    const holds: string[] = [];
+    if (rewards.coins) holds.push(`+${rewards.coins} coins`);
+    if (rewards.points) holds.push(`+${rewards.points} Paw Points`);
+    if (news.achievements.length) holds.push(plural(news.achievements.length, 'badge'));
+    if (news.missions.length) holds.push(news.missions.length === 1 ? 'a mission done' : `${news.missions.length} missions done`);
+    if (rewards.decor.length) holds.push(rewards.decor.length === 1 ? 'a gift' : `${rewards.decor.length} gifts`);
+    if (rewards.lives) holds.push(`+${plural(rewards.lives, 'extra life', 'extra lives')}`);
+    if (rewards.hints) holds.push(`+${plural(rewards.hints, 'hint')}`);
+    const visitQuiet =
+      mode.kind === 'cup'
+        ? ''
+        : worldVisit
+          ? `<button class="btn btn--quiet" data-act="region">${ICON.globe}Visit the ${esc(sanctuaryDef(worldVisit).short)}</button>`
+          : growth?.growth
+            ? `<button class="btn btn--quiet" data-act="region">${ICON.home}Visit the ${esc(sanctuaryDef(growth.sanctuary).short)}</button>`
+            : `<button class="btn btn--quiet" data-act="sanctuary">${ICON.home}Visit sanctuary</button>`;
     sheet = openSheet(scope, {
-      title: 'Harmony restored!',
+      title: milestone && hero && growth ? heroTitle(growth, hero) : 'Puzzle solved!',
       center: true,
       dismissible: false,
       className: `win-sheet${milestone ? ' win-sheet--milestone' : ''}`,
       body: `
-        ${milestone && hero && growth ? heroMarkup(growth, hero) : winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}
-        <div class="win-stage win-stage-1">
-          ${stars}
-          <div class="stats">
-            <div class="stat"><div class="stat__v">${fmtClock(seconds)}</div><div class="stat__k">${rules.timer ? 'time' : 'time (untimed)'}</div></div>
-            <div class="stat"><div class="stat__v">${s.mistakes}</div><div class="stat__k">${s.mistakes === 1 ? 'mistake' : 'mistakes'}</div></div>
-            <div class="stat"><div class="stat__v">${s.hintsUsed}</div><div class="stat__k">${s.hintsUsed === 1 ? 'hint' : 'hints'}</div></div>
-          </div>
-        </div>
-        <div class="win-stage win-stage-2">
-          ${badges.length ? `<div class="win-badges">${badges.join('')}</div>` : ''}
-          ${skillMarkup()}
-          ${cupMarkup(cupScore)}
-          ${pointsMarkup(rewards)}
-          ${replayMarkup(rec, seconds)}
-        </div>
-        <div class="win-stage win-stage-3">
-          ${rewardsMarkup(rewards)}
-          ${growthMarkup(growth, hero, step)}
-          ${newsMarkup(news)}
-          ${growth?.growth ? '' : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save))}
-        </div>
-        <div class="sheet__actions">
+        <div class="win-stage win-stage-1">${first}</div>
+        <div class="sheet__actions win-stage win-stage-2">
           ${
             milestone
               ? `<button class="btn btn--block" data-act="${visitAct}" data-autofocus>${esc(primaryLabel)}</button>
-          <button class="btn btn--secondary btn--block" data-act="next">${esc(nextLabel)}</button>
-          <div class="win-secondary"><button class="btn btn--quiet" data-act="share" aria-label="Share result">${ICON.share}Share</button></div>`
+          <button class="btn btn--secondary btn--block" data-act="next">${esc(nextLabel)}</button>`
               : `<button class="btn btn--block" data-act="next" data-autofocus>${esc(primaryLabel)}</button>
-          <div class="win-secondary">
-            ${mode.kind === 'cup' ? '' : worldVisit ? `<button class="btn btn--quiet" data-act="region">${ICON.globe}Visit the ${esc(sanctuaryDef(worldVisit).short)}</button>` : growth?.growth ? `<button class="btn btn--quiet" data-act="region">${ICON.home}Visit the ${esc(sanctuaryDef(growth.sanctuary).short)}</button>` : `<button class="btn btn--quiet" data-act="sanctuary">${ICON.home}Visit sanctuary</button>`}
-            <button class="btn btn--quiet" data-act="share" aria-label="Share result">${ICON.share}Share</button>
-          </div>`
+          ${visitQuiet ? `<div class="win-secondary">${visitQuiet}</div>` : ''}`
           }
-        </div>`,
+        </div>
+        <details class="win-more win-stage win-stage-3" data-win-more>
+          <summary class="win-more__summary"><span class="win-more__text"><b class="win-more__label">${holds.length ? 'More rewards' : 'Details'}</b><small class="win-more__holds">${esc(holds.length ? holds.join(' · ') : 'Time, mistakes and hints')}</small></span>${ICON.chevron}</summary>
+          <div class="win-more__body">${details}</div>
+        </details>`,
     });
     const ws = sheet;
     let leaving = false;

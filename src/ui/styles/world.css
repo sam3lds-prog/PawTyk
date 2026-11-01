@@ -747,6 +747,102 @@
 .win-sheet.is-revealed .win-plus {
   animation: none;
 }
+
+/* D40: the win's first view is the reward; the accounting waits in one fold under the buttons. */
+.win-plus-line {
+  margin: 0;
+  text-align: center;
+}
+.win-plus-line .win-plus {
+  font-size: var(--t-sm);
+  padding: 3px 12px;
+}
+.win-closer {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.win-growth__body small {
+  color: var(--muted-ink);
+  font-weight: 700;
+  font-size: var(--t-xs);
+}
+.win-stars--small .ico {
+  width: 24px;
+  height: 24px;
+}
+.win-more {
+  margin-top: var(--s2);
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.win-more > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 48px;
+  padding: 6px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.win-more > summary::-webkit-details-marker {
+  display: none;
+}
+.win-more__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.win-more__label {
+  font-weight: 800;
+  color: var(--ink);
+}
+.win-more__holds {
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+.win-more > summary .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--muted-ink);
+  transition: transform 160ms ease-out;
+}
+.win-more[open] > summary .ico {
+  transform: rotate(90deg);
+}
+:root[data-motion='reduce'] .win-more > summary .ico {
+  transition: none;
+}
+.win-more__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s2) 0 var(--s3);
+  text-align: center;
+}
+/* The newcomer (D40): what it is to you, and its character. */
+.win-hero__kicker {
+  margin: var(--s2) 0 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--ink);
+}
+.win-hero__temper {
+  display: flex;
+  gap: var(--s2);
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+  max-width: 32ch;
+  font-size: var(--t-sm);
+  color: var(--ink);
+}
 .reward-item--arrival .reward-item__art svg {
   width: 100%;
   height: 100%;
@@ -1329,4 +1425,51 @@
   width: 16px;
   height: 16px;
   color: var(--accent, var(--brand));
+}
+
+/* ------------------------------------------------------------------ the next goal (D40, after a welcome) */
+.next-goal {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: win-rise 380ms var(--ease) both;
+}
+.next-goal__art {
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+.next-goal__art--icon {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+}
+.next-goal__art--icon .ico {
+  width: 24px;
+  height: 24px;
+}
+.next-goal__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.next-goal__kicker {
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.next-goal__play {
+  flex: none;
+}
+:root[data-motion='reduce'] .next-goal {
+  animation: none;
 }

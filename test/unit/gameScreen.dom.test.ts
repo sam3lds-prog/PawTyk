@@ -453,7 +453,11 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
     solveBoard();
     const sh = sheet()!;
     expect(sh.classList.contains('win-sheet--milestone')).toBe(true);
-    expect(sh.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/Truffle the piglet came home!/);
+    // D40: the animal first — its name as the title, what it is to you, and its character.
+    expect(sh.querySelector('h2')?.textContent).toBe('Truffle is home!');
+    expect(sh.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/Your new piglet/);
+    expect(sh.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/A new little friend has arrived/);
+    expect(sh.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/Playful.*Truffle is curious about everything/);
     const blocks = [...sh.querySelectorAll<HTMLElement>('.sheet__actions .btn--block')];
     expect(blocks.map((b) => [b.dataset.act, b.textContent])).toEqual([
       ['meet', 'Meet Truffle'],
@@ -472,7 +476,8 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
     start(10);
     solveBoard();
     const sh = sheet()!;
-    expect(sh.querySelector('[data-hero="opened"]')?.textContent).toMatch(/The Outback Sanctuary is open!/);
+    expect(sh.querySelector('[data-hero="opened"]')).not.toBeNull();
+    expect(sh.querySelector('h2')?.textContent).toBe('The Outback Sanctuary is open!');
     // The arrival still shows, below.
     expect(sh.textContent).toMatch(/Truffle the piglet came home to the Farm/);
     const primary = sh.querySelector<HTMLElement>('.sheet__actions .btn--block')!;
@@ -502,6 +507,48 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
     expect(sheet()!.textContent).not.toMatch(/\+1/);
   });
 
+  describe('the reward first, the accounting folded (D40 PR C)', () => {
+    it("an ordinary win's first view: Puzzle solved!, small stars, Meadow Farm +1, one puzzle closer, Play next", () => {
+      app.save.world.growth.farm = 1;
+      app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+      start(6);
+      solveBoard();
+      const w = sheet()!;
+      expect(w.querySelector('h2')?.textContent).toBe('Puzzle solved!');
+      const first = w.querySelector('.win-stage-1')!;
+      expect(first.querySelector('.win-stars--small')).not.toBeNull();
+      expect(first.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
+      expect(first.textContent).toMatch(/One puzzle closer to Truffle!/);
+      // Time, badges, points and coins are not in the first view…
+      for (const sel of ['.stats', '.win-points', '.win-rewards', '.win-skill', '[data-act="share"]']) expect(first.querySelector(sel), sel).toBeNull();
+      // …they are one tap away, and the fold's summary says what it holds.
+      const more = w.querySelector<HTMLDetailsElement>('[data-win-more]')!;
+      expect(more.open).toBe(false);
+      expect(more.querySelector('.stats')).not.toBeNull();
+      expect(more.querySelector('.win-points')).not.toBeNull();
+      expect(more.querySelector('[data-act="share"]')).not.toBeNull();
+      expect(more.querySelector('summary')?.textContent).toMatch(/More rewards.*\+\d+ coins.*Paw Points/);
+      // The buttons come before the fold.
+      const order = [...w.querySelectorAll('.win-stage-1, .sheet__actions, [data-win-more]')].map((x) => (x.matches('[data-win-more]') ? 'more' : x.matches('.sheet__actions') ? 'actions' : 'first'));
+      expect(order).toEqual(['first', 'actions', 'more']);
+    });
+
+    it('an arrival keeps even the stars for the fold: the first view is the animal', () => {
+      app.save.world.growth.farm = 3;
+      app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+      start(4);
+      solveBoard();
+      const w = sheet()!;
+      const first = w.querySelector('.win-stage-1')!;
+      expect(first.querySelector('[data-hero="arrived"]')).not.toBeNull();
+      expect(first.querySelector('.win-stars, .stats, .win-points')).toBeNull();
+      const more = w.querySelector('[data-win-more]')!;
+      expect(more.querySelector('.win-stars')).not.toBeNull();
+      // What's next after Truffle is there too, for whoever looks.
+      expect(more.textContent).toMatch(/Buttercup the calf/);
+    });
+  });
+
   describe('a win always says what is next (D39 PR A)', () => {
     const home = (ids: string[]) => {
       for (const id of ids) app.save.inventory.companions[id] = { unlockedAt: '2026-10-30T00:00:00.000Z' };
@@ -512,7 +559,7 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       start(4);
       solveBoard();
       const w = sheet()!;
-      expect(w.querySelector('[data-hero="arrived"]')?.textContent).toMatch(/Hazel the pony came home!/);
+      expect(w.querySelector('h2')?.textContent).toBe('Hazel is home!');
       expect(w.textContent).toMatch(/The Meadow Farm is complete!/);
       expect(w.querySelector('[data-up-next]')?.textContent).toMatch(/Up next at the Pet Garden: Juniper the bunny, one more puzzle/);
     });
@@ -548,7 +595,8 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       solveBoard();
       const w = sheet()!;
       expect(w.querySelector('.win-hero')).toBeNull();
-      expect(w.querySelector('.win-plus')?.textContent).toBe('Farm +1');
+      expect(w.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
+      expect(w.querySelector('.win-next-friend')?.textContent).toMatch(/One puzzle closer to Truffle!/);
       expect(w.querySelector('.win-next-friend')?.textContent).toMatch(/Truffle the piglet: 3 → 2 puzzles away/);
       const bar = w.querySelector<HTMLElement>('[data-grow-bar]')!;
       // Starts where it was (0 of 3), settles where it is now (1 of 3) a beat later; a tap settles it at once.

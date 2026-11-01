@@ -68,6 +68,11 @@ export interface SceneLife {
   play(id: string, action: AmbientAction): boolean;
   /** Ids of every figure in the scene, residents first. */
   figures(): string[];
+  /**
+   * The scene, a little livelier for a moment (D40, a welcome home): up to two of its lively parts (water, lanterns,
+   * petals…) play once. Nothing under reduced motion.
+   */
+  cheer(): void;
   /** Screen shown / hidden. */
   setLive(on: boolean): void;
   dispose(): void;
@@ -184,6 +189,7 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     ambient.add({ id, actions: (kit ? KIT_ACTIONS[kit] : species ? FRIEND_ACTIONS[species] : null) ?? ['blink', 'stretch'] });
   }
   // Decorations and stage features: each lively group is one actor (its own part is what moves).
+  const parts: Array<[string, AmbientAction]> = [];
   let n = 0;
   for (const g of svg.querySelectorAll('[data-decor], .sp-stage')) {
     const actions = PART_ACTIONS.filter(([sel]) => g.querySelector(sel)).map(([, a]) => a);
@@ -191,6 +197,7 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     const id = (g as HTMLElement).dataset.decor ? `decor:${(g as HTMLElement).dataset.decor}` : `stage:${n++}`;
     actors.set(id, g);
     ambient.add({ id, actions });
+    parts.push([id, actions[0]]);
   }
   for (const [i, g] of [...svg.querySelectorAll('.sp-fireflies, .sp-stars')].entries()) {
     actors.set(`sky:${i}`, g);
@@ -207,6 +214,10 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     },
     play: (id, action) => ambient.trigger(id, action) || (action === 'greet' && ambient.trigger(id, 'love')),
     figures: () => [...figs],
+    cheer: () => {
+      if (app.reducedMotion) return;
+      for (const [id, action] of parts.slice(0, 2)) ambient.trigger(id, action);
+    },
     setLive: (on) => ambient.setLive(on),
     dispose: () => {
       for (const id of [...faceTimers.keys()]) clearFace(id);

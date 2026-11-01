@@ -85,3 +85,43 @@ describe('the newcomer is easy to find (D39)', () => {
     expect(document.querySelector('.sanctuary__scene .sp-spotlight[data-for="juniper"]')).not.toBeNull();
   });
 });
+
+describe('the arrival ends with the next goal (D40 PR C)', () => {
+  it('after Meet, once the newcomer has said hello, a card says what the next puzzles bring closer', () => {
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
+    // Reduced motion (set above): it comes at once; with motion, after the hello.
+    vi.advanceTimersByTime(10);
+    const goal = document.querySelector('[data-next-goal]')!;
+    expect(goal).not.toBeNull();
+    expect(goal.textContent).toMatch(/Next goal/);
+    expect(goal.textContent).toMatch(/Buttercup the calf comes home in \d+ more puzzles/);
+    expect(goal.querySelector('[data-act="play"]')?.textContent).toMatch(/Play level \d+/);
+    // An ordinary visit has none.
+    router.go({ screen: 'region', id: 'farm' });
+    expect(document.querySelector('[data-next-goal]')).toBeNull();
+  });
+
+  it('with every animal home, the goal is the next stage, else the next home', async () => {
+    const { nextGoal } = await import('../../src/meta/world');
+    for (const id of ['buttercup', 'pepper', 'marigold']) app.save.inventory.companions[id] = { unlockedAt: '2026-10-31T11:00:00.000Z' };
+    app.save.world.growth.farm = 20;
+    const g = nextGoal(app.save, 'farm')!;
+    expect(['animal', 'stage', 'home']).toContain(g.kind);
+    app.save.inventory.companions.hazel = { unlockedAt: '2026-10-31T11:00:00.000Z' };
+    app.save.world.growth.farm = 26;
+    // The Farm is finished: the goal moves to the home being built now (the Pet Garden).
+    expect(nextGoal(app.save, 'farm')?.where).toBe('harmony');
+  });
+
+  it('the Pet Garden shows it too, once its "came home" card is closed', () => {
+    app.save.world.growth.harmony = 1;
+    app.save.inventory.companions.juniper = { unlockedAt: '2026-10-31T11:00:00.000Z' };
+    const router = mount();
+    router.go({ screen: 'sanctuary', welcome: ['juniper'] });
+    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    (document.querySelector('.intro-sheet [data-act="ok"]') as HTMLButtonElement).click();
+    vi.advanceTimersByTime(50);
+    expect(document.querySelector('[data-next-goal]')?.textContent).toMatch(/Next goal/);
+  });
+});

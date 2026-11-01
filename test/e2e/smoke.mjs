@@ -159,7 +159,16 @@ try {
   check('the tile never moves or resizes', box0.x === box1.x && box0.y === box1.y && box0.width === box1.width, JSON.stringify([box0, box1]));
 
   await solveActive();
-  check('the first win brings Cotton home and offers to meet her', (await page.textContent('[data-act="meet"]'))?.includes('Meet Cotton') && /Cotton the sheep came home/.test((await page.textContent('.win-sheet')) ?? ''));
+  check('the first win brings Cotton home and offers to meet her', (await page.textContent('[data-act="meet"]'))?.includes('Meet Cotton') && /Cotton is home!/.test((await page.textContent('.win-sheet h2')) ?? '') && /Your new sheep/.test((await page.textContent('.win-sheet')) ?? ''));
+  // D40: the animal first; time, coins and points wait in a closed fold under the buttons.
+  check(
+    'an arrival win shows the animal first and folds the accounting away (D40)',
+    await page.evaluate(() => {
+      const w = document.querySelector('.win-sheet');
+      const more = w?.querySelector('[data-win-more]');
+      return !!w?.querySelector('.win-stage-1 [data-hero="arrived"]') && !w.querySelector('.win-stage-1 .stats') && !!more && !more.open && !!more.querySelector('.stats');
+    }),
+  );
   check('the newcomer is the centerpiece: Meet is the main action and Play level 2 a full second button', await page.evaluate(() => {
     const blocks = [...document.querySelectorAll('.win-sheet .sheet__actions .btn--block')];
     return !!document.querySelector('.win-sheet [data-hero="arrived"]') && blocks.length === 2 && blocks[0].dataset.act === 'meet' && blocks[1].dataset.act === 'next' && /level 2/.test(blocks[1].textContent);
@@ -598,7 +607,7 @@ try {
   });
   await page.waitForTimeout(200);
   await solveActive();
-  check('an arrival makes the newcomer the hero of the win sheet', /Truffle the piglet came home!/.test((await page.textContent('.win-sheet [data-hero="arrived"]')) ?? ''));
+  check('an arrival makes the newcomer the hero of the win sheet', (await page.textContent('.win-sheet h2'))?.trim() === 'Truffle is home!' && /Your new piglet/.test((await page.textContent('.win-sheet [data-hero="arrived"]')) ?? ''));
   await page.click('.win-sheet [data-act="next"]');
   await page.waitForTimeout(200);
   await page.evaluate(() => window.__pt.go({ screen: 'world' }));

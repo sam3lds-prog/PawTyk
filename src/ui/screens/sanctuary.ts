@@ -7,6 +7,7 @@
 
 import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
+import { showNextGoal } from '../components/nextGoal';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, decorOf, type DecorId } from '../../meta/catalogs/decor';
@@ -117,7 +118,9 @@ export const sanctuaryScreen: ScreenDef = {
       if (btn) btn.hidden = !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
+      if (goalShown) showNextGoal(el, 'harmony');
     }
+    let goalShown = false;
 
     /** Feeding or patting from a card: the animal reacts in the garden once the card is closed. */
     function reactions(figure: string): FeedEvents {
@@ -300,6 +303,12 @@ export const sanctuaryScreen: ScreenDef = {
     if (arrivals.length)
       introduce(scope, arrivals, () => {
         spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), arrivals[0]);
+        // D40, the arrival's last two steps: the garden livens up for a moment, then the next goal.
+        scope.timeout(() => {
+          life?.cheer();
+          goalShown = true;
+          showNextGoal(el, 'harmony');
+        }, app.reducedMotion ? 0 : 1200);
         intro();
       });
     else intro();

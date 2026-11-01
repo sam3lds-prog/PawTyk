@@ -35,6 +35,7 @@ import { friendPortrait, isEvening, offerStarterGift, showFriendSheet } from './
 import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
+import { showNextGoal } from '../components/nextGoal';
 
 export const regionScreen: ScreenDef = {
   tab: 'world',
@@ -219,7 +220,9 @@ export const regionScreen: ScreenDef = {
       if (btn) btn.hidden = !open || !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
+      if (goalShown) showNextGoal(el, id);
     }
+    let goalShown = false;
     render();
 
     // Arrival: a new stage grows in, then everyone says hello (a bigger hello on the first visit of the day, or right
@@ -244,6 +247,13 @@ export const regionScreen: ScreenDef = {
         scope.timeout(() => fig?.classList.remove('is-arriving'), 900);
       }
       scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
+      // D40, the arrival's last two steps: the place livens up for a moment around its newcomer, then the next goal.
+      if (route.welcome?.includes(newcomers[0]))
+        scope.timeout(() => {
+          life?.cheer();
+          goalShown = true;
+          showNextGoal(el, id);
+        }, app.reducedMotion ? 0 : 2300);
     }
 
     scope.on(el, 'click', (e) => {

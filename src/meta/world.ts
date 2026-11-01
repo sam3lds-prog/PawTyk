@@ -456,3 +456,28 @@ export function arrivalLine(save: Pick<SaveV2, 'journey' | 'world' | 'inventory'
     return `Coming home next: ${p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`} while you build the ${def.short}. Until then, this is the animal on your boards there.`;
   return `Arrives later, after the animals before it at the ${def.short}. Solve puzzles while you build there.`;
 }
+
+// ------------------------------------------------------------------ the next goal (D40)
+
+/** What the next puzzles bring closer, after a welcome: an animal on its way, the next stage, or the next home. */
+export type NextGoal =
+  | { kind: 'animal'; where: SanctuaryId; id: string; left: number }
+  | { kind: 'stage'; where: SanctuaryId; name: string; change: string; left: number }
+  | { kind: 'home'; where: SanctuaryId; left: number };
+
+/**
+ * The next goal from a sanctuary (D40, the fourth step of an arrival): who comes home next here, else this home's next
+ * stage, else the same for the home being built now, else the next home to open. Null only when the world has nothing
+ * left at all (never, in practice: the endless world always has a next place).
+ */
+export function nextGoal(save: SaveV2, from: SanctuaryId): NextGoal | null {
+  for (const where of [from, activeSanctuary(save)]) {
+    if (!where || !isOpen(save, where)) continue;
+    const p = arrivalProgress(save, where);
+    if (p) return { kind: 'animal', where, id: p.next.id, left: p.left };
+    const st = nextStage(save, where);
+    if (st) return { kind: 'stage', where, name: st.stage.name, change: st.stage.change, left: st.need - st.have };
+  }
+  const up = nextToOpen(save);
+  return up ? { kind: 'home', where: up.id, left: up.left } : null;
+}
