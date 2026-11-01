@@ -1064,12 +1064,12 @@ const COAST: RegionArt = {
       {
         base: 240,
         svg: `
-        <ellipse cx="270" cy="236" rx="26" ry="6.6" fill="#b8b1a4" ${ol(0.8)}/>
-        <ellipse cx="270" cy="235.4" rx="21" ry="4.6" fill="#9fd3dd"/>
-        ${starfish(262, 236, '#f2a65a', 3.4)}
-        <g fill="#e98aa0"><circle cx="279" cy="235" r="1.6"/><circle cx="281.6" cy="234" r="1.2"/><circle cx="277" cy="233.6" r="1.1"/></g>
-        ${ripples([[266, 233, 8]])}
-        <g fill="#b8b1a4" ${ol(0.6)}><ellipse cx="244" cy="238" rx="5" ry="3"/><ellipse cx="298" cy="236" rx="4" ry="2.6"/></g>`,
+        <ellipse cx="258" cy="236" rx="24" ry="6.4" fill="#b8b1a4" ${ol(0.8)}/>
+        <ellipse cx="258" cy="235.4" rx="19.4" ry="4.4" fill="#9fd3dd"/>
+        ${starfish(250, 236, '#f2a65a', 3.4)}
+        <g fill="#e98aa0"><circle cx="267" cy="235" r="1.6"/><circle cx="269.6" cy="234" r="1.2"/><circle cx="265" cy="233.6" r="1.1"/></g>
+        ${ripples([[254, 233, 8]])}
+        <g fill="#b8b1a4" ${ol(0.6)}><ellipse cx="234" cy="238" rx="4.4" ry="2.8"/><ellipse cx="284" cy="236" rx="3.6" ry="2.4"/></g>`,
       },
       {
         base: 226,
@@ -1080,7 +1080,7 @@ const COAST: RegionArt = {
         <path d="M164 191 C166 180 178 176 177 177 C176 180 176 186 177 190 Z M190 189 C190 180 184 177 177 177 C180 179 184 184 186 190 Z" fill="#e6735f"/>
         <path d="M150 192 q4 3 9 0 q4 3 9 0 q4 3 9 0 q4 3 9 0 q4 3 9 0 q4 3 9 -2" stroke="${OUT}" stroke-width="0.6" fill="none"/>
         <circle cx="177" cy="176" r="1.6" fill="#e6735f"/>
-        <rect x="186" y="218" width="18" height="7" rx="2" fill="#6aa3c9" opacity="0.85"/>`,
+        <rect x="148" y="217" width="18" height="7" rx="2" fill="#6aa3c9" opacity="0.85"/>`,
       },
     ],
     4: [
@@ -1120,7 +1120,7 @@ const COAST: RegionArt = {
       },
     ],
   },
-  sign: [104, 240],
+  sign: [112, 236],
   evening: [
     [40, 30],
     [150, 40],
@@ -1437,7 +1437,7 @@ export const LANDSCAPE_SPOTS: Record<NewBiome, { ground: readonly [Spot, Spot, S
     water: [spot(222, 216, 32, 'happy'), spot(306, 234, 32, 'idle'), spot(160, 228, 30, 'happy')],
   },
   coast: {
-    ground: [spot(68, 262, 34, 'happy'), spot(206, 264, 34, 'idle'), spot(140, 290, 32, 'happy'), spot(300, 284, 30, 'sleepy')],
+    ground: [spot(66, 264, 34, 'happy'), spot(206, 266, 34, 'idle'), spot(140, 290, 32, 'happy'), spot(312, 286, 30, 'sleepy')],
     water: [spot(222, 166, 30, 'happy'), spot(312, 184, 30, 'idle'), spot(150, 156, 28, 'happy')],
   },
   island: {
