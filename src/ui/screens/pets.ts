@@ -12,9 +12,9 @@ import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
 import type { CompanionId } from '../../meta/catalogs/companions';
-import { SANCTUARIES } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef } from '../../meta/catalogs/sanctuaries';
 import { animalInfo, animalsOf, isHome, nextArrivalIn } from '../../meta/animals';
-import { activeSanctuary, arrivalProgress, isOpen } from '../../meta/world';
+import { activeSanctuary, arrivalProgress, isOpen, worldIds } from '../../meta/world';
 import { friendPortrait, showFriendSheet } from './sanctuary';
 
 type Filter = 'all' | 'home' | 'fav';
@@ -30,7 +30,9 @@ export const petsScreen: ScreenDef = {
     function render(): void {
       const save = app.save;
       const building = activeSanctuary(save);
-      const all = SANCTUARIES.flatMap((s) => animalsOf(s.id));
+      // Every home in this save's world (D39: the open places of the endless world and the next one too).
+      const homes = worldIds(save).map(sanctuaryDef);
+      const all = homes.flatMap((s) => animalsOf(s.id));
       const homeCount = all.filter((a) => isHome(save, a)).length;
       const coming = building ? arrivalProgress(save, building) : null;
       const filters: Array<[Filter, string]> = [
@@ -39,7 +41,7 @@ export const petsScreen: ScreenDef = {
         ['fav', 'Favorites'],
       ];
       const show = (id: string) => (lastFilter === 'all' ? true : lastFilter === 'home' ? isHome(save, id as PetId) : !!save.inventory.favorites[id]);
-      const groups = SANCTUARIES.map((sd) => {
+      const groups = homes.map((sd) => {
         const ids = animalsOf(sd.id).filter(show);
         if (!ids.length) return '';
         const n = animalsOf(sd.id).filter((a) => isHome(save, a)).length;
@@ -84,7 +86,7 @@ export const petsScreen: ScreenDef = {
                   ${isPetId(coming.next.id) ? portrait(coming.next.id, 'idle') : friendPortrait(coming.next.id as CompanionId)}
                   <div class="next-arrival__body">
                     <b>${esc(a.name)} the ${esc(a.noun)} is on the way</b>
-                    <span class="muted">${plural(coming.left, 'more puzzle')} while you build the ${esc(SANCTUARIES.find((s) => s.id === building)!.short)}.</span>
+                    <span class="muted">${plural(coming.left, 'more puzzle')} while you build the ${esc(sanctuaryDef(building).short)}.</span>
                     <div class="progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${coming.from}" aria-valuemax="${coming.need}" aria-valuenow="${coming.have}"><span style="width:${Math.round(((coming.have - coming.from) / span) * 100)}%"></span></div>
                   </div>
                 </div>`;

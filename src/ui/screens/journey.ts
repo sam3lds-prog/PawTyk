@@ -14,7 +14,8 @@ import { hasMeaningfulProgress } from '../../game/sessionPersistence';
 import { addDaysKey, localDateKey, localWeekStart } from '../../game/dates';
 import { modeTitle, puzzleFor, sizeFor } from '../../game/puzzles';
 import { displayDifficulty } from '../../game/grading';
-import { chapterAt, chapterOf, visibleChapters, type Chapter } from '../../meta/chapters';
+import { chapterAt, chapterOf, placeAfterChapter, visibleChapters, type Chapter } from '../../meta/chapters';
+import { placeDef } from '../../meta/catalogs/places';
 import { liveStreak } from '../../meta/progression';
 import { openSheet, toast } from '../components/sheet';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
@@ -31,8 +32,8 @@ import { actionOf, capitalize, esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { CanonicalRoute, Scope, ScreenDef } from '../router';
 import { showSettings } from './settings';
-import { SANCTUARY_BY_ID, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
-import { activeSanctuary, arrivalProgress, nextStage, nextToOpen, stageOf, unseenIn } from '../../meta/world';
+import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { activeSanctuary, arrivalProgress, isOpen, nextStage, nextToOpen, stageOf, unseenIn } from '../../meta/world';
 import { animalInfo, homeAnimals } from '../../meta/animals';
 import { animalPortrait } from '../art/animals';
 import type { CompanionId } from '../../meta/catalogs/companions';
@@ -90,7 +91,7 @@ function heroGoalMarkup(): { markup: string; accent: string; visit: string; sanc
   const save = app.save;
   const id = activeSanctuary(save);
   if (id) {
-    const def = SANCTUARY_BY_ID[id];
+    const def = sanctuaryDef(id);
     const coming = arrivalProgress(save, id);
     const next = nextStage(save, id);
     let line = '';
@@ -200,6 +201,15 @@ function pathMarkup(ch: Chapter): string {
       </svg>
       <ol class="journey-path__nodes" aria-label="Chapter ${ch.index + 1} levels">${nodes}</ol>
     </div>`;
+}
+
+/** The new place a chapter's last level opens on the map (D39), or that it already opened. */
+function chapterPlaceLine(index: number): string {
+  const k = placeAfterChapter(index);
+  if (!k) return '';
+  const def = placeDef(k);
+  const open = isOpen(app.save, def.id);
+  return `<p class="chapter__place" style="--accent:${def.accent}">${ICON.globe}<span>${open ? `The <b>${esc(def.name)}</b> is open on the map.` : `Finish it and the <b>${esc(def.name)}</b> opens on the map.`}</span></p>`;
 }
 
 export const journeyScreen: ScreenDef = {
@@ -556,6 +566,7 @@ function mountPath(root: HTMLElement, scope: Scope, chapterIndex: number | undef
         </div>
         <div class="progress" role="progressbar" aria-label="Chapter progress" aria-valuemin="0" aria-valuemax="20" aria-valuenow="${solved}"><span style="width:${(solved / 20) * 100}%"></span></div>
         <p class="chapter__count muted num">${solved} of 20 solved${locked ? `. Opens after level ${ch.first - 1}.` : ''}</p>
+        ${chapterPlaceLine(ch.index)}
       </section>
       ${pathMarkup(ch)}`;
     for (const t of el.querySelectorAll<HTMLElement>('[data-chapter]')) t.setAttribute('aria-selected', String(Number(t.dataset.chapter) === current));

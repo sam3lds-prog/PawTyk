@@ -882,3 +882,44 @@ win on a long board.
   Faces only, as always (D11): no tile or head moves.
 - Tests: `test/unit/session.test.ts` (whyPlaced), `test/unit/gameScreen.dom.test.ts` (first three, the setting, no
   invented reasons, two-animal sentence, guided boards, halfway once).
+
+### PR D — a world that never runs out
+The Journey already had no end (past level 170 each board is generated on the device from its level number, the same
+board on every phone), but the world did: the six hand-made homes take about 180 new puzzles to finish, and after that
+a solve grew nothing. For players who never stop, the world now keeps going.
+
+- **Places** (`meta/catalogs/places.ts`): after the Amazon, place 1, 2, 3 … are generated from hand-written ingredients
+  as a pure function of their number. Each is one of the five drawn biomes (a farm, the outback, the savanna, the Arctic,
+  the rainforest; every five places visit all five, never the same twice in a row), with its own name (*Marula
+  Grasslands*, *Quandong Station*, *Narwhal Cove*; 200 per biome before any repeats), a look (golden light, autumn,
+  blossom, mist or dusk, as a color treatment and a light overlay on the region's own art; classic is the region as
+  drawn), mirroring (two places of a biome in a row never look alike), a pin inside its biome's part of the world (a
+  koala never lives in Siberia), the same five stages as a region (0/3/8/15/25) and its completion gift.
+- **New animals**: three natives per place — new individuals of the species already drawn for that biome, each with a
+  name (a biome's own names first, then a shared list; no two animals share a name for the first ~225), a coat (three
+  per species, taking turns), sometimes a knotted neckerchief, a trait and a short bio in the game's voice — and, every
+  other place of the farm, savanna and Arctic, a guest kind that lives there: a rabbit, a bat-eared fox, an arctic fox
+  or an arctic hare (drawn species in a new role and coat). Natives arrive in their region's order, so each stands on the
+  feature its stage brings (the goat on the bales); guests stand on open ground. They appear on boards like any animal
+  (the next one on its way is the board's animal), move like their species in the scene, and their 3D toys are the
+  species' toys recolored (the neckerchief is 2D only for now).
+- **Opening**: place k opens after Journey level 60 + 20k — one new place at the end of every chapter from level 80 —
+  or sooner, the moment every home before it is complete (`world.openPlaceCount`; open places are always 1…N, so one
+  walk finds them). A Zen-only player who finishes everything still always has somewhere new to build. The solve that
+  finishes a home announces the place it opened (`creditSolve` asks again after growing). The next place appears on the
+  map, locked, only once every hand-made home is open, so the early game is unchanged.
+- **Screens**: the World lists every home (`world.worldIds`); once the endless world has begun the list leads with
+  what's being built, then open homes, the next one, and the finished ones last, folded away once the list passes eight;
+  a place's pin is smaller and keeps its name to itself unless it's being built, has news or is next; at most three
+  news pills (the rest are one tap away); news chips name two animals and *N more*. A place's screen shows its animals
+  and has no decorations (its charm is its animals and its look; decorations stay with their hand-made homes). The album
+  has a group per home. Chapters after the fifth have names (*Thistle Path*, *Firefly Hollow* …) instead of "Far Fields
+  N", and the chapter card says which place its last level opens.
+- **Never changes once shipped**: saves keep growth and arrivals by place and animal id, so `PLACES_VERSION` and
+  `test/unit/fixtures/places-v1.json` (the first forty places, regenerated only with a version bump:
+  `npx tsx scripts/places-fixture.ts`) pin the recipe.
+- Tester shortcuts: *Skip to level 81* and *Finish every open home* (which opens the next place).
+- Tests: `test/unit/places.test.ts` (the fixture, 300 places well formed, looks, ids, who the animals are, opening by
+  level and by finishing, the board's cast, reload and reconcile, the shortcut, chapters, drawing, coats on portrait,
+  board face and toy), `test/unit/endlessWorld.dom.test.ts` (World, the fold, a place's screen, the album, the chapter
+  card), `test/unit/difficulty.test.ts` (levels 300, 1000 and 5000 are sound boards).

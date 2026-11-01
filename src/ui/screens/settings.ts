@@ -3,7 +3,7 @@
 import { app } from '../../app/app';
 import { clearSessions, resetProgress, type Settings } from '../../services/storage';
 import { ITEM_CAP, grantStarterItems } from '../../meta/items';
-import { growActive, setPantry, skipToLevel } from '../../app/qaTools';
+import { finishOpenHomes, growActive, setPantry, skipToLevel } from '../../app/qaTools';
 import { iap } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
@@ -133,7 +133,9 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="skip:11"><span class="row__label">Skip to level 11<small>Marks 1–10 solved; the Outback opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="skip:21"><span class="row__label">Skip to level 21<small>The first two-animal board, with its lesson</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="skip:41"><span class="row__label">Skip to level 41<small>Two-animal boards; the Savanna and the Arctic are open</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="skip:81"><span class="row__label">Skip to level 81<small>Every region open; the first new place of the endless world opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="grow:5"><span class="row__label">Solve 5 puzzles for this sanctuary<small>Grows the sanctuary you're building; animals come home</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="finish"><span class="row__label">Finish every open home<small>Everyone comes home everywhere open; the next new place opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="empty"><span class="row__label">Empty extra lives and hints<small>See "no hints left" and the loss sheet without extra lives</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="fill"><span class="row__label">Fill extra lives and hints to 10<small>Earning more turns into coins</small></span>${ICON.chevron}</button>
       </div>`
@@ -154,6 +156,10 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         app.persist();
         // Reload so the normal startup catch-up hands out the skipped levels' gifts and points, once.
         location.reload();
+      } else if (what === 'finish') {
+        const came = finishOpenHomes(app.save);
+        app.persist();
+        toast(`${plural(came.length, 'animal')} came home. A new place is open on the map.`);
       } else if (what === 'grow') {
         const came = growActive(app.save, Number(arg));
         app.persist();

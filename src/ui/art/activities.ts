@@ -10,6 +10,7 @@
 
 import type { DecorId } from '../../meta/catalogs/decor';
 import { isCompanionId } from '../../meta/catalogs/companions';
+import { isWildId } from '../../meta/catalogs/places';
 import { isPetId } from '../../meta/catalogs/pets';
 import { companionFigure, type CompanionMood } from './companions';
 import { residentFigure } from './sanctuary';
@@ -219,7 +220,7 @@ export function activityFor(decor: string): ActivityDef | null {
 export function riderFigure(id: string, x: number, y: number, H: number, mood: CompanionMood): string {
   let svg = '';
   if (isPetId(id)) svg = residentFigure(id, x, y, H, mood === 'sleepy' ? 'sleepy' : 'happy');
-  else if (isCompanionId(id)) svg = companionFigure(id, x, y, H, mood);
+  else if (isCompanionId(id) || isWildId(id)) svg = companionFigure(id, x, y, H, mood);
   return svg
     .replace(/class="sanctuary__pet( sanctuary__friend)?"/, 'class="sp-rider-fig"')
     .replace(/ data-(pet|friend)="/g, ' data-rider="')

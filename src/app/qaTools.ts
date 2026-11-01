@@ -9,7 +9,7 @@
 import type { SaveV2 } from '../services/storage';
 import { itemBalance, type PantryItem } from '../meta/items';
 import { FIRST_PAIR_LEVEL } from '../game/modes';
-import { growOnSolve, openRegions } from '../meta/world';
+import { creditSolve, growOnSolve, isComplete, isOpen, openRegions, worldIds } from '../meta/world';
 import type { AnimalId } from '../meta/animals';
 
 /**
@@ -35,6 +35,18 @@ export function skipToLevel(save: SaveV2, next: number, now = new Date()): void 
 export function growActive(save: SaveV2, n: number, now = new Date()): AnimalId[] {
   const out: AnimalId[] = [];
   for (let i = 0; i < n; i++) out.push(...(growOnSolve(save, openRegions(save), now)?.arrived ?? []));
+  return out;
+}
+
+/**
+ * Finishes every home that is open (as if enough puzzles had been solved for each), which opens the next place of the
+ * endless world at once (D39). Returns who came home.
+ */
+export function finishOpenHomes(save: SaveV2, now = new Date()): AnimalId[] {
+  const out: AnimalId[] = [];
+  const todo = worldIds(save).filter((id) => isOpen(save, id) && !isComplete(save, id));
+  for (const id of todo)
+    for (let g = 0; g < 200 && !isComplete(save, id); g++) out.push(...(creditSolve(save, { boardSanctuary: id, openedBefore: openRegions(save) }, now)?.arrived ?? []));
   return out;
 }
 

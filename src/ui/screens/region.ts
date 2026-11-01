@@ -8,9 +8,10 @@
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { afterDecorChange } from '../../app/events';
-import { COMPANIONS, COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
+import { isPlaceId } from '../../meta/catalogs/places';
+import type { FriendId } from '../art/companions';
 import { decorOf, type DecorId } from '../../meta/catalogs/decor';
-import { SANCTUARY_BY_ID, type RegionId } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef, type RegionId } from '../../meta/catalogs/sanctuaries';
 import { isShown, owns, setShown, shownDecorIds } from '../../meta/sanctuary';
 import { activeSanctuary, arrivalProgress, isComplete, isOpen, markSeen, nextStage, regionChat, setActive, stageOf } from '../../meta/world';
 import { animalInfo, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
@@ -40,9 +41,12 @@ export const regionScreen: ScreenDef = {
   mount(root, scope, route: Route) {
     if (route.screen !== 'region') return;
     const id: RegionId = route.id;
-    const def = SANCTUARY_BY_ID[id];
+    const def = sanctuaryDef(id);
     const order = def.arrivals.map((a) => a.id as string);
-    const friendsHere = COMPANIONS.filter((c) => c.sanctuary === id).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    // Everyone who will live here, in the order they arrive (a hand-made region's friends, or a place's own animals).
+    const friendsHere = order.map((a) => ({ ...animalInfo(a as AnimalId), id: a as FriendId }));
+    // The endless world's places have no decorations (yet): their charm is their animals and their look (D39).
+    const hasDecor = !isPlaceId(id);
     // Which stage just appeared (coming from a solve that reached it), to pop it in.
     const freshStage = route.fresh ?? 0;
     const today = localDateKey();
@@ -91,6 +95,7 @@ export const regionScreen: ScreenDef = {
         const pct = Math.round((cleared / def.opensAfterLevel) * 100);
         return `<section class="card region-progress" aria-labelledby="rp-title">
           <h2 id="rp-title">${ICON.lock}Opens after level ${def.opensAfterLevel}</h2>
+          ${isPlaceId(id) ? `<p class="muted">Or sooner: it opens the moment every home before it is complete.</p>` : ''}
           <p class="muted">${esc(def.blurb)}</p>
           <div class="progress world-progress" role="progressbar" aria-label="Levels until it opens" aria-valuemin="0" aria-valuemax="${def.opensAfterLevel}" aria-valuenow="${cleared}"><span style="width:${pct}%"></span></div>
           <p class="world-focus__count">${plural(def.opensAfterLevel - cleared, 'level')} to go</p>
@@ -175,7 +180,7 @@ export const regionScreen: ScreenDef = {
                 const has = welcomed.includes(c.id);
                 const isNext = !has && c.id === nextId;
                 const fresh = has && newcomers.includes(c.id);
-                return `<li><button class="resident ${isNext ? 'is-next' : ''}${fresh ? ' is-new' : ''}" data-friend-card="${c.id}" aria-label="${esc(has ? `${c.name} the ${c.kind.toLowerCase()}, ${fresh ? 'just came home, ' : ''}${c.trait}` : isNext ? `${c.name} the ${c.kind.toLowerCase()}, coming home next` : `A ${c.kind.toLowerCase()}, arrives later`)}">
+                return `<li><button class="resident ${isNext ? 'is-next' : ''}${fresh ? ' is-new' : ''}" data-friend-card="${c.id}" aria-label="${esc(has ? `${c.name} the ${c.noun}, ${fresh ? 'just came home, ' : ''}${c.trait}` : isNext ? `${c.name} the ${c.noun}, coming home next` : `A ${c.noun}, arrives later`)}">
                   ${friendPortrait(c.id, !has && !isNext)}${fresh ? NEW_CHIP : ''}
                   <span class="resident__name">${has || isNext ? esc(c.name) : 'Later'}</span>
                 </button></li>`;
@@ -183,7 +188,7 @@ export const regionScreen: ScreenDef = {
               .join('')}
           </ul>
         </section>
-        <section aria-labelledby="rdecor-title">
+        ${hasDecor ? `<section aria-labelledby="rdecor-title">
           <div class="section-head"><h2 id="rdecor-title">Decorations</h2><span class="muted num">${ownedDecor.length} of ${decorOf(id).length}</span></div>
           ${
             ownedDecor.length
@@ -199,7 +204,7 @@ export const regionScreen: ScreenDef = {
               : `<p class="empty">${open ? `Decorations and treats for the ${esc(def.short)} are in the Shop.` : 'Its decorations can be bought once it opens.'}</p>`
           }
           <button class="btn btn--secondary btn--block" data-act="shop">${ICON.bag}${esc(def.short)} decorations and treats</button>
-        </section>`;
+        </section>` : ''}`;
       life?.dispose();
       acts?.dispose();
       const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
@@ -270,7 +275,7 @@ export const regionScreen: ScreenDef = {
       }
       const friendBtn = t.closest('[data-friend-card]') as HTMLElement | null;
       if (friendBtn) {
-        const cid = friendBtn.dataset.friendCard as CompanionId;
+        const cid = friendBtn.dataset.friendCard as FriendId;
         let fed = false;
         let patted = false;
         showFriendSheet(scope, cid, {
@@ -317,8 +322,8 @@ export const regionScreen: ScreenDef = {
       }
     });
 
-    function sceneLabel(stage: number, welcomed: CompanionId[]): string {
-      const who = welcomed.map((c) => `${COMPANION_BY_ID[c].name} the ${COMPANION_BY_ID[c].kind.toLowerCase()}`);
+    function sceneLabel(stage: number, welcomed: FriendId[]): string {
+      const who = welcomed.map((c) => `${animalInfo(c).name} the ${animalInfo(c).noun}`);
       const where = stage ? def.stages[stage].name : `${def.stages[0]?.name ?? 'Wild land'}, waiting for its first friend`;
       return `The ${def.name}. ${where}.${who.length ? ` ${who.join(', ')} ${who.length === 1 ? 'lives' : 'live'} here.` : ''}`;
     }

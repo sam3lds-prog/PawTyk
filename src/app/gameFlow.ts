@@ -19,7 +19,7 @@ import { isTutorial } from '../meta/onboarding';
 import { startAttempt } from '../competitions/localCup';
 import { SESSION_SLOTS, savedSession, slotOf, type SavedSession } from '../services/storage';
 import { castFor, parseCast } from '../meta/cast';
-import { SANCTUARY_BY_ID, type SanctuaryId } from '../meta/catalogs/sanctuaries';
+import { sanctuaryDef, isSanctuaryId, type SanctuaryId } from '../meta/catalogs/sanctuaries';
 import { openSheet } from '../ui/components/sheet';
 import { actionOf, esc, plural } from '../ui/dom';
 
@@ -211,17 +211,17 @@ export function savedBoardSanctuaries(): SanctuaryId[] {
   const out: SanctuaryId[] = [];
   for (const s of resumableSessions()) {
     const id = s.cast?.sanctuary;
-    if (id && id in SANCTUARY_BY_ID && !out.includes(id as SanctuaryId)) out.push(id as SanctuaryId);
+    if (id && isSanctuaryId(id) && !out.includes(id)) out.push(id);
   }
   return out;
 }
 
 /** The one-line toast for choosing where to build, honest about boards already on the table. */
 export function buildHereMessage(id: SanctuaryId): string {
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   const held = savedBoardSanctuaries().filter((h) => h !== id);
   if (held.length === 1)
-    return `Now building the ${def.name}. Your saved ${SANCTUARY_BY_ID[held[0]].short} board still helps the ${SANCTUARY_BY_ID[held[0]].short}; every new board helps the ${def.short}.`;
+    return `Now building the ${def.name}. Your saved ${sanctuaryDef(held[0]).short} board still helps the ${sanctuaryDef(held[0]).short}; every new board helps the ${def.short}.`;
   if (held.length > 1) return `Now building the ${def.name}. Your saved boards still help the sanctuaries they started for; every new board helps the ${def.short}.`;
   return `Now building the ${def.name}. Every puzzle you solve helps it grow.`;
 }

@@ -7,6 +7,8 @@
 
 import { PET_BY_ID, type PetId } from '../meta/catalogs/pets';
 import type { CompanionId } from '../meta/catalogs/companions';
+import { isWildId, wildDef } from '../meta/catalogs/places';
+import { friendPalette } from '../ui/art/companions';
 
 export type BodyKind = 'sit' | 'upright' | 'big' | 'tall' | 'bird' | 'seal';
 export type EarKind = 'pointed' | 'round' | 'tufted' | 'floppy' | 'folded' | 'button' | 'disc' | 'fluffy' | 'tall' | 'small' | 'giant' | 'side' | 'none';
@@ -498,7 +500,48 @@ export const FRIEND_TOYS: Record<CompanionId, ToySpec> = {
 };
 
 export function toySpec(id: string): ToySpec | null {
+  if (isWildId(id)) return wildToy(id);
   return (PET_TOYS as Record<string, ToySpec>)[id] ?? (FRIEND_TOYS as Record<string, ToySpec>)[id] ?? null;
+}
+
+/** A hex color made darker (for a coat's shade). */
+function darken(hex: string, k: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (v: number) => Math.max(0, Math.min(255, Math.round(v * k)));
+  return `#${[f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
+const wildCache = new Map<string, ToySpec>();
+
+/**
+ * An animal of the endless world as a toy (D39): its species' toy, with every color that came from the species' 2D
+ * palette swapped for the coat's (fur, its shade, light, dark, accent); colors that aren't the coat (a beak's pattern,
+ * the eyes, the cheeks) stay. The neckerchief is 2D only for now.
+ */
+function wildToy(id: string): ToySpec | null {
+  const hit = wildCache.get(id);
+  if (hit) return hit;
+  const w = wildDef(id as Parameters<typeof wildDef>[0]);
+  const base = (FRIEND_TOYS as Record<string, ToySpec>)[w.base];
+  if (!base) return null;
+  const pal = friendPalette(w.base);
+  const c = w.coat;
+  const swap = new Map<string, string>([
+    [pal.fur.toUpperCase(), c.fur],
+    [base.shade.toUpperCase(), darken(c.fur, 0.87)],
+    [pal.light.toUpperCase(), c.light],
+    [pal.dark.toUpperCase(), c.dark],
+    [pal.accent.toUpperCase(), c.accent],
+  ]);
+  const walk = (v: unknown): unknown => {
+    if (typeof v === 'string') return /^#[0-9a-f]{6}$/i.test(v) ? (swap.get(v.toUpperCase()) ?? v) : v;
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  const spec = { ...(walk(base) as ToySpec), id };
+  wildCache.set(id, spec);
+  return spec;
 }
 
 export const ALL_TOY_IDS: readonly string[] = [...Object.keys(PET_TOYS), ...Object.keys(FRIEND_TOYS)];

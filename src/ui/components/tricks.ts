@@ -20,6 +20,7 @@ import { performTrick } from './trickPlay';
 import { residentFigure } from '../art/sanctuary';
 import { companionFigure } from '../art/companions';
 import { isCompanionId } from '../../meta/catalogs/companions';
+import { isWildId } from '../../meta/catalogs/places';
 import { isPetId } from '../../meta/catalogs/pets';
 import { esc, plural } from '../dom';
 import { ICON } from '../icons';
@@ -335,6 +336,6 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
 /** A preview figure on the little stage in the trick card (a scene figure, so the trick plays on it). */
 function stageFigure(id: string): string {
   if (isPetId(id)) return residentFigure(id, 60, 90, 34, 'happy');
-  if (isCompanionId(id)) return companionFigure(id, 60, 90, 32, 'happy');
+  if (isCompanionId(id) || isWildId(id)) return companionFigure(id, 60, 90, 32, 'happy');
   return residentFigure('mochi', 60, 90, 34, 'happy');
 }

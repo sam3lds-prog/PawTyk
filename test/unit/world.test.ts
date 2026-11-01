@@ -79,7 +79,8 @@ describe('world map', () => {
     expect(openRegions(atLevel(10))).toEqual(['farm', 'outback']);
     expect(openRegions(atLevel(25))).toEqual(['farm', 'outback', 'savanna']);
     expect(openRegions(atLevel(60))).toEqual(['farm', 'outback', 'savanna', 'arctic', 'amazon']);
-    expect(nextToOpen(atLevel(60))).toBeNull();
+    // D39: the world never runs out. After the Amazon, the next home is the first place of the endless world.
+    expect(nextToOpen(atLevel(60))).toMatchObject({ id: 'p1', left: 20, orSooner: true });
     const opens = EXOTIC.map((r) => r.opensAfterLevel);
     expect([...opens].sort((a, b) => a - b)).toEqual(opens);
     expect(SANCTUARIES.filter((x) => x.beginner).map((x) => x.id)).toEqual(['farm', 'harmony']);
@@ -532,7 +533,7 @@ describe('regional scenes', () => {
 
   it('every region has a place, an accent and an honest blurb', () => {
     for (const r of REGIONS) {
-      expect(SANCTUARY_BY_ID[r.id].place.length).toBeGreaterThan(3);
+      expect(r.place.length).toBeGreaterThan(3);
       expect(r.accent).toMatch(/^#[0-9A-F]{6}$/i);
       expect(isOpen(atLevel(r.opensAfterLevel), r.id as never)).toBe(true);
       if (r.opensAfterLevel > 0) expect(isOpen(atLevel(r.opensAfterLevel - 1), r.id as never)).toBe(false);

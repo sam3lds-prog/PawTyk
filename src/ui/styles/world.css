@@ -143,6 +143,46 @@
   font-weight: 700;
   background: rgba(255, 255, 255, 0.72);
 }
+/* D39: a place of the endless world is a smaller pin; it keeps its name to itself unless it is being built, has news
+   or is next to open (its full name is still in its label for screen readers), so a long world stays readable. */
+.world-pin.is-place .world-pin__ring {
+  --size: 26px;
+  padding: 2px;
+}
+.world-pin.is-place.is-quiet .world-pin__label {
+  display: none;
+}
+.world-pin.is-place.is-complete .world-pin__ring {
+  --size: 22px;
+}
+
+/* D39: finished homes, folded at the end of a long list. */
+.world-finished {
+  margin-top: var(--s2);
+}
+.world-finished > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--s2);
+  font-weight: 800;
+  color: var(--muted-ink);
+  cursor: pointer;
+  list-style: none;
+}
+.world-finished > summary::-webkit-details-marker {
+  display: none;
+}
+.world-finished > summary .ico {
+  width: 16px;
+  height: 16px;
+  color: var(--brand);
+}
+.world-finished[open] > summary {
+  color: var(--ink);
+}
+
 /* The home being built: a gentle halo that breathes (still under reduced motion). */
 .world-pin.is-building .world-pin__ring {
   --size: 40px;
@@ -1238,4 +1278,21 @@
   font-size: var(--t-sm);
   font-weight: 600;
   color: var(--brand-dark);
+}
+
+/* D39: the chapter card names the place its last level opens. */
+.chapter__place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--s2) 0 0;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+.chapter__place .ico {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--accent, var(--brand));
 }
