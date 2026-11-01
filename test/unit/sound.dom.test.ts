@@ -67,8 +67,14 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('the feel table (D40)', () => {
   it('matches the design: each event has the sound and the haptic it was given', () => {
-    expect(FEEL.mark).toEqual({ sound: 'tick', haptic: 'select' });
-    expect(FEEL.place).toEqual({ sound: 'pop', haptic: 'light' });
+    // Owner request: a ✕ is felt (a light tap), and a correct animal more firmly than a ✕.
+    expect(FEEL.mark).toEqual({ sound: 'tick', haptic: 'light' });
+    expect(FEEL.place).toEqual({ sound: 'pop', haptic: 'medium' });
+    const strength = ['select', 'light', 'medium'];
+    expect(strength.indexOf(FEEL.place.haptic!)).toBeGreaterThan(strength.indexOf(FEEL.mark.haptic!));
+    // Every browser fallback is long enough to be felt, and stronger kinds buzz longer.
+    expect(VIBRATE.light as number).toBeGreaterThanOrEqual(10);
+    expect(VIBRATE.medium as number).toBeGreaterThan(VIBRATE.light as number);
     expect(FEEL.line).toEqual({ sound: 'line', haptic: 'medium' });
     expect(FEEL.miss).toEqual({ sound: 'miss', haptic: 'warning' });
     expect(FEEL.solved).toEqual({ sound: 'solved', haptic: 'success' });

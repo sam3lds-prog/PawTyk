@@ -9,23 +9,27 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 /**
- * - `select`: the lightest tick there is (iOS selection feedback): marking a ✕, a drag, a switch.
- * - `light`: a light tap: placing an animal, tapping an animal hello, a small reward.
- * - `medium`: a firmer single tap, the "subtle success" of a finished row, column or color.
+ * - `select`: the lightest tick there is (iOS selection feedback): a drag across tiles, a tool, a switch.
+ * - `light`: a light tap: marking a ✕, tapping an animal hello, a small reward.
+ * - `medium`: a firmer single tap: an animal placed correctly, and the "subtle success" of a finished row, column or
+ *   color (on a move that finishes one, the two land together as one firm tap).
  * - `warning`: the gentle warning pattern, for a wrong guess.
  * - `success`: the success pattern, for a solved puzzle or a purchase.
  * - `pulse`: one celebratory heavy pulse, only for a new animal arriving.
+ *
+ * Owner request (2026-11-01): a ✕ is felt (it was the barely-there selection tick), and a correct animal is felt more
+ * firmly than a ✕ (it was a light tap).
  */
 export type HapticKind = 'select' | 'light' | 'medium' | 'warning' | 'success' | 'pulse';
 
 /** Browser fallback patterns (ms), kept short. */
 export const VIBRATE: Record<HapticKind, number | number[]> = {
-  select: 5,
-  light: 8,
-  medium: 14,
+  select: 6,
+  light: 12,
+  medium: 24,
   warning: [16, 50, 16],
   success: [12, 30, 12, 30, 24],
-  pulse: 30,
+  pulse: 36,
 };
 
 let enabled = true;

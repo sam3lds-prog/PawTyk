@@ -1019,9 +1019,11 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
 
 ### PR A — one feel for every moment
 - **One table** (`services/feel.ts::FEEL`): every event that sounds or buzzes goes through `feel(event)`, so its sound
-  and haptic are chosen together. Mark ✕: a quiet tick and the lightest tick (selection) haptic. Place: a gentle
-  bright pop, light. A row, column or color finished: a short rising tone, a single medium tap (more lines at once: a
-  three-note rise, still one tap). Wrong guess: one muted soft note and the gentle warning pattern (never a buzzer).
+  and haptic are chosen together. Mark ✕: a quiet tick and a light tap. Place (a correct animal): a gentle bright pop
+  and a firm (medium) tap, stronger than a ✕ (owner request, 2026-11-01: the ✕ was the barely-there selection tick and
+  the placement a light tap). A row, column or color finished: a short rising tone and a firm tap, landing with the
+  placement's as one (more lines at once: a three-note rise, still one tap). Dragging ✕ across tiles keeps the
+  lightest tick per tile, so a run never rattles. Wrong guess: one muted soft note and the gentle warning pattern (never a buzzer).
   Solved: the game's own melody (C–E–G, then a ringing high C) and success. A new animal: a warm chime over a soft chord,
   a sound used for nothing else, and one heavy pulse, a beat after the melody as its portrait comes up. Tapping an
   animal: a tiny hello (below). Undo, a tool, a drag: the lightest haptic, no sound.

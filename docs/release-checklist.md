@@ -166,7 +166,8 @@
 - [ ] On a device, sound on: ✕ is a quiet tick, a placement a soft pop, a finished row a short rise, a wrong guess one
       muted note, a solve the little melody, a new animal its own warm chime a beat later; nothing is loud next to
       other apps' sounds at the same volume
-- [ ] Haptics: a ✕ is barely there, a placement light, a finished row one firm tap, a wrong guess the gentle warning,
+- [ ] Haptics: a ✕ is a light tap you can feel, a correct animal a clearly firmer tap, a finished row one firm tap, a
+      drag across tiles only the faintest ticks, a wrong guess the gentle warning,
       a new animal one strong pulse; Settings → Haptics off: no buzz at all, sounds unchanged; Sound off: silence, the
       buzzes unchanged; the ringer switch on silent mutes the sounds
 - [ ] Turning Sound effects on plays a small sample; turning it off mid-arrival-chime stops it at once

@@ -5,10 +5,10 @@
  *
  * | event    | sound                                  | haptic                 |
  * |----------|----------------------------------------|------------------------|
- * | mark     | a quiet soft tick                      | the lightest tick      |
+ * | mark     | a quiet soft tick                      | light                  |
  * | unmark   | a softer tick                          | none                   |
  * | drag     | none (the ✕ marks are enough)          | the lightest tick      |
- * | place    | a gentle bright pop                    | light                  |
+ * | place    | a gentle bright pop                    | firm (medium)          |
  * | line     | a short rising tone                    | subtle success (medium)|
  * | lines    | a longer rising tone                   | subtle success (medium)|
  * | miss     | one muted soft note                    | gentle warning         |
@@ -49,10 +49,10 @@ export type FeelEvent =
   | 'lost';
 
 export const FEEL: Record<FeelEvent, { sound: Sfx | null; haptic: HapticKind | null }> = {
-  mark: { sound: 'tick', haptic: 'select' },
+  mark: { sound: 'tick', haptic: 'light' },
   unmark: { sound: 'untick', haptic: null },
   drag: { sound: null, haptic: 'select' },
-  place: { sound: 'pop', haptic: 'light' },
+  place: { sound: 'pop', haptic: 'medium' },
   line: { sound: 'line', haptic: 'medium' },
   lines: { sound: 'lines', haptic: 'medium' },
   miss: { sound: 'miss', haptic: 'warning' },
