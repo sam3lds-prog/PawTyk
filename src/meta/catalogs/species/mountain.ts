@@ -170,8 +170,8 @@ export const SPECIES_MOUNTAIN: readonly SpeciesDef[] = [
 export const NAMES_MOUNTAIN: readonly string[] = [
   'Pema', 'Tashi', 'Dawa', 'Nima', 'Sonam', 'Norbu', 'Dechen', 'Pemba', 'Mingma', 'Yeshi',
   'Inti', 'Pilar', 'Wayra', 'Mayu', 'Tika', 'Urpi', 'Paloma', 'Anja', 'Lukas', 'Seppi',
-  'Anneli', 'Anni', 'Mia', 'Abeba', 'Selam', 'Konjo', 'Amal', 'Safiya', 'Tilelli', 'Lupine',
-  'Kesang', 'Sky', 'Ingo', 'Edda', 'Reto', 'Vreni', 'Paco', 'Thistle', 'Moss', 'Bryn',
+  'Anneli', 'Lina', 'Mia', 'Abeba', 'Selam', 'Konjo', 'Amal', 'Safiya', 'Tilelli', 'Lupine',
+  'Kesang', 'Sky', 'Ingo', 'Edda', 'Reto', 'Vreni', 'Tito', 'Thistle', 'Moss', 'Bryn',
 ];
 
 /** Words for mountain place names ("<adjective> <noun>"). */

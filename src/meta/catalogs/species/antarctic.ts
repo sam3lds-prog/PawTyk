@@ -74,7 +74,7 @@ export const NAMES_ANTARCTIC: readonly string[] = [
   'Popcorn', 'Puddle', 'Sprout', 'Nugget', 'Biscuit', 'Button', 'Dumpling', 'Waffle', 'Noodle', 'Pudding',
   'Toffee', 'Pancake', 'Cocoa', 'Sprinkle', 'Jellybean', 'Crumble', 'Wren', 'Edie', 'Ivy', 'Rosie',
   'Gus', 'Ollie', 'Tess', 'Bea', 'Effie', 'Lulu', 'Mimi', 'Peggy', 'Rita', 'Pia',
-  'Alma', 'Nieve', 'Celeste', 'Pilu', 'Emilio', 'Lucia', 'Tomas', 'Rocio', 'Ines', 'Bobble',
+  'Alma', 'Nieve', 'Celeste', 'Nube', 'Emilio', 'Lucia', 'Tomas', 'Rocio', 'Ines', 'Bobble',
 ];
 
 /** Words for antarctic place names ("<adjective> <noun>"). */

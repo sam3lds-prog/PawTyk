@@ -4,9 +4,12 @@
  */
 
 import { DRAWN_SPECIES } from './drawn';
+import { NAMES_AMAZON, SPECIES_AMAZON } from './amazon';
+import { NAMES_BAMBOO, PLACE_WORDS_BAMBOO, SPECIES_BAMBOO } from './bamboo';
 import { NAMES_COAST, PLACE_WORDS_COAST, SPECIES_COAST } from './coast';
 import { NAMES_DESERT, PLACE_WORDS_DESERT, SPECIES_DESERT } from './desert';
 import { NAMES_ISLAND, PLACE_WORDS_ISLAND, SPECIES_ISLAND } from './island';
+import { NAMES_JUNGLE, PLACE_WORDS_JUNGLE, SPECIES_JUNGLE } from './jungle';
 import { NAMES_SAVANNA, SPECIES_SAVANNA } from './savanna';
 import { NAMES_WETLAND, PLACE_WORDS_WETLAND, SPECIES_WETLAND } from './wetland';
 import type { BiomeId, SpeciesDef, SpeciesId } from './types';
@@ -24,6 +27,9 @@ const FILES: Partial<Record<BiomeId, BiomeFile>> = {
   savanna: { species: SPECIES_SAVANNA, names: NAMES_SAVANNA },
   desert: { species: SPECIES_DESERT, names: NAMES_DESERT, placeWords: PLACE_WORDS_DESERT },
   island: { species: SPECIES_ISLAND, names: NAMES_ISLAND, placeWords: PLACE_WORDS_ISLAND },
+  amazon: { species: SPECIES_AMAZON, names: NAMES_AMAZON },
+  jungle: { species: SPECIES_JUNGLE, names: NAMES_JUNGLE, placeWords: PLACE_WORDS_JUNGLE },
+  bamboo: { species: SPECIES_BAMBOO, names: NAMES_BAMBOO, placeWords: PLACE_WORDS_BAMBOO },
 };
 
 export const SPECIES: readonly SpeciesDef[] = [...DRAWN_SPECIES, ...Object.values(FILES).flatMap((f) => f!.species)];
