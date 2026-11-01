@@ -10,7 +10,6 @@
  */
 
 import type { Feature, RegionArt, Spot } from './regions';
-import type { LookId } from '../../meta/catalogs/places';
 import { OUT, SHADOW } from './sceneKit';
 
 export type NewBiome = 'bamboo' | 'mountain' | 'desert' | 'woodland' | 'wetland' | 'coast' | 'island' | 'grassland';
@@ -1442,7 +1441,7 @@ const spot = (x: number, y: number, H: number, mood: Spot['mood']): Spot => ({ x
 export const LANDSCAPE_SPOTS: Record<NewBiome, { ground: readonly [Spot, Spot, Spot, Spot]; water: readonly Spot[] }> = {
   bamboo: { ground: [spot(114, 254, 34, 'happy'), spot(250, 262, 34, 'idle'), spot(178, 288, 32, 'happy'), spot(318, 280, 30, 'sleepy')], water: [] },
   mountain: { ground: [spot(88, 250, 34, 'happy'), spot(236, 260, 34, 'idle'), spot(160, 288, 32, 'happy'), spot(304, 280, 30, 'sleepy')], water: [] },
-  desert: { ground: [spot(96, 258, 34, 'happy'), spot(236, 264, 34, 'idle'), spot(170, 290, 32, 'happy'), spot(298, 282, 30, 'sleepy')], water: [] },
+  desert: { ground: [spot(96, 258, 34, 'happy'), spot(236, 264, 34, 'idle'), spot(170, 290, 32, 'happy'), spot(298, 282, 30, 'sleepy')], water: [spot(200, 202, 24, 'happy')] },
   woodland: { ground: [spot(92, 256, 34, 'happy'), spot(244, 262, 34, 'idle'), spot(170, 288, 32, 'happy'), spot(312, 280, 30, 'sleepy')], water: [] },
   wetland: {
     ground: [spot(66, 236, 34, 'happy'), spot(110, 286, 32, 'idle'), spot(200, 290, 32, 'happy'), spot(300, 292, 30, 'sleepy')],
@@ -1457,81 +1456,4 @@ export const LANDSCAPE_SPOTS: Record<NewBiome, { ground: readonly [Spot, Spot, S
     water: [spot(150, 200, 32, 'happy'), spot(80, 222, 30, 'idle'), spot(196, 172, 28, 'happy')],
   },
   grassland: { ground: [spot(92, 256, 34, 'happy'), spot(244, 262, 34, 'idle'), spot(168, 288, 32, 'happy'), spot(306, 280, 30, 'sleepy')], water: [] },
-};
-
-export const LANDSCAPE_TEXT: Record<
-  NewBiome,
-  {
-    label: string;
-    scenery: string;
-    stageNames: readonly [string, string, string, string, string];
-    stageLines: readonly [string, string, string, string, string];
-    accents: readonly string[];
-    looks: readonly LookId[];
-  }
-> = {
-  bamboo: {
-    label: 'Bamboo forest',
-    scenery: 'Tall green bamboo and misty hills',
-    stageNames: ['Quiet grove', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['Bamboo, mist and a dry stream bed', 'Tall bamboo sways, and the first friend arrives', 'A little pavilion goes up', 'The stream runs under a wooden bridge', 'Blossom, lanterns and birdsong'],
-    accents: ['#3F8F7E', '#358574', '#4A9784', '#2E7E6E', '#43927F'],
-    looks: ['classic', 'misty', 'blossom', 'golden'],
-  },
-  mountain: {
-    label: 'Mountains',
-    scenery: 'Snowy peaks above an alpine meadow',
-    stageNames: ['Wild land', 'First friend', 'Mountain hut', 'Water and shade', 'Thriving'],
-    stageLines: ['Snowy peaks and a quiet meadow', 'Rocky ledges rise, and the first friend climbs up', 'A cozy hut goes up on the meadow', 'Snowmelt fills a clear blue lake', 'Alpine flowers everywhere'],
-    accents: ['#5B77A6', '#4F6C98', '#6680B0', '#56709E', '#4A6890'],
-    looks: ['classic', 'misty', 'golden', 'autumn', 'dusk'],
-  },
-  desert: {
-    label: 'Desert',
-    scenery: 'Golden dunes and rosy mesas',
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Oasis', 'Thriving'],
-    stageLines: ['Rolling dunes under a pale sky', 'A tall cactus grows, and the first friend arrives', 'A cool clay house goes up', 'An oasis fills under the date palms', 'Cactus flowers and a balloon drifting by'],
-    accents: ['#C0694F', '#B45F4C', '#C4744F', '#AD5B48', '#BC6E56'],
-    looks: ['classic', 'golden', 'dusk'],
-  },
-  woodland: {
-    label: 'Woodland',
-    scenery: 'Oaks, pines and mossy paths',
-    stageNames: ['Wild land', 'First friend', 'Stump house', 'Water and shade', 'Thriving'],
-    stageLines: ['A quiet path through the trees', 'A great oak spreads out, and the first friend arrives', 'A cozy stump house opens its door', 'A forest pool fills by the pines', 'Toadstools, bluebells and butterflies'],
-    accents: ['#6A8A3E', '#5E8244', '#7A8A3A', '#8A6E48', '#668E4A'],
-    looks: ['classic', 'autumn', 'misty', 'blossom', 'golden'],
-  },
-  wetland: {
-    label: 'Wetland',
-    scenery: 'Reeds, lily pads and slow water',
-    stageNames: ['Wild land', 'First friend', 'Boardwalk', 'Water and shade', 'Thriving'],
-    stageLines: ['Still water and a wide sky', 'Reeds rustle, and the first friend arrives', 'A boardwalk leads to a little hut', 'Water lilies bloom under a willow', 'Irises and dragonflies everywhere'],
-    accents: ['#3A8791', '#2F7D88', '#438E96', '#36818C', '#4A8A86'],
-    looks: ['classic', 'misty', 'golden', 'dusk', 'autumn'],
-  },
-  coast: {
-    label: 'Coast',
-    scenery: 'Sandy beach, rock pools and the open sea',
-    stageNames: ['Wild land', 'First friend', 'Beach hut', 'Rock pools', 'Thriving'],
-    stageLines: ['Waves on an empty beach', 'Rocks and driftwood wash up, and the first friend arrives', 'A striped beach hut goes up', 'Rock pools fill, and a sunshade opens', 'A lighthouse, a sailboat and gulls'],
-    accents: ['#3A7FB0', '#3477A6', '#4386B5', '#2F6F9C', '#4A82AE'],
-    looks: ['classic', 'golden', 'misty', 'dusk'],
-  },
-  island: {
-    label: 'Island',
-    scenery: 'Palm trees and a turquoise lagoon',
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['White sand and a green peak', 'Palms lean over the sand, and the first friend arrives', 'A hut on stilts stands in the lagoon', 'A waterfall tumbles down the peak', 'Flowers, a canoe and seabirds'],
-    accents: ['#1F8F8A', '#178580', '#269690', '#13807C', '#2A8E86'],
-    looks: ['classic', 'golden', 'dusk'],
-  },
-  grassland: {
-    label: 'Grassland',
-    scenery: 'Rolling prairie under a big sky',
-    stageNames: ['Open prairie', 'First friend', 'Windmill', 'Water and shade', 'Thriving'],
-    stageLines: ['Tall grass under a big sky', 'A lone tree grows on the hill, and the first friend arrives', 'A windmill starts to turn', 'A pond fills below the windmill', 'Wildflowers, butterflies and a kite'],
-    accents: ['#73883A', '#687F3C', '#7E8C38', '#62803E', '#867F36'],
-    looks: ['classic', 'golden', 'autumn', 'blossom', 'dusk'],
-  },
 };

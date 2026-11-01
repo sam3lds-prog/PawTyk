@@ -8,7 +8,7 @@ export const SPECIES_MOUNTAIN: readonly SpeciesDef[] = [
      'ears:round snout:cat mark:rosettes tail:bushy x:whiskers',
      'E8E4DC FBF8F2 3B3A3C 6B6A6E'),
   sp('llama', 'Llama', 'mountain', 'The Andes of South America',
-     'Llamas hum softly to talk to each other.', 'horse', 'large',
+     'Some farmers keep a llama to watch over their sheep.', 'horse', 'large',
      'body:tall head:tall ears:pointed crown:topknot snout:muzzle tail:stub',
      'F2EBDD FFF8EE 3A2E26 E6D8C0',
      { coats: ['Brown: 9A6A44 E2C8A6 3A2A20 7A5236'] }),

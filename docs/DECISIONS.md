@@ -986,3 +986,24 @@ places brought new *individuals* of the eighteen drawn species; now each place b
   nouns), `test/unit/places.test.ts` and `endlessWorld.dom.test.ts` updated, and three e2e checks (a place's kit
   animals, a toyable place in 3D, a place with a snake or fish kept drawn).
 
+#### PR E review fixes (independent review)
+- **A red fox or red panda place crashed** (the first around place 109): the Pet Garden's fox and red panda had no
+  coats. They have three each now, a hand-drawn kind falls back to its own colors, and a test draws every place animal
+  over a full lap of every landscape (places 1–300) through every renderer (portrait, board rig, scene figure, tint, toy).
+- **Every list a place is made from is pinned**, not just the first forty places: each landscape's species order,
+  names, words, zones, looks, accents and stages, plus every 25th place to 1000 (`placesSnapshot.ts::worldFixture`).
+  `docs/species-kit.md` says what that means once places ship.
+- **Swimmers arrive when their water is there**: where a scene's water comes with its third stage (an oasis, a pond by
+  the ice), a place's fish and whales arrive last; the desert has an oasis spot. Checked over 3,000 places: none early.
+- **Words**: kinds named for places keep their capitals ("North American river otter", "Christmas Island red crab"),
+  others don't ("giant Pacific octopus", "gentoo penguin"); "a European robin"; "grey wolves", "wood mice", "musk oxen".
+- **3D**: a scene that changes to one that stays drawn while three.js is still loading no longer makes a stage.
+- **Content**: the Pekin duck (a domestic mallard, the wetland's mallard already) is now the Muscovy duck, its own
+  species; repeated facts rewritten (llama, bilby, red-necked wallaby, Arctic hare); the Virginia opossum is "the only
+  marsupial" north of Mexico; the green tree python lives in the outback's landscape (New Guinea).
+- Small: names are escaped in figure attributes; `data-no-toy="1"`; coats' colors are checked; unused landscape text
+  removed (places.ts holds it).
+- Noted, not changed: the startup bundle grows by about 78 kB gzipped (the catalog, the kit and the landscapes load
+  for every player); loading them only once places begin is a follow-up. New landscape thumbnails are heavier than the
+  regions' (the World's finished fold draws them only when opened).
+

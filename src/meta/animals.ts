@@ -57,25 +57,32 @@ export function animalInfo(id: AnimalId): AnimalInfo {
  * capital ("Galápagos tortoise", "Przewalski's horse").
  */
 export function kindNoun(kind: string): string {
-  const first = kind.split(' ')[0];
-  if (PROPER.test(first) || /['’]s$/.test(first)) return kind;
+  const words = kind.split(' ');
+  const first = words[0];
+  // A name of a place or a person keeps its capital: "Galápagos tortoise", "Przewalski's horse", and a two-word name
+  // whose second word is capitalized too ("North American river otter", "Christmas Island red crab").
+  if (PROPER.test(first) || (/['’]s$/.test(first) && !/^lion['’]s$/i.test(first)) || (/^(North|South|East|West|New|Christmas|Rajah|Saint|Great)$/.test(first) && /^[A-Z]/.test(words[1] ?? ''))) return kind;
   return kind.charAt(0).toLowerCase() + kind.slice(1);
 }
 const PROPER =
-  /^(African|American|Amazon|Andean|Antarctic|Arabian|Asian|Asiatic|Atlantic|Australian|Bactrian|Barbary|Bengal|Bornean|Brazilian|Californian?|Canadian|Caribbean|Chinese|Eurasian|European|Egyptian|Ethiopian|Galápagos|Hawaiian|Himalayan|Humboldt|Indian|Japanese|Javan|Komodo|Madagascar|Malagasy|Malayan|Mexican|Mongolian|Nile|Pacific|Patagonian|Philippine|Siberian|Sumatran|Tasmanian|Tibetan|Amur|Adélie|Gila|Gentoo|Pallas|Bennett|Goodfellow|Darwin|Hector|Grevy|Thomson|Rothschild|Sri|Iberian|Scottish|Cape|Nubian|Alaskan|Hermann|Spix|Victoria|Patas|Diana|Mandarin(?= duck))$/;
+  /^(African|American|Amazon|Andean|Antarctic|Arabian|Asian|Asiatic|Atlantic|Australian|Bactrian|Barbary|Bengal|Bornean|Brazilian|Californian?|Canadian|Caribbean|Chinese|Eurasian|European|Egyptian|Ethiopian|Galápagos|Hawaiian|Himalayan|Humboldt|Indian|Japanese|Javan|Komodo|Madagascar|Malagasy|Malayan|Mexican|Mongolian|Nile|Pacific|Patagonian|Philippine|Siberian|Sumatran|Tasmanian|Tibetan|Amur|Adélie|Gila|Pallas|Bennett|Goodfellow|Darwin|Hector|Grevy|Thomson|Rothschild|Sri|Iberian|Scottish|Cape|Nubian|Alaskan|Hermann|Spix|Victoria|Patas|Diana|Norway|Senegal|Congo|Kalahari|Sahara|Steller|Atlas|Andes)$/;
 
 /** "sheep", "piglets", "calves", "ponies", "foxes": the plural of an animal noun. */
 export function pluralNoun(noun: string): string {
-  if (/sheep$/i.test(noun)) return noun;
-  if (/calf$/i.test(noun)) return noun.replace(/calf$/i, 'calves');
+  // The same in the plural: sheep, deer, moose, bison, fish (and kinds named for them: "red deer", "zebrafish").
+  if (/(sheep|deer|moose|bison|fish|salmon|trout|squid|krill|buffalo|elk|aphid)$/i.test(noun)) return noun;
+  if (/(calf|wolf)$/i.test(noun)) return noun.replace(/f$/i, 'ves');
+  if (/(^| )ox$/i.test(noun)) return noun + 'en';
+  if (/mouse$/i.test(noun)) return noun.replace(/mouse$/i, 'mice');
+  if (/goose$/i.test(noun)) return noun.replace(/goose$/i, 'geese');
   if (/[^aeiou]y$/i.test(noun)) return noun.slice(0, -1) + 'ies';
   if (/(s|x|z|ch|sh)$/i.test(noun)) return noun + 'es';
   return noun + 's';
 }
 
-/** "a sheep", "an elephant calf". */
+/** "a sheep", "an elephant calf", "a European robin" (an "eu", "uni" or "one" sound starts with a y or a w). */
 export function withArticle(noun: string): string {
-  return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+  return `${/^[aeiou]/i.test(noun) && !/^(eu|uni|use|usu|one)/i.test(noun) ? 'an' : 'a'} ${noun}`;
 }
 
 export function isHome(save: Pick<SaveV2, 'inventory'>, id: AnimalId): boolean {

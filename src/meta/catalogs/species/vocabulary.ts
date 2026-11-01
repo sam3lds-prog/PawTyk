@@ -56,6 +56,10 @@ export function speciesProblems(list: readonly SpeciesDef[]): string[] {
       if (!(VOCAB[k] as readonly string[]).includes(s[k] as string)) out.push(`${at} ${k} "${s[k]}" is not in the vocabulary`);
     for (const x of s.extras) if (!(VOCAB.extras as readonly string[]).includes(x)) out.push(`${at} extra "${x}" is not in the vocabulary`);
     for (const [k, v] of Object.entries(s.colors)) if (!HEX.test(v)) out.push(`${at} color ${k} "${v}" is not a 6-digit hex`);
+    for (const c of s.coats ?? []) {
+      if (!c.name) out.push(`${at} a coat needs a name`);
+      for (const [k, v] of Object.entries(c)) if (k !== 'name' && !HEX.test(v as string)) out.push(`${at} coat "${c.name}" color ${k} "${v}" is not a 6-digit hex`);
+    }
     if (!s.name || s.name.length > 28) out.push(`${at} name must be 1–28 characters`);
     if (s.name[0] !== s.name[0].toUpperCase()) out.push(`${at} name starts with a capital`);
     if (!s.from || s.from.length > 48) out.push(`${at} "from" must be 1–48 characters`);

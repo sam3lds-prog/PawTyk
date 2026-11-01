@@ -138,8 +138,10 @@ describe('the endless world on screen (D39)', () => {
     const w = p1.animals[0];
     expect(sheet.textContent).toContain(w.name);
     expect(sheet.textContent).toContain(w.kind);
-    if (w.coat.name) expect(sheet.textContent).toContain(`${w.coat.name} coat`);
-    if (!w.base) {
+    // A kit kind has no coat name: the card names its kind alone.
+    expect(w.base).toBeNull();
+    expect(sheet.textContent).not.toContain(' coat');
+    {
       expect(sheet.textContent).toContain(w.bio);
       expect(sheet.textContent).toContain('In the wild');
     }

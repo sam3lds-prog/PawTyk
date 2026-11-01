@@ -147,7 +147,7 @@ export const SPECIES_WOODLAND: readonly SpeciesDef[] = [
      'body:bird head:small snout:beak mark:hood tail:feather',
      '9A9A98 F6F2EA 2A2A2C 2A2A2C beak:2A2A2C'),
   sp('virginia-opossum', 'Virginia opossum', 'woodland', 'Woods and towns of North America',
-     'It is the only animal north of Mexico with a pouch, like a kangaroo.', 'fox', 'small',
+     'It is the only marsupial north of Mexico: mums carry babies in a pouch.', 'fox', 'small',
      'head:tall ears:round snout:fox tail:cat x:darkears x:whiskers',
      'A09E9A F6F4F0 E68A94 2E2C2E head:F2F0EC'),
   sp('eastern-box-turtle', 'Eastern box turtle', 'woodland', 'Woods of eastern North America',

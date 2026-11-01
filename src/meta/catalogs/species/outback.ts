@@ -44,7 +44,7 @@ export const SPECIES_OUTBACK: readonly SpeciesDef[] = [
      'body:bird crown:crest snout:hook tail:feather',
      'FBFBF8 FFFFFF 2A2A2A F6D24A beak:3A3A3A'),
   sp('greater-bilby', 'Greater bilby', 'outback', 'Deserts of central and western Australia',
-     'Its pouch opens backwards, so no dirt gets in while it digs.', 'meerkat', 'small',
+     'Its big ears help it hear insects and stay cool in the desert.', 'meerkat', 'small',
      'ears:long snout:long tail:cat',
      'A8A8AE F2EEEA 2B2B2E 3A3A3E'),
   sp('southern-cassowary', 'Southern cassowary', 'outback', 'Rainforests of New Guinea and Queensland',
@@ -52,7 +52,7 @@ export const SPECIES_OUTBACK: readonly SpeciesDef[] = [
      'body:wader head:small crown:casque snout:beak tail:feather x:wattle',
      '2B2B30 3A3A42 1E1E22 B89A6A beak:6A6A70 head:3A6EC8'),
   sp('red-necked-wallaby', 'Red-necked wallaby', 'outback', 'Eastern Australia and Tasmania',
-     'A baby wallaby is called a joey, and it grows up in mum’s pouch.', 'kangaroo', 'medium',
+     'Red-necked wallabies come out to graze in the cool of dusk and dawn.', 'kangaroo', 'medium',
      'body:upright ears:pointed snout:dog tail:kangaroo',
      'A8A098 E6E0D6 2B2B2E C9845A head:B89070'),
   sp('thorny-devil', 'Thorny devil', 'outback', 'Sandy deserts of Australia',
@@ -140,6 +140,7 @@ export const SPECIES_OUTBACK: readonly SpeciesDef[] = [
      'It is also called the rainbow finch for its many bright colors.', 'chicken', 'tiny',
      'body:bird head:small snout:beak tail:feather',
      '4AA84A F6D24A 2A2A2E 8A4AC8 beak:F2D2C2 head:E2463F'),
+  sp('green-tree-python', 'Green tree python', 'outback', 'Rainforests of New Guinea', 'Its babies are yellow or red and turn green as they grow.', 'seal', 'small', 'body:coil head:small snout:smile mark:spots tail:none', '4EB04E D9F0A8 2A3A20 F6F1E0', { coats: ['Young: F2C83A FBEAA0 4A3A20 F6F1E0'] }),
 ];
 
 /** Names for the animals who live in outback places (40). */

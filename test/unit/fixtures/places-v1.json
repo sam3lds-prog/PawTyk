@@ -1,1992 +1,6820 @@
-[
- {
-  "id": "p1",
-  "name": "Sunset Wells",
-  "biome": "desert",
-  "look": "golden",
-  "mirror": true,
-  "place": "Desert · Kalahari",
-  "pin": [
-   17.7,
-   -21.8
-  ],
-  "opens": 80,
-  "accent": "#AD5B48",
-  "animals": [
-   [
-    "w1-0",
-    3,
-    "fennec",
-    null,
-    "Henna",
-    "",
-    null,
-    "A great listener"
+{
+ "first": [
+  {
+   "id": "p1",
+   "name": "Sunset Wells",
+   "biome": "desert",
+   "look": "golden",
+   "mirror": true,
+   "place": "Desert · Kalahari",
+   "pin": [
+    17.7,
+    -21.8
    ],
-   [
-    "w1-1",
-    8,
-    "dromedary",
-    null,
-    "Mesquite",
-    "",
-    "#A88BDB",
-    "Likes things just so"
-   ],
-   [
-    "w1-2",
-    15,
-    "roadrunner",
-    null,
-    "Falafel",
-    "",
-    null,
-    "Curious about everything"
+   "opens": 80,
+   "accent": "#AD5B48",
+   "animals": [
+    [
+     "w1-0",
+     3,
+     "fennec",
+     null,
+     "Henna",
+     "",
+     null,
+     "A great listener"
+    ],
+    [
+     "w1-1",
+     8,
+     "dromedary",
+     null,
+     "Mesquite",
+     "",
+     "#A88BDB",
+     "Likes things just so"
+    ],
+    [
+     "w1-2",
+     15,
+     "roadrunner",
+     null,
+     "Falafel",
+     "",
+     null,
+     "Curious about everything"
+    ]
    ]
-  ]
- },
- {
-  "id": "p2",
-  "name": "Honey Hills",
-  "biome": "farm",
-  "look": "classic",
-  "mirror": false,
-  "place": "Farmland · American Midwest",
-  "pin": [
-   -91.9,
-   43.3
-  ],
-  "opens": 100,
-  "accent": "#C0583F",
-  "animals": [
-   [
-    "w2-0",
-    3,
+  },
+  {
+   "id": "p2",
+   "name": "Honey Hills",
+   "biome": "farm",
+   "look": "classic",
+   "mirror": false,
+   "place": "Farmland · American Midwest",
+   "pin": [
+    -91.9,
+    43.3
+   ],
+   "opens": 100,
+   "accent": "#C0583F",
+   "animals": [
+    [
+     "w2-0",
+     3,
+     "donkey",
+     null,
+     "Elspeth",
+     "",
+     "#F08A5D",
+     "Proud of its home"
+    ],
+    [
+     "w2-1",
+     8,
+     "muscovy-duck",
+     null,
+     "Gracie",
+     "",
+     "#A88BDB",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w2-2",
+     15,
+     "alpaca",
+     null,
+     "Gingersnap",
+     "",
+     null,
+     "Chatty in the mornings"
+    ]
+   ]
+  },
+  {
+   "id": "p3",
+   "name": "Misty Cape",
+   "biome": "antarctic",
+   "look": "misty",
+   "mirror": true,
+   "place": "Antarctica · East Antarctica",
+   "pin": [
+    70.6,
+    -68.2
+   ],
+   "opens": 120,
+   "accent": "#5B9BC4",
+   "animals": [
+    [
+     "w3-0",
+     3,
+     "emperor-penguin",
+     null,
+     "Bobble",
+     "",
+     null,
+     "Makes friends easily"
+    ],
+    [
+     "w3-1",
+     8,
+     "leopard-seal",
+     null,
+     "Popcorn",
+     "",
+     null,
+     "Notices the little things"
+    ],
+    [
+     "w3-2",
+     15,
+     "adelie-penguin",
+     null,
+     "Rocio",
+     "",
+     "#F2B84B",
+     "Always up for an adventure"
+    ]
+   ]
+  },
+  {
+   "id": "p4",
+   "name": "Lantern Hills",
+   "biome": "bamboo",
+   "look": "blossom",
+   "mirror": false,
+   "place": "Bamboo forest · Russian Far East",
+   "pin": [
+    132.7,
+    46.2
+   ],
+   "opens": 140,
+   "accent": "#358574",
+   "animals": [
+    [
+     "w4-0",
+     3,
+     "giant-panda",
+     null,
+     "Hinoki",
+     "",
+     null,
+     "Gentle and a little shy"
+    ],
+    [
+     "w4-1",
+     8,
+     "red-crowned-crane",
+     null,
+     "Kinako",
+     "",
+     "#F08A5D",
+     "Brave, bright and always first"
+    ],
+    [
+     "w4-2",
+     15,
+     "japanese-macaque",
+     null,
+     "Yuzu",
+     "",
+     "#3FB7A8",
+     "Happiest with friends nearby"
+    ]
+   ]
+  },
+  {
+   "id": "p5",
+   "name": "Saltwind Bay",
+   "biome": "coast",
+   "look": "classic",
+   "mirror": false,
+   "place": "Coast · Great Barrier Reef",
+   "pin": [
+    144,
+    -13.4
+   ],
+   "opens": 160,
+   "accent": "#4386B5",
+   "animals": [
+    [
+     "w5-0",
+     3,
+     "bottlenose-dolphin",
+     null,
+     "Sprat",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w5-1",
+     8,
+     "sea-otter",
+     null,
+     "Bosun",
+     "",
+     null,
+     "Chatty in the mornings"
+    ],
+    [
+     "w5-2",
+     15,
+     "clownfish",
+     null,
+     "Morgan",
+     "",
+     "#6FBF73",
+     "Bold, bouncy and brave"
+    ]
+   ]
+  },
+  {
+   "id": "p6",
+   "name": "Sunlit Knoll",
+   "biome": "grassland",
+   "look": "autumn",
+   "mirror": true,
+   "place": "Grassland · Steppe of eastern Europe",
+   "pin": [
+    34.6,
+    47.4
+   ],
+   "opens": 180,
+   "accent": "#867F36",
+   "animals": [
+    [
+     "w6-0",
+     3,
+     "american-bison",
+     null,
+     "Bolor",
+     "",
+     null,
+     "Always the last to bed"
+    ],
+    [
+     "w6-1",
+     8,
+     "black-tailed-prairie-dog",
+     null,
+     "Saran",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w6-2",
+     15,
+     "monarch-butterfly",
+     null,
+     "Paz",
+     "",
+     "#F08A5D",
+     "Likes things just so"
+    ]
+   ]
+  },
+  {
+   "id": "p7",
+   "name": "Granite Col",
+   "biome": "mountain",
+   "look": "classic",
+   "mirror": true,
+   "place": "Mountains · Himalayas",
+   "pin": [
+    89.3,
+    29.3
+   ],
+   "opens": 200,
+   "accent": "#5B77A6",
+   "animals": [
+    [
+     "w7-0",
+     3,
+     "snow-leopard",
+     null,
+     "Konjo",
+     "",
+     null,
+     "A champion napper"
+    ],
+    [
+     "w7-1",
+     8,
+     "llama",
+     null,
+     "Urpi",
+     "",
+     null,
+     "Funny without trying"
+    ],
+    [
+     "w7-2",
+     15,
+     "golden-eagle",
+     null,
+     "Pema",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ]
+   ]
+  },
+  {
+   "id": "p8",
+   "name": "Jade Glade",
+   "biome": "amazon",
+   "look": "misty",
+   "mirror": false,
+   "place": "Rainforest · Central America",
+   "pin": [
+    -84.6,
+    8
+   ],
+   "opens": 220,
+   "accent": "#55A874",
+   "animals": [
+    [
+     "w8-0",
+     3,
+     "jaguar",
+     null,
+     "Rubi",
+     "",
+     null,
+     "Chatty in the mornings"
+    ],
+    [
+     "w8-1",
+     8,
+     "scarlet-macaw",
+     null,
+     "Goiaba",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w8-2",
+     15,
+     "red-eyed-tree-frog",
+     null,
+     "Brisa",
+     "",
+     "#E5546C",
+     "Proud of its home"
+    ]
+   ]
+  },
+  {
+   "id": "p9",
+   "name": "Mango Shoals",
+   "biome": "island",
+   "look": "dusk",
+   "mirror": true,
+   "place": "Island · New Zealand",
+   "pin": [
+    177.6,
+    -40.6
+   ],
+   "opens": 240,
+   "accent": "#1F8F8A",
+   "animals": [
+    [
+     "w9-0",
+     3,
+     "ring-tailed-lemur",
+     null,
+     "Driftwood",
+     "",
+     "#5B9BD5",
+     "Always up for an adventure"
+    ],
+    [
+     "w9-1",
+     8,
+     "brown-kiwi",
+     null,
+     "Ube",
+     "",
+     null,
+     "Full of bounce"
+    ],
+    [
+     "w9-2",
+     15,
+     "galapagos-tortoise",
+     null,
+     "Hoku",
+     "",
+     null,
+     "Makes friends easily"
+    ]
+   ]
+  },
+  {
+   "id": "p10",
+   "name": "Quandong Station",
+   "biome": "outback",
+   "look": "golden",
+   "mirror": true,
+   "place": "Outback · New Guinea",
+   "pin": [
+    144.9,
+    -6
+   ],
+   "opens": 260,
+   "accent": "#D99550",
+   "animals": [
+    [
+     "w10-0",
+     3,
+     "platypus",
+     null,
+     "Frankie",
+     "",
+     null,
+     "Brave, bright and always first"
+    ],
+    [
+     "w10-1",
+     8,
+     "quokka",
+     null,
+     "Alfie",
+     "",
+     null,
+     "Gentle and a little shy"
+    ],
+    [
+     "w10-2",
+     15,
+     "laughing-kookaburra",
+     null,
+     "Ruby",
+     "",
+     "#F08A5D",
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p11",
+   "name": "Mossy Copse",
+   "biome": "woodland",
+   "look": "golden",
+   "mirror": false,
+   "place": "Woodland · Pacific Northwest",
+   "pin": [
+    -118.8,
+    45.2
+   ],
+   "opens": 280,
+   "accent": "#5E8244",
+   "animals": [
+    [
+     "w11-0",
+     3,
+     "european-hedgehog",
+     null,
+     "Ingrid",
+     "",
+     null,
+     "Loves a sunny spot"
+    ],
+    [
+     "w11-1",
+     8,
+     "raccoon",
+     null,
+     "Nils",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ],
+    [
+     "w11-2",
+     15,
+     "great-horned-owl",
+     null,
+     "Bertil",
+     "",
+     "#F2B84B",
+     "Funny without trying"
+    ]
+   ]
+  },
+  {
+   "id": "p12",
+   "name": "Orchid Springs",
+   "biome": "jungle",
+   "look": "golden",
+   "mirror": true,
+   "place": "Jungle · Southeast Asia",
+   "pin": [
+    102.1,
+    8.1
+   ],
+   "opens": 300,
+   "accent": "#2F8A55",
+   "animals": [
+    [
+     "w12-0",
+     3,
+     "bengal-tiger",
+     null,
+     "Sinar",
+     "",
+     null,
+     "A champion napper"
+    ],
+    [
+     "w12-1",
+     8,
+     "bornean-orangutan",
+     null,
+     "Megha",
+     "",
+     null,
+     "Funny without trying"
+    ],
+    [
+     "w12-2",
+     15,
+     "great-hornbill",
+     null,
+     "Sona",
+     "",
+     "#6FBF73",
+     "Quiet, patient and wise"
+    ]
+   ]
+  },
+  {
+   "id": "p13",
+   "name": "Marula Grasslands",
+   "biome": "savanna",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Savanna · Sahel",
+   "pin": [
+    2.2,
+    11.7
+   ],
+   "opens": 320,
+   "accent": "#A98A2C",
+   "animals": [
+    [
+     "w13-0",
+     3,
+     "lion",
+     null,
+     "Nanasi",
+     "",
+     "#3FB7A8",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w13-1",
+     8,
+     "plains-zebra",
+     null,
+     "Hazina",
+     "",
+     "#6FBF73",
+     "Never in a hurry"
+    ],
+    [
+     "w13-2",
+     15,
+     "ostrich",
+     null,
+     "Sherehe",
+     "",
+     null,
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p14",
+   "name": "Lily Marsh",
+   "biome": "wetland",
+   "look": "autumn",
+   "mirror": true,
+   "place": "Wetland · Nile",
+   "pin": [
+    31.1,
+    19.8
+   ],
+   "opens": 340,
+   "accent": "#2F7D88",
+   "animals": [
+    [
+     "w14-0",
+     3,
+     "hippopotamus",
+     null,
+     "Naledi",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w14-1",
+     8,
+     "greater-flamingo",
+     null,
+     "Dewdrop",
+     "",
+     null,
+     "Chatty in the mornings"
+    ],
+    [
+     "w14-2",
+     15,
+     "north-american-beaver",
+     null,
+     "Kamal",
+     "",
+     null,
+     "Bold, bouncy and brave"
+    ]
+   ]
+  },
+  {
+   "id": "p15",
+   "name": "Narwhal Cove",
+   "biome": "arctic",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Arctic · Siberian Arctic",
+   "pin": [
+    68.7,
+    71.9
+   ],
+   "opens": 360,
+   "accent": "#5B9BC4",
+   "animals": [
+    [
+     "w15-0",
+     3,
+     "walrus",
+     null,
+     "Tova",
+     "",
+     "#5B9BD5",
+     "Chatty in the mornings"
+    ],
+    [
+     "w15-1",
+     8,
+     "reindeer",
+     null,
+     "Sleet",
+     "",
+     "#F08A5D",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w15-2",
+     15,
+     "narwhal",
+     null,
+     "Britt",
+     "",
+     null,
+     "Proud of its home"
+    ]
+   ]
+  },
+  {
+   "id": "p16",
+   "name": "Elderberry Grove",
+   "biome": "woodland",
+   "look": "classic",
+   "mirror": true,
+   "place": "Woodland · Woods of North America",
+   "pin": [
+    -75.2,
+    46.8
+   ],
+   "opens": 380,
+   "accent": "#668E4A",
+   "animals": [
+    [
+     "w16-0",
+     3,
+     "red-squirrel",
+     null,
+     "Elsie",
+     "",
+     "#E5546C",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w16-1",
+     8,
+     "brown-bear",
+     null,
+     "Hattie",
+     "",
+     null,
+     "Proud of its home"
+    ],
+    [
+     "w16-2",
+     15,
+     "ladybird",
+     null,
+     "Lumi",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w16-3",
+     21,
+     "white-tailed-deer",
+     null,
+     "Morel",
+     "",
+     "#F08A5D",
+     "Chatty in the mornings"
+    ]
+   ]
+  },
+  {
+   "id": "p17",
+   "name": "Dandelion Plains",
+   "biome": "grassland",
+   "look": "blossom",
+   "mirror": false,
+   "place": "Grassland · Pampas",
+   "pin": [
+    -61.5,
+    -37.1
+   ],
+   "opens": 400,
+   "accent": "#62803E",
+   "animals": [
+    [
+     "w17-0",
+     3,
+     "pronghorn",
+     null,
+     "Amos",
+     "",
+     null,
+     "Happiest with friends nearby"
+    ],
+    [
+     "w17-1",
+     8,
+     "burrowing-owl",
+     null,
+     "Altan",
+     "",
+     "#E5546C",
+     "Never in a hurry"
+    ],
+    [
+     "w17-2",
+     15,
+     "golden-hamster",
+     null,
+     "Rusty",
+     "",
+     "#F08A5D",
+     "Gentle and a little shy"
+    ],
+    [
+     "w17-3",
+     21,
+     "maned-wolf",
+     null,
+     "Nico",
+     "",
+     null,
+     "Brave, bright and always first"
+    ]
+   ]
+  },
+  {
+   "id": "p18",
+   "name": "Blue Ice Coast",
+   "biome": "arctic",
+   "look": "misty",
+   "mirror": true,
+   "place": "Arctic · Greenland",
+   "pin": [
+    -33.1,
+    70
+   ],
+   "opens": 420,
+   "accent": "#5B9BC4",
+   "animals": [
+    [
+     "w18-0",
+     3,
+     "rock-ptarmigan",
+     null,
+     "Cloudberry",
+     "",
+     "#A88BDB",
+     "Brave, bright and always first"
+    ],
+    [
+     "w18-1",
+     8,
+     "arctic-fox",
+     "ember",
+     "Arvid",
+     "snow-white",
+     "#F08A5D",
+     "Curls up with its tail as a blanket"
+    ],
+    [
+     "w18-2",
+     15,
+     "arctic-hare",
+     "juniper",
+     "Frida",
+     "frosty grey",
+     null,
+     "Hops in neat zigzags"
+    ],
+    [
+     "w18-3",
+     21,
+     "arctic-wolf",
+     null,
+     "Snowdrop",
+     "",
+     null,
+     "Happiest with friends nearby"
+    ]
+   ]
+  },
+  {
+   "id": "p19",
+   "name": "Frosty Ridge",
+   "biome": "antarctic",
+   "look": "classic",
+   "mirror": false,
+   "place": "Antarctica · Antarctic Peninsula",
+   "pin": [
+    -62.6,
+    -69.3
+   ],
+   "opens": 440,
+   "accent": "#5590B0",
+   "animals": [
+    [
+     "w19-0",
+     3,
+     "wandering-albatross",
+     null,
+     "Jellybean",
+     "",
+     "#A88BDB",
+     "Chatty in the mornings"
+    ],
+    [
+     "w19-1",
+     8,
+     "antarctic-krill",
+     null,
+     "Peggy",
+     "",
+     "#F2B84B",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w19-2",
+     15,
+     "king-penguin",
+     null,
+     "Mimi",
+     "",
+     null,
+     "Proud of its home"
+    ],
+    [
+     "w19-3",
+     21,
+     "weddell-seal",
+     null,
+     "Pancake",
+     "",
+     null,
+     "Bold, bouncy and brave"
+    ]
+   ]
+  },
+  {
+   "id": "p20",
+   "name": "Jade Ridge",
+   "biome": "bamboo",
+   "look": "golden",
+   "mirror": true,
+   "place": "Bamboo forest · Japan",
+   "pin": [
+    139,
+    37.4
+   ],
+   "opens": 460,
+   "accent": "#448C7A",
+   "animals": [
+    [
+     "w20-0",
+     3,
+     "mandarin-duck",
+     null,
+     "Bori",
+     "",
+     "#F2B84B",
+     "Loves a sunny spot"
+    ],
+    [
+     "w20-1",
+     8,
+     "raccoon-dog",
+     null,
+     "Yun",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ],
+    [
+     "w20-2",
+     15,
+     "siberian-flying-squirrel",
+     null,
+     "Azuki",
+     "",
+     null,
+     "Funny without trying"
+    ],
+    [
+     "w20-3",
+     21,
+     "golden-snub-nosed-monkey",
+     null,
+     "Sumi",
+     "",
+     "#6FBF73",
+     "A champion napper"
+    ]
+   ]
+  },
+  {
+   "id": "p21",
+   "name": "Windward Sands",
+   "biome": "coast",
+   "look": "golden",
+   "mirror": true,
+   "place": "Coast · Coral Triangle",
+   "pin": [
+    124,
+    10.9
+   ],
+   "opens": 480,
+   "accent": "#2F6F9C",
+   "animals": [
+    [
+     "w21-0",
+     3,
+     "atlantic-puffin",
+     null,
+     "Estrella",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w21-1",
+     8,
+     "green-sea-turtle",
+     null,
+     "Oceane",
+     "",
+     "#E5546C",
+     "Chatty in the mornings"
+    ],
+    [
+     "w21-2",
+     15,
+     "orca",
+     null,
+     "Topaz",
+     "",
+     "#5B9BD5",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w21-3",
+     21,
+     "common-octopus",
+     null,
+     "Merrow",
+     "",
+     null,
+     "Proud of its home"
+    ]
+   ]
+  },
+  {
+   "id": "p22",
+   "name": "Vanilla Atoll",
+   "biome": "island",
+   "look": "classic",
+   "mirror": false,
+   "place": "Island · Caribbean islands",
+   "pin": [
+    -81.3,
+    20.5
+   ],
+   "opens": 500,
+   "accent": "#1F8F8A",
+   "animals": [
+    [
+     "w22-0",
+     3,
+     "philippine-tarsier",
+     null,
+     "Frangipani",
+     "",
+     null,
+     "Always the last to bed"
+    ],
+    [
+     "w22-1",
+     8,
+     "blue-footed-booby",
+     null,
+     "Bituin",
+     "",
+     "#5B9BD5",
+     "Curious about everything"
+    ],
+    [
+     "w22-2",
+     15,
+     "komodo-dragon",
+     null,
+     "Ola",
+     "",
+     "#E5546C",
+     "Likes things just so"
+    ],
+    [
+     "w22-3",
+     21,
+     "red-crab",
+     null,
+     "Lucero",
+     "",
+     null,
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p23",
+   "name": "Orchid Grove",
+   "biome": "jungle",
+   "look": "misty",
+   "mirror": false,
+   "place": "Jungle · India",
+   "pin": [
+    82.2,
+    17.8
+   ],
+   "opens": 520,
+   "accent": "#3E9A62",
+   "animals": [
+    [
+     "w23-0",
+     3,
+     "asian-elephant",
+     null,
+     "Tamu",
+     "",
+     "#3FB7A8",
+     "Makes friends easily"
+    ],
+    [
+     "w23-1",
+     8,
+     "atlas-moth",
+     null,
+     "Rambutan",
+     "",
+     "#E5546C",
+     "Notices the little things"
+    ],
+    [
+     "w23-2",
+     15,
+     "mountain-gorilla",
+     null,
+     "Diya",
+     "",
+     null,
+     "Always up for an adventure"
+    ],
+    [
+     "w23-3",
+     21,
+     "okapi",
+     null,
+     "Intan",
+     "",
+     null,
+     "Full of bounce"
+    ]
+   ]
+  },
+  {
+   "id": "p24",
+   "name": "Juniper Oasis",
+   "biome": "desert",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Desert · Sahara",
+   "pin": [
+    11.2,
+    22.6
+   ],
+   "opens": 540,
+   "accent": "#B45F4C",
+   "animals": [
+    [
+     "w24-0",
+     3,
+     "sand-cat",
+     null,
+     "Samira",
+     "",
+     null,
+     "Loves a sunny spot"
+    ],
+    [
+     "w24-1",
+     8,
+     "desert-tortoise",
+     null,
+     "Tahini",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ],
+    [
+     "w24-2",
+     15,
+     "long-eared-jerboa",
+     null,
+     "Tumbleweed",
+     "",
+     "#A88BDB",
+     "Funny without trying"
+    ],
+    [
+     "w24-3",
+     21,
+     "arabian-oryx",
+     null,
+     "Zahra",
+     "",
+     "#F2B84B",
+     "A champion napper"
+    ]
+   ]
+  },
+  {
+   "id": "p25",
+   "name": "Ochre Springs",
+   "biome": "outback",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Outback · Australia",
+   "pin": [
+    121.2,
+    -28.2
+   ],
+   "opens": 560,
+   "accent": "#D99550",
+   "animals": [
+    [
+     "w25-0",
+     3,
+     "short-beaked-echidna",
+     null,
+     "Kookie",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ],
+    [
+     "w25-1",
+     8,
+     "rainbow-lorikeet",
+     null,
+     "Billabong",
+     "",
+     null,
+     "Loves a sunny spot"
+    ],
+    [
+     "w25-2",
+     15,
+     "tasmanian-devil",
+     null,
+     "Sadie",
+     "",
+     "#A88BDB",
+     "A champion napper"
+    ],
+    [
+     "w25-3",
+     21,
+     "emu",
+     null,
+     "Acacia",
+     "",
+     "#F08A5D",
+     "Funny without trying"
+    ]
+   ]
+  },
+  {
+   "id": "p26",
+   "name": "Passionflower Bend",
+   "biome": "amazon",
+   "look": "classic",
+   "mirror": true,
+   "place": "Rainforest · Amazon basin",
+   "pin": [
+    -54.2,
+    -5.4
+   ],
+   "opens": 580,
+   "accent": "#55A874",
+   "animals": [
+    [
+     "w26-0",
+     3,
+     "amazon-river-dolphin",
+     null,
+     "Guava",
+     "",
+     null,
+     "Happiest with friends nearby"
+    ],
+    [
+     "w26-1",
+     8,
+     "blue-morpho",
+     null,
+     "Mateo",
+     "",
+     null,
+     "Never in a hurry"
+    ],
+    [
+     "w26-2",
+     15,
+     "red-howler-monkey",
+     null,
+     "Vida",
+     "",
+     null,
+     "Gentle and a little shy"
+    ],
+    [
+     "w26-3",
+     21,
+     "giant-anteater",
+     null,
+     "Bromelia",
+     "",
+     "#A88BDB",
+     "Brave, bright and always first"
+    ]
+   ]
+  },
+  {
+   "id": "p27",
+   "name": "Sandriver Ridge",
+   "biome": "savanna",
+   "look": "misty",
+   "mirror": true,
+   "place": "Savanna · Sahel",
+   "pin": [
+    -8.8,
+    9.4
+   ],
+   "opens": 600,
+   "accent": "#C99A2E",
+   "animals": [
+    [
+     "w27-0",
+     3,
+     "cheetah",
+     null,
+     "Imara",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w27-1",
+     8,
+     "bat-eared-fox",
+     "ember",
+     "Baobab",
+     "silver-grey",
+     "#F08A5D",
+     "Enormous ears that hear everything"
+    ],
+    [
+     "w27-2",
+     15,
+     "white-rhino",
+     null,
+     "Shangwe",
+     "",
+     null,
+     "A great listener"
+    ],
+    [
+     "w27-3",
+     21,
+     "vervet-monkey",
+     null,
+     "Wimbo",
+     "",
+     null,
+     "Likes things just so"
+    ]
+   ]
+  },
+  {
+   "id": "p28",
+   "name": "Barley Paddocks",
+   "biome": "farm",
+   "look": "golden",
+   "mirror": true,
+   "place": "Farmland · Central Europe",
+   "pin": [
+    21.5,
+    50.6
+   ],
+   "opens": 620,
+   "accent": "#9C5B3F",
+   "animals": [
+    [
+     "w28-0",
+     3,
+     "barn-owl",
+     null,
+     "Gravy",
+     "",
+     null,
+     "Gentle and a little shy"
+    ],
+    [
+     "w28-1",
+     8,
+     "rabbit",
+     "juniper",
+     "Parsnip",
+     "grey",
+     null,
+     "Quick, curious and fond of clover"
+    ],
+    [
+     "w28-2",
+     15,
+     "guinea-pig",
+     null,
+     "Waffles",
+     "",
+     "#5B9BD5",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w28-3",
+     21,
+     "domestic-goose",
+     null,
+     "Hamish",
+     "",
+     null,
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p29",
+   "name": "Dewy Shallows",
+   "biome": "wetland",
+   "look": "classic",
+   "mirror": false,
+   "place": "Wetland · Pantanal",
+   "pin": [
+    -55.8,
+    -19.9
+   ],
+   "opens": 640,
+   "accent": "#3A8791",
+   "animals": [
+    [
+     "w29-0",
+     3,
+     "mallard",
+     null,
+     "Pollywog",
+     "",
+     null,
+     "Always up for an adventure"
+    ],
+    [
+     "w29-1",
+     8,
+     "nile-crocodile",
+     null,
+     "Bobbin",
+     "",
+     null,
+     "Full of bounce"
+    ],
+    [
+     "w29-2",
+     15,
+     "common-kingfisher",
+     null,
+     "Minnow",
+     "",
+     null,
+     "Makes friends easily"
+    ],
+    [
+     "w29-3",
+     21,
+     "axolotl",
+     null,
+     "Lotte",
+     "",
+     "#F2B84B",
+     "Notices the little things"
+    ]
+   ]
+  },
+  {
+   "id": "p30",
+   "name": "Harebell Summit",
+   "biome": "mountain",
+   "look": "misty",
+   "mirror": false,
+   "place": "Mountains · Andes",
+   "pin": [
+    -76.3,
+    -10.7
+   ],
+   "opens": 660,
+   "accent": "#6680B0",
+   "animals": [
+    [
+     "w30-0",
+     3,
+     "alpine-marmot",
+     null,
+     "Lupine",
+     "",
+     "#3FB7A8",
+     "Never in a hurry"
+    ],
+    [
+     "w30-1",
+     8,
+     "alpine-ibex",
+     null,
+     "Inti",
+     "",
+     "#E5546C",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w30-2",
+     15,
+     "spectacled-bear",
+     null,
+     "Bryn",
+     "",
+     null,
+     "Brave, bright and always first"
+    ],
+    [
+     "w30-3",
+     21,
+     "andean-condor",
+     null,
+     "Mayu",
+     "",
+     null,
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p31",
+   "name": "Bluebell Croft",
+   "biome": "farm",
+   "look": "autumn",
+   "mirror": false,
+   "place": "Farmland · Western Europe",
+   "pin": [
+    7,
+    46.6
+   ],
+   "opens": 680,
+   "accent": "#B5683A",
+   "animals": [
+    [
+     "w31-0",
+     3,
+     "western-honeybee",
+     null,
+     "Doodle",
+     "",
+     null,
+     "Happiest with friends nearby"
+    ],
+    [
+     "w31-1",
+     8,
+     "turkey",
+     null,
+     "Dolly",
+     "",
+     null,
+     "Never in a hurry"
+    ],
+    [
+     "w31-2",
+     15,
+     "ferret",
+     null,
+     "Hollyhock",
+     "",
+     null,
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p32",
+   "name": "Persimmon Glen",
+   "biome": "bamboo",
+   "look": "classic",
+   "mirror": false,
+   "place": "Bamboo forest · Korea",
+   "pin": [
+    127.9,
+    36.2
+   ],
+   "opens": 700,
+   "accent": "#43927F",
+   "animals": [
+    [
+     "w32-0",
+     3,
+     "golden-pheasant",
+     null,
+     "Momiji",
+     "",
+     null,
+     "A great listener"
+    ],
+    [
+     "w32-1",
+     8,
+     "amur-tiger",
+     null,
+     "Dubu",
+     "",
+     "#E5546C",
+     "Likes things just so"
+    ],
+    [
+     "w32-2",
+     15,
+     "japanese-rhinoceros-beetle",
+     null,
+     "Yuki",
+     "",
+     "#5B9BD5",
+     "Curious about everything"
+    ]
+   ]
+  },
+  {
+   "id": "p33",
+   "name": "Saguaro Springs",
+   "biome": "desert",
+   "look": "classic",
+   "mirror": true,
+   "place": "Desert · Arabia",
+   "pin": [
+    42.1,
+    19.1
+   ],
+   "opens": 720,
+   "accent": "#AD5B48",
+   "animals": [
+    [
+     "w33-0",
+     3,
+     "gila-monster",
+     null,
+     "Mallow",
+     "",
+     "#F2B84B",
+     "Likes things just so"
+    ],
+    [
+     "w33-1",
+     8,
+     "elf-owl",
+     null,
+     "Mica",
+     "",
+     null,
+     "A great listener"
+    ],
+    [
+     "w33-2",
+     15,
+     "bactrian-camel",
+     null,
+     "Cactus",
+     "",
+     null,
+     "Always the last to bed"
+    ]
+   ]
+  },
+  {
+   "id": "p34",
+   "name": "Windward Reef",
+   "biome": "coast",
+   "look": "misty",
+   "mirror": false,
+   "place": "Coast · California coast",
+   "pin": [
+    -122.8,
+    35.9
+   ],
+   "opens": 740,
+   "accent": "#2F6F9C",
+   "animals": [
+    [
+     "w34-0",
+     3,
+     "hermit-crab",
+     null,
+     "Nalu",
+     "",
+     null,
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w34-1",
+     8,
+     "humpback-whale",
+     null,
+     "Jory",
+     "",
+     "#3FB7A8",
+     "Proud of its home"
+    ],
+    [
+     "w34-2",
+     15,
+     "brown-pelican",
+     null,
+     "Marisol",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ]
+   ]
+  },
+  {
+   "id": "p35",
+   "name": "Sagebrush Vale",
+   "biome": "grassland",
+   "look": "dusk",
+   "mirror": true,
+   "place": "Grassland · Great Plains",
+   "pin": [
+    -104.6,
+    43.8
+   ],
+   "opens": 760,
+   "accent": "#7E8C38",
+   "animals": [
+    [
+     "w35-0",
+     3,
+     "buff-tailed-bumblebee",
+     null,
+     "Bluebonnet",
+     "",
+     "#5B9BD5",
+     "Always the last to bed"
+    ],
+    [
+     "w35-1",
+     8,
+     "przewalskis-horse",
+     null,
+     "Luz",
+     "",
+     "#F08A5D",
+     "Curious about everything"
+    ],
+    [
+     "w35-2",
+     15,
+     "brown-hare",
+     null,
+     "Millet",
+     "",
+     null,
+     "Likes things just so"
+    ]
+   ]
+  },
+  {
+   "id": "p36",
+   "name": "Sundown Gully",
+   "biome": "outback",
+   "look": "classic",
+   "mirror": true,
+   "place": "Outback · Australia",
+   "pin": [
+    147.9,
+    -29.2
+   ],
+   "opens": 780,
+   "accent": "#D9824A",
+   "animals": [
+    [
+     "w36-0",
+     3,
+     "frilled-lizard",
+     null,
+     "Banjo",
+     "",
+     "#F08A5D",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w36-1",
+     8,
+     "sugar-glider",
+     null,
+     "Wattle",
+     "",
+     "#5B9BD5",
+     "Chatty in the mornings"
+    ],
+    [
+     "w36-2",
+     15,
+     "sulphur-crested-cockatoo",
+     null,
+     "Dusty",
+     "",
+     null,
+     "Bold, bouncy and brave"
+    ]
+   ]
+  },
+  {
+   "id": "p37",
+   "name": "Tamarind Hills",
+   "biome": "savanna",
+   "look": "classic",
+   "mirror": false,
+   "place": "Savanna · East Africa",
+   "pin": [
+    34.1,
+    -12.3
+   ],
+   "opens": 800,
+   "accent": "#A98A2C",
+   "animals": [
+    [
+     "w37-0",
+     3,
+     "leopard",
+     null,
+     "Kito",
+     "",
+     "#6FBF73",
+     "Chatty in the mornings"
+    ],
+    [
+     "w37-1",
+     8,
+     "warthog",
+     null,
+     "Kesho",
+     "",
+     null,
+     "Kind to everyone it meets"
+    ],
+    [
+     "w37-2",
+     15,
+     "ground-hornbill",
+     null,
+     "Maua",
+     "",
+     null,
+     "Proud of its home"
+    ]
+   ]
+  },
+  {
+   "id": "p38",
+   "name": "Sunlit Bay",
+   "biome": "antarctic",
+   "look": "golden",
+   "mirror": true,
+   "place": "Antarctica · South Georgia",
+   "pin": [
+    -32.7,
+    -59.8
+   ],
+   "opens": 820,
+   "accent": "#5590B0",
+   "animals": [
+    [
+     "w38-0",
+     3,
+     "gentoo-penguin",
+     null,
+     "Pia",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w38-1",
+     8,
+     "snow-petrel",
+     null,
+     "Tomas",
+     "",
+     null,
+     "Always the last to bed"
+    ],
+    [
+     "w38-2",
+     15,
+     "blackfin-icefish",
+     null,
+     "Noodle",
+     "",
+     "#A88BDB",
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p39",
+   "name": "Pine Valley",
+   "biome": "mountain",
+   "look": "golden",
+   "mirror": true,
+   "place": "Mountains · Ethiopian Highlands",
+   "pin": [
+    37.6,
+    13
+   ],
+   "opens": 840,
+   "accent": "#56709E",
+   "animals": [
+    [
+     "w39-0",
+     3,
+     "chinchilla",
+     null,
+     "Mia",
+     "",
+     "#6FBF73",
+     "Always the last to bed"
+    ],
+    [
+     "w39-1",
+     8,
+     "mountain-goat",
+     null,
+     "Vreni",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w39-2",
+     15,
+     "yak",
+     null,
+     "Yeshi",
+     "",
+     null,
+     "Likes things just so"
+    ]
+   ]
+  },
+  {
+   "id": "p40",
+   "name": "Camphor Gorge",
+   "biome": "jungle",
+   "look": "classic",
+   "mirror": true,
+   "place": "Jungle · Borneo and Sumatra",
+   "pin": [
+    117.7,
+    3.5
+   ],
+   "opens": 860,
+   "accent": "#4AA36B",
+   "animals": [
+    [
+     "w40-0",
+     3,
+     "peacock",
+     null,
+     "Kavi",
+     "",
+     null,
+     "Always the last to bed"
+    ],
+    [
+     "w40-1",
+     8,
+     "chimpanzee",
+     null,
+     "Ayu",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w40-2",
+     15,
+     "pygmy-hippo",
+     null,
+     "Mentari",
+     "",
+     "#5B9BD5",
+     "Likes things just so"
+    ]
+   ]
+  }
+ ],
+ "sampled": [
+  {
+   "id": "p25",
+   "name": "Ochre Springs",
+   "biome": "outback",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Outback · Australia",
+   "pin": [
+    121.2,
+    -28.2
+   ],
+   "opens": 560,
+   "accent": "#D99550",
+   "animals": [
+    [
+     "w25-0",
+     3,
+     "short-beaked-echidna",
+     null,
+     "Kookie",
+     "",
+     null,
+     "Quiet, patient and wise"
+    ],
+    [
+     "w25-1",
+     8,
+     "rainbow-lorikeet",
+     null,
+     "Billabong",
+     "",
+     null,
+     "Loves a sunny spot"
+    ],
+    [
+     "w25-2",
+     15,
+     "tasmanian-devil",
+     null,
+     "Sadie",
+     "",
+     "#A88BDB",
+     "A champion napper"
+    ],
+    [
+     "w25-3",
+     21,
+     "emu",
+     null,
+     "Acacia",
+     "",
+     "#F08A5D",
+     "Funny without trying"
+    ]
+   ]
+  },
+  {
+   "id": "p50",
+   "name": "Desert Pea Gorge",
+   "biome": "outback",
+   "look": "golden",
+   "mirror": false,
+   "place": "Outback · Australia",
+   "pin": [
+    121.1,
+    -21.2
+   ],
+   "opens": 1060,
+   "accent": "#E08A55",
+   "animals": [
+    [
+     "w50-0",
+     3,
+     "greater-bilby",
+     null,
+     "Nellie",
+     "",
+     null,
+     "A great listener"
+    ],
+    [
+     "w50-1",
+     8,
+     "southern-cassowary",
+     null,
+     "Benny",
+     "",
+     null,
+     "Likes things just so"
+    ],
+    [
+     "w50-2",
+     15,
+     "red-necked-wallaby",
+     null,
+     "Saltbush",
+     "",
+     "#E5546C",
+     "Curious about everything"
+    ],
+    [
+     "w50-3",
+     21,
+     "thorny-devil",
+     null,
+     "Quinn",
+     "",
+     "#F2B84B",
+     "Always the last to bed"
+    ]
+   ]
+  },
+  {
+   "id": "p75",
+   "name": "Turtle Lagoon",
+   "biome": "island",
+   "look": "classic",
+   "mirror": true,
+   "place": "Island · Hawaii",
+   "pin": [
+    -155.7,
+    20.6
+   ],
+   "opens": 1560,
+   "accent": "#1F8F8A",
+   "animals": [
+    [
+     "w75-0",
+     3,
+     "common-coqui",
+     null,
+     "Starfruit",
+     "",
+     null,
+     "Always the last to bed"
+    ],
+    [
+     "w75-1",
+     8,
+     "hawaiian-monk-seal",
+     null,
+     "Ravina",
+     "",
+     null,
+     "Curious about everything"
+    ],
+    [
+     "w75-2",
+     15,
+     "nene",
+     null,
+     "Leilani",
+     "",
+     null,
+     "Likes things just so"
+    ]
+   ]
+  },
+  {
+   "id": "p100",
+   "name": "Banyan Falls",
+   "biome": "jungle",
+   "look": "golden",
+   "mirror": true,
+   "place": "Jungle · India",
+   "pin": [
+    77,
+    15.2
+   ],
+   "opens": 2060,
+   "accent": "#3E9A62",
+   "animals": [
+    [
+     "w100-0",
+     3,
+     "rajah-brookes-birdwing",
+     null,
+     "Laddoo",
+     "",
+     null,
+     "Always up for an adventure"
+    ],
+    [
+     "w100-1",
+     8,
+     "mandrill",
+     null,
+     "Embun",
+     "",
+     null,
+     "Full of bounce"
+    ],
+    [
+     "w100-2",
+     15,
+     "bongo",
+     null,
+     "Pari",
+     "",
+     "#A88BDB",
+     "Makes friends easily"
+    ]
+   ]
+  },
+  {
+   "id": "p125",
+   "name": "Brook Hollow",
+   "biome": "farm",
+   "look": "blossom",
+   "mirror": false,
+   "place": "Farmland · Western Europe",
+   "pin": [
+    -2.4,
+    46.5
+   ],
+   "opens": 2560,
+   "accent": "#C0583F",
+   "animals": [
+    [
+     "w125-0",
+     3,
+     "pony",
+     "hazel",
+     "Haystack",
+     "chestnut",
+     "#E5546C",
+     "Flicks her tail to say hello"
+    ],
+    [
+     "w125-1",
+     8,
+     "donkey",
+     null,
+     "Buttons",
+     "",
+     "#3FB7A8",
+     "A champion napper"
+    ],
+    [
+     "w125-2",
+     15,
+     "muscovy-duck",
+     null,
+     "Haybale",
+     "",
+     "#6FBF73",
+     "Loves a sunny spot"
+    ]
+   ]
+  },
+  {
+   "id": "p150",
+   "name": "Buttercup Rise",
+   "biome": "grassland",
+   "look": "golden",
+   "mirror": false,
+   "place": "Grassland · Steppe of eastern Europe",
+   "pin": [
+    37.2,
+    46.4
+   ],
+   "opens": 3060,
+   "accent": "#73883A",
+   "animals": [
+    [
+     "w150-0",
+     3,
+     "maned-wolf",
+     null,
+     "Button",
+     "",
+     "#F2B84B",
+     "Always the last to bed"
+    ],
+    [
+     "w150-1",
+     8,
+     "buff-tailed-bumblebee",
+     null,
+     "Pippin",
+     "",
+     "#E5546C",
+     "Curious about everything"
+    ],
+    [
+     "w150-2",
+     15,
+     "przewalskis-horse",
+     null,
+     "Misty",
+     "",
+     "#3FB7A8",
+     "Likes things just so"
+    ],
+    [
+     "w150-3",
+     21,
+     "brown-hare",
+     null,
+     "Holly",
+     "",
+     "#6FBF73",
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p175",
+   "name": "Blue Ice Bay",
+   "biome": "arctic",
+   "look": "golden",
+   "mirror": true,
+   "place": "Arctic · Canadian Arctic",
+   "pin": [
+    -141.9,
+    66.9
+   ],
+   "opens": 3560,
+   "accent": "#7AA9CF",
+   "animals": [
+    [
+     "w175-0",
+     3,
+     "snow-goose",
+     null,
+     "Onni",
+     "",
+     "#6FBF73",
+     "A great listener"
+    ],
+    [
+     "w175-1",
+     8,
+     "ringed-seal",
+     null,
+     "Kaisa",
+     "",
+     "#3FB7A8",
+     "Likes things just so"
+    ],
+    [
+     "w175-2",
+     15,
+     "arctic-ground-squirrel",
+     null,
+     "Glacier",
+     "",
+     "#E5546C",
+     "Curious about everything"
+    ],
+    [
+     "w175-3",
+     21,
+     "bowhead-whale",
+     null,
+     "Eino",
+     "",
+     "#F2B84B",
+     "Always the last to bed"
+    ]
+   ]
+  },
+  {
+   "id": "p200",
+   "name": "Seashell Reef",
+   "biome": "island",
+   "look": "classic",
+   "mirror": false,
+   "place": "Island · Galápagos",
+   "pin": [
+    -91.1,
+    -0.9
+   ],
+   "opens": 4060,
+   "accent": "#178580",
+   "animals": [
+    [
+     "w200-0",
+     3,
+     "marine-iguana",
+     null,
+     "Aster 2",
+     "Red and green",
+     "#6FBF73",
+     "Always the last to bed"
+    ],
+    [
+     "w200-1",
+     8,
+     "galapagos-penguin",
+     null,
+     "Petal 2",
+     "",
+     "#5B9BD5",
+     "Curious about everything"
+    ],
+    [
+     "w200-2",
+     15,
+     "fossa",
+     null,
+     "Yarrow 2",
+     "",
+     "#F08A5D",
+     "Likes things just so"
+    ],
+    [
+     "w200-3",
+     21,
+     "kea",
+     null,
+     "Shortbread 2",
+     "",
+     "#A88BDB",
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p225",
+   "name": "Pitcher Plant Terrace",
+   "biome": "jungle",
+   "look": "classic",
+   "mirror": true,
+   "place": "Jungle · India",
+   "pin": [
+    85.4,
+    14.7
+   ],
+   "opens": 4560,
+   "accent": "#4AA36B",
+   "animals": [
+    [
+     "w225-0",
+     3,
+     "okapi",
+     null,
+     "Bubbles 2",
+     "",
+     "#3FB7A8",
+     "A great listener"
+    ],
+    [
+     "w225-1",
+     8,
+     "peacock",
+     null,
+     "Sparrow 2",
+     "",
+     "#E5546C",
+     "Likes things just so"
+    ],
+    [
+     "w225-2",
+     15,
+     "chimpanzee",
+     null,
+     "Pebbles 2",
+     "",
+     "#F2B84B",
+     "Curious about everything"
+    ]
+   ]
+  },
+  {
+   "id": "p250",
+   "name": "Fig Tree River",
+   "biome": "jungle",
+   "look": "misty",
+   "mirror": true,
+   "place": "Jungle · Borneo and Sumatra",
+   "pin": [
+    106.3,
+    -2.3
+   ],
+   "opens": 5060,
+   "accent": "#2F8A55",
+   "animals": [
+    [
+     "w250-0",
+     3,
+     "sunda-slow-loris",
+     null,
+     "Twig 3",
+     "",
+     "#F2B84B",
+     "Always up for an adventure"
+    ],
+    [
+     "w250-1",
+     8,
+     "malayan-tapir",
+     null,
+     "Maize 3",
+     "",
+     "#A88BDB",
+     "Full of bounce"
+    ],
+    [
+     "w250-2",
+     15,
+     "rhinoceros-hornbill",
+     null,
+     "Gumdrop 3",
+     "",
+     "#F08A5D",
+     "Makes friends easily"
+    ]
+   ]
+  },
+  {
+   "id": "p275",
+   "name": "Ostrich Springs",
+   "biome": "savanna",
+   "look": "classic",
+   "mirror": false,
+   "place": "Savanna · Sahel",
+   "pin": [
+    0,
+    12.6
+   ],
+   "opens": 5560,
+   "accent": "#B8862A",
+   "animals": [
+    [
+     "w275-0",
+     3,
+     "banded-mongoose",
+     null,
+     "Otis 4",
+     "",
+     "#5B9BD5",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w275-1",
+     8,
+     "spotted-hyena",
+     null,
+     "Lulu 4",
+     "",
+     "#F08A5D",
+     "Never in a hurry"
+    ],
+    [
+     "w275-2",
+     15,
+     "lilac-breasted-roller",
+     null,
+     "Waffle 4",
+     "",
+     "#A88BDB",
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p300",
+   "name": "Hoarfrost Fjord",
+   "biome": "arctic",
+   "look": "golden",
+   "mirror": true,
+   "place": "Arctic · Lapland",
+   "pin": [
+    30.9,
+    69.1
+   ],
+   "opens": 6060,
+   "accent": "#5590B0",
+   "animals": [
+    [
+     "w300-0",
+     3,
+     "ringed-seal",
+     null,
+     "Millie 4",
+     "",
+     "#5B9BD5",
+     "Never in a hurry"
+    ],
+    [
+     "w300-1",
+     8,
+     "arctic-ground-squirrel",
+     null,
+     "Rowan 4",
+     "",
+     "#6FBF73",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w300-2",
+     15,
+     "gyrfalcon",
+     null,
+     "Chestnut 4",
+     "Grey",
+     "#E5546C",
+     "Brave, bright and always first"
+    ],
+    [
+     "w300-3",
+     21,
+     "arctic-char",
+     null,
+     "Dew 4",
+     "",
+     "#F2B84B",
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p325",
+   "name": "Mallow Pools",
+   "biome": "wetland",
+   "look": "classic",
+   "mirror": false,
+   "place": "Wetland · Pantanal",
+   "pin": [
+    -56.6,
+    -17.3
+   ],
+   "opens": 6560,
+   "accent": "#3A8791",
+   "animals": [
+    [
+     "w325-0",
+     3,
+     "sockeye-salmon",
+     null,
+     "Twig 5",
+     "",
+     "#6FBF73",
+     "Gentle and a little shy"
+    ],
+    [
+     "w325-1",
+     8,
+     "great-egret",
+     null,
+     "Maize 5",
+     "",
+     "#5B9BD5",
+     "Brave, bright and always first"
+    ],
+    [
+     "w325-2",
+     15,
+     "roseate-spoonbill",
+     null,
+     "Gumdrop 5",
+     "",
+     "#E5546C",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w325-3",
+     21,
+     "hippopotamus",
+     null,
+     "Blossom 5",
+     "",
+     "#3FB7A8",
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p350",
+   "name": "Golden Frog Glade",
+   "biome": "amazon",
+   "look": "golden",
+   "mirror": true,
+   "place": "Rainforest · Central America",
+   "pin": [
+    -77.7,
+    8.4
+   ],
+   "opens": 7060,
+   "accent": "#3B8C5E",
+   "animals": [
+    [
+     "w350-0",
+     3,
+     "green-basilisk",
+     null,
+     "Bumble 5",
+     "",
+     "#F08A5D",
+     "Chatty in the mornings"
+    ],
+    [
+     "w350-1",
+     8,
+     "guianan-cock-of-the-rock",
+     null,
+     "Fern 5",
+     "",
+     "#A88BDB",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w350-2",
+     15,
+     "honduran-white-bat",
+     null,
+     "Cashew 5",
+     "",
+     "#6FBF73",
+     "Proud of its home"
+    ],
+    [
+     "w350-3",
+     21,
+     "cotton-top-tamarin",
+     null,
+     "Crumpet 5",
+     "",
+     "#5B9BD5",
+     "Bold, bouncy and brave"
+    ]
+   ]
+  },
+  {
+   "id": "p375",
+   "name": "Hummingbird Clearing",
+   "biome": "amazon",
+   "look": "misty",
+   "mirror": false,
+   "place": "Rainforest · Amazon basin",
+   "pin": [
+    -70.4,
+    -5.7
+   ],
+   "opens": 7560,
+   "accent": "#2F8A55",
+   "animals": [
+    [
+     "w375-0",
+     3,
+     "neon-tetra",
+     null,
+     "Oak 6",
+     "",
+     "#F08A5D",
+     "Never in a hurry"
+    ],
+    [
+     "w375-1",
+     8,
+     "spectacled-owl",
+     null,
+     "Praline 6",
+     "",
+     "#5B9BD5",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w375-2",
+     15,
+     "black-caiman",
+     null,
+     "Iris 6",
+     "",
+     "#F2B84B",
+     "Brave, bright and always first"
+    ]
+   ]
+  },
+  {
+   "id": "p400",
+   "name": "Kingfisher Delta",
+   "biome": "wetland",
+   "look": "classic",
+   "mirror": true,
+   "place": "Wetland · Pantanal",
+   "pin": [
+    -56.1,
+    -18.4
+   ],
+   "opens": 8060,
+   "accent": "#3A8791",
+   "animals": [
+    [
+     "w400-0",
+     3,
+     "water-vole",
+     null,
+     "Wren 7",
+     "",
+     "#A88BDB",
+     "Full of bounce"
+    ],
+    [
+     "w400-1",
+     8,
+     "scarlet-ibis",
+     null,
+     "Puddle 7",
+     "",
+     "#F2B84B",
+     "Always up for an adventure"
+    ],
+    [
+     "w400-2",
+     15,
+     "white-stork",
+     null,
+     "Peony 7",
+     "",
+     "#5B9BD5",
+     "Notices the little things"
+    ]
+   ]
+  },
+  {
+   "id": "p425",
+   "name": "Willow Orchards",
+   "biome": "farm",
+   "look": "blossom",
+   "mirror": false,
+   "place": "Farmland · Central Europe",
+   "pin": [
+    22.4,
+    50.6
+   ],
+   "opens": 8560,
+   "accent": "#C4793D",
+   "animals": [
+    [
+     "w425-0",
+     3,
+     "barn-swallow",
+     null,
+     "Cashew 7",
+     "",
+     "#E5546C",
+     "A champion napper"
+    ],
+    [
+     "w425-1",
+     8,
+     "mule",
+     null,
+     "Crumpet 7",
+     "",
+     "#F2B84B",
+     "Funny without trying"
+    ],
+    [
+     "w425-2",
+     15,
+     "california-quail",
+     null,
+     "Olive 8",
+     "",
+     "#6FBF73",
+     "Quiet, patient and wise"
+    ]
+   ]
+  },
+  {
+   "id": "p450",
+   "name": "Eagle Valley",
+   "biome": "mountain",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Mountains · Himalayas",
+   "pin": [
+    80.8,
+    30
+   ],
+   "opens": 9060,
+   "accent": "#4F6C98",
+   "animals": [
+    [
+     "w450-0",
+     3,
+     "markhor",
+     null,
+     "Bubbles 8",
+     "",
+     "#F2B84B",
+     "Never in a hurry"
+    ],
+    [
+     "w450-1",
+     8,
+     "mountain-tapir",
+     null,
+     "Sparrow 8",
+     "",
+     "#A88BDB",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w450-2",
+     15,
+     "tibetan-fox",
+     null,
+     "Pebbles 8",
+     "",
+     "#3FB7A8",
+     "Brave, bright and always first"
+    ],
+    [
+     "w450-3",
+     21,
+     "wallcreeper",
+     null,
+     "Millie 8",
+     "",
+     "#E5546C",
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p475",
+   "name": "Liana Rapids",
+   "biome": "amazon",
+   "look": "classic",
+   "mirror": true,
+   "place": "Rainforest · Amazon basin",
+   "pin": [
+    -54.7,
+    0.7
+   ],
+   "opens": 9560,
+   "accent": "#4AA36B",
+   "animals": [
+    [
+     "w475-0",
+     3,
+     "golden-lion-tamarin",
+     null,
+     "Wren 9",
+     "",
+     "#5B9BD5",
+     "Likes things just so"
+    ],
+    [
+     "w475-1",
+     8,
+     "harpy-eagle",
+     null,
+     "Puddle 9",
+     "",
+     "#F08A5D",
+     "A great listener"
+    ],
+    [
+     "w475-2",
+     15,
+     "green-iguana",
+     null,
+     "Peony 9",
+     "",
+     "#3FB7A8",
+     "Always the last to bed"
+    ],
+    [
+     "w475-3",
+     21,
+     "south-american-tapir",
+     null,
+     "Twig 9",
+     "",
+     "#6FBF73",
+     "Curious about everything"
+    ]
+   ]
+  },
+  {
+   "id": "p500",
+   "name": "Misty Inlet",
+   "biome": "antarctic",
+   "look": "classic",
+   "mirror": false,
+   "place": "Antarctica · East Antarctica",
+   "pin": [
+    75.7,
+    -67.5
+   ],
+   "opens": 10060,
+   "accent": "#5590B0",
+   "animals": [
+    [
+     "w500-0",
+     3,
+     "wandering-albatross",
+     null,
+     "Penny 9",
+     "",
+     "#6FBF73",
+     "Quiet, patient and wise"
+    ],
+    [
+     "w500-1",
+     8,
+     "antarctic-krill",
+     null,
+     "Cedar 9",
+     "",
+     "#3FB7A8",
+     "Loves a sunny spot"
+    ],
+    [
+     "w500-2",
+     15,
+     "king-penguin",
+     null,
+     "Meringue 9",
+     "",
+     "#E5546C",
+     "A champion napper"
+    ],
+    [
+     "w500-3",
+     21,
+     "weddell-seal",
+     null,
+     "Bumble 9",
+     "",
+     "#F2B84B",
+     "Funny without trying"
+    ]
+   ]
+  },
+  {
+   "id": "p525",
+   "name": "Heron Bend",
+   "biome": "wetland",
+   "look": "dusk",
+   "mirror": true,
+   "place": "Wetland · Everglades",
+   "pin": [
+    -80.4,
+    26.9
+   ],
+   "opens": 10560,
+   "accent": "#3A8791",
+   "animals": [
+    [
+     "w525-0",
+     3,
+     "common-kingfisher",
+     null,
+     "Cinnamon 10",
+     "",
+     "#A88BDB",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w525-1",
+     8,
+     "axolotl",
+     null,
+     "Honey 10",
+     "",
+     "#F2B84B",
+     "Never in a hurry"
+    ],
+    [
+     "w525-2",
+     15,
+     "american-bullfrog",
+     null,
+     "Scone 10",
+     "",
+     "#E5546C",
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p550",
+   "name": "Maple Falls",
+   "biome": "bamboo",
+   "look": "blossom",
+   "mirror": false,
+   "place": "Bamboo forest · Central China",
+   "pin": [
+    105.4,
+    33.9
+   ],
+   "opens": 11060,
+   "accent": "#3F8F7E",
+   "animals": [
+    [
+     "w550-0",
+     3,
+     "yellow-throated-marten",
+     null,
+     "Muffin 11",
+     "",
+     "#A88BDB",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w550-1",
+     8,
+     "blakistons-fish-owl",
+     null,
+     "Sesame 11",
+     "",
+     "#F2B84B",
+     "Never in a hurry"
+    ],
+    [
+     "w550-2",
+     15,
+     "chinese-bamboo-rat",
+     null,
+     "Turnip 11",
+     "",
+     "#E5546C",
+     "Gentle and a little shy"
+    ]
+   ]
+  },
+  {
+   "id": "p575",
+   "name": "Golden Springs",
+   "biome": "savanna",
+   "look": "classic",
+   "mirror": false,
+   "place": "Savanna · Sahel",
+   "pin": [
+    6.2,
+    12.3
+   ],
+   "opens": 11560,
+   "accent": "#D2A63E",
+   "animals": [
+    [
+     "w575-0",
+     3,
+     "rock-agama",
+     null,
+     "Meringue 11",
+     "",
+     "#A88BDB",
+     "Brave, bright and always first"
+    ],
+    [
+     "w575-1",
+     8,
+     "caracal",
+     null,
+     "Bumble 11",
+     "",
+     "#F08A5D",
+     "Gentle and a little shy"
+    ],
+    [
+     "w575-2",
+     15,
+     "yellow-billed-hornbill",
+     null,
+     "Fern 11",
+     "",
+     "#5B9BD5",
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p600",
+   "name": "Whispering Ridge",
+   "biome": "woodland",
+   "look": "blossom",
+   "mirror": true,
+   "place": "Woodland · Pacific Northwest",
+   "pin": [
+    -120.2,
+    44.5
+   ],
+   "opens": 12060,
+   "accent": "#6A8A3E",
+   "animals": [
+    [
+     "w600-0",
+     3,
+     "european-rhinoceros-beetle",
+     null,
+     "Iris 12",
+     "",
+     "#F08A5D",
+     "Proud of its home"
+    ],
+    [
+     "w600-1",
+     8,
+     "pine-marten",
+     null,
+     "Oatcake 12",
+     "",
+     "#A88BDB",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w600-2",
+     15,
+     "black-capped-chickadee",
+     null,
+     "Opal 12",
+     "",
+     "#F2B84B",
+     "Chatty in the mornings"
+    ],
+    [
+     "w600-3",
+     21,
+     "virginia-opossum",
+     null,
+     "Bubbles 12",
+     "",
+     "#E5546C",
+     "Kind to everyone it meets"
+    ]
+   ]
+  },
+  {
+   "id": "p625",
+   "name": "Coral Sands",
+   "biome": "coast",
+   "look": "golden",
+   "mirror": true,
+   "place": "Coast · Caribbean",
+   "pin": [
+    -85.1,
+    19.4
+   ],
+   "opens": 12560,
+   "accent": "#4A82AE",
+   "animals": [
+    [
+     "w625-0",
+     3,
+     "humpback-whale",
+     null,
+     "Muffin 13",
+     "",
+     "#E5546C",
+     "Always up for an adventure"
+    ],
+    [
+     "w625-1",
+     8,
+     "brown-pelican",
+     null,
+     "Sesame 13",
+     "",
+     "#F2B84B",
+     "Full of bounce"
+    ],
+    [
+     "w625-2",
+     15,
+     "moon-jellyfish",
+     null,
+     "Turnip 13",
+     "",
+     "#A88BDB",
+     "Makes friends easily"
+    ],
+    [
+     "w625-3",
+     21,
+     "california-sea-lion",
+     null,
+     "Wren 13",
+     "",
+     "#F08A5D",
+     "Notices the little things"
+    ]
+   ]
+  },
+  {
+   "id": "p650",
+   "name": "Teak Creek",
+   "biome": "jungle",
+   "look": "misty",
+   "mirror": false,
+   "place": "Jungle · West Africa",
+   "pin": [
+    -4.4,
+    8.8
+   ],
+   "opens": 13060,
+   "accent": "#3E9A62",
+   "animals": [
+    [
+     "w650-0",
+     3,
+     "rajah-brookes-birdwing",
+     null,
+     "Jasper 13",
+     "",
+     "#3FB7A8",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w650-1",
+     8,
+     "mandrill",
+     null,
+     "Periwinkle 13",
+     "",
+     "#E5546C",
+     "Chatty in the mornings"
+    ],
+    [
+     "w650-2",
+     15,
+     "bongo",
+     null,
+     "Willow 13",
+     "",
+     "#F2B84B",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w650-3",
+     21,
+     "tokay-gecko",
+     null,
+     "Penny 13",
+     "",
+     "#A88BDB",
+     "Proud of its home"
+    ]
+   ]
+  },
+  {
+   "id": "p675",
+   "name": "Rosy Saddle",
+   "biome": "mountain",
+   "look": "dusk",
+   "mirror": true,
+   "place": "Mountains · Andes",
+   "pin": [
+    -74.4,
+    -19.4
+   ],
+   "opens": 13560,
+   "accent": "#5B77A6",
+   "animals": [
+    [
+     "w675-0",
+     3,
+     "mountain-bluebird",
+     null,
+     "Nugget 14",
+     "",
+     "#F2B84B",
+     "Proud of its home"
+    ],
+    [
+     "w675-1",
+     8,
+     "walia-ibex",
+     null,
+     "Dumpling 14",
+     "",
+     "#E5546C",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w675-2",
+     15,
+     "clarks-nutcracker",
+     null,
+     "Sugar 14",
+     "",
+     "#3FB7A8",
+     "Chatty in the mornings"
+    ]
+   ]
+  },
+  {
+   "id": "p700",
+   "name": "Mulga Range",
+   "biome": "outback",
+   "look": "dusk",
+   "mirror": true,
+   "place": "Outback · New Guinea",
+   "pin": [
+    141.4,
+    -7.6
+   ],
+   "opens": 14060,
+   "accent": "#E08A55",
+   "animals": [
+    [
+     "w700-0",
+     3,
+     "sulphur-crested-cockatoo",
+     null,
+     "Myrtle 15",
+     "",
+     "#F08A5D",
+     "A champion napper"
+    ],
+    [
+     "w700-1",
+     8,
+     "greater-bilby",
+     null,
+     "Sage 15",
+     "",
+     "#5B9BD5",
+     "Funny without trying"
+    ],
+    [
+     "w700-2",
+     15,
+     "southern-cassowary",
+     null,
+     "Kiwi 15",
+     "",
+     "#F2B84B",
+     "Quiet, patient and wise"
+    ]
+   ]
+  },
+  {
+   "id": "p725",
+   "name": "Yucca Bluffs",
+   "biome": "desert",
+   "look": "golden",
+   "mirror": true,
+   "place": "Desert · Sahara",
+   "pin": [
+    6.1,
+    22.1
+   ],
+   "opens": 14560,
+   "accent": "#C0694F",
+   "animals": [
+    [
+     "w725-0",
+     3,
+     "sand-cat",
+     null,
+     "Willow 15",
+     "",
+     "#F2B84B",
+     "Gentle and a little shy"
+    ],
+    [
+     "w725-1",
+     8,
+     "desert-tortoise",
+     null,
+     "Penny 15",
+     "",
+     "#E5546C",
+     "Brave, bright and always first"
+    ],
+    [
+     "w725-2",
+     15,
+     "long-eared-jerboa",
+     null,
+     "Cedar 15",
+     "",
+     "#F08A5D",
+     "Happiest with friends nearby"
+    ]
+   ]
+  },
+  {
+   "id": "p750",
+   "name": "Sagebrush Knoll",
+   "biome": "grassland",
+   "look": "golden",
+   "mirror": false,
+   "place": "Grassland · Steppe",
+   "pin": [
+    96.5,
+    46.3
+   ],
+   "opens": 15060,
+   "accent": "#62803E",
+   "animals": [
+    [
+     "w750-0",
+     3,
+     "guanaco",
+     null,
+     "Scone 16",
+     "",
+     "#6FBF73",
+     "Loves a sunny spot"
+    ],
+    [
+     "w750-1",
+     8,
+     "black-footed-ferret",
+     null,
+     "Oak 16",
+     "",
+     "#5B9BD5",
+     "Quiet, patient and wise"
+    ],
+    [
+     "w750-2",
+     15,
+     "common-kestrel",
+     null,
+     "Praline 16",
+     "",
+     "#E5546C",
+     "Funny without trying"
+    ],
+    [
+     "w750-3",
+     21,
+     "sand-lizard",
+     null,
+     "Iris 16",
+     "",
+     "#3FB7A8",
+     "A champion napper"
+    ]
+   ]
+  },
+  {
+   "id": "p775",
+   "name": "Moonflower Sands",
+   "biome": "island",
+   "look": "dusk",
+   "mirror": false,
+   "place": "Island · Hawaii",
+   "pin": [
+    -157.5,
+    21.1
+   ],
+   "opens": 15560,
+   "accent": "#269690",
+   "animals": [
+    [
+     "w775-0",
+     3,
+     "hawaiian-hoary-bat",
+     null,
+     "Myrtle 17",
+     "",
+     "#6FBF73",
+     "Bold, bouncy and brave"
+    ],
+    [
+     "w775-1",
+     8,
+     "medium-ground-finch",
+     null,
+     "Sage 17",
+     "",
+     "#3FB7A8",
+     "Proud of its home"
+    ],
+    [
+     "w775-2",
+     15,
+     "ring-tailed-lemur",
+     null,
+     "Kiwi 17",
+     "",
+     "#F08A5D",
+     "Kind to everyone it meets"
+    ],
+    [
+     "w775-3",
+     21,
+     "brown-kiwi",
+     null,
+     "Muffin 17",
+     "",
+     "#5B9BD5",
+     "Chatty in the mornings"
+    ]
+   ]
+  },
+  {
+   "id": "p800",
+   "name": "Moon Stream",
+   "biome": "bamboo",
+   "look": "golden",
+   "mirror": true,
+   "place": "Bamboo forest · Korea",
+   "pin": [
+    127.8,
+    37
+   ],
+   "opens": 16060,
+   "accent": "#43927F",
+   "animals": [
+    [
+     "w800-0",
+     3,
+     "mandarin-duck",
+     null,
+     "Elm 17",
+     "",
+     "#A88BDB",
+     "Gentle and a little shy"
+    ],
+    [
+     "w800-1",
+     8,
+     "raccoon-dog",
+     null,
+     "Primrose 17",
+     "",
+     "#F2B84B",
+     "Brave, bright and always first"
+    ],
+    [
+     "w800-2",
+     15,
+     "siberian-flying-squirrel",
+     null,
+     "Poppy 17",
+     "",
+     "#5B9BD5",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w800-3",
+     21,
+     "golden-snub-nosed-monkey",
+     null,
+     "Jasper 17",
+     "",
+     "#F08A5D",
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p825",
+   "name": "Ginkgo Grove",
+   "biome": "bamboo",
+   "look": "classic",
+   "mirror": false,
+   "place": "Bamboo forest · Japan",
+   "pin": [
+    139.6,
+    37.3
+   ],
+   "opens": 16560,
+   "accent": "#448C7A",
+   "animals": [
+    [
+     "w825-0",
+     3,
+     "golden-pheasant",
+     null,
+     "Alder 18",
+     "",
+     "#A88BDB",
+     "A champion napper"
+    ],
+    [
+     "w825-1",
+     8,
+     "amur-tiger",
+     null,
+     "Tulip 18",
+     "",
+     "#F08A5D",
+     "Funny without trying"
+    ],
+    [
+     "w825-2",
+     15,
+     "japanese-rhinoceros-beetle",
+     null,
+     "Saffron 18",
+     "",
+     "#E5546C",
+     "Quiet, patient and wise"
+    ]
+   ]
+  },
+  {
+   "id": "p850",
+   "name": "Driftwood Key",
+   "biome": "island",
+   "look": "golden",
+   "mirror": true,
+   "place": "Island · New Zealand",
+   "pin": [
+    176.8,
+    -35.6
+   ],
+   "opens": 17060,
+   "accent": "#2A8E86",
+   "animals": [
+    [
+     "w850-0",
+     3,
+     "nene",
+     null,
+     "Pippin 19",
+     "",
+     "#A88BDB",
+     "Never in a hurry"
+    ],
+    [
+     "w850-1",
+     8,
+     "panther-chameleon",
+     null,
+     "Misty 19",
+     "Red",
+     "#F08A5D",
+     "Happiest with friends nearby"
+    ],
+    [
+     "w850-2",
+     15,
+     "red-ruffed-lemur",
+     null,
+     "Holly 19",
+     "",
+     "#E5546C",
+     "Brave, bright and always first"
+    ]
+   ]
+  },
+  {
+   "id": "p875",
+   "name": "Lily Hollow",
+   "biome": "amazon",
+   "look": "classic",
+   "mirror": false,
+   "place": "Rainforest · Central America",
+   "pin": [
+    -83.5,
+    8
+   ],
+   "opens": 17560,
+   "accent": "#2F8A55",
+   "animals": [
+    [
+     "w875-0",
+     3,
+     "harpy-eagle",
+     null,
+     "Poppy 19",
+     "",
+     "#6FBF73",
+     "Loves a sunny spot"
+    ],
+    [
+     "w875-1",
+     8,
+     "green-iguana",
+     null,
+     "Jasper 19",
+     "",
+     "#5B9BD5",
+     "Quiet, patient and wise"
+    ],
+    [
+     "w875-2",
+     15,
+     "south-american-tapir",
+     null,
+     "Periwinkle 19",
+     "",
+     "#E5546C",
+     "Funny without trying"
+    ]
+   ]
+  },
+  {
+   "id": "p900",
+   "name": "Sunrise Waterhole",
+   "biome": "savanna",
+   "look": "golden",
+   "mirror": true,
+   "place": "Savanna · East Africa",
+   "pin": [
+    26.4,
+    -9.6
+   ],
+   "opens": 18060,
+   "accent": "#C08B3A",
+   "animals": [
+    [
+     "w900-0",
+     3,
+     "ostrich",
+     null,
+     "Sugar 20",
+     "",
+     "#A88BDB",
+     "Brave, bright and always first"
+    ],
+    [
+     "w900-1",
+     8,
+     "cheetah",
+     null,
+     "Cinnamon 20",
+     "",
+     "#F08A5D",
+     "Gentle and a little shy"
+    ],
+    [
+     "w900-2",
+     15,
+     "bat-eared-fox",
+     "ember",
+     "Honey 20",
+     "silver-grey",
+     "#5B9BD5",
+     "Listens to the grass before it naps in it"
+    ],
+    [
+     "w900-3",
+     21,
+     "white-rhino",
+     null,
+     "Scone 20",
+     "",
+     "#6FBF73",
+     "Happiest with friends nearby"
+    ]
+   ]
+  },
+  {
+   "id": "p925",
+   "name": "Silver Bay",
+   "biome": "arctic",
+   "look": "misty",
+   "mirror": true,
+   "place": "Arctic · Siberian Arctic",
+   "pin": [
+    75.5,
+    72.6
+   ],
+   "opens": 18560,
+   "accent": "#5B9BC4",
+   "animals": [
+    [
+     "w925-0",
+     3,
+     "arctic-hare",
+     "juniper",
+     "Pippin 21",
+     "frosty grey",
+     "#E5546C",
+     "Hops in neat zigzags"
+    ],
+    [
+     "w925-1",
+     8,
+     "arctic-wolf",
+     null,
+     "Misty 21",
+     "",
+     "#3FB7A8",
+     "Curious about everything"
+    ],
+    [
+     "w925-2",
+     15,
+     "norway-lemming",
+     null,
+     "Holly 21",
+     "",
+     "#6FBF73",
+     "Likes things just so"
+    ],
+    [
+     "w925-3",
+     21,
+     "beluga",
+     null,
+     "Myrtle 21",
+     "",
+     "#5B9BD5",
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p950",
+   "name": "Golden Basin",
+   "biome": "savanna",
+   "look": "golden",
+   "mirror": true,
+   "place": "Savanna · Sahel",
+   "pin": [
+    -1.4,
+    9.3
+   ],
+   "opens": 19060,
+   "accent": "#D2A63E",
+   "animals": [
+    [
+     "w950-0",
+     3,
+     "greater-kudu",
+     null,
+     "Raisin 21",
+     "",
+     "#3FB7A8",
+     "Always the last to bed"
+    ],
+    [
+     "w950-1",
+     8,
+     "lesser-bushbaby",
+     null,
+     "Chickpea 21",
+     "",
+     "#6FBF73",
+     "Curious about everything"
+    ],
+    [
+     "w950-2",
+     15,
+     "leopard-tortoise",
+     null,
+     "Dot 21",
+     "",
+     "#5B9BD5",
+     "Likes things just so"
+    ],
+    [
+     "w950-3",
+     21,
+     "honey-badger",
+     null,
+     "Elm 21",
+     "",
+     "#F08A5D",
+     "A great listener"
+    ]
+   ]
+  },
+  {
+   "id": "p975",
+   "name": "Firefly Falls",
+   "biome": "amazon",
+   "look": "classic",
+   "mirror": false,
+   "place": "Rainforest · Amazon basin",
+   "pin": [
+    -65.2,
+    -11.5
+   ],
+   "opens": 19560,
+   "accent": "#4AA36B",
+   "animals": [
+    [
+     "w975-0",
+     3,
+     "cotton-top-tamarin",
+     null,
+     "Tapioca 22",
+     "",
+     "#E5546C",
+     "Brave, bright and always first"
+    ],
+    [
+     "w975-1",
+     8,
+     "neon-tetra",
+     null,
+     "Walnut 22",
+     "",
+     "#F2B84B",
+     "Gentle and a little shy"
+    ],
+    [
+     "w975-2",
+     15,
+     "spectacled-owl",
+     null,
+     "Strudel 22",
+     "",
+     "#A88BDB",
+     "Never in a hurry"
+    ]
+   ]
+  },
+  {
+   "id": "p1000",
+   "name": "Jasmine Hollow",
+   "biome": "jungle",
+   "look": "golden",
+   "mirror": true,
+   "place": "Jungle · Congo Basin",
+   "pin": [
+    12.5,
+    3.1
+   ],
+   "opens": 20060,
+   "accent": "#357F50",
+   "animals": [
+    [
+     "w1000-0",
+     3,
+     "binturong",
+     null,
+     "Quince 23",
+     "",
+     "#6FBF73",
+     "Always up for an adventure"
+    ],
+    [
+     "w1000-1",
+     8,
+     "clouded-leopard",
+     null,
+     "Acorn 23",
+     "",
+     "#3FB7A8",
+     "Full of bounce"
+    ],
+    [
+     "w1000-2",
+     15,
+     "sunda-pangolin",
+     null,
+     "Button 23",
+     "",
+     "#F08A5D",
+     "Makes friends easily"
+    ]
+   ]
+  }
+ ],
+ "inputs": {
+  "farm": {
+   "species": [
     "donkey",
-    null,
-    "Elspeth",
-    "",
-    "#F08A5D",
-    "Proud of its home"
-   ],
-   [
-    "w2-1",
-    8,
-    "pekin-duck",
-    null,
-    "Gracie",
-    "",
-    "#A88BDB",
-    "Bold, bouncy and brave"
-   ],
-   [
-    "w2-2",
-    15,
+    "muscovy-duck",
     "alpaca",
-    null,
-    "Gingersnap",
-    "",
-    null,
-    "Chatty in the mornings"
-   ]
-  ]
- },
- {
-  "id": "p3",
-  "name": "Misty Cape",
-  "biome": "antarctic",
-  "look": "misty",
-  "mirror": true,
-  "place": "Antarctica · East Antarctica",
-  "pin": [
-   70.6,
-   -68.2
-  ],
-  "opens": 120,
-  "accent": "#5B9BC4",
-  "animals": [
-   [
-    "w3-0",
-    3,
-    "emperor-penguin",
-    null,
-    "Bobble",
-    "",
-    null,
-    "Makes friends easily"
-   ],
-   [
-    "w3-1",
-    8,
-    "leopard-seal",
-    null,
-    "Popcorn",
-    "",
-    null,
-    "Notices the little things"
-   ],
-   [
-    "w3-2",
-    15,
-    "adelie-penguin",
-    null,
-    "Rocio",
-    "",
-    "#F2B84B",
-    "Always up for an adventure"
-   ]
-  ]
- },
- {
-  "id": "p4",
-  "name": "Lantern Hills",
-  "biome": "bamboo",
-  "look": "blossom",
-  "mirror": false,
-  "place": "Bamboo forest · Russian Far East",
-  "pin": [
-   132.7,
-   46.2
-  ],
-  "opens": 140,
-  "accent": "#358574",
-  "animals": [
-   [
-    "w4-0",
-    3,
-    "giant-panda",
-    null,
-    "Hinoki",
-    "",
-    null,
-    "Gentle and a little shy"
-   ],
-   [
-    "w4-1",
-    8,
-    "red-crowned-crane",
-    null,
-    "Kinako",
-    "",
-    "#F08A5D",
-    "Brave, bright and always first"
-   ],
-   [
-    "w4-2",
-    15,
-    "japanese-macaque",
-    null,
-    "Yuzu",
-    "",
-    "#3FB7A8",
-    "Happiest with friends nearby"
-   ]
-  ]
- },
- {
-  "id": "p5",
-  "name": "Saltwind Bay",
-  "biome": "coast",
-  "look": "classic",
-  "mirror": false,
-  "place": "Coast · Great Barrier Reef",
-  "pin": [
-   144,
-   -13.4
-  ],
-  "opens": 160,
-  "accent": "#4386B5",
-  "animals": [
-   [
-    "w5-0",
-    3,
-    "bottlenose-dolphin",
-    null,
-    "Sprat",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w5-1",
-    8,
-    "sea-otter",
-    null,
-    "Bosun",
-    "",
-    null,
-    "Chatty in the mornings"
-   ],
-   [
-    "w5-2",
-    15,
-    "clownfish",
-    null,
-    "Morgan",
-    "",
-    "#6FBF73",
-    "Bold, bouncy and brave"
-   ]
-  ]
- },
- {
-  "id": "p6",
-  "name": "Sunlit Knoll",
-  "biome": "grassland",
-  "look": "autumn",
-  "mirror": true,
-  "place": "Grassland · Steppe of eastern Europe",
-  "pin": [
-   34.6,
-   47.4
-  ],
-  "opens": 180,
-  "accent": "#867F36",
-  "animals": [
-   [
-    "w6-0",
-    3,
-    "american-bison",
-    null,
-    "Bolor",
-    "",
-    null,
-    "Always the last to bed"
-   ],
-   [
-    "w6-1",
-    8,
-    "black-tailed-prairie-dog",
-    null,
-    "Saran",
-    "",
-    null,
-    "Curious about everything"
-   ],
-   [
-    "w6-2",
-    15,
-    "monarch-butterfly",
-    null,
-    "Paz",
-    "",
-    "#F08A5D",
-    "Likes things just so"
-   ]
-  ]
- },
- {
-  "id": "p7",
-  "name": "Granite Col",
-  "biome": "mountain",
-  "look": "classic",
-  "mirror": true,
-  "place": "Mountains · Himalayas",
-  "pin": [
-   89.3,
-   29.3
-  ],
-  "opens": 200,
-  "accent": "#5B77A6",
-  "animals": [
-   [
-    "w7-0",
-    3,
-    "snow-leopard",
-    null,
-    "Konjo",
-    "",
-    null,
-    "A champion napper"
-   ],
-   [
-    "w7-1",
-    8,
-    "llama",
-    null,
-    "Urpi",
-    "",
-    null,
-    "Funny without trying"
-   ],
-   [
-    "w7-2",
-    15,
-    "golden-eagle",
-    null,
-    "Pema",
-    "",
-    null,
-    "Quiet, patient and wise"
-   ]
-  ]
- },
- {
-  "id": "p8",
-  "name": "Jade Glade",
-  "biome": "amazon",
-  "look": "misty",
-  "mirror": false,
-  "place": "Rainforest · Central America",
-  "pin": [
-   -84.6,
-   8
-  ],
-  "opens": 220,
-  "accent": "#55A874",
-  "animals": [
-   [
-    "w8-0",
-    3,
-    "jaguar",
-    null,
-    "Rubi",
-    "",
-    null,
-    "Chatty in the mornings"
-   ],
-   [
-    "w8-1",
-    8,
-    "scarlet-macaw",
-    null,
-    "Goiaba",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w8-2",
-    15,
-    "red-eyed-tree-frog",
-    null,
-    "Brisa",
-    "",
-    "#E5546C",
-    "Proud of its home"
-   ]
-  ]
- },
- {
-  "id": "p9",
-  "name": "Mango Shoals",
-  "biome": "island",
-  "look": "dusk",
-  "mirror": true,
-  "place": "Island · New Zealand",
-  "pin": [
-   177.6,
-   -40.6
-  ],
-  "opens": 240,
-  "accent": "#1F8F8A",
-  "animals": [
-   [
-    "w9-0",
-    3,
-    "ring-tailed-lemur",
-    null,
-    "Driftwood",
-    "",
-    "#5B9BD5",
-    "Always up for an adventure"
-   ],
-   [
-    "w9-1",
-    8,
-    "brown-kiwi",
-    null,
-    "Ube",
-    "",
-    null,
-    "Full of bounce"
-   ],
-   [
-    "w9-2",
-    15,
-    "galapagos-tortoise",
-    null,
-    "Hoku",
-    "",
-    null,
-    "Makes friends easily"
-   ]
-  ]
- },
- {
-  "id": "p10",
-  "name": "Quandong Station",
-  "biome": "outback",
-  "look": "golden",
-  "mirror": true,
-  "place": "Outback · New Guinea",
-  "pin": [
-   144.9,
-   -6
-  ],
-  "opens": 260,
-  "accent": "#D99550",
-  "animals": [
-   [
-    "w10-0",
-    3,
-    "platypus",
-    null,
-    "Frankie",
-    "",
-    null,
-    "Brave, bright and always first"
-   ],
-   [
-    "w10-1",
-    8,
-    "quokka",
-    null,
-    "Alfie",
-    "",
-    null,
-    "Gentle and a little shy"
-   ],
-   [
-    "w10-2",
-    15,
-    "laughing-kookaburra",
-    null,
-    "Ruby",
-    "",
-    "#F08A5D",
-    "Never in a hurry"
-   ]
-  ]
- },
- {
-  "id": "p11",
-  "name": "Mossy Copse",
-  "biome": "woodland",
-  "look": "golden",
-  "mirror": false,
-  "place": "Woodland · Pacific Northwest",
-  "pin": [
-   -118.8,
-   45.2
-  ],
-  "opens": 280,
-  "accent": "#5E8244",
-  "animals": [
-   [
-    "w11-0",
-    3,
-    "european-hedgehog",
-    null,
-    "Ingrid",
-    "",
-    null,
-    "Loves a sunny spot"
-   ],
-   [
-    "w11-1",
-    8,
-    "raccoon",
-    null,
-    "Nils",
-    "",
-    null,
-    "Quiet, patient and wise"
-   ],
-   [
-    "w11-2",
-    15,
-    "great-horned-owl",
-    null,
-    "Bertil",
-    "",
-    "#F2B84B",
-    "Funny without trying"
-   ]
-  ]
- },
- {
-  "id": "p12",
-  "name": "Orchid Springs",
-  "biome": "jungle",
-  "look": "golden",
-  "mirror": true,
-  "place": "Jungle · Southeast Asia",
-  "pin": [
-   102.1,
-   8.1
-  ],
-  "opens": 300,
-  "accent": "#2F8A55",
-  "animals": [
-   [
-    "w12-0",
-    3,
-    "bengal-tiger",
-    null,
-    "Sinar",
-    "",
-    null,
-    "A champion napper"
-   ],
-   [
-    "w12-1",
-    8,
-    "bornean-orangutan",
-    null,
-    "Megha",
-    "",
-    null,
-    "Funny without trying"
-   ],
-   [
-    "w12-2",
-    15,
-    "great-hornbill",
-    null,
-    "Sona",
-    "",
-    "#6FBF73",
-    "Quiet, patient and wise"
-   ]
-  ]
- },
- {
-  "id": "p13",
-  "name": "Marula Grasslands",
-  "biome": "savanna",
-  "look": "dusk",
-  "mirror": false,
-  "place": "Savanna · Sahel",
-  "pin": [
-   2.2,
-   11.7
-  ],
-  "opens": 320,
-  "accent": "#A98A2C",
-  "animals": [
-   [
-    "w13-0",
-    3,
-    "lion",
-    null,
-    "Nanasi",
-    "",
-    "#3FB7A8",
-    "Happiest with friends nearby"
-   ],
-   [
-    "w13-1",
-    8,
-    "plains-zebra",
-    null,
-    "Hazina",
-    "",
-    "#6FBF73",
-    "Never in a hurry"
-   ],
-   [
-    "w13-2",
-    15,
-    "ostrich",
-    null,
-    "Sherehe",
-    "",
-    null,
-    "Gentle and a little shy"
-   ]
-  ]
- },
- {
-  "id": "p14",
-  "name": "Lily Marsh",
-  "biome": "wetland",
-  "look": "autumn",
-  "mirror": true,
-  "place": "Wetland · Nile",
-  "pin": [
-   31.1,
-   19.8
-  ],
-  "opens": 340,
-  "accent": "#2F7D88",
-  "animals": [
-   [
-    "w14-0",
-    3,
-    "hippopotamus",
-    null,
-    "Naledi",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w14-1",
-    8,
-    "greater-flamingo",
-    null,
-    "Dewdrop",
-    "",
-    null,
-    "Chatty in the mornings"
-   ],
-   [
-    "w14-2",
-    15,
-    "north-american-beaver",
-    null,
-    "Kamal",
-    "",
-    null,
-    "Bold, bouncy and brave"
-   ]
-  ]
- },
- {
-  "id": "p15",
-  "name": "Narwhal Cove",
-  "biome": "arctic",
-  "look": "dusk",
-  "mirror": false,
-  "place": "Arctic · Siberian Arctic",
-  "pin": [
-   68.7,
-   71.9
-  ],
-  "opens": 360,
-  "accent": "#5B9BC4",
-  "animals": [
-   [
-    "w15-0",
-    3,
-    "walrus",
-    null,
-    "Tova",
-    "",
-    "#5B9BD5",
-    "Chatty in the mornings"
-   ],
-   [
-    "w15-1",
-    8,
-    "reindeer",
-    null,
-    "Sleet",
-    "",
-    "#F08A5D",
-    "Kind to everyone it meets"
-   ],
-   [
-    "w15-2",
-    15,
-    "narwhal",
-    null,
-    "Britt",
-    "",
-    null,
-    "Proud of its home"
-   ]
-  ]
- },
- {
-  "id": "p16",
-  "name": "Elderberry Grove",
-  "biome": "woodland",
-  "look": "classic",
-  "mirror": true,
-  "place": "Woodland · Woods of North America",
-  "pin": [
-   -75.2,
-   46.8
-  ],
-  "opens": 380,
-  "accent": "#668E4A",
-  "animals": [
-   [
-    "w16-0",
-    3,
-    "red-squirrel",
-    null,
-    "Elsie",
-    "",
-    "#E5546C",
-    "Bold, bouncy and brave"
-   ],
-   [
-    "w16-1",
-    8,
-    "brown-bear",
-    null,
-    "Hattie",
-    "",
-    null,
-    "Proud of its home"
-   ],
-   [
-    "w16-2",
-    15,
-    "ladybird",
-    null,
-    "Lumi",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w16-3",
-    21,
-    "white-tailed-deer",
-    null,
-    "Morel",
-    "",
-    "#F08A5D",
-    "Chatty in the mornings"
-   ]
-  ]
- },
- {
-  "id": "p17",
-  "name": "Dandelion Plains",
-  "biome": "grassland",
-  "look": "blossom",
-  "mirror": false,
-  "place": "Grassland · Pampas",
-  "pin": [
-   -61.5,
-   -37.1
-  ],
-  "opens": 400,
-  "accent": "#62803E",
-  "animals": [
-   [
-    "w17-0",
-    3,
-    "pronghorn",
-    null,
-    "Amos",
-    "",
-    null,
-    "Happiest with friends nearby"
-   ],
-   [
-    "w17-1",
-    8,
-    "burrowing-owl",
-    null,
-    "Altan",
-    "",
-    "#E5546C",
-    "Never in a hurry"
-   ],
-   [
-    "w17-2",
-    15,
-    "golden-hamster",
-    null,
-    "Rusty",
-    "",
-    "#F08A5D",
-    "Gentle and a little shy"
-   ],
-   [
-    "w17-3",
-    21,
-    "maned-wolf",
-    null,
-    "Nico",
-    "",
-    null,
-    "Brave, bright and always first"
-   ]
-  ]
- },
- {
-  "id": "p18",
-  "name": "Blue Ice Coast",
-  "biome": "arctic",
-  "look": "misty",
-  "mirror": true,
-  "place": "Arctic · Greenland",
-  "pin": [
-   -33.1,
-   70
-  ],
-  "opens": 420,
-  "accent": "#5B9BC4",
-  "animals": [
-   [
-    "w18-0",
-    3,
-    "rock-ptarmigan",
-    null,
-    "Cloudberry",
-    "",
-    "#A88BDB",
-    "Brave, bright and always first"
-   ],
-   [
-    "w18-1",
-    8,
-    "arctic-fox",
-    "ember",
-    "Arvid",
-    "snow-white",
-    "#F08A5D",
-    "Curls up with its tail as a blanket"
-   ],
-   [
-    "w18-2",
-    15,
-    "arctic-hare",
-    "juniper",
-    "Frida",
-    "frosty grey",
-    null,
-    "Hops in neat zigzags"
-   ],
-   [
-    "w18-3",
-    21,
-    "arctic-wolf",
-    null,
-    "Snowdrop",
-    "",
-    null,
-    "Happiest with friends nearby"
-   ]
-  ]
- },
- {
-  "id": "p19",
-  "name": "Frosty Ridge",
-  "biome": "antarctic",
-  "look": "classic",
-  "mirror": false,
-  "place": "Antarctica · Antarctic Peninsula",
-  "pin": [
-   -62.6,
-   -69.3
-  ],
-  "opens": 440,
-  "accent": "#5590B0",
-  "animals": [
-   [
-    "w19-0",
-    3,
-    "wandering-albatross",
-    null,
-    "Jellybean",
-    "",
-    "#A88BDB",
-    "Chatty in the mornings"
-   ],
-   [
-    "w19-1",
-    8,
-    "antarctic-krill",
-    null,
-    "Peggy",
-    "",
-    "#F2B84B",
-    "Kind to everyone it meets"
-   ],
-   [
-    "w19-2",
-    15,
-    "king-penguin",
-    null,
-    "Mimi",
-    "",
-    null,
-    "Proud of its home"
-   ],
-   [
-    "w19-3",
-    21,
-    "weddell-seal",
-    null,
-    "Pancake",
-    "",
-    null,
-    "Bold, bouncy and brave"
-   ]
-  ]
- },
- {
-  "id": "p20",
-  "name": "Jade Ridge",
-  "biome": "bamboo",
-  "look": "golden",
-  "mirror": true,
-  "place": "Bamboo forest · Japan",
-  "pin": [
-   139,
-   37.4
-  ],
-  "opens": 460,
-  "accent": "#448C7A",
-  "animals": [
-   [
-    "w20-0",
-    3,
-    "mandarin-duck",
-    null,
-    "Bori",
-    "",
-    "#F2B84B",
-    "Loves a sunny spot"
-   ],
-   [
-    "w20-1",
-    8,
-    "raccoon-dog",
-    null,
-    "Yun",
-    "",
-    null,
-    "Quiet, patient and wise"
-   ],
-   [
-    "w20-2",
-    15,
-    "siberian-flying-squirrel",
-    null,
-    "Azuki",
-    "",
-    null,
-    "Funny without trying"
-   ],
-   [
-    "w20-3",
-    21,
-    "golden-snub-nosed-monkey",
-    null,
-    "Sumi",
-    "",
-    "#6FBF73",
-    "A champion napper"
-   ]
-  ]
- },
- {
-  "id": "p21",
-  "name": "Windward Sands",
-  "biome": "coast",
-  "look": "golden",
-  "mirror": true,
-  "place": "Coast · Coral Triangle",
-  "pin": [
-   124,
-   10.9
-  ],
-  "opens": 480,
-  "accent": "#2F6F9C",
-  "animals": [
-   [
-    "w21-0",
-    3,
-    "atlantic-puffin",
-    null,
-    "Estrella",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w21-1",
-    8,
-    "green-sea-turtle",
-    null,
-    "Oceane",
-    "",
-    "#E5546C",
-    "Chatty in the mornings"
-   ],
-   [
-    "w21-2",
-    15,
-    "orca",
-    null,
-    "Topaz",
-    "",
-    "#5B9BD5",
-    "Bold, bouncy and brave"
-   ],
-   [
-    "w21-3",
-    21,
-    "common-octopus",
-    null,
-    "Merrow",
-    "",
-    null,
-    "Proud of its home"
-   ]
-  ]
- },
- {
-  "id": "p22",
-  "name": "Vanilla Atoll",
-  "biome": "island",
-  "look": "classic",
-  "mirror": false,
-  "place": "Island · Caribbean islands",
-  "pin": [
-   -81.3,
-   20.5
-  ],
-  "opens": 500,
-  "accent": "#1F8F8A",
-  "animals": [
-   [
-    "w22-0",
-    3,
-    "philippine-tarsier",
-    null,
-    "Frangipani",
-    "",
-    null,
-    "Always the last to bed"
-   ],
-   [
-    "w22-1",
-    8,
-    "blue-footed-booby",
-    null,
-    "Bituin",
-    "",
-    "#5B9BD5",
-    "Curious about everything"
-   ],
-   [
-    "w22-2",
-    15,
-    "komodo-dragon",
-    null,
-    "Ola",
-    "",
-    "#E5546C",
-    "Likes things just so"
-   ],
-   [
-    "w22-3",
-    21,
-    "red-crab",
-    null,
-    "Lucero",
-    "",
-    null,
-    "A great listener"
-   ]
-  ]
- },
- {
-  "id": "p23",
-  "name": "Orchid Grove",
-  "biome": "jungle",
-  "look": "misty",
-  "mirror": false,
-  "place": "Jungle · India",
-  "pin": [
-   82.2,
-   17.8
-  ],
-  "opens": 520,
-  "accent": "#3E9A62",
-  "animals": [
-   [
-    "w23-0",
-    3,
-    "asian-elephant",
-    null,
-    "Tamu",
-    "",
-    "#3FB7A8",
-    "Makes friends easily"
-   ],
-   [
-    "w23-1",
-    8,
-    "atlas-moth",
-    null,
-    "Rambutan",
-    "",
-    "#E5546C",
-    "Notices the little things"
-   ],
-   [
-    "w23-2",
-    15,
-    "mountain-gorilla",
-    null,
-    "Diya",
-    "",
-    null,
-    "Always up for an adventure"
-   ],
-   [
-    "w23-3",
-    21,
-    "okapi",
-    null,
-    "Intan",
-    "",
-    null,
-    "Full of bounce"
-   ]
-  ]
- },
- {
-  "id": "p24",
-  "name": "Juniper Oasis",
-  "biome": "desert",
-  "look": "dusk",
-  "mirror": false,
-  "place": "Desert · Sahara",
-  "pin": [
-   11.2,
-   22.6
-  ],
-  "opens": 540,
-  "accent": "#B45F4C",
-  "animals": [
-   [
-    "w24-0",
-    3,
-    "sand-cat",
-    null,
-    "Samira",
-    "",
-    null,
-    "Loves a sunny spot"
-   ],
-   [
-    "w24-1",
-    8,
-    "desert-tortoise",
-    null,
-    "Tahini",
-    "",
-    null,
-    "Quiet, patient and wise"
-   ],
-   [
-    "w24-2",
-    15,
-    "long-eared-jerboa",
-    null,
-    "Tumbleweed",
-    "",
-    "#A88BDB",
-    "Funny without trying"
-   ],
-   [
-    "w24-3",
-    21,
-    "arabian-oryx",
-    null,
-    "Zahra",
-    "",
-    "#F2B84B",
-    "A champion napper"
-   ]
-  ]
- },
- {
-  "id": "p25",
-  "name": "Ochre Springs",
-  "biome": "outback",
-  "look": "dusk",
-  "mirror": false,
-  "place": "Outback · Australia",
-  "pin": [
-   121.2,
-   -28.2
-  ],
-  "opens": 560,
-  "accent": "#D99550",
-  "animals": [
-   [
-    "w25-0",
-    3,
-    "short-beaked-echidna",
-    null,
-    "Kookie",
-    "",
-    null,
-    "Quiet, patient and wise"
-   ],
-   [
-    "w25-1",
-    8,
-    "rainbow-lorikeet",
-    null,
-    "Billabong",
-    "",
-    null,
-    "Loves a sunny spot"
-   ],
-   [
-    "w25-2",
-    15,
-    "tasmanian-devil",
-    null,
-    "Sadie",
-    "",
-    "#A88BDB",
-    "A champion napper"
-   ],
-   [
-    "w25-3",
-    21,
-    "emu",
-    null,
-    "Acacia",
-    "",
-    "#F08A5D",
-    "Funny without trying"
-   ]
-  ]
- },
- {
-  "id": "p26",
-  "name": "Passionflower Bend",
-  "biome": "amazon",
-  "look": "classic",
-  "mirror": true,
-  "place": "Rainforest · Amazon basin",
-  "pin": [
-   -54.2,
-   -5.4
-  ],
-  "opens": 580,
-  "accent": "#55A874",
-  "animals": [
-   [
-    "w26-0",
-    3,
-    "amazon-river-dolphin",
-    null,
-    "Guava",
-    "",
-    null,
-    "Happiest with friends nearby"
-   ],
-   [
-    "w26-1",
-    8,
-    "blue-morpho",
-    null,
-    "Mateo",
-    "",
-    null,
-    "Never in a hurry"
-   ],
-   [
-    "w26-2",
-    15,
-    "red-howler-monkey",
-    null,
-    "Vida",
-    "",
-    null,
-    "Gentle and a little shy"
-   ],
-   [
-    "w26-3",
-    21,
-    "giant-anteater",
-    null,
-    "Bromelia",
-    "",
-    "#A88BDB",
-    "Brave, bright and always first"
-   ]
-  ]
- },
- {
-  "id": "p27",
-  "name": "Sandriver Ridge",
-  "biome": "savanna",
-  "look": "misty",
-  "mirror": true,
-  "place": "Savanna · Sahel",
-  "pin": [
-   -8.8,
-   9.4
-  ],
-  "opens": 600,
-  "accent": "#C99A2E",
-  "animals": [
-   [
-    "w27-0",
-    3,
-    "cheetah",
-    null,
-    "Imara",
-    "",
-    null,
-    "Curious about everything"
-   ],
-   [
-    "w27-1",
-    8,
-    "bat-eared-fox",
-    "ember",
-    "Baobab",
-    "silver-grey",
-    "#F08A5D",
-    "Enormous ears that hear everything"
-   ],
-   [
-    "w27-2",
-    15,
-    "white-rhino",
-    null,
-    "Shangwe",
-    "",
-    null,
-    "A great listener"
-   ],
-   [
-    "w27-3",
-    21,
-    "vervet-monkey",
-    null,
-    "Wimbo",
-    "",
-    null,
-    "Likes things just so"
-   ]
-  ]
- },
- {
-  "id": "p28",
-  "name": "Barley Paddocks",
-  "biome": "farm",
-  "look": "golden",
-  "mirror": true,
-  "place": "Farmland · Central Europe",
-  "pin": [
-   21.5,
-   50.6
-  ],
-  "opens": 620,
-  "accent": "#9C5B3F",
-  "animals": [
-   [
-    "w28-0",
-    3,
     "barn-owl",
-    null,
-    "Gravy",
-    "",
-    null,
-    "Gentle and a little shy"
-   ],
-   [
-    "w28-1",
-    8,
     "rabbit",
-    "juniper",
-    "Parsnip",
-    "grey",
-    null,
-    "Quick, curious and fond of clover"
-   ],
-   [
-    "w28-2",
-    15,
     "guinea-pig",
-    null,
-    "Waffles",
-    "",
-    "#5B9BD5",
-    "Happiest with friends nearby"
-   ],
-   [
-    "w28-3",
-    21,
     "domestic-goose",
-    null,
-    "Hamish",
-    "",
-    null,
-    "Never in a hurry"
-   ]
-  ]
- },
- {
-  "id": "p29",
-  "name": "Dewy Shallows",
-  "biome": "wetland",
-  "look": "classic",
-  "mirror": false,
-  "place": "Wetland · Pantanal",
-  "pin": [
-   -55.8,
-   -19.9
-  ],
-  "opens": 640,
-  "accent": "#3A8791",
-  "animals": [
-   [
-    "w29-0",
-    3,
-    "mallard",
-    null,
-    "Pollywog",
-    "",
-    null,
-    "Always up for an adventure"
-   ],
-   [
-    "w29-1",
-    8,
-    "nile-crocodile",
-    null,
-    "Bobbin",
-    "",
-    null,
-    "Full of bounce"
-   ],
-   [
-    "w29-2",
-    15,
-    "common-kingfisher",
-    null,
-    "Minnow",
-    "",
-    null,
-    "Makes friends easily"
-   ],
-   [
-    "w29-3",
-    21,
-    "axolotl",
-    null,
-    "Lotte",
-    "",
-    "#F2B84B",
-    "Notices the little things"
-   ]
-  ]
- },
- {
-  "id": "p30",
-  "name": "Harebell Summit",
-  "biome": "mountain",
-  "look": "misty",
-  "mirror": false,
-  "place": "Mountains · Andes",
-  "pin": [
-   -76.3,
-   -10.7
-  ],
-  "opens": 660,
-  "accent": "#6680B0",
-  "animals": [
-   [
-    "w30-0",
-    3,
-    "alpine-marmot",
-    null,
-    "Lupine",
-    "",
-    "#3FB7A8",
-    "Never in a hurry"
-   ],
-   [
-    "w30-1",
-    8,
-    "alpine-ibex",
-    null,
-    "Inti",
-    "",
-    "#E5546C",
-    "Happiest with friends nearby"
-   ],
-   [
-    "w30-2",
-    15,
-    "spectacled-bear",
-    null,
-    "Bryn",
-    "",
-    null,
-    "Brave, bright and always first"
-   ],
-   [
-    "w30-3",
-    21,
-    "andean-condor",
-    null,
-    "Mayu",
-    "",
-    null,
-    "Gentle and a little shy"
-   ]
-  ]
- },
- {
-  "id": "p31",
-  "name": "Bluebell Croft",
-  "biome": "farm",
-  "look": "autumn",
-  "mirror": false,
-  "place": "Farmland · Western Europe",
-  "pin": [
-   7,
-   46.6
-  ],
-  "opens": 680,
-  "accent": "#B5683A",
-  "animals": [
-   [
-    "w31-0",
-    3,
     "western-honeybee",
-    null,
-    "Doodle",
-    "",
-    null,
-    "Happiest with friends nearby"
-   ],
-   [
-    "w31-1",
-    8,
     "turkey",
-    null,
-    "Dolly",
-    "",
-    null,
-    "Never in a hurry"
-   ],
-   [
-    "w31-2",
-    15,
     "ferret",
-    null,
-    "Hollyhock",
-    "",
-    null,
-    "Gentle and a little shy"
-   ]
-  ]
- },
- {
-  "id": "p32",
-  "name": "Persimmon Glen",
-  "biome": "bamboo",
-  "look": "classic",
-  "mirror": false,
-  "place": "Bamboo forest · Korea",
-  "pin": [
-   127.9,
-   36.2
-  ],
-  "opens": 700,
-  "accent": "#43927F",
-  "animals": [
-   [
-    "w32-0",
-    3,
-    "golden-pheasant",
-    null,
-    "Momiji",
-    "",
-    null,
-    "A great listener"
+    "harvest-mouse",
+    "barn-swallow",
+    "mule",
+    "california-quail",
+    "water-buffalo",
+    "rock-pigeon",
+    "domestic-silkmoth",
+    "eurasian-magpie",
+    "european-mole",
+    "house-sparrow",
+    "common-pipistrelle",
+    "european-goldfinch",
+    "american-crow",
+    "sheep",
+    "pig",
+    "cow",
+    "goat",
+    "chicken",
+    "pony"
    ],
-   [
-    "w32-1",
-    8,
-    "amur-tiger",
-    null,
-    "Dubu",
-    "",
-    "#E5546C",
-    "Likes things just so"
-   ],
-   [
-    "w32-2",
-    15,
-    "japanese-rhinoceros-beetle",
-    null,
-    "Yuki",
-    "",
-    "#5B9BD5",
-    "Curious about everything"
-   ]
-  ]
- },
- {
-  "id": "p33",
-  "name": "Saguaro Springs",
-  "biome": "desert",
-  "look": "classic",
-  "mirror": true,
-  "place": "Desert · Arabia",
-  "pin": [
-   42.1,
-   19.1
-  ],
-  "opens": 720,
-  "accent": "#AD5B48",
-  "animals": [
-   [
-    "w33-0",
-    3,
-    "gila-monster",
-    null,
-    "Mallow",
-    "",
-    "#F2B84B",
-    "Likes things just so"
-   ],
-   [
-    "w33-1",
-    8,
-    "elf-owl",
-    null,
-    "Mica",
-    "",
-    null,
-    "A great listener"
-   ],
-   [
-    "w33-2",
-    15,
-    "bactrian-camel",
-    null,
-    "Cactus",
-    "",
-    null,
-    "Always the last to bed"
-   ]
-  ]
- },
- {
-  "id": "p34",
-  "name": "Windward Reef",
-  "biome": "coast",
-  "look": "misty",
-  "mirror": false,
-  "place": "Coast · California coast",
-  "pin": [
-   -122.8,
-   35.9
-  ],
-  "opens": 740,
-  "accent": "#2F6F9C",
-  "animals": [
-   [
-    "w34-0",
-    3,
-    "hermit-crab",
-    null,
-    "Nalu",
-    "",
-    null,
-    "Bold, bouncy and brave"
-   ],
-   [
-    "w34-1",
-    8,
-    "humpback-whale",
-    null,
-    "Jory",
-    "",
-    "#3FB7A8",
-    "Proud of its home"
-   ],
-   [
-    "w34-2",
-    15,
-    "brown-pelican",
-    null,
-    "Marisol",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ]
-  ]
- },
- {
-  "id": "p35",
-  "name": "Sagebrush Vale",
-  "biome": "grassland",
-  "look": "dusk",
-  "mirror": true,
-  "place": "Grassland · Great Plains",
-  "pin": [
-   -104.6,
-   43.8
-  ],
-  "opens": 760,
-  "accent": "#7E8C38",
-  "animals": [
-   [
-    "w35-0",
-    3,
-    "buff-tailed-bumblebee",
-    null,
-    "Bluebonnet",
-    "",
-    "#5B9BD5",
-    "Always the last to bed"
-   ],
-   [
-    "w35-1",
-    8,
-    "przewalskis-horse",
-    null,
-    "Luz",
-    "",
-    "#F08A5D",
-    "Curious about everything"
-   ],
-   [
-    "w35-2",
-    15,
-    "brown-hare",
-    null,
-    "Millet",
-    "",
-    null,
-    "Likes things just so"
-   ]
-  ]
- },
- {
-  "id": "p36",
-  "name": "Sundown Gully",
-  "biome": "outback",
-  "look": "classic",
-  "mirror": true,
-  "place": "Outback · Australia",
-  "pin": [
-   147.9,
-   -29.2
-  ],
-  "opens": 780,
-  "accent": "#D9824A",
-  "animals": [
-   [
-    "w36-0",
-    3,
-    "frilled-lizard",
-    null,
-    "Banjo",
-    "",
-    "#F08A5D",
-    "Kind to everyone it meets"
-   ],
-   [
-    "w36-1",
-    8,
-    "sugar-glider",
-    null,
-    "Wattle",
-    "",
-    "#5B9BD5",
-    "Chatty in the mornings"
-   ],
-   [
-    "w36-2",
-    15,
-    "sulphur-crested-cockatoo",
-    null,
-    "Dusty",
-    "",
-    null,
-    "Bold, bouncy and brave"
-   ]
-  ]
- },
- {
-  "id": "p37",
-  "name": "Tamarind Hills",
-  "biome": "savanna",
-  "look": "classic",
-  "mirror": false,
-  "place": "Savanna · East Africa",
-  "pin": [
-   34.1,
-   -12.3
-  ],
-  "opens": 800,
-  "accent": "#A98A2C",
-  "animals": [
-   [
-    "w37-0",
-    3,
-    "leopard",
-    null,
-    "Kito",
-    "",
-    "#6FBF73",
-    "Chatty in the mornings"
-   ],
-   [
-    "w37-1",
-    8,
-    "warthog",
-    null,
-    "Kesho",
-    "",
-    null,
-    "Kind to everyone it meets"
-   ],
-   [
-    "w37-2",
-    15,
-    "ground-hornbill",
-    null,
-    "Maua",
-    "",
-    null,
-    "Proud of its home"
-   ]
-  ]
- },
- {
-  "id": "p38",
-  "name": "Sunlit Bay",
-  "biome": "antarctic",
-  "look": "golden",
-  "mirror": true,
-  "place": "Antarctica · South Georgia",
-  "pin": [
-   -32.7,
-   -59.8
-  ],
-  "opens": 820,
-  "accent": "#5590B0",
-  "animals": [
-   [
-    "w38-0",
-    3,
-    "gentoo-penguin",
-    null,
-    "Pia",
-    "",
-    null,
-    "Curious about everything"
-   ],
-   [
-    "w38-1",
-    8,
-    "snow-petrel",
-    null,
-    "Tomas",
-    "",
-    null,
-    "Always the last to bed"
-   ],
-   [
-    "w38-2",
-    15,
-    "blackfin-icefish",
-    null,
+   "names": [
+    "Barley",
+    "Buttons",
+    "Pumpkin",
+    "Clementine",
+    "Dumpling",
+    "Pickles",
+    "Peanut",
     "Noodle",
-    "",
-    "#A88BDB",
-    "A great listener"
-   ]
-  ]
- },
- {
-  "id": "p39",
-  "name": "Pine Valley",
-  "biome": "mountain",
-  "look": "golden",
-  "mirror": true,
-  "place": "Mountains · Ethiopian Highlands",
-  "pin": [
-   37.6,
-   13
-  ],
-  "opens": 840,
-  "accent": "#56709E",
-  "animals": [
-   [
-    "w39-0",
-    3,
-    "chinchilla",
-    null,
-    "Mia",
-    "",
-    "#6FBF73",
-    "Always the last to bed"
+    "Turnip",
+    "Parsnip",
+    "Radish",
+    "Haystack",
+    "Bonnie",
+    "Bertie",
+    "Butterbean",
+    "Treacle",
+    "Toffee",
+    "Crumpet",
+    "Pudding",
+    "Sprout",
+    "Cricket",
+    "Puddle",
+    "Mo",
+    "Lulu",
+    "Gracie",
+    "Ruby",
+    "Shortbread",
+    "Marmalade",
+    "Tater",
+    "Henrietta",
+    "Gingersnap",
+    "Waffles",
+    "Oatcake",
+    "Bramley",
+    "Mabel",
+    "Hamish",
+    "Elspeth",
+    "Nell",
+    "Ivy",
+    "Doodle"
    ],
-   [
-    "w39-1",
-    8,
-    "mountain-goat",
-    null,
-    "Vreni",
-    "",
-    null,
-    "Curious about everything"
+   "words": [
+    [
+     "Clover",
+     "Honey",
+     "Bramble",
+     "Willow",
+     "Larkspur",
+     "Hollyhock",
+     "Apple",
+     "Bluebell",
+     "Thistle",
+     "Foxglove",
+     "Primrose",
+     "Mill",
+     "Cherry",
+     "Barley",
+     "Sorrel",
+     "Elderflower",
+     "Daisy",
+     "Pear Tree",
+     "Hayloft",
+     "Brook"
+    ],
+    [
+     "Acres",
+     "Meadows",
+     "Fields",
+     "Orchards",
+     "Paddocks",
+     "Hills",
+     "Hollow",
+     "Croft",
+     "Downs",
+     "Homestead"
+    ]
    ],
-   [
-    "w39-2",
-    15,
-    "yak",
-    null,
-    "Yeshi",
-    "",
-    null,
-    "Likes things just so"
-   ]
-  ]
- },
- {
-  "id": "p40",
-  "name": "Camphor Gorge",
-  "biome": "jungle",
-  "look": "classic",
-  "mirror": true,
-  "place": "Jungle · Borneo and Sumatra",
-  "pin": [
-   117.7,
-   3.5
-  ],
-  "opens": 860,
-  "accent": "#4AA36B",
-  "animals": [
-   [
-    "w40-0",
-    3,
-    "peacock",
-    null,
-    "Kavi",
-    "",
-    null,
-    "Always the last to bed"
+   "zones": [
+    [
+     -4,
+     8,
+     46,
+     54,
+     "Western Europe"
+    ],
+    [
+     10,
+     26,
+     46,
+     53,
+     "Central Europe"
+    ],
+    [
+     -96,
+     -82,
+     38,
+     45,
+     "the American Midwest"
+    ],
+    [
+     -63,
+     -58,
+     -37,
+     -32,
+     "the Pampas"
+    ],
+    [
+     170,
+     176,
+     -45,
+     -39,
+     "New Zealand"
+    ],
+    [
+     -80,
+     -72,
+     41,
+     45,
+     "New England"
+    ]
    ],
-   [
-    "w40-1",
-    8,
+   "looks": [
+    "classic",
+    "golden",
+    "autumn",
+    "blossom",
+    "misty"
+   ],
+   "accents": [
+    "#C0583F",
+    "#B5683A",
+    "#A8574B",
+    "#C4793D",
+    "#9C5B3F"
+   ],
+   "stages": [
+    [
+     "Empty meadow",
+     "First friend",
+     "Barn raising",
+     "Duck pond",
+     "Thriving"
+    ],
+    [
+     "Long grass and a quiet gate",
+     "A fenced pasture, and the first friend wanders in",
+     "A red barn goes up beside the pasture",
+     "The pond fills and a hen house appears",
+     "Sunflowers and an orchard all along the hill"
+    ]
+   ],
+   "label": "Farmland",
+   "scenery": "Green fields and a red barn",
+   "art": "farm"
+  },
+  "outback": {
+   "species": [
+    "platypus",
+    "quokka",
+    "laughing-kookaburra",
+    "short-beaked-echidna",
+    "rainbow-lorikeet",
+    "tasmanian-devil",
+    "emu",
+    "frilled-lizard",
+    "sugar-glider",
+    "sulphur-crested-cockatoo",
+    "greater-bilby",
+    "southern-cassowary",
+    "red-necked-wallaby",
+    "thorny-devil",
+    "galah",
+    "dingo",
+    "goodfellows-tree-kangaroo",
+    "superb-lyrebird",
+    "numbat",
+    "eastern-blue-tongued-skink",
+    "tawny-frogmouth",
+    "australian-green-tree-frog",
+    "eastern-quoll",
+    "budgerigar",
+    "common-brushtail-possum",
+    "central-bearded-dragon",
+    "raggiana-bird-of-paradise",
+    "yellow-footed-rock-wallaby",
+    "carpet-python",
+    "wedge-tailed-eagle",
+    "southern-greater-glider",
+    "ulysses-butterfly",
+    "eastern-long-necked-turtle",
+    "gouldian-finch",
     "green-tree-python",
-    null,
-    "Ayu",
-    "",
-    null,
-    "Curious about everything"
+    "koala",
+    "kangaroo",
+    "wombat"
    ],
-   [
-    "w40-2",
-    15,
+   "names": [
+    "Opal",
+    "Ochre",
+    "Jarrah",
+    "Banksia",
+    "Waratah",
+    "Boronia",
+    "Acacia",
+    "Ruby",
+    "Mabel",
+    "Olive",
+    "Flossie",
+    "Alfie",
+    "Benny",
+    "Fig",
+    "Bonnie",
+    "Posy",
+    "Paprika",
+    "Pepper",
+    "Cinnamon",
+    "Digby",
+    "Maisie",
+    "Amber",
+    "Rory",
+    "Mallee",
+    "Kip",
+    "Murray",
+    "Huxley",
+    "Evie",
+    "Sadie",
+    "Violet",
+    "Nellie",
+    "Cooper",
+    "Gemma",
+    "Quinn",
+    "Frankie",
+    "Teddy",
+    "Lottie",
+    "Millie",
+    "Mango",
+    "Plum"
+   ],
+   "words": [
+    [
+     "Wattle",
+     "Red Gum",
+     "Saltbush",
+     "Ochre",
+     "Spinifex",
+     "Quandong",
+     "Coolabah",
+     "Ironbark",
+     "Sundown",
+     "Emu",
+     "Mulga",
+     "Desert Pea",
+     "Banksia",
+     "Bottlebrush",
+     "Dingo Fence",
+     "Starlight",
+     "Opal",
+     "Billabong",
+     "Paperbark",
+     "Kurrajong"
+    ],
+    [
+     "Flats",
+     "Plains",
+     "Station",
+     "Range",
+     "Creek",
+     "Gorge",
+     "Springs",
+     "Downs",
+     "Ridge",
+     "Gully"
+    ]
+   ],
+   "zones": [
+    [
+     118,
+     148,
+     -31,
+     -20,
+     "Australia"
+    ],
+    [
+     141,
+     147,
+     -8,
+     -5,
+     "New Guinea"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk"
+   ],
+   "accents": [
+    "#D9824A",
+    "#C96E3C",
+    "#D99550",
+    "#BF6A45",
+    "#E08A55"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Untouched and quiet",
+     "Gum trees take root, and the first friend climbs in",
+     "A shade shelter goes up",
+     "The billabong fills",
+     "Desert peas bloom across the red sand"
+    ]
+   ],
+   "label": "Outback",
+   "scenery": "Red earth and gum trees under big skies",
+   "art": "outback"
+  },
+  "savanna": {
+   "species": [
+    "lion",
+    "plains-zebra",
+    "ostrich",
+    "cheetah",
+    "bat-eared-fox",
+    "white-rhino",
+    "vervet-monkey",
+    "leopard",
+    "warthog",
+    "ground-hornbill",
+    "african-wild-dog",
+    "blue-wildebeest",
+    "banded-mongoose",
+    "spotted-hyena",
+    "lilac-breasted-roller",
+    "aardvark",
+    "greater-kudu",
+    "lesser-bushbaby",
+    "leopard-tortoise",
+    "honey-badger",
+    "secretary-bird",
+    "thomsons-gazelle",
+    "cape-buffalo",
+    "fischers-lovebird",
+    "ground-pangolin",
+    "serval",
+    "dung-beetle",
+    "olive-baboon",
+    "kirks-dik-dik",
+    "helmeted-guineafowl",
+    "grevys-zebra",
+    "rock-agama",
+    "caracal",
+    "yellow-billed-hornbill",
+    "impala",
+    "straw-coloured-fruit-bat",
+    "black-backed-jackal",
+    "gerenuk",
+    "lappet-faced-vulture",
+    "cape-ground-squirrel",
+    "springbok",
+    "african-rock-python",
+    "aardwolf",
+    "masked-weaver",
+    "sable-antelope",
+    "african-monarch",
+    "red-billed-oxpecker",
+    "gemsbok",
+    "giraffe",
+    "meerkat",
+    "african-elephant"
+   ],
+   "names": [
+    "Jua",
+    "Nuru",
+    "Upendo",
+    "Furaha",
+    "Tamu",
+    "Malaika",
+    "Pendo",
+    "Kipenzi",
+    "Bahati",
+    "Faraja",
+    "Jamila",
+    "Kesho",
+    "Maua",
+    "Tausi",
+    "Kipepeo",
+    "Johari",
+    "Almasi",
+    "Asali",
+    "Embe",
+    "Nanasi",
+    "Pilipili",
+    "Upepo",
+    "Wingu",
+    "Kilima",
+    "Subira",
+    "Imara",
+    "Haraka",
+    "Shangwe",
+    "Sherehe",
+    "Wimbo",
+    "Moyo",
+    "Tabasamu",
+    "Kicheko",
+    "Marjani",
+    "Mopane",
+    "Rooibos",
+    "Hazina",
+    "Dunia",
+    "Tulivu",
+    "Shaba"
+   ],
+   "words": [
+    [
+     "Acacia",
+     "Baobab",
+     "Golden",
+     "Marula",
+     "Sunrise",
+     "Amber",
+     "Weaver",
+     "Tamarind",
+     "Kopje",
+     "Lion Rock",
+     "Fever Tree",
+     "Long Grass",
+     "Mango Tree",
+     "Thornbush",
+     "Sandriver",
+     "Red Oat",
+     "Hornbill",
+     "Morning Star",
+     "Ostrich",
+     "Twin Hills"
+    ],
+    [
+     "Plains",
+     "Valley",
+     "Grasslands",
+     "Waterhole",
+     "Springs",
+     "Pan",
+     "Ridge",
+     "Crossing",
+     "Hills",
+     "Basin"
+    ]
+   ],
+   "zones": [
+    [
+     22,
+     40,
+     -20,
+     6,
+     "East Africa"
+    ],
+    [
+     -12,
+     10,
+     9,
+     13,
+     "the Sahel"
+    ],
+    [
+     16,
+     30,
+     -26,
+     -18,
+     "Southern Africa"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk",
+    "misty"
+   ],
+   "accents": [
+    "#C99A2E",
+    "#B8862A",
+    "#D2A63E",
+    "#C08B3A",
+    "#A98A2C"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Untouched and quiet",
+     "An acacia grows tall, and the first friend comes by",
+     "A rocky lookout rises",
+     "The waterhole fills",
+     "Wildflowers and weaver birds everywhere"
+    ]
+   ],
+   "label": "Savanna",
+   "scenery": "Golden grass under a huge sun",
+   "art": "savanna"
+  },
+  "arctic": {
+   "species": [
+    "walrus",
+    "reindeer",
+    "narwhal",
+    "rock-ptarmigan",
+    "arctic-fox",
+    "arctic-hare",
+    "arctic-wolf",
+    "beluga",
+    "norway-lemming",
+    "musk-ox",
+    "arctic-tern",
+    "wolverine",
+    "bowhead-whale",
+    "snow-goose",
+    "ringed-seal",
+    "arctic-ground-squirrel",
+    "gyrfalcon",
+    "arctic-char",
+    "snow-bunting",
+    "snow-crab",
+    "king-eider",
+    "arctic-bumblebee",
+    "ivory-gull",
+    "snowy-owl",
+    "polar-bear",
+    "harp-seal"
+   ],
+   "names": [
+    "Vilja",
+    "Tuuli",
+    "Onni",
+    "Siku",
+    "Malik",
+    "Alva",
+    "Ragna",
+    "Sigrid",
+    "Linnea",
+    "Inga",
+    "Liv",
+    "Saga",
+    "Tova",
+    "Runa",
+    "Eira",
+    "Tilde",
+    "Elin",
+    "Bodil",
+    "Sasha",
+    "Katya",
+    "Mira",
+    "Aino",
+    "Eino",
+    "Aili",
+    "Frida",
+    "Klara",
+    "Svea",
+    "Britt",
+    "Halla",
+    "Kari",
+    "Leif",
+    "Arvid",
+    "Dasha",
+    "Nika",
+    "Snowdrop",
+    "Cloudberry",
+    "Kaja",
+    "Kaisa",
+    "Sunniva",
+    "Ebba"
+   ],
+   "words": [
+    [
+     "Snowdrift",
+     "Aurora",
+     "Polar",
+     "Frost",
+     "Northern",
+     "Glacier",
+     "Midnight Sun",
+     "Silver",
+     "Icefall",
+     "Starry",
+     "Whitecap",
+     "Narwhal",
+     "Snowberry",
+     "Lichen",
+     "Blue Ice",
+     "Moonlit",
+     "Puffin",
+     "Hoarfrost",
+     "Crystal",
+     "Seal Rock"
+    ],
+    [
+     "Shore",
+     "Bay",
+     "Fjord",
+     "Point",
+     "Tundra",
+     "Cove",
+     "Floe",
+     "Sound",
+     "Inlet",
+     "Coast"
+    ]
+   ],
+   "zones": [
+    [
+     -150,
+     -75,
+     64,
+     74,
+     "the Canadian Arctic"
+    ],
+    [
+     -48,
+     -25,
+     64,
+     76,
+     "Greenland"
+    ],
+    [
+     16,
+     32,
+     68,
+     71,
+     "Lapland"
+    ],
+    [
+     60,
+     140,
+     67,
+     73,
+     "the Siberian Arctic"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk",
+    "misty"
+   ],
+   "accents": [
+    "#5B9BC4",
+    "#4C8BB8",
+    "#6AA6C9",
+    "#5590B0",
+    "#7AA9CF"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Untouched and quiet",
+     "Snowdrifts settle, and the first friend arrives",
+     "A snow den is dug",
+     "Open water by the ice",
+     "Cotton grass and starry nights"
+    ]
+   ],
+   "label": "Arctic",
+   "scenery": "Snow, sea ice and the midnight sun",
+   "art": "arctic"
+  },
+  "amazon": {
+   "species": [
+    "jaguar",
+    "scarlet-macaw",
+    "red-eyed-tree-frog",
+    "amazon-river-dolphin",
+    "blue-morpho",
+    "red-howler-monkey",
+    "giant-anteater",
+    "blue-and-yellow-macaw",
+    "green-anaconda",
+    "squirrel-monkey",
+    "blue-poison-dart-frog",
+    "rufous-tailed-hummingbird",
+    "ocelot",
+    "red-bellied-piranha",
+    "golden-lion-tamarin",
+    "harpy-eagle",
+    "green-iguana",
+    "south-american-tapir",
+    "kinkajou",
+    "hyacinth-macaw",
+    "northern-glass-frog",
+    "black-spider-monkey",
+    "hercules-beetle",
+    "south-american-coati",
+    "resplendent-quetzal",
+    "giant-otter",
+    "pygmy-marmoset",
+    "arapaima",
+    "nine-banded-armadillo",
+    "hoatzin",
+    "margay",
+    "strawberry-poison-frog",
+    "white-faced-capuchin",
+    "green-basilisk",
+    "guianan-cock-of-the-rock",
+    "honduran-white-bat",
+    "cotton-top-tamarin",
+    "neon-tetra",
+    "spectacled-owl",
+    "black-caiman",
+    "owl-butterfly",
+    "agouti",
+    "three-striped-night-monkey",
+    "white-faced-saki",
+    "toucan",
+    "sloth",
+    "capybara"
+   ],
+   "names": [
+    "Caju",
+    "Pipoca",
+    "Mel",
+    "Flor",
+    "Jaci",
+    "Kiko",
+    "Nico",
+    "Lupe",
+    "Rosa",
+    "Chico",
+    "Amora",
+    "Brisa",
+    "Selva",
+    "Lua",
+    "Goiaba",
+    "Pitanga",
+    "Bento",
+    "Teo",
+    "Zeca",
+    "Juju",
+    "Lili",
+    "Nuno",
+    "Lia",
+    "Mateo",
+    "Paz",
+    "Cereja",
+    "Sabia",
+    "Tuca",
+    "Duda",
+    "Biju",
+    "Rubi",
+    "Vida",
+    "Mimo",
+    "Nina",
+    "Sol",
+    "Arara",
+    "Sapeca",
+    "Chuva",
+    "Jambo",
+    "Maracuja"
+   ],
+   "words": [
+    [
+     "Orchid",
+     "Kapok",
+     "Mossy",
+     "Emerald",
+     "Fern",
+     "Canopy",
+     "Firefly",
+     "Lily",
+     "Passionflower",
+     "Bromeliad",
+     "Rainy",
+     "Cacao",
+     "Morpho",
+     "Hummingbird",
+     "Liana",
+     "Misty Leaf",
+     "Jade",
+     "Papaya",
+     "Golden Frog",
+     "Riverbend"
+    ],
+    [
+     "Grove",
+     "Lagoon",
+     "Bend",
+     "Falls",
+     "Glade",
+     "Hollow",
+     "Rapids",
+     "Backwater",
+     "Clearing",
+     "Islands"
+    ]
+   ],
+   "zones": [
+    [
+     -73,
+     -52,
+     -12,
+     1,
+     "the Amazon basin"
+    ],
+    [
+     -85,
+     -77,
+     7,
+     12,
+     "Central America"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "misty"
+   ],
+   "accents": [
+    "#3E9A62",
+    "#2F8A55",
+    "#4AA36B",
+    "#3B8C5E",
+    "#55A874"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Untouched and quiet",
+     "Giant leaves unfurl, and the first friend flies in",
+     "A tree platform goes up",
+     "Giant lily pads on the river",
+     "Heliconia flowers and butterflies"
+    ]
+   ],
+   "label": "Rainforest",
+   "scenery": "Giant leaves and a slow brown river",
+   "art": "amazon"
+  },
+  "antarctic": {
+   "species": [
+    "emperor-penguin",
+    "leopard-seal",
+    "adelie-penguin",
+    "wandering-albatross",
+    "antarctic-krill",
+    "king-penguin",
+    "weddell-seal",
+    "gentoo-penguin",
+    "snow-petrel",
+    "blackfin-icefish",
+    "chinstrap-penguin",
+    "southern-elephant-seal",
+    "macaroni-penguin",
+    "south-polar-skua",
+    "antarctic-minke-whale",
+    "southern-rockhopper-penguin"
+   ],
+   "names": [
+    "Popcorn",
+    "Puddle",
+    "Sprout",
+    "Nugget",
+    "Biscuit",
+    "Button",
+    "Dumpling",
+    "Waffle",
+    "Noodle",
+    "Pudding",
+    "Toffee",
+    "Pancake",
+    "Cocoa",
+    "Sprinkle",
+    "Jellybean",
+    "Crumble",
+    "Wren",
+    "Edie",
+    "Ivy",
+    "Rosie",
+    "Gus",
+    "Ollie",
+    "Tess",
+    "Bea",
+    "Effie",
+    "Lulu",
+    "Mimi",
+    "Peggy",
+    "Rita",
+    "Pia",
+    "Alma",
+    "Nieve",
+    "Celeste",
+    "Nube",
+    "Emilio",
+    "Lucia",
+    "Tomas",
+    "Rocio",
+    "Ines",
+    "Bobble"
+   ],
+   "words": [
+    [
+     "Glacier",
+     "Aurora",
+     "Starlit",
+     "Moonlit",
+     "Silver",
+     "Crystal",
+     "Pearl",
+     "Snowy",
+     "Frosty",
+     "Polar",
+     "Windswept",
+     "Sparkling",
+     "Gleaming",
+     "Hushed",
+     "Sapphire",
+     "Misty",
+     "Penguin",
+     "Sunlit",
+     "Midnight",
+     "Albatross"
+    ],
+    [
+     "Shelf",
+     "Floe",
+     "Bay",
+     "Cove",
+     "Cape",
+     "Point",
+     "Sound",
+     "Ridge",
+     "Icefield",
+     "Inlet"
+    ]
+   ],
+   "zones": [
+    [
+     -68,
+     -56,
+     -70,
+     -63,
+     "the Antarctic Peninsula"
+    ],
+    [
+     -45,
+     -30,
+     -62,
+     -54,
+     "South Georgia"
+    ],
+    [
+     60,
+     120,
+     -69,
+     -65,
+     "East Antarctica"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk",
+    "misty"
+   ],
+   "accents": [
+    "#4C8BB8",
+    "#5B9BC4",
+    "#3F7FAE",
+    "#6AA6C9",
+    "#5590B0"
+   ],
+   "stages": [
+    [
+     "Wild ice",
+     "First friend",
+     "Shelter",
+     "Open water",
+     "Thriving"
+    ],
+    [
+     "Wind, ice and a quiet shore",
+     "Snowdrifts settle, and the first friend waddles in",
+     "A snow shelter is dug",
+     "Open water by the ice",
+     "Clear skies and starry nights"
+    ]
+   ],
+   "label": "Antarctica",
+   "scenery": "Ice shelves and penguin beaches at the bottom of the world",
+   "art": "arctic"
+  },
+  "jungle": {
+   "species": [
+    "bengal-tiger",
+    "bornean-orangutan",
+    "great-hornbill",
+    "asian-elephant",
+    "atlas-moth",
+    "mountain-gorilla",
+    "okapi",
+    "peacock",
     "chimpanzee",
-    null,
+    "pygmy-hippo",
+    "large-flying-fox",
+    "sun-bear",
+    "wallaces-flying-frog",
+    "sunda-slow-loris",
+    "malayan-tapir",
+    "rhinoceros-hornbill",
+    "binturong",
+    "clouded-leopard",
+    "sunda-pangolin",
+    "proboscis-monkey",
+    "african-grey-parrot",
+    "rajah-brookes-birdwing",
+    "mandrill",
+    "bongo",
+    "tokay-gecko",
+    "white-handed-gibbon",
+    "sumatran-rhino",
+    "oriental-dwarf-kingfisher",
+    "goliath-frog",
+    "bonobo",
+    "sloth-bear",
+    "paradise-flying-snake",
+    "black-and-white-colobus",
+    "great-blue-turaco",
+    "gaur",
+    "indian-giant-squirrel",
+    "goliath-beetle",
+    "dhole",
+    "common-hill-myna",
+    "lesser-mouse-deer",
+    "lion-tailed-macaque",
+    "sunda-colugo",
+    "red-river-hog"
+   ],
+   "names": [
+    "Bulan",
     "Mentari",
-    "",
-    "#5B9BD5",
-    "Likes things just so"
-   ]
-  ]
+    "Embun",
+    "Melati",
+    "Intan",
+    "Pelangi",
+    "Manis",
+    "Comel",
+    "Ayu",
+    "Suria",
+    "Awan",
+    "Kasih",
+    "Sayang",
+    "Pandan",
+    "Rambutan",
+    "Sinar",
+    "Cahaya",
+    "Tara",
+    "Kavi",
+    "Diya",
+    "Neel",
+    "Kiran",
+    "Sona",
+    "Pari",
+    "Nila",
+    "Megha",
+    "Laddoo",
+    "Jalebi",
+    "Mithu",
+    "Kesar",
+    "Malee",
+    "Sabai",
+    "Furaha",
+    "Nuru",
+    "Pendo",
+    "Bolingo",
+    "Tamu",
+    "Teratai",
+    "Wangi",
+    "Gulab"
+   ],
+   "words": [
+    [
+     "Monsoon",
+     "Teak",
+     "Banyan",
+     "Rattan",
+     "Mangosteen",
+     "Lotus",
+     "Jasmine",
+     "Sandalwood",
+     "Hornbill",
+     "Fig Tree",
+     "Pitcher Plant",
+     "Rafflesia",
+     "Camphor",
+     "Kingfisher",
+     "Starfruit",
+     "Jade",
+     "Orchid",
+     "Raintree",
+     "Cardamom",
+     "Sunbird"
+    ],
+    [
+     "Grove",
+     "Valley",
+     "Falls",
+     "Hollow",
+     "River",
+     "Gorge",
+     "Ridge",
+     "Terrace",
+     "Creek",
+     "Springs"
+    ]
+   ],
+   "zones": [
+    [
+     100,
+     118,
+     -3,
+     5,
+     "Borneo and Sumatra"
+    ],
+    [
+     98,
+     106,
+     6,
+     18,
+     "Southeast Asia"
+    ],
+    [
+     74,
+     90,
+     10,
+     24,
+     "India"
+    ],
+    [
+     12,
+     28,
+     -4,
+     4,
+     "the Congo Basin"
+    ],
+    [
+     -12,
+     -4,
+     5,
+     9,
+     "West Africa"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "misty"
+   ],
+   "accents": [
+    "#2F8A55",
+    "#3E9A62",
+    "#357F50",
+    "#4AA36B",
+    "#2E7A58"
+   ],
+   "stages": [
+    [
+     "Wild forest",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Deep green and quiet",
+     "Giant leaves unfurl, and the first friend swings in",
+     "A tree platform goes up",
+     "Lily pads on the river",
+     "Flowers and butterflies everywhere"
+    ]
+   ],
+   "label": "Jungle",
+   "scenery": "Tall trees, warm rain and a lazy river",
+   "art": "amazon"
+  },
+  "bamboo": {
+   "species": [
+    "giant-panda",
+    "red-crowned-crane",
+    "japanese-macaque",
+    "mandarin-duck",
+    "raccoon-dog",
+    "siberian-flying-squirrel",
+    "golden-snub-nosed-monkey",
+    "golden-pheasant",
+    "amur-tiger",
+    "japanese-rhinoceros-beetle",
+    "sika-deer",
+    "chinese-giant-salamander",
+    "asiatic-black-bear",
+    "crested-ibis",
+    "siberian-chipmunk",
+    "amur-leopard",
+    "great-purple-emperor",
+    "golden-takin",
+    "japanese-white-eye",
+    "japanese-serow",
+    "japanese-dormouse",
+    "green-pheasant",
+    "yellow-throated-marten",
+    "blakistons-fish-owl",
+    "chinese-bamboo-rat",
+    "red-panda"
+   ],
+   "names": [
+    "Kumo",
+    "Hoshi",
+    "Kaede",
+    "Kotori",
+    "Mame",
+    "Ume",
+    "Kiku",
+    "Fuyu",
+    "Yuzu",
+    "Azuki",
+    "Sumi",
+    "Kuri",
+    "Komugi",
+    "Momiji",
+    "Kinako",
+    "Hinoki",
+    "Matsu",
+    "Kaze",
+    "Hana",
+    "Yuki",
+    "Dango",
+    "Lan",
+    "Yun",
+    "Lin",
+    "Chun",
+    "Ling",
+    "Ming",
+    "Hua",
+    "Nabi",
+    "Dubu",
+    "Hodu",
+    "Bori",
+    "Mandu",
+    "Nari",
+    "Ari",
+    "Vesna",
+    "Sonya",
+    "Pushok",
+    "Taiga",
+    "Mila"
+   ],
+   "words": [
+    [
+     "Misty",
+     "Jade",
+     "Plum Blossom",
+     "Moon",
+     "Pine",
+     "Camellia",
+     "Maple",
+     "Ginkgo",
+     "Wisteria",
+     "Cedar",
+     "Crane",
+     "Snowfall",
+     "Persimmon",
+     "Azalea",
+     "Lantern",
+     "Green Tea",
+     "Cherry Blossom",
+     "Hot Spring",
+     "Dewdrop",
+     "Silver Birch"
+    ],
+    [
+     "Grove",
+     "Valley",
+     "Terrace",
+     "Stream",
+     "Gorge",
+     "Ridge",
+     "Falls",
+     "Hills",
+     "Glen",
+     "Hollow"
+    ]
+   ],
+   "zones": [
+    [
+     102,
+     112,
+     26,
+     34,
+     "central China"
+    ],
+    [
+     131,
+     141,
+     33,
+     40,
+     "Japan"
+    ],
+    [
+     126,
+     129,
+     35,
+     38,
+     "Korea"
+    ],
+    [
+     131,
+     137,
+     43,
+     48,
+     "the Russian Far East"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "misty",
+    "blossom",
+    "golden"
+   ],
+   "accents": [
+    "#3F8F7E",
+    "#358574",
+    "#448C7A",
+    "#2E7E6E",
+    "#43927F"
+   ],
+   "stages": [
+    [
+     "Quiet grove",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Bamboo, mist and a dry stream bed",
+     "Tall bamboo sways, and the first friend arrives",
+     "A little pavilion goes up",
+     "The stream runs under a wooden bridge",
+     "Blossom, lanterns and birdsong"
+    ]
+   ],
+   "label": "Bamboo forest",
+   "scenery": "Tall green bamboo and misty hills",
+   "art": "bamboo"
+  },
+  "mountain": {
+   "species": [
+    "snow-leopard",
+    "llama",
+    "golden-eagle",
+    "alpine-marmot",
+    "alpine-ibex",
+    "spectacled-bear",
+    "andean-condor",
+    "chinchilla",
+    "mountain-goat",
+    "yak",
+    "himalayan-monal",
+    "gelada",
+    "bighorn-sheep",
+    "vicuna",
+    "bald-eagle",
+    "mountain-lion",
+    "apollo-butterfly",
+    "american-pika",
+    "bearded-vulture",
+    "ethiopian-wolf",
+    "mountain-viscacha",
+    "markhor",
+    "mountain-tapir",
+    "tibetan-fox",
+    "wallcreeper",
+    "chamois",
+    "barbary-macaque",
+    "pallas-cat",
+    "giant-hummingbird",
+    "himalayan-tahr",
+    "alpine-salamander",
+    "blue-sheep",
+    "bar-headed-goose",
+    "argali",
+    "mountain-bluebird",
+    "walia-ibex",
+    "clarks-nutcracker",
+    "kiang",
+    "torrent-duck",
+    "tibetan-antelope"
+   ],
+   "names": [
+    "Pema",
+    "Tashi",
+    "Dawa",
+    "Nima",
+    "Sonam",
+    "Norbu",
+    "Dechen",
+    "Pemba",
+    "Mingma",
+    "Yeshi",
+    "Inti",
+    "Pilar",
+    "Wayra",
+    "Mayu",
+    "Tika",
+    "Urpi",
+    "Paloma",
+    "Anja",
+    "Lukas",
+    "Seppi",
+    "Anneli",
+    "Lina",
+    "Mia",
+    "Abeba",
+    "Selam",
+    "Konjo",
+    "Amal",
+    "Safiya",
+    "Tilelli",
+    "Lupine",
+    "Kesang",
+    "Sky",
+    "Ingo",
+    "Edda",
+    "Reto",
+    "Vreni",
+    "Tito",
+    "Thistle",
+    "Moss",
+    "Bryn"
+   ],
+   "words": [
+    [
+     "Granite",
+     "Alpine",
+     "Cloud",
+     "Echo",
+     "Eagle",
+     "Pine",
+     "Gentian",
+     "Edelweiss",
+     "Golden",
+     "Rosy",
+     "Sunrise",
+     "Windy",
+     "Lofty",
+     "Slate",
+     "Starry",
+     "Mossy",
+     "Harebell",
+     "Snowcap",
+     "Larch",
+     "Highland"
+    ],
+    [
+     "Peak",
+     "Col",
+     "Pass",
+     "Ridge",
+     "Summit",
+     "Crag",
+     "Tarn",
+     "Meadow",
+     "Saddle",
+     "Valley"
+    ]
+   ],
+   "zones": [
+    [
+     78,
+     95,
+     28,
+     34,
+     "the Himalayas"
+    ],
+    [
+     -77,
+     -66,
+     -30,
+     -10,
+     "the Andes"
+    ],
+    [
+     6,
+     14,
+     45.5,
+     47.5,
+     "the Alps"
+    ],
+    [
+     -118,
+     -106,
+     40,
+     52,
+     "the Rocky Mountains"
+    ],
+    [
+     37,
+     40,
+     9,
+     13,
+     "the Ethiopian Highlands"
+    ],
+    [
+     -8,
+     -3,
+     30,
+     34,
+     "the Atlas Mountains"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "misty",
+    "golden",
+    "autumn",
+    "dusk"
+   ],
+   "accents": [
+    "#5B77A6",
+    "#4F6C98",
+    "#6680B0",
+    "#56709E",
+    "#4A6890"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Mountain hut",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Snowy peaks and a quiet meadow",
+     "Rocky ledges rise, and the first friend climbs up",
+     "A cozy hut goes up on the meadow",
+     "Snowmelt fills a clear blue lake",
+     "Alpine flowers everywhere"
+    ]
+   ],
+   "label": "Mountains",
+   "scenery": "Snowy peaks above an alpine meadow",
+   "art": "mountain"
+  },
+  "desert": {
+   "species": [
+    "fennec",
+    "dromedary",
+    "roadrunner",
+    "sand-cat",
+    "desert-tortoise",
+    "long-eared-jerboa",
+    "arabian-oryx",
+    "gila-monster",
+    "elf-owl",
+    "bactrian-camel",
+    "desert-hedgehog",
+    "sidewinder",
+    "gambels-quail",
+    "kit-fox",
+    "namib-beetle",
+    "addax",
+    "kangaroo-rat",
+    "horned-lizard",
+    "coyote",
+    "cactus-wren",
+    "desert-pupfish",
+    "collared-peccary",
+    "web-footed-gecko",
+    "harris-hawk",
+    "ringtail",
+    "sand-boa",
+    "dorcas-gazelle",
+    "gila-woodpecker",
+    "striped-hyena",
+    "namaqua-sandgrouse",
+    "spadefoot-toad",
+    "spiny-tailed-lizard",
+    "common-gundi"
+   ],
+   "names": [
+    "Noor",
+    "Zahra",
+    "Yasmin",
+    "Najma",
+    "Amira",
+    "Samira",
+    "Hala",
+    "Wadi",
+    "Tamar",
+    "Rimal",
+    "Altan",
+    "Naran",
+    "Bolor",
+    "Gobi",
+    "Cactus",
+    "Yucca",
+    "Agave",
+    "Mesquite",
+    "Ocotillo",
+    "Saguaro",
+    "Pinyon",
+    "Juniper",
+    "Tumbleweed",
+    "Zephyr",
+    "Paloverde",
+    "Verbena",
+    "Zinnia",
+    "Dewdrop",
+    "Mallow",
+    "Cumin",
+    "Mica",
+    "Henna",
+    "Sumac",
+    "Cardamom",
+    "Tahini",
+    "Halva",
+    "Couscous",
+    "Falafel",
+    "Pistachio",
+    "Nougat"
+   ],
+   "words": [
+    [
+     "Dune",
+     "Saffron",
+     "Sandstone",
+     "Cactus",
+     "Date Palm",
+     "Starlit",
+     "Copper",
+     "Painted",
+     "Juniper",
+     "Saguaro",
+     "Yucca",
+     "Sagebrush",
+     "Red Rock",
+     "Moonrise",
+     "Tamarisk",
+     "Desert Rose",
+     "Camelthorn",
+     "Sirocco",
+     "Crescent",
+     "Sunset"
+    ],
+    [
+     "Oasis",
+     "Mesa",
+     "Wadi",
+     "Canyon",
+     "Springs",
+     "Butte",
+     "Wells",
+     "Arches",
+     "Bluffs",
+     "Plateau"
+    ]
+   ],
+   "zones": [
+    [
+     -6,
+     28,
+     18,
+     30,
+     "the Sahara"
+    ],
+    [
+     42,
+     55,
+     17,
+     25,
+     "Arabia"
+    ],
+    [
+     96,
+     110,
+     40,
+     45,
+     "the Gobi"
+    ],
+    [
+     -116,
+     -109,
+     31,
+     35.5,
+     "the Sonoran Desert"
+    ],
+    [
+     17,
+     24,
+     -27,
+     -21,
+     "the Kalahari"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk"
+   ],
+   "accents": [
+    "#C0694F",
+    "#B45F4C",
+    "#C4744F",
+    "#AD5B48",
+    "#BC6E56"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Oasis",
+     "Thriving"
+    ],
+    [
+     "Rolling dunes under a pale sky",
+     "A tall cactus grows, and the first friend arrives",
+     "A cool clay house goes up",
+     "An oasis fills under the date palms",
+     "Cactus flowers and a balloon drifting by"
+    ]
+   ],
+   "label": "Desert",
+   "scenery": "Golden dunes and rosy mesas",
+   "art": "desert"
+  },
+  "woodland": {
+   "species": [
+    "european-hedgehog",
+    "raccoon",
+    "great-horned-owl",
+    "red-squirrel",
+    "brown-bear",
+    "ladybird",
+    "white-tailed-deer",
+    "european-robin",
+    "eastern-chipmunk",
+    "moose",
+    "european-badger",
+    "garden-snail",
+    "grey-wolf",
+    "northern-cardinal",
+    "eurasian-lynx",
+    "tawny-owl",
+    "striped-skunk",
+    "common-toad",
+    "american-black-bear",
+    "hazel-dormouse",
+    "blue-jay",
+    "red-deer",
+    "stoat",
+    "peacock-butterfly",
+    "grey-fox",
+    "snowshoe-hare",
+    "ruby-throated-hummingbird",
+    "north-american-porcupine",
+    "fire-salamander",
+    "pileated-woodpecker",
+    "wild-boar",
+    "eastern-grey-squirrel",
+    "european-rhinoceros-beetle",
+    "pine-marten",
+    "black-capped-chickadee",
+    "virginia-opossum",
+    "eastern-box-turtle",
+    "blue-tit",
+    "fallow-deer",
+    "groundhog",
+    "brown-long-eared-bat",
+    "eurasian-jay",
+    "wood-mouse",
+    "common-garter-snake",
+    "american-robin",
+    "bobcat",
+    "luna-moth",
+    "eurasian-nuthatch",
+    "common-shrew",
+    "slow-worm",
+    "goldcrest",
+    "red-fox"
+   ],
+   "names": [
+    "Bramble",
+    "Rowan",
+    "Pinecone",
+    "Birch",
+    "Willow",
+    "Juniper",
+    "Nutmeg",
+    "Briar",
+    "Alder",
+    "Maple",
+    "Cedar",
+    "Aspen",
+    "Linden",
+    "Hollis",
+    "Pip",
+    "Juno",
+    "Tilly",
+    "Bertil",
+    "Otto",
+    "Elsie",
+    "Toby",
+    "Pippa",
+    "Finn",
+    "Nils",
+    "Ingrid",
+    "Bjorn",
+    "Marlo",
+    "Fritz",
+    "Hattie",
+    "Tamsin",
+    "Thimble",
+    "Sprig",
+    "Tumble",
+    "Bracken",
+    "Sorrel",
+    "Teasel",
+    "Conker",
+    "Truffle",
+    "Morel",
+    "Lumi"
+   ],
+   "words": [
+    [
+     "Mossy",
+     "Birchwood",
+     "Foxglove",
+     "Bluebell",
+     "Dappled",
+     "Misty",
+     "Acorn",
+     "Pinewood",
+     "Honeysuckle",
+     "Wildwood",
+     "Elderberry",
+     "Hazelnut",
+     "Snowberry",
+     "Toadstool",
+     "Primrose",
+     "Hollyberry",
+     "Dewy",
+     "Larchwood",
+     "Whispering",
+     "Cloudberry"
+    ],
+    [
+     "Hollow",
+     "Glade",
+     "Ridge",
+     "Dell",
+     "Thicket",
+     "Grove",
+     "Copse",
+     "Glen",
+     "Dingle",
+     "Brook"
+    ]
+   ],
+   "zones": [
+    [
+     -4,
+     28,
+     47,
+     60,
+     "the forests of Europe"
+    ],
+    [
+     -90,
+     -70,
+     40,
+     47,
+     "the woods of North America"
+    ],
+    [
+     -125,
+     -118,
+     44,
+     50,
+     "the Pacific Northwest"
+    ],
+    [
+     -110,
+     -65,
+     50,
+     57,
+     "the forests of Canada"
+    ],
+    [
+     24,
+     40,
+     56,
+     64,
+     "the northern forests"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "autumn",
+    "misty",
+    "blossom",
+    "golden"
+   ],
+   "accents": [
+    "#6A8A3E",
+    "#5E8244",
+    "#7A8A3A",
+    "#8A6E48",
+    "#668E4A"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Stump house",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "A quiet path through the trees",
+     "A great oak spreads out, and the first friend arrives",
+     "A cozy stump house opens its door",
+     "A forest pool fills by the pines",
+     "Toadstools, bluebells and butterflies"
+    ]
+   ],
+   "label": "Woodland",
+   "scenery": "Oaks, pines and mossy paths",
+   "art": "woodland"
+  },
+  "wetland": {
+   "species": [
+    "hippopotamus",
+    "greater-flamingo",
+    "north-american-beaver",
+    "mallard",
+    "nile-crocodile",
+    "common-kingfisher",
+    "axolotl",
+    "american-bullfrog",
+    "north-american-river-otter",
+    "shoebill",
+    "american-alligator",
+    "painted-turtle",
+    "mute-swan",
+    "great-diving-beetle",
+    "grey-heron",
+    "water-vole",
+    "scarlet-ibis",
+    "white-stork",
+    "irrawaddy-dolphin",
+    "wood-duck",
+    "fishing-cat",
+    "gharial",
+    "red-lechwe",
+    "sarus-crane",
+    "pels-fishing-owl",
+    "archerfish",
+    "snapping-turtle",
+    "osprey",
+    "muskrat",
+    "great-pond-snail",
+    "african-jacana",
+    "yacare-caiman",
+    "sitatunga",
+    "red-swamp-crayfish",
+    "hamerkop",
+    "sockeye-salmon",
+    "great-egret",
+    "roseate-spoonbill"
+   ],
+   "names": [
+    "Ripple",
+    "Burble",
+    "Minnow",
+    "Dewdrop",
+    "Plink",
+    "Dabble",
+    "Paddle",
+    "Teal",
+    "Nell",
+    "Lilypad",
+    "Bijou",
+    "Naledi",
+    "Lesedi",
+    "Amira",
+    "Mai",
+    "Kamal",
+    "Lua",
+    "Brisa",
+    "Rosa",
+    "Tula",
+    "Tiko",
+    "Pippa",
+    "Waddle",
+    "Drizzle",
+    "Otto",
+    "Lotte",
+    "Hana",
+    "Nour",
+    "Malee",
+    "Pollywog",
+    "Splashy",
+    "Mudlark",
+    "Dimple",
+    "Bobbin",
+    "Wade",
+    "Beau",
+    "Fenna",
+    "Sanne",
+    "Bram",
+    "Flor"
+   ],
+   "words": [
+    [
+     "Reed",
+     "Lily",
+     "Willow",
+     "Misty",
+     "Heron",
+     "Lotus",
+     "Dragonfly",
+     "Cattail",
+     "Bulrush",
+     "Silver",
+     "Amber",
+     "Moonlit",
+     "Dewy",
+     "Otter",
+     "Frogsong",
+     "Sedge",
+     "Mallow",
+     "Kingfisher",
+     "Firefly",
+     "Mossy"
+    ],
+    [
+     "Marsh",
+     "Fen",
+     "Bayou",
+     "Pools",
+     "Delta",
+     "Mere",
+     "Creek",
+     "Shallows",
+     "Lake",
+     "Bend"
+    ]
+   ],
+   "zones": [
+    [
+     -82,
+     -80,
+     25,
+     27.5,
+     "the Everglades"
+    ],
+    [
+     -58,
+     -55,
+     -20,
+     -16,
+     "the Pantanal"
+    ],
+    [
+     22,
+     24,
+     -20,
+     -18,
+     "the Okavango Delta"
+    ],
+    [
+     30,
+     33,
+     12,
+     22,
+     "the Nile"
+    ],
+    [
+     104,
+     107,
+     9,
+     12,
+     "the Mekong Delta"
+    ],
+    [
+     -92,
+     -89,
+     29,
+     31,
+     "the bayous of Louisiana"
+    ],
+    [
+     3,
+     7,
+     51,
+     53.5,
+     "the marshes of the Low Countries"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "misty",
+    "golden",
+    "dusk",
+    "autumn"
+   ],
+   "accents": [
+    "#3A8791",
+    "#2F7D88",
+    "#438E96",
+    "#36818C",
+    "#4A8A86"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Boardwalk",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Still water and a wide sky",
+     "Reeds rustle, and the first friend arrives",
+     "A boardwalk leads to a little hut",
+     "Water lilies bloom under a willow",
+     "Irises and dragonflies everywhere"
+    ]
+   ],
+   "label": "Wetland",
+   "scenery": "Reeds, lily pads and slow water",
+   "art": "wetland"
+  },
+  "coast": {
+   "species": [
+    "bottlenose-dolphin",
+    "sea-otter",
+    "clownfish",
+    "atlantic-puffin",
+    "green-sea-turtle",
+    "orca",
+    "common-octopus",
+    "hermit-crab",
+    "humpback-whale",
+    "brown-pelican",
+    "moon-jellyfish",
+    "california-sea-lion",
+    "manta-ray",
+    "blue-tang",
+    "ochre-sea-star",
+    "west-indian-manatee",
+    "blue-whale",
+    "african-penguin",
+    "pufferfish",
+    "loggerhead-sea-turtle",
+    "whale-shark",
+    "herring-gull",
+    "spinner-dolphin",
+    "ghost-crab",
+    "parrotfish",
+    "northern-gannet",
+    "sperm-whale",
+    "lions-mane-jellyfish",
+    "northern-elephant-seal",
+    "spotted-eagle-ray",
+    "red-lionfish",
+    "hawksbill-sea-turtle",
+    "common-tern",
+    "giant-pacific-octopus",
+    "harbour-porpoise",
+    "european-lobster",
+    "moorish-idol",
+    "eurasian-oystercatcher",
+    "blue-spotted-stingray",
+    "queen-conch",
+    "ocean-sunfish",
+    "common-eider",
+    "blue-sea-star",
+    "dugong",
+    "garibaldi"
+   ],
+   "names": [
+    "Shelly",
+    "Marina",
+    "Breezy",
+    "Nalu",
+    "Kai",
+    "Mahina",
+    "Oceane",
+    "Marisol",
+    "Mistral",
+    "Estrella",
+    "Sirena",
+    "Ola",
+    "Merrow",
+    "Seren",
+    "Ailsa",
+    "Umi",
+    "Indigo",
+    "Topaz",
+    "Delphine",
+    "Gusty",
+    "Starla",
+    "Tully",
+    "Waverly",
+    "Bahari",
+    "Neela",
+    "Sagar",
+    "Bosun",
+    "Coralie",
+    "Perla",
+    "Morgan",
+    "Noa",
+    "Sol",
+    "Jory",
+    "Kerra",
+    "Tilly",
+    "Bree",
+    "Wavelet",
+    "Seaspray",
+    "Sailor",
+    "Sprat"
+   ],
+   "words": [
+    [
+     "Coral",
+     "Driftwood",
+     "Seashell",
+     "Tidepool",
+     "Saltwind",
+     "Pearl",
+     "Seaglass",
+     "Sunlit",
+     "Kelp",
+     "Starfish",
+     "Turquoise",
+     "Azure",
+     "Gull",
+     "Dolphin",
+     "Sapphire",
+     "Spindrift",
+     "Golden",
+     "Windward",
+     "Sandpiper",
+     "Lighthouse"
+    ],
+    [
+     "Bay",
+     "Cove",
+     "Reef",
+     "Shore",
+     "Lagoon",
+     "Shoal",
+     "Sands",
+     "Harbour",
+     "Cape",
+     "Point"
+    ]
+   ],
+   "zones": [
+    [
+     143,
+     153,
+     -24,
+     -13,
+     "the Great Barrier Reef"
+    ],
+    [
+     -125,
+     -117,
+     33,
+     40,
+     "the California coast"
+    ],
+    [
+     -10,
+     -5,
+     50,
+     58,
+     "the North Atlantic coast"
+    ],
+    [
+     -88,
+     -78,
+     16,
+     22,
+     "the Caribbean"
+    ],
+    [
+     17,
+     20,
+     -35,
+     -33,
+     "the Cape coast"
+    ],
+    [
+     119,
+     125,
+     8,
+     14,
+     "the Coral Triangle"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "misty",
+    "dusk"
+   ],
+   "accents": [
+    "#3A7FB0",
+    "#3477A6",
+    "#4386B5",
+    "#2F6F9C",
+    "#4A82AE"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Beach hut",
+     "Rock pools",
+     "Thriving"
+    ],
+    [
+     "Waves on an empty beach",
+     "Rocks and driftwood wash up, and the first friend arrives",
+     "A striped beach hut goes up",
+     "Rock pools fill, and a sunshade opens",
+     "A lighthouse, a sailboat and gulls"
+    ]
+   ],
+   "label": "Coast",
+   "scenery": "Sandy beach, rock pools and the open sea",
+   "art": "coast"
+  },
+  "island": {
+   "species": [
+    "ring-tailed-lemur",
+    "brown-kiwi",
+    "galapagos-tortoise",
+    "philippine-tarsier",
+    "blue-footed-booby",
+    "komodo-dragon",
+    "red-crab",
+    "kakapo",
+    "verreauxs-sifaka",
+    "marine-iguana",
+    "galapagos-penguin",
+    "fossa",
+    "kea",
+    "aye-aye",
+    "common-coqui",
+    "hawaiian-monk-seal",
+    "nene",
+    "panther-chameleon",
+    "red-ruffed-lemur",
+    "bee-hummingbird",
+    "tomato-frog",
+    "tuatara",
+    "streaked-tenrec",
+    "takahe",
+    "coconut-crab",
+    "grey-mouse-lemur",
+    "flightless-cormorant",
+    "visayan-warty-pig",
+    "leaf-tailed-gecko",
+    "philippine-eagle",
+    "galapagos-sea-lion",
+    "iiwi",
+    "sunset-moth",
+    "nz-fantail",
+    "hawaiian-hoary-bat",
+    "medium-ground-finch"
+   ],
+   "names": [
+    "Makani",
+    "Mahina",
+    "Leilani",
+    "Nalu",
+    "Manu",
+    "Hoku",
+    "Kalani",
+    "Aroha",
+    "Rimu",
+    "Totara",
+    "Tsara",
+    "Fitia",
+    "Kintana",
+    "Volana",
+    "Ravina",
+    "Starfruit",
+    "Ligaya",
+    "Hiraya",
+    "Mayumi",
+    "Ube",
+    "Calamansi",
+    "Bituin",
+    "Brisa",
+    "Perla",
+    "Marisol",
+    "Isla",
+    "Lucero",
+    "Hibiscus",
+    "Plumeria",
+    "Frangipani",
+    "Seaglass",
+    "Coconut",
+    "Lychee",
+    "Taro",
+    "Driftwood",
+    "Pineapple",
+    "Tradewind",
+    "Breezy",
+    "Aloha",
+    "Ola"
+   ],
+   "words": [
+    [
+     "Coral",
+     "Coconut",
+     "Hibiscus",
+     "Frangipani",
+     "Palm",
+     "Sunlit",
+     "Seashell",
+     "Turtle",
+     "Tradewind",
+     "Driftwood",
+     "Pearl",
+     "Sapphire",
+     "Rainbow",
+     "Banyan",
+     "Vanilla",
+     "Plumeria",
+     "Mango",
+     "Pineapple",
+     "Moonflower",
+     "Volcano"
+    ],
+    [
+     "Cove",
+     "Bay",
+     "Atoll",
+     "Isle",
+     "Lagoon",
+     "Key",
+     "Point",
+     "Sands",
+     "Reef",
+     "Shoals"
+    ]
+   ],
+   "zones": [
+    [
+     43,
+     50,
+     -25,
+     -13,
+     "Madagascar"
+    ],
+    [
+     -92,
+     -89,
+     -1.5,
+     0.5,
+     "the Galápagos"
+    ],
+    [
+     167,
+     178,
+     -46,
+     -35,
+     "New Zealand"
+    ],
+    [
+     119,
+     121,
+     -9,
+     -8,
+     "Komodo"
+    ],
+    [
+     122,
+     126,
+     8,
+     12,
+     "the Philippines"
+    ],
+    [
+     -160,
+     -155,
+     19,
+     22,
+     "Hawaii"
+    ],
+    [
+     -84,
+     -75,
+     20,
+     22.5,
+     "the Caribbean islands"
+    ],
+    [
+     -67.2,
+     -65.6,
+     17.9,
+     18.5,
+     "Puerto Rico"
+    ],
+    [
+     105.5,
+     105.8,
+     -10.6,
+     -10.4,
+     "Christmas Island"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "dusk"
+   ],
+   "accents": [
+    "#1F8F8A",
+    "#178580",
+    "#269690",
+    "#13807C",
+    "#2A8E86"
+   ],
+   "stages": [
+    [
+     "Wild land",
+     "First friend",
+     "Shelter",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "White sand and a green peak",
+     "Palms lean over the sand, and the first friend arrives",
+     "A hut on stilts stands in the lagoon",
+     "A waterfall tumbles down the peak",
+     "Flowers, a canoe and seabirds"
+    ]
+   ],
+   "label": "Island",
+   "scenery": "Palm trees and a turquoise lagoon",
+   "art": "island"
+  },
+  "grassland": {
+   "species": [
+    "american-bison",
+    "black-tailed-prairie-dog",
+    "monarch-butterfly",
+    "pronghorn",
+    "burrowing-owl",
+    "golden-hamster",
+    "maned-wolf",
+    "buff-tailed-bumblebee",
+    "przewalskis-horse",
+    "brown-hare",
+    "greater-rhea",
+    "western-hognose-snake",
+    "patagonian-mara",
+    "eurasian-skylark",
+    "swift-fox",
+    "painted-lady",
+    "american-badger",
+    "western-meadowlark",
+    "saiga",
+    "mongolian-gerbil",
+    "great-bustard",
+    "guanaco",
+    "black-footed-ferret",
+    "common-kestrel",
+    "sand-lizard"
+   ],
+   "names": [
+    "Sunny",
+    "Tumbleweed",
+    "Clover",
+    "Bellflower",
+    "Sage",
+    "Goldie",
+    "Bluebonnet",
+    "Yarrow",
+    "Aster",
+    "Flax",
+    "Millet",
+    "Honey",
+    "Saffron",
+    "Penny",
+    "Marigold",
+    "Dakota",
+    "Cody",
+    "Rusty",
+    "Jasper",
+    "Tansy",
+    "Breeze",
+    "Carmela",
+    "Paz",
+    "Chico",
+    "Rosita",
+    "Mateo",
+    "Luz",
+    "Nico",
+    "Sol",
+    "Altan",
+    "Saran",
+    "Oyun",
+    "Nara",
+    "Bolor",
+    "Aru",
+    "Dana",
+    "Pebble",
+    "Willa",
+    "Amos",
+    "Dot"
+   ],
+   "words": [
+    [
+     "Golden",
+     "Windswept",
+     "Buttercup",
+     "Cornflower",
+     "Tallgrass",
+     "Wildflower",
+     "Bluestem",
+     "Thistle",
+     "Meadowsweet",
+     "Sunflower",
+     "Amber",
+     "Lupine",
+     "Silvergrass",
+     "Dandelion",
+     "Sagebrush",
+     "Larkspur",
+     "Feathergrass",
+     "Harebell",
+     "Sunlit",
+     "Rolling"
+    ],
+    [
+     "Meadow",
+     "Prairie",
+     "Plains",
+     "Downs",
+     "Steppe",
+     "Knoll",
+     "Rise",
+     "Heath",
+     "Vale",
+     "Flats"
+    ]
+   ],
+   "zones": [
+    [
+     -105,
+     -96,
+     36,
+     48,
+     "the Great Plains"
+    ],
+    [
+     62,
+     100,
+     46,
+     51,
+     "the steppe"
+    ],
+    [
+     -64,
+     -58,
+     -38,
+     -33,
+     "the Pampas"
+    ],
+    [
+     24,
+     40,
+     46,
+     50,
+     "the steppe of eastern Europe"
+    ]
+   ],
+   "looks": [
+    "classic",
+    "golden",
+    "autumn",
+    "blossom",
+    "dusk"
+   ],
+   "accents": [
+    "#73883A",
+    "#687F3C",
+    "#7E8C38",
+    "#62803E",
+    "#867F36"
+   ],
+   "stages": [
+    [
+     "Open prairie",
+     "First friend",
+     "Windmill",
+     "Water and shade",
+     "Thriving"
+    ],
+    [
+     "Tall grass under a big sky",
+     "A lone tree grows on the hill, and the first friend arrives",
+     "A windmill starts to turn",
+     "A pond fills below the windmill",
+     "Wildflowers, butterflies and a kite"
+    ]
+   ],
+   "label": "Grassland",
+   "scenery": "Rolling prairie under a big sky",
+   "art": "grassland"
+  }
  }
-]
+}

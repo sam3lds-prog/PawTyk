@@ -490,6 +490,9 @@ export function kitSpeciesOf(id: FriendId): SpeciesDef | null {
   return artOf(id).kit;
 }
 
+/** Text for an attribute value (names are plain words today; this keeps a quote or an ampersand from breaking a scene). */
+const attr = (t: string) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
 /** The friend's name, for figures' data attributes. */
 function friendName(id: FriendId): string {
   return isWildId(id) ? wildDef(id).name : COMPANION_BY_ID[id].name;
@@ -649,7 +652,7 @@ export function companionFigure(fid: FriendId, x: number, y: number, H: number, 
     const s = art.kit;
     const h = H * kitScale(s);
     const f = kitBody(s, art.p as KitPal, x, y, h);
-    return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${friendName(fid)}" data-gx="${x}" data-gy="${y}" data-gh="${h.toFixed(1)}" data-mood="${mood}" data-kit="${s.form === 'beast' ? s.body : s.form}"${kitHasToy(s) ? '' : ' data-no-toy'}>${f.behind}${f.body}<g class="sp-tail">${f.tail}</g><g transform="translate(${f.headX.toFixed(1)} ${f.headTop.toFixed(1)}) scale(${f.k.toFixed(3)})">${head(fid, mood)}</g></g>`;
+    return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${attr(friendName(fid))}" data-gx="${x}" data-gy="${y}" data-gh="${h.toFixed(1)}" data-mood="${mood}" data-kit="${s.form === 'beast' ? s.body : s.form}"${kitHasToy(s) ? '' : ' data-no-toy="1"'}>${f.behind}${f.body}<g class="sp-tail">${f.tail}</g><g transform="translate(${f.headX.toFixed(1)} ${f.headTop.toFixed(1)}) scale(${f.k.toFixed(3)})">${head(fid, mood)}</g></g>`;
   }
   const id = art.base!;
   const p = art.p;
@@ -722,7 +725,7 @@ export function companionFigure(fid: FriendId, x: number, y: number, H: number, 
     if (kind === 'tall') headTop -= H * 0.4;
   }
   const name = friendName(fid);
-  return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${name}" data-gx="${x}" data-gy="${y}" data-gh="${H}" data-mood="${mood}">${bodySvg}<g class="sp-tail">${tail}</g><g transform="translate(${headX.toFixed(1)} ${headTop.toFixed(1)}) scale(${k.toFixed(3)})">${head(fid, mood)}</g></g>`;
+  return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${attr(name)}" data-gx="${x}" data-gy="${y}" data-gh="${H}" data-mood="${mood}">${bodySvg}<g class="sp-tail">${tail}</g><g transform="translate(${headX.toFixed(1)} ${headTop.toFixed(1)}) scale(${k.toFixed(3)})">${head(fid, mood)}</g></g>`;
 }
 
 /** Coat details drawn over a seated body: a sheep's wool curls, a calf's patches. */

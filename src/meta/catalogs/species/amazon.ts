@@ -45,7 +45,7 @@ export const SPECIES_AMAZON: readonly SpeciesDef[] = [
   sp('black-caiman', 'Black caiman', 'amazon', 'Rivers and lakes of the Amazon', 'Black caiman moms guard their nests and babies.', 'seal', 'huge', 'body:low head:wide snout:croc eyes:bulge tail:lizard x:spikes', '3A3A34 A8A890 1E1E1C 2A2A26 eye:C8A030'),
   sp('owl-butterfly', 'Owl butterfly', 'amazon', 'Rainforests of South and Central America', 'The big spots on its wings look like an owl’s eyes.', 'toucan', 'tiny', 'form:butterfly', '8A7A6A D8C8B0 3A2E26 2A2420'),
   sp('agouti', 'Red-rumped agouti', 'amazon', 'Rainforests of northern South America', 'It buries seeds, and the ones it forgets grow into new trees.', 'capybara', 'small', 'head:small ears:small snout:cat tail:stub x:whiskers', 'B8823E E0C090 3A2A20 8A5A2A'),
-  sp('three-striped-night-monkey', 'Three-striped night monkey', 'amazon', 'Rainforests of northern South America', 'It is the only monkey that is awake at night.', 'toucan', 'small', 'body:upright ears:small snout:ape eyes:big mark:badger tail:long', '9A8A78 E8DCC8 2A2420 3A2E26 eye:C8843A'),
+  sp('three-striped-night-monkey', 'Three-striped night monkey', 'amazon', 'Rainforests of northern South America', 'Night monkeys are the only monkeys that are awake at night.', 'toucan', 'small', 'body:upright ears:small snout:ape eyes:big mark:badger tail:long', '9A8A78 E8DCC8 2A2420 3A2E26 eye:C8843A'),
   sp('white-faced-saki', 'White-faced saki', 'amazon', 'Rainforests of northern South America', 'Only the dad has a white face; the mom is brown.', 'toucan', 'small', 'body:upright snout:ape tail:bushy', '2A2826 9A7E74 3A2E28 2A2826 head:F2ECE0'),
 ];
 

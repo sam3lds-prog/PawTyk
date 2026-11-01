@@ -95,3 +95,12 @@ readable against the fur.
 - **Order matters**: a landscape's places meet its species in file order, three or four at a time. Put the most loved
   first, and mix shapes so every run of three has variety (not three birds in a row).
 - Pick parts so each species reads at a glance as itself (its ears, its horns, its markings); check the gallery.
+
+## Once places have shipped
+
+A place is made from these lists: each landscape's species in file order, its names and its place words. Saves keep
+places and animals by id, so once a build with places is in players' hands, **any** change to a list (adding a species
+in the middle, reordering, renaming, removing) changes places that may already be in a save. `npm run places:check`
+fails on any such change (`test/unit/fixtures/places-v1.json` pins every list and a sample of places to 1000). To
+change a list after shipping, bump `PLACES_VERSION` and keep the old lists for saves made with them.
+

@@ -6,11 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { SPECIES, speciesById, speciesOfBiome } from '../../src/meta/catalogs/species/index';
 import { speciesProblems, VOCAB } from '../../src/meta/catalogs/species/vocabulary';
 import { DRAWN_SPECIES } from '../../src/meta/catalogs/species/drawn';
-import { BIOME_IDS, biomeSpecies, placeDef } from '../../src/meta/catalogs/places';
+import { BIOME_IDS, COATS, biomeSpecies, placeDef } from '../../src/meta/catalogs/places';
 import { kitBody, kitHasToy, kitHead, kitPal, kitScale } from '../../src/ui/art/kit';
 import { face, companionFigure, companionSvg, friendRigBody, kitSpeciesOf } from '../../src/ui/art/companions';
 import { kitToy, toySpec } from '../../src/three/species';
-import { animalInfo, kindNoun, kindsMet, KINDS_TOTAL, speciesOfAnimal } from '../../src/meta/animals';
+import { animalInfo, kindNoun, kindsMet, KINDS_TOTAL, pluralNoun, speciesOfAnimal, withArticle } from '../../src/meta/animals';
+import { animalTint } from '../../src/ui/art/animals';
 import { defaultSave } from '../../src/services/storage';
 import { regionScene } from '../../src/ui/art/regions';
 import type { BiomeId } from '../../src/meta/catalogs/species/types';
@@ -42,7 +43,8 @@ describe('the species catalog (D39 PR E)', () => {
       const p = placeDef(k);
       const set = seen.get(p.biome) ?? new Set<string>();
       seen.set(p.biome, set);
-      for (const a of p.animals) {
+      // Within one place the swimmers may arrive last (review of D39 PR E): look at its new kinds first.
+      for (const a of [...p.animals].sort((x, y) => Number(set.has(x.species)) - Number(set.has(y.species)))) {
         if (set.has(a.species)) {
           expect(set.size, `${a.id}: ${p.biome} came round before meeting all its kinds`).toBe(biomeSpecies(p.biome).length);
           set.clear();
@@ -68,6 +70,26 @@ describe('the species catalog (D39 PR E)', () => {
       expect(f.body + f.tail + f.behind, s.id).not.toMatch(/NaN|undefined/);
       expect(Number.isFinite(f.headTop)).toBe(true);
     }
+  });
+
+  it('every hand-drawn kind has coats of its own (a place draws it in one)', () => {
+    for (const d of DRAWN_SPECIES) if (!d.guest) expect(COATS[d.drawn!]?.length, d.id).toBeGreaterThan(0);
+  });
+
+  it('every place animal over a full lap of every landscape draws through every renderer (review of D39 PR E)', () => {
+    const bases = new Set<string>();
+    for (let k = 1; k <= 300; k++)
+      for (const a of placeDef(k).animals) {
+        if (a.base) bases.add(a.base);
+        const out = [companionSvg(a.id, 'happy'), friendRigBody(a.id), companionFigure(a.id, 120, 260, 34, 'idle'), animalTint(a.id) ?? ''].join('');
+        expect(out, a.id).not.toMatch(/NaN|undefined|Infinity/);
+        const toy = toySpec(a.id);
+        if (toy) expect(JSON.stringify(toy), a.id).not.toMatch(/null|NaN/);
+        expect(animalInfo(a.id).kind).toBe(a.kind);
+      }
+    // The Pet Garden's fox and red panda are among them (their coats were once missing).
+    expect(bases.has('ember')).toBe(true);
+    expect(bases.has('maple')).toBe(true);
   });
 
   it('a kit animal of a place is drawn by the kit, rigged for its board tile, and sized for its kind', () => {
@@ -111,11 +133,24 @@ describe('the species catalog (D39 PR E)', () => {
     expect(VOCAB.eats as readonly string[]).toContain(info.animal);
   });
 
-  it('nouns keep a capital only for names of places and people', () => {
+  it('nouns keep a capital only for names of places and people; articles and plurals read right', () => {
     expect(kindNoun('Snow leopard')).toBe('snow leopard');
     expect(kindNoun('Galápagos tortoise')).toBe('Galápagos tortoise');
     expect(kindNoun("Przewalski's horse")).toBe("Przewalski's horse");
     expect(kindNoun('Bactrian camel')).toBe('Bactrian camel');
+    expect(kindNoun('North American river otter')).toBe('North American river otter');
+    expect(kindNoun('Christmas Island red crab')).toBe('Christmas Island red crab');
+    expect(kindNoun('Giant Pacific octopus')).toBe('giant Pacific octopus');
+    expect(kindNoun('Lion’s mane jellyfish')).toBe('lion’s mane jellyfish');
+    expect(kindNoun('Gentoo penguin')).toBe('gentoo penguin');
+    expect(withArticle('European robin')).toBe('a European robin');
+    expect(withArticle('Eurasian lynx')).toBe('a Eurasian lynx');
+    expect(withArticle('emu')).toBe('an emu');
+    expect(['grey wolf', 'moose', 'wood mouse', 'red deer', 'musk ox', 'snow goose', 'fox', 'calf'].map(pluralNoun)).toEqual([
+      'grey wolves', 'moose', 'wood mice', 'red deer', 'musk oxen', 'snow geese', 'foxes', 'calves',
+    ]);
+    // Every kind's noun starts lowercase unless its first word names a place or a person.
+    for (const sp of SPECIES) expect(kindNoun(sp.name), sp.name).toMatch(/^([a-zʻ]|[A-Z][\wáé’'-]*( [A-Z][\w’'-]*)? )/);
   });
 
   it('kinds met counts each kind once, hand-made friends included', () => {

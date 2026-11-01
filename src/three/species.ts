@@ -556,7 +556,7 @@ function wildToy(id: string): ToySpec | null {
 /**
  * A kit species as a soft toy (D39 PR E), when the toy builder has the parts for it: a seated, big, tall, upright, perched
  * or lying animal with ears and a snout it knows. Snakes, crocodiles, turtles, frogs, fish and bugs have no toy yet:
- * their scenes stay drawn (`three/stage.ts` only shows toys when every animal in a scene has one).
+ * their scenes stay drawn (`ui/components/scene3d.ts` only shows toys when every animal in a scene has one).
  */
 export function kitToy(s: SpeciesDef, coat: { fur: string; light: string; dark: string; accent: string } = s.colors): ToySpec | null {
   if (!kitHasToy(s)) return null;
@@ -576,11 +576,10 @@ export function kitToy(s: SpeciesDef, coat: { fur: string; light: string; dark: 
   if (s.crown === 'crest' || s.crown === 'comb' || s.crown === 'plume') extras.push('crest');
   const beaked = ['beak', 'hook', 'longbeak', 'duck', 'bigbeak'].includes(s.snout);
   const bird = body === 'bird';
-  const fur = s.colors.head && !bird ? coat.fur : coat.fur;
   return {
     id: s.id,
     body,
-    fur,
+    fur: coat.fur,
     shade: darken(coat.fur, 0.87),
     light: coat.light,
     dark: coat.dark,

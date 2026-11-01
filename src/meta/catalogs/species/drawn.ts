@@ -32,7 +32,7 @@ export const DRAWN_SPECIES: readonly SpeciesDef[] = [
   sp('polar-bear', 'Polar bear cub', 'arctic', 'The Arctic sea ice', 'Under its white fur, a polar bear’s skin is black.', 'polarbear', 'large', D, 'F4F1E8 FBF9F3 2F2A27 E0D8C7', { drawn: 'frost' }),
   sp('harp-seal', 'Seal pup', 'arctic', 'The North Atlantic and Arctic Oceans', 'A harp seal pup is born with fluffy white fur.', 'seal', 'medium', D, 'D3D9DF EEF1F4 3B3F45 B5BFC9', { drawn: 'pebble' }),
   sp('arctic-fox', 'Arctic fox', 'arctic', 'The Arctic tundra', 'Its coat turns from brown in summer to white in winter.', 'fox', 'small', D, 'F6F6F4 FFFFFF 3B3F45 E3E6E9', { drawn: 'ember', guest: 'arcticfox' }),
-  sp('arctic-hare', 'Arctic hare', 'arctic', 'The Arctic tundra', 'Its big, furry back feet work like snowshoes.', 'rabbit', 'small', D, 'FAFAF8 FFFFFF 4A4A4A F1C6CC', { drawn: 'juniper', guest: 'arctichare' }),
+  sp('arctic-hare', 'Arctic hare', 'arctic', 'The Arctic tundra', 'Arctic hares can hop along on just their back legs, like kangaroos.', 'rabbit', 'small', D, 'FAFAF8 FFFFFF 4A4A4A F1C6CC', { drawn: 'juniper', guest: 'arctichare' }),
   // Rainforest
   sp('toucan', 'Toucan', 'amazon', 'Rainforests of South America', 'A toucan’s huge beak is light because it is full of tiny air pockets.', 'toucan', 'small', D, '2B2B30 FCE7A0 1A1A1E F6A23A', { drawn: 'rio' }),
   sp('sloth', 'Sloth', 'amazon', 'Rainforests of Central and South America', 'Sloths move slowly on land, but they are good swimmers.', 'sloth', 'medium', D, 'B59B7C EADCC4 5A4636 C9B194', { drawn: 'mango' }),

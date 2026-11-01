@@ -16,7 +16,7 @@ import {
   slotsOf,
   wildDef,
 } from '../../src/meta/catalogs/places';
-import { placesSnapshot } from '../../src/meta/catalogs/placesSnapshot';
+import { worldFixture } from '../../src/meta/catalogs/placesSnapshot';
 import { SANCTUARIES, arrivalOf, homeOf, isSanctuaryId, sanctuaryDef } from '../../src/meta/catalogs/sanctuaries';
 import { COMPANIONS } from '../../src/meta/catalogs/companions';
 import { PETS } from '../../src/meta/catalogs/pets';
@@ -58,9 +58,13 @@ function finishBase(s: SaveV2): void {
 }
 
 describe('places are pinned: a shipped place never changes (D39)', () => {
-  it('the first forty places match the fixture exactly', () => {
+  it('the first forty places, a sample to place 1000, and every list they are made from match the fixture exactly', () => {
     const fixture = JSON.parse(readFileSync('test/unit/fixtures/places-v1.json', 'utf8'));
-    expect(JSON.parse(JSON.stringify(placesSnapshot(40)))).toEqual(fixture);
+    const now = JSON.parse(JSON.stringify(worldFixture()));
+    // Every list a place is made from (a reordered or edited species list changes places far past the first forty).
+    expect(now.inputs).toEqual(fixture.inputs);
+    expect(now.first).toEqual(fixture.first);
+    expect(now.sampled).toEqual(fixture.sampled);
   });
 
   it('hundreds of places are well formed: names unique in a biome, animals unique by name, stages and arrivals in order', () => {

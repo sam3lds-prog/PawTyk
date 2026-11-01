@@ -62,6 +62,12 @@ export function createScene3D(): Scene3D {
     loading
       .then((m) => {
         if (disposed) return settle(false);
+        // The scene changed while three.js loaded (to one that stays drawn): make no stage (no WebGL context) until a
+        // scene that wants toys attaches again (review of D39 PR E).
+        if (!target) {
+          started = false;
+          return;
+        }
         stage = new m.SceneStage({ reducedMotion: () => app.reducedMotion });
         liveStages.push(stage);
         stage.setLive(live);

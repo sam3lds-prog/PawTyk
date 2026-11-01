@@ -151,6 +151,16 @@ export const COATS: Partial<Record<CompanionId, readonly Coat[]>> = {
     { name: 'mossy', fur: '#A9A27F', light: '#E5E0CA', dark: '#4E4A36', accent: '#BDB592' },
     { name: 'cocoa', fur: '#9C7F63', light: '#E3D2BC', dark: '#4A3828', accent: '#B39878' },
   ],
+  ember: [
+    { name: 'russet', fur: '#D9763E', light: '#FFF1DE', dark: '#4E3228', accent: '#EFA46E' },
+    { name: 'silver', fur: '#9DA1A6', light: '#F1F2F3', dark: '#2F3033', accent: '#C7CACD' },
+    { name: 'cross', fur: '#B97A4E', light: '#F4E6D6', dark: '#3A2A22', accent: '#8E5A3A' },
+  ],
+  maple: [
+    { name: 'ruby', fur: '#B84E2C', light: '#FFF4E6', dark: '#40241D', accent: '#E39A62' },
+    { name: 'amber', fur: '#CF6A35', light: '#FFF7EC', dark: '#4A2A22', accent: '#F0B47A' },
+    { name: 'chestnut', fur: '#A9502F', light: '#FBEFE2', dark: '#3A221C', accent: '#D99062' },
+  ],
   pudding: [
     { name: 'golden', fur: '#C69A68', light: '#D9B184', dark: '#3A2E28', accent: '#AD8155' },
     { name: 'russet', fur: '#A8704A', light: '#BD875D', dark: '#3A2620', accent: '#8E5C3C' },
@@ -852,7 +862,8 @@ function wildOf(k: number, slot: number, s: SpeciesDef, lap: number): WildDef {
   let traits: readonly string[];
   let bios: readonly string[];
   if (s.drawn) {
-    const coats = g ? g.coats : (COATS[s.drawn] ?? []);
+    // Every hand-drawn kind has coats (a test checks); its own colors are the fallback, never nothing.
+    const coats = g ? g.coats : (COATS[s.drawn] ?? [speciesCoat(s, 0)]);
     // A drawn kind wears the next coat each time its landscape brings it round again.
     coat = coats[(lap + (hashString(`pawtopia-places-v${PLACES_VERSION}:coat:${s.id}`) % coats.length)) % coats.length];
     traits = g ? g.traits : (TRAITS[s.drawn] ?? KIT_TRAITS);
@@ -882,6 +893,10 @@ function wildOf(k: number, slot: number, s: SpeciesDef, lap: number): WildDef {
   };
 }
 
+/** Scenes with water from the start (a sea, a lagoon, a river), and the kinds that live in it. */
+const WATER_FROM_START = new Set<BiomeId>(['coast', 'wetland', 'island', 'amazon']);
+const SWIMMERS = new Set(['fish', 'whale', 'ray', 'jelly', 'octopus']);
+
 const placeCache = new Map<number, PlaceDef>();
 
 /** Place k (1-based), generated once and cached. */
@@ -897,10 +912,11 @@ export function placeDef(k: number): PlaceDef {
   const name = `${names[n % names.length]}${lap ? ` ${lap + 1}` : ''}`;
   const list = biomeSpecies(biome);
   const cursor = speciesCursor(k);
-  const animals: WildDef[] = Array.from({ length: slotsOf(k) }, (_, slot) => {
-    const i = cursor + slot;
-    return wildOf(k, slot, list[i % list.length], Math.floor(i / list.length));
-  });
+  const picks = Array.from({ length: slotsOf(k) }, (_, j) => ({ s: list[(cursor + j) % list.length], lap: Math.floor((cursor + j) / list.length) }));
+  // Where a scene's water only comes with its third stage (an oasis, a pond by the ice), swimmers arrive last, when it
+  // is there (review of D39 PR E).
+  if (!WATER_FROM_START.has(b.art)) picks.sort((x, y) => Number(SWIMMERS.has(x.s.form)) - Number(SWIMMERS.has(y.s.form)));
+  const animals: WildDef[] = picks.map((pk, slot) => wildOf(k, slot, pk.s, pk.lap));
   const pin = pinOf(k);
   const stages: StageDef[] = STAGE_AT.map((at, i) => ({ at, name: b.stageNames[i], change: b.stageLines[i] }));
   const arrivals: Arrival[] = animals.map((a) => ({ id: a.id, at: a.at }));
