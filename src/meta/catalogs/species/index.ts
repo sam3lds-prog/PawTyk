@@ -5,6 +5,9 @@
 
 import { DRAWN_SPECIES } from './drawn';
 import { NAMES_COAST, PLACE_WORDS_COAST, SPECIES_COAST } from './coast';
+import { NAMES_DESERT, PLACE_WORDS_DESERT, SPECIES_DESERT } from './desert';
+import { NAMES_ISLAND, PLACE_WORDS_ISLAND, SPECIES_ISLAND } from './island';
+import { NAMES_SAVANNA, SPECIES_SAVANNA } from './savanna';
 import { NAMES_WETLAND, PLACE_WORDS_WETLAND, SPECIES_WETLAND } from './wetland';
 import type { BiomeId, SpeciesDef, SpeciesId } from './types';
 
@@ -18,6 +21,9 @@ interface BiomeFile {
 const FILES: Partial<Record<BiomeId, BiomeFile>> = {
   wetland: { species: SPECIES_WETLAND, names: NAMES_WETLAND, placeWords: PLACE_WORDS_WETLAND },
   coast: { species: SPECIES_COAST, names: NAMES_COAST, placeWords: PLACE_WORDS_COAST },
+  savanna: { species: SPECIES_SAVANNA, names: NAMES_SAVANNA },
+  desert: { species: SPECIES_DESERT, names: NAMES_DESERT, placeWords: PLACE_WORDS_DESERT },
+  island: { species: SPECIES_ISLAND, names: NAMES_ISLAND, placeWords: PLACE_WORDS_ISLAND },
 };
 
 export const SPECIES: readonly SpeciesDef[] = [...DRAWN_SPECIES, ...Object.values(FILES).flatMap((f) => f!.species)];

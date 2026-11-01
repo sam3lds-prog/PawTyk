@@ -18,6 +18,16 @@ const ANTLER = '#B98B5E';
 const BEAK = '#F2A23A';
 
 const f1 = (n: number) => n.toFixed(1);
+
+/** Relative luminance of a #RRGGBB color (0 black … 1 white). */
+function luminance(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
 const ol = (w = 1) => `stroke="${OUT}" stroke-width="${w}"`;
 
 export type KitPal = Pal & { head?: string };
@@ -503,6 +513,12 @@ function beastHead(s: SpeciesDef): KitHeadDef {
           ? `<circle cx="${f1(32 - ex - 1)}" cy="${f1(ey)}" r="6.6" fill="${headFur(p)}" ${ol()}/><circle cx="${f1(32 + ex + 1)}" cy="${f1(ey)}" r="6.6" fill="${headFur(p)}" ${ol()}/>`
           : '';
       const owlDisc = s.eyes === 'owl' ? `<circle cx="${f1(32 - ex - 1)}" cy="${f1(ey)}" r="8.6" fill="${p.light}"/><circle cx="${f1(32 + ex + 1)}" cy="${f1(ey)}" r="8.6" fill="${p.light}"/>` : '';
+      // Dark eyes vanish on a dark head (or a dark mask): a soft pale ring behind each keeps them readable.
+      const around = s.mark === 'panda' || s.mark === 'mask' || s.mark === 'hood' ? p.accent : headFur(p);
+      const ring =
+        s.eyes !== 'owl' && luminance(around) < 0.09
+          ? `<g fill="#F3EEE6" opacity=".9"><circle cx="${f1(32 - ex - (s.eyes === 'bulge' ? 1 : 0))}" cy="${f1(ey)}" r="${s.eyes === 'big' ? 5.2 : 4}"/><circle cx="${f1(32 + ex + (s.eyes === 'bulge' ? 1 : 0))}" cy="${f1(ey)}" r="${s.eyes === 'big' ? 5.2 : 4}"/></g>`
+          : '';
       return (
         crownBehind(s, p, g) +
         extrasOnFace(s, p, g, ey, null, beakOf(s), 'gills') +
@@ -512,6 +528,7 @@ function beastHead(s: SpeciesDef): KitHeadDef {
         bulge +
         marks(s, p, g, ey) +
         owlDisc +
+        ring +
         sn.art +
         (horned ? '' : crownOn(s, p, g)) +
         extrasOnFace(s, p, g, ey, sn.mouthY, beakOf(s))
