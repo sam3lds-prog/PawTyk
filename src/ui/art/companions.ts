@@ -9,6 +9,9 @@
 
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { isWildId, wildDef, type WildId } from '../../meta/catalogs/places';
+import { speciesById } from '../../meta/catalogs/species/index';
+import type { SpeciesDef } from '../../meta/catalogs/species/types';
+import { kitBody, kitHasToy, kitHead, kitPal, kitScale, type KitPal } from './kit';
 
 /** A friend that can be drawn: a hand-made one, or an animal of the endless world (a coat on a drawn species; D39). */
 export type FriendId = CompanionId | WildId;
@@ -436,14 +439,40 @@ const NECK: Partial<Record<CompanionId, [number, number, number]>> = {
   pudding: [32, 54, 11],
 };
 
-/** The art recipe for any friend: its drawn species, its colors, and its neckerchief (if any). */
-function artOf(id: FriendId): { base: CompanionId; p: Pal; neck: string | null } {
+/**
+ * The art recipe for any friend: a hand-drawn head (its species, recolored by its coat) or a kit species' (D39 PR E),
+ * its colors, and its neckerchief (if any) with where it sits.
+ */
+interface Art {
+  head: HeadDef;
+  p: Pal;
+  neck: { color: string; at: [number, number, number] } | null;
+  /** The hand-drawn species, or null for a kit animal. */
+  base: CompanionId | null;
+  /** The kit species, for a kit animal. */
+  kit: SpeciesDef | null;
+}
+
+const artCache = new Map<FriendId, Art>();
+function artOf(id: FriendId): Art {
+  const hit = artCache.get(id);
+  if (hit) return hit;
+  let art: Art;
   if (isWildId(id)) {
     const w = wildDef(id);
     const c = w.coat;
-    return { base: w.base, p: { fur: c.fur, light: c.light, dark: c.dark, accent: c.accent }, neck: NECK[w.base] ? w.neckerchief : null };
-  }
-  return { base: id, p: PAL[id], neck: null };
+    if (w.base) {
+      const at = NECK[w.base];
+      art = { head: HEADS[w.base], p: { fur: c.fur, light: c.light, dark: c.dark, accent: c.accent }, neck: at && w.neckerchief ? { color: w.neckerchief, at } : null, base: w.base, kit: null };
+    } else {
+      const s = speciesById(w.species)!;
+      const h = kitHead(s);
+      const p: KitPal = { ...kitPal(s.colors), fur: c.fur, light: c.light, dark: c.dark, accent: c.accent };
+      art = { head: h, p, neck: h.neck && w.neckerchief ? { color: w.neckerchief, at: h.neck } : null, base: null, kit: s };
+    }
+  } else art = { head: HEADS[id], p: PAL[id], neck: null, base: id, kit: null };
+  artCache.set(id, art);
+  return art;
 }
 
 /**
@@ -454,23 +483,27 @@ export function wearsNeckerchief(id: FriendId): boolean {
   return artOf(id).neck !== null;
 }
 
+/** The kit species a friend is drawn as (D39 PR E), or null for a hand-drawn one. */
+export function kitSpeciesOf(id: FriendId): SpeciesDef | null {
+  return artOf(id).kit;
+}
+
 /** The friend's name, for figures' data attributes. */
 function friendName(id: FriendId): string {
   return isWildId(id) ? wildDef(id).name : COMPANION_BY_ID[id].name;
 }
 
 /** A knotted neckerchief under the chin, in head units. */
-function neckerchief(base: CompanionId, color: string | null): string {
-  const n = NECK[base];
-  if (!n || !color) return '';
-  const [x, y, w] = n;
+function neckerchief(neck: Art['neck']): string {
+  if (!neck) return '';
+  const color = neck.color;
+  const [x, y, w] = neck.at;
   return `<g class="sp-neck"><path d="M${x - w} ${y - 1.4} Q${x} ${y + 1.6} ${x + w} ${y - 1.4} L${x + w * 0.35} ${y + 3.4} L${x} ${y + 7.4} L${x - w * 0.35} ${y + 3.4} Z" fill="${color}" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/><circle cx="${x}" cy="${y + 1.2}" r="1.6" fill="${color}" stroke="${OUT}" stroke-width=".6"/><g fill="#fff" opacity=".7"><circle cx="${x - w * 0.45}" cy="${y + 0.6}" r=".7"/><circle cx="${x + w * 0.45}" cy="${y + 0.6}" r=".7"/><circle cx="${x}" cy="${y + 4.6}" r=".7"/></g></g>`;
 }
 
 function head(id: FriendId, mood: CompanionMood): string {
-  const { base, p, neck } = artOf(id);
-  const d = HEADS[base];
-  return d.art(p) + face(mood, d.face(p)) + neckerchief(base, neck);
+  const { head: d, p, neck } = artOf(id);
+  return d.art(p) + face(mood, d.face(p)) + neckerchief(neck);
 }
 
 // ------------------------------------------------------------------ animated rig (board tiles)
@@ -556,12 +589,11 @@ const rigCache = new Map<FriendId, string>();
 export function friendRigBody(id: FriendId): string {
   const hit = rigCache.get(id);
   if (hit) return hit;
-  const { base, p, neck } = artOf(id);
-  const d = HEADS[base];
+  const { head: d, p, neck } = artOf(id);
   const o = d.face(p);
   const f = rigFace(o, p);
   const body =
-    `<g data-layer="head-static">${d.art(p)}${o.nose ?? ''}${neckerchief(base, neck)}</g>` +
+    `<g data-layer="head-static">${d.art(p)}${o.nose ?? ''}${neckerchief(neck)}</g>` +
     `<g data-layer="cheeks">${f.cheeks}</g>` +
     `<g data-layer="eyes">${f.eyes}</g>` +
     `<g data-layer="lids">${f.lids}</g>` +
@@ -609,7 +641,16 @@ const PLAIN_BELLY = new Set<CompanionId>(['cotton', 'buttercup']);
  * ambient classes; the tail is its own group so it can wag around its base.
  */
 export function companionFigure(fid: FriendId, x: number, y: number, H: number, mood: CompanionMood): string {
-  const { base: id, p } = artOf(fid);
+  const art = artOf(fid);
+  if (art.kit) {
+    // A kit animal (D39 PR E): its own body, sized for its kind, with the same head rig and data attributes as any friend.
+    const s = art.kit;
+    const h = H * kitScale(s);
+    const f = kitBody(s, art.p as KitPal, x, y, h);
+    return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${friendName(fid)}" data-gx="${x}" data-gy="${y}" data-gh="${h.toFixed(1)}" data-mood="${mood}" data-kit="${s.form === 'beast' ? s.body : s.form}"${kitHasToy(s) ? '' : ' data-no-toy'}>${f.behind}${f.body}<g class="sp-tail">${f.tail}</g><g transform="translate(${f.headX.toFixed(1)} ${f.headTop.toFixed(1)}) scale(${f.k.toFixed(3)})">${head(fid, mood)}</g></g>`;
+  }
+  const id = art.base!;
+  const p = art.p;
   const P = (dx: number, dy: number) => `${(x + dx * H).toFixed(1)} ${(y + dy * H).toFixed(1)}`;
   const kind = BODY[id] ?? 'seated';
   const big = kind === 'big';
@@ -699,7 +740,9 @@ function bodyExtras(id: CompanionId, p: Pal, x: number, by: number, bw: number, 
 
 /** The figure's head-top y, for placing a floating heart above it. */
 export function figureTop(fid: FriendId, y: number, H: number): number {
-  const id = isWildId(fid) ? wildDef(fid).base : fid;
+  const art = artOf(fid);
+  if (art.kit) return kitBody(art.kit, art.p as KitPal, 0, y, H * kitScale(art.kit)).headTop;
+  const id = art.base!;
   const kind = BODY[id] ?? 'seated';
   const big = kind === 'big';
   const bh = H * (big ? 0.27 : 0.24);

@@ -49,10 +49,7 @@ export function buyFood(save: SaveV2, food: FoodId, now = new Date()): BuyFoodRe
 export function animalKindOf(id: string): AnimalKind | null {
   if (isPetId(id)) return PET_BY_ID[id].species;
   if (isCompanionId(id)) return COMPANION_BY_ID[id].animal;
-  if (isWildId(id)) {
-    const w = wildDef(id);
-    return w.animal ?? COMPANION_BY_ID[w.base].animal;
-  }
+  if (isWildId(id)) return wildDef(id).animal;
   return null;
 }
 

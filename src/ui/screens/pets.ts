@@ -14,7 +14,7 @@ import { coinPill } from '../components/wallet';
 import type { CompanionId } from '../../meta/catalogs/companions';
 import { sanctuaryDef, type SanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { wireFolds } from '../components/fold';
-import { animalInfo, animalsOf, isHome, nextArrivalIn } from '../../meta/animals';
+import { animalInfo, animalsOf, isHome, kindsMet, KINDS_TOTAL, nextArrivalIn } from '../../meta/animals';
 import { activeSanctuary, arrivalProgress, isOpen, worldIds } from '../../meta/world';
 import { friendPortrait, showFriendSheet } from './sanctuary';
 
@@ -95,7 +95,7 @@ export const petsScreen: ScreenDef = {
           <h1 data-autofocus>Animal album</h1>
           <div class="screen-head__end">${coinPill()}</div>
         </header>
-        <p class="muted pets__count">${homeCount} of ${all.length} animals have come home</p>
+        <p class="muted pets__count">${homeCount} of ${all.length} animals have come home${homes.length > 6 ? ` · <span data-kinds>${kindsMet(save)} of ${KINDS_TOTAL} kinds met</span>` : ''}</p>
         ${
           coming && building
             ? (() => {

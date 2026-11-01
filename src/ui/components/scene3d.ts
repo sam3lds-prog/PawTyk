@@ -77,6 +77,18 @@ export function createScene3D(): Scene3D {
     ready,
     attach(figure, svg) {
       target = figure && svg ? [figure, svg] : null;
+      // A scene with an animal the toy builder can't make yet (a snake, a fish; D39 PR E) stays drawn, all of it.
+      if (svg?.querySelector('[data-no-toy]')) {
+        target = null;
+        if (stage) {
+          liveStages.splice(liveStages.indexOf(stage), 1);
+          stage.dispose();
+          stage = null;
+          started = false;
+        }
+        settle(false);
+        return;
+      }
       if (!target) return;
       if (stage) {
         stage.attach(...target);

@@ -42,6 +42,8 @@ export function colorsOf(words: string): KitColors {
 export interface SpOptions {
   /** A hand-drawn species (its art and toy). */
   drawn?: CompanionId;
+  /** A hand-drawn species in a new role, with its own coats. */
+  guest?: SpeciesDef['guest'];
   /** Real color forms: "Silver: C9CCD1 F4F5F7 3B3F45 9AA4AE". */
   coats?: readonly string[];
 }
@@ -76,6 +78,7 @@ export function sp(
     eats,
     size,
     ...(opts.drawn ? { drawn: opts.drawn } : {}),
+    ...(opts.guest ? { guest: opts.guest } : {}),
     ...(def as unknown as Pick<SpeciesDef, (typeof KEYS)[number]>),
     extras,
     colors: colorsOf(colors),

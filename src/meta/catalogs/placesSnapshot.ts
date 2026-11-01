@@ -15,7 +15,7 @@ export function placesSnapshot(n: number): unknown[] {
       pin: [p.lon, p.lat],
       opens: p.opensAfterLevel,
       accent: p.accent,
-      animals: p.animals.map((a) => [a.id, a.at, a.base, a.kind || null, a.name, a.coat.name, a.neckerchief, a.trait]),
+      animals: p.animals.map((a) => [a.id, a.at, a.species, a.base, a.name, a.coat.name, a.neckerchief, a.trait]),
     });
   }
   return out;

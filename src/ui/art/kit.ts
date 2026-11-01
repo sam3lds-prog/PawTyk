@@ -659,6 +659,17 @@ export function kitHead(s: SpeciesDef): KitHeadDef {
   return def;
 }
 
+// ------------------------------------------------------------------ 3D
+
+/**
+ * Whether the 3D toy builder has the parts for a species (`three/species.ts::kitToy`): a seated, big, tall, upright,
+ * perched or lying animal. Snakes, crocodiles, turtles, frogs, waders, bats, fish and bugs stay drawn, and so does any
+ * scene they are in (`ui/components/scene3d.ts`).
+ */
+export function kitHasToy(s: SpeciesDef): boolean {
+  return s.form === 'beast' && ['sit', 'big', 'tall', 'upright', 'bird', 'seal'].includes(s.body) && s.snout !== 'croc' && s.eyes !== 'bulge';
+}
+
 // ------------------------------------------------------------------ scene figures
 
 const SIZE_K: Record<SpeciesDef['size'], number> = { tiny: 0.62, small: 0.8, medium: 1, large: 1.14, huge: 1.28 };

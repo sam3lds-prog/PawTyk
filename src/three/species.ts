@@ -8,7 +8,10 @@
 import { PET_BY_ID, type PetId } from '../meta/catalogs/pets';
 import type { CompanionId } from '../meta/catalogs/companions';
 import { isWildId, wildDef } from '../meta/catalogs/places';
+import { speciesById } from '../meta/catalogs/species/index';
+import type { SpeciesDef } from '../meta/catalogs/species/types';
 import { friendPalette } from '../ui/art/companions';
+import { kitHasToy } from '../ui/art/kit';
 
 export type BodyKind = 'sit' | 'upright' | 'big' | 'tall' | 'bird' | 'seal';
 export type EarKind = 'pointed' | 'round' | 'tufted' | 'floppy' | 'folded' | 'button' | 'disc' | 'fluffy' | 'tall' | 'small' | 'giant' | 'side' | 'none';
@@ -511,7 +514,7 @@ function darken(hex: string, k: number): string {
   return `#${[f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
 
-const wildCache = new Map<string, ToySpec>();
+const wildCache = new Map<string, ToySpec | null>();
 
 /**
  * An animal of the endless world as a toy (D39): its species' toy, with every color that came from the species' 2D
@@ -520,29 +523,81 @@ const wildCache = new Map<string, ToySpec>();
  * shapes some species by id (a kangaroo's big feet), and the stage keys its toys by the figure, not the spec.
  */
 function wildToy(id: string): ToySpec | null {
-  const hit = wildCache.get(id);
-  if (hit) return hit;
+  if (wildCache.has(id)) return wildCache.get(id)!;
   const w = wildDef(id as Parameters<typeof wildDef>[0]);
-  const base = (FRIEND_TOYS as Record<string, ToySpec>)[w.base];
-  if (!base) return null;
-  const pal = friendPalette(w.base);
   const c = w.coat;
-  const swap = new Map<string, string>([
-    [pal.fur.toUpperCase(), c.fur],
-    [base.shade.toUpperCase(), darken(c.fur, 0.87)],
-    [pal.light.toUpperCase(), c.light],
-    [pal.dark.toUpperCase(), c.dark],
-    [pal.accent.toUpperCase(), c.accent],
-  ]);
-  const walk = (v: unknown): unknown => {
-    if (typeof v === 'string') return /^#[0-9a-f]{6}$/i.test(v) ? (swap.get(v.toUpperCase()) ?? v) : v;
-    if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
-    return v;
-  };
-  const spec = { ...(walk(base) as ToySpec), id: base.id };
+  let spec: ToySpec | null;
+  if (w.base) {
+    const base = (FRIEND_TOYS as Record<string, ToySpec>)[w.base];
+    if (!base) return null;
+    const pal = friendPalette(w.base);
+    const swap = new Map<string, string>([
+      [pal.fur.toUpperCase(), c.fur],
+      [base.shade.toUpperCase(), darken(c.fur, 0.87)],
+      [pal.light.toUpperCase(), c.light],
+      [pal.dark.toUpperCase(), c.dark],
+      [pal.accent.toUpperCase(), c.accent],
+    ]);
+    const walk = (v: unknown): unknown => {
+      if (typeof v === 'string') return /^#[0-9a-f]{6}$/i.test(v) ? (swap.get(v.toUpperCase()) ?? v) : v;
+      if (Array.isArray(v)) return v.map(walk);
+      if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+      return v;
+    };
+    spec = { ...(walk(base) as ToySpec), id: base.id };
+  } else {
+    const sp = speciesById(w.species);
+    spec = sp ? kitToy(sp, c) : null;
+  }
   wildCache.set(id, spec);
   return spec;
+}
+
+/**
+ * A kit species as a soft toy (D39 PR E), when the toy builder has the parts for it: a seated, big, tall, upright, perched
+ * or lying animal with ears and a snout it knows. Snakes, crocodiles, turtles, frogs, fish and bugs have no toy yet:
+ * their scenes stay drawn (`three/stage.ts` only shows toys when every animal in a scene has one).
+ */
+export function kitToy(s: SpeciesDef, coat: { fur: string; light: string; dark: string; accent: string } = s.colors): ToySpec | null {
+  if (!kitHasToy(s)) return null;
+  const body = ({ sit: 'sit', big: 'big', tall: 'tall', upright: 'upright', bird: 'bird', wader: null, seal: 'seal', low: null, shell: null, coil: null, frog: null, bat: null } as const)[s.body];
+  const snout = ({ cat: 'cat', dog: 'dog', fox: 'fox', bear: 'round', koala: 'koala', pig: 'pig', muzzle: 'muzzle', long: 'fox', ape: 'flat', beak: 'beak', hook: 'beak', longbeak: 'beak', duck: 'beak', bigbeak: 'bigbeak', trunk: 'trunk', croc: null, smile: 'flat', flat: 'flat' } as const)[s.snout];
+  if (!body || !snout || s.eyes === 'bulge') return null;
+  const ears = ({ none: 'none', pointed: 'pointed', round: 'round', tufted: 'tufted', long: 'tall', floppy: 'floppy', small: 'small', mouse: 'disc', fan: 'pointed', giant: 'giant', side: 'side' } as const)[s.ears];
+  const tail = ({ none: 'none', stub: 'stub', cat: 'cat', dog: 'dog', bushy: 'fox', ringed: 'panda', long: 'cat', kangaroo: 'kangaroo', horse: 'horse', tuft: 'tuft', puff: 'puff', curl: 'curl', paddle: 'stub', fan: 'bird', feather: 'bird', lizard: 'cat', fin: 'none' } as const)[s.tail];
+  const marking: Marking = s.mark === 'mask' || s.mark === 'badger' ? 'mask' : s.mark === 'panda' ? 'meerkat' : s.mark === 'stripes' ? 'tabby' : s.mark === 'blaze' ? 'blaze' : 'none';
+  const extras: Extra[] = [];
+  if (s.extras.includes('whiskers')) extras.push('whiskers');
+  if (s.extras.includes('beard')) extras.push('beard');
+  if (s.mark === 'spots' || s.mark === 'rosettes') extras.push('spots');
+  if (['horns', 'curved', 'ram', 'straight', 'spiral', 'antlers', 'moose'].includes(s.crown)) extras.push('horns');
+  if (s.crown === 'ossicones') extras.push('ossicones');
+  if (s.crown === 'mane') extras.push('mane');
+  if (s.crown === 'crest' || s.crown === 'comb' || s.crown === 'plume') extras.push('crest');
+  const beaked = ['beak', 'hook', 'longbeak', 'duck', 'bigbeak'].includes(s.snout);
+  const bird = body === 'bird';
+  const fur = s.colors.head && !bird ? coat.fur : coat.fur;
+  return {
+    id: s.id,
+    body,
+    fur,
+    shade: darken(coat.fur, 0.87),
+    light: coat.light,
+    dark: coat.dark,
+    inner: coat.light,
+    head: bird ? [0.7, 0.6, 0.6] : s.head === 'wide' ? [0.82, 0.6, 0.62] : s.head === 'tall' ? [0.7, 0.66, 0.62] : s.head === 'small' ? [0.66, 0.56, 0.56] : [0.76, 0.62, 0.62],
+    ...(s.colors.head ? { headFur: s.colors.head } : {}),
+    ears: { kind: ears, size: s.ears === 'fan' ? 1.6 : s.ears === 'mouse' ? 1.3 : 1, color: s.extras.includes('darkears') ? coat.accent : (s.colors.head ?? coat.fur), tip: coat.dark },
+    snout: { kind: snout, color: beaked ? (s.colors.beak ?? '#F2A23A') : coat.light, nose: beaked ? (s.colors.beak ?? '#F2A23A') : coat.dark, size: s.snout === 'long' ? 1.25 : s.snout === 'bigbeak' ? 1 : 0.95 },
+    eyes: { style: s.eyes === 'owl' ? 'owl' : s.eyes === 'side' ? 'side' : 'dot', color: INK, ...(s.eyes === 'owl' && s.colors.eye ? { iris: s.colors.eye } : {}), size: s.eyes === 'big' ? 1.25 : 0.95, spacing: 0.3, y: 0.04 },
+    mouth: beaked || snout === 'trunk' ? 'none' : snout === 'cat' ? 'cat' : snout === 'dog' || snout === 'fox' ? 'dog' : 'simple',
+    tail: { kind: tail, color: s.tail === 'horse' || s.tail === 'tuft' ? coat.dark : coat.fur, tip: coat.light, ring: coat.accent },
+    marking,
+    markColor: coat.accent,
+    cheek: '#F09C98',
+    ...(s.mark === 'panda' ? { paws: coat.accent } : ['muzzle', 'pig'].includes(s.snout) ? { paws: coat.dark } : {}),
+    extras,
+  };
 }
 
 export const ALL_TOY_IDS: readonly string[] = [...Object.keys(PET_TOYS), ...Object.keys(FRIEND_TOYS)];

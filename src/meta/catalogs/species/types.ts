@@ -187,8 +187,10 @@ export interface SpeciesDef {
   /** What it eats, as the treats it likes (an animal that eats like a horse loves hay). */
   eats: AnimalKind;
   size: KitSize;
-  /** A hand-drawn species of the regions: its own art and 3D toy, recolored by `coats`. */
+  /** A hand-drawn species of the regions: its own art and 3D toy, recolored by its coats (`places.ts`). */
   drawn?: CompanionId;
+  /** A hand-drawn species in a new role (D39 PR D's guests: a rabbit drawn as the bunny), with its own coats. */
+  guest?: 'rabbit' | 'arcticfox' | 'arctichare' | 'batearedfox';
   form: KitForm;
   body: KitBody;
   head: KitHead;

@@ -32,6 +32,18 @@ const FRIEND_ACTIONS: Record<string, AmbientAction[]> = {
   pudding: ['blink', 'stretch', 'stroll'],
 };
 
+/** How a kit animal (D39 PR E) moves, by its body or whole form (`data-kit` on its figure). */
+const KIT_ACTIONS: Record<string, AmbientAction[]> = {
+  sit: ['blink', 'look', 'wag', 'stretch', 'stroll'],
+  big: ['blink', 'look', 'wag', 'stroll'],
+  tall: ['blink', 'look', 'stretch', 'stroll'],
+  upright: ['blink', 'look', 'hop', 'wag'],
+  bird: ['blink', 'hop', 'look'],
+  wader: ['blink', 'look', 'stretch'],
+  frog: ['blink', 'hop'],
+  crab: ['blink', 'hop'],
+};
+
 /** Lively scene parts and the one action each plays. */
 const PART_ACTIONS: Array<[string, AmbientAction]> = [
   ['.sp-water', 'sparkle'],
@@ -112,8 +124,9 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     actors.set(id, g);
     figs.push(id);
     // An animal of the endless world moves like its species (D39).
+    const kit = (g as HTMLElement).dataset.kit;
     const species = isWildId(f) ? wildDef(f).base : f;
-    ambient.add({ id, actions: FRIEND_ACTIONS[species] ?? ['blink', 'stretch'] });
+    ambient.add({ id, actions: (kit ? KIT_ACTIONS[kit] : species ? FRIEND_ACTIONS[species] : null) ?? ['blink', 'stretch'] });
   }
   // Decorations and stage features: each lively group is one actor (its own part is what moves).
   let n = 0;

@@ -12,8 +12,8 @@ import type { CompanionId } from '../../meta/catalogs/companions';
 import { COMPANIONS } from '../../meta/catalogs/companions';
 import { DECOR_BY_ID, decorHome, type DecorId } from '../../meta/catalogs/decor';
 import { biomeOfRegion, sanctuaryDef, type BaseRegionId, type RegionId } from '../../meta/catalogs/sanctuaries';
-import { isPlaceId, placeDef, placeIndex, type BiomeId, type LookId } from '../../meta/catalogs/places';
-import { companionFigure, figureTop, type CompanionMood, type FriendId } from './companions';
+import { BIOMES, isPlaceId, placeDef, placeIndex, type BiomeId, type LookId } from '../../meta/catalogs/places';
+import { companionFigure, figureTop, kitSpeciesOf, type CompanionMood, type FriendId } from './companions';
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
 
 export type RegionDecorId = Extract<
@@ -971,17 +971,81 @@ export interface RegionSceneState {
   evening?: boolean;
 }
 
-/**
- * Where a place's guest (D39: a rabbit on a farm, an arctic fox, a bat-eared fox) stands: open ground in its biome's
- * scene, clear of the natives' spots and the stage features.
- */
-const GUEST_SPOTS: Record<BiomeId, Spot> = {
-  farm: { x: 104, y: 278, H: 24, mood: 'happy' },
-  outback: { x: 300, y: 276, H: 26, mood: 'happy' },
-  savanna: { x: 150, y: 282, H: 28, mood: 'happy' },
-  arctic: { x: 140, y: 272, H: 28, mood: 'happy' },
-  amazon: { x: 300, y: 282, H: 26, mood: 'happy' },
+/** Where a place's animals stand: four ground spots by arrival slot, and spots in the water for swimmers (D39 PR E). */
+export interface PlaceSpots {
+  ground: readonly [Spot, Spot, Spot, Spot];
+  water: readonly Spot[];
+}
+
+/** The hand-made regions' scenes, as places: open ground clear of every stage feature, and their ponds and river. */
+const PLACE_SPOTS: Record<BaseRegionId, PlaceSpots> = {
+  farm: {
+    ground: [
+      { x: 62, y: 240, H: 34, mood: 'happy' },
+      { x: 300, y: 248, H: 34, mood: 'idle' },
+      { x: 150, y: 236, H: 30, mood: 'happy' },
+      { x: 264, y: 286, H: 32, mood: 'idle' },
+    ],
+    water: [{ x: 66, y: 282, H: 26, mood: 'happy' }],
+  },
+  outback: {
+    ground: [
+      { x: 150, y: 230, H: 34, mood: 'happy' },
+      { x: 312, y: 250, H: 34, mood: 'idle' },
+      { x: 96, y: 240, H: 30, mood: 'happy' },
+      { x: 268, y: 288, H: 32, mood: 'idle' },
+    ],
+    water: [{ x: 150, y: 282, H: 28, mood: 'happy' }],
+  },
+  savanna: {
+    ground: [
+      { x: 60, y: 246, H: 34, mood: 'happy' },
+      { x: 282, y: 244, H: 36, mood: 'idle' },
+      { x: 172, y: 232, H: 30, mood: 'happy' },
+      { x: 286, y: 288, H: 32, mood: 'idle' },
+    ],
+    water: [{ x: 166, y: 282, H: 28, mood: 'happy' }],
+  },
+  arctic: {
+    ground: [
+      { x: 240, y: 252, H: 36, mood: 'happy' },
+      { x: 322, y: 266, H: 34, mood: 'idle' },
+      { x: 136, y: 236, H: 30, mood: 'happy' },
+      { x: 262, y: 292, H: 32, mood: 'idle' },
+    ],
+    water: [
+      { x: 120, y: 282, H: 30, mood: 'happy' },
+      { x: 80, y: 276, H: 24, mood: 'idle' },
+    ],
+  },
+  amazon: {
+    ground: [
+      { x: 106, y: 284, H: 32, mood: 'happy' },
+      { x: 302, y: 214, H: 30, mood: 'idle' },
+      { x: 124, y: 208, H: 28, mood: 'happy' },
+      { x: 236, y: 292, H: 30, mood: 'idle' },
+    ],
+    water: [
+      { x: 92, y: 246, H: 28, mood: 'happy' },
+      { x: 300, y: 246, H: 26, mood: 'idle' },
+    ],
+  },
 };
+
+/** Landscapes drawn beyond the hand-made regions (`landscapes.ts`), when there are any. */
+const NEW_LANDSCAPES: Partial<Record<BiomeId, { art: RegionArt; spots: PlaceSpots }>> = {};
+
+const isBaseArt = (b: BiomeId): b is BaseRegionId => b in REGION_ART;
+
+/** The drawn scene and the spots for a landscape (the Antarctic is drawn as the Arctic, the jungle as the rainforest). */
+function sceneFor(b: BiomeId): { art: RegionArt; spots: PlaceSpots } {
+  const drawn = BIOMES[b].art;
+  if (isBaseArt(drawn)) return { art: REGION_ART[drawn], spots: PLACE_SPOTS[drawn] };
+  return NEW_LANDSCAPES[drawn] ?? { art: REGION_ART.farm, spots: PLACE_SPOTS.farm };
+}
+
+/** Swimmers float in the water when the scene has some. */
+const SWIMS = new Set(['fish', 'whale', 'ray', 'jelly', 'octopus']);
 
 /** A place's look (D39): a color treatment on its sky and land, and sometimes a light overlay. Classic is the region's own. */
 function lookDefs(look: LookId, id: string): string {
@@ -1024,7 +1088,7 @@ function lookOverlay(look: LookId, id: string): string {
 
 export function regionScene(region: RegionId, st: RegionSceneState, id = 'region'): string {
   const biome = biomeOfRegion(region);
-  const art = REGION_ART[biome];
+  const { art, spots } = sceneFor(biome);
   const place = isPlaceId(region) ? placeDef(placeIndex(region)) : null;
   const look: LookId = place?.look ?? 'classic';
   // A mirrored place flips its whole land and every feature; its animals are drawn upright at the mirrored spots.
@@ -1059,7 +1123,14 @@ export function regionScene(region: RegionId, st: RegionSceneState, id = 'region
     items.push({ base: (spot.base ?? spot.y) + 0.6, svg: fig });
   };
   if (place) {
-    for (const w of place.animals) if (st.companions.includes(w.id)) figure(w.id, w.guest ? GUEST_SPOTS[biome] : SPOTS[w.base as RegionalCompanion]);
+    // Each arrival slot has its own ground spot; swimmers take the water spots in turn (D39 PR E).
+    let ground = 0;
+    let water = 0;
+    for (const w of place.animals) {
+      const swims = SWIMS.has(kitSpeciesOf(w.id)?.form ?? '') && spots.water.length > 0;
+      const spot = swims ? spots.water[water++ % spots.water.length] : spots.ground[ground++ % 4];
+      if (st.companions.includes(w.id)) figure(w.id, spot);
+    }
   } else
     for (const c of COMPANIONS) {
       if (c.sanctuary !== region || !st.companions.includes(c.id)) continue;
