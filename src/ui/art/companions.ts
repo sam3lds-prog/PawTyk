@@ -19,7 +19,7 @@ const INK = '#2F2A27';
 
 export type CompanionMood = 'idle' | 'happy' | 'sleepy';
 
-interface Pal {
+export interface Pal {
   fur: string;
   light: string;
   dark: string;
@@ -50,7 +50,7 @@ const PAL: Record<CompanionId, Pal> = {
   pudding: { fur: '#B58A62', light: '#C99D74', dark: '#3A2E28', accent: '#9E7452' },
 };
 
-interface FaceOpts {
+export interface FaceOpts {
   eyes?: [number, number, number, number];
   eyeR?: [number, number];
   nose?: string;
@@ -67,12 +67,12 @@ interface FaceOpts {
 }
 
 /** A head: its drawn art (ears, head, markings) and where its face sits. */
-interface HeadDef {
+export interface HeadDef {
   art: (p: Pal) => string;
   face: (p: Pal) => FaceOpts;
 }
 
-function face(mood: CompanionMood, o: FaceOpts = {}): string {
+export function face(mood: CompanionMood, o: FaceOpts = {}): string {
   const closed = mood === 'sleepy';
   const happy = mood === 'happy';
   const [lx, ly, rx, ry] = o.eyes ?? [24, 33, 40, 33];

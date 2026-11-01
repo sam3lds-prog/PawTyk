@@ -351,7 +351,7 @@ export const REGION_DECOR_ART: Record<RegionDecorId, DecorArt> = {
 
 // ------------------------------------------------------------------ the animals' spots
 
-interface Spot {
+export interface Spot {
   x: number;
   y: number;
   H: number;
@@ -385,12 +385,12 @@ const SPOTS: Record<RegionalCompanion, Spot> = {
 
 // ------------------------------------------------------------------ the four regions
 
-interface Feature {
+export interface Feature {
   base: number;
   svg: string;
 }
 
-interface RegionArt {
+export interface RegionArt {
   sky(id: string): string;
   land(id: string): string;
   /** Features by stage (index 1–4). */
