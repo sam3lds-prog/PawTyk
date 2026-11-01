@@ -842,7 +842,7 @@ describe('a little why, and small celebrations (D39 PR C)', () => {
     for (let i = 0; i < 3; i++) {
       const { r } = forceByRow(done);
       done.push(r);
-      expect(coach()).toMatch(/^Only one spot was left for an? \w+ in (row \d|column \d|the \w+ region)\.$/);
+      expect(coach()).toMatch(/^Only one spot was left for an? \w+ in (row\u00a0\d|column\u00a0\d|the \w+ region)\.$/);
       expect(why().length).toBeGreaterThan(0);
       vi.advanceTimersByTime(1600);
       expect(why().length).toBe(0);
