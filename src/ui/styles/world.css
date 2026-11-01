@@ -1434,6 +1434,8 @@
   gap: var(--s3);
   padding: var(--s3);
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.next-goal.is-entering {
   animation: win-rise 380ms var(--ease) both;
 }
 .next-goal__art {

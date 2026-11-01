@@ -466,12 +466,13 @@ export type NextGoal =
   | { kind: 'home'; where: SanctuaryId; left: number };
 
 /**
- * The next goal from a sanctuary (D40, the fourth step of an arrival): who comes home next here, else this home's next
- * stage, else the same for the home being built now, else the next home to open. Null only when the world has nothing
- * left at all (never, in practice: the endless world always has a next place).
+ * The next goal after an arrival (D40, its fourth step): what the next puzzles really bring closer. That is the home
+ * being built now — who comes home next there, else its next stage — and only when nothing is being built, the home
+ * the player is in; else the next home to open. Null only when the world has nothing left at all (never, in practice:
+ * the endless world always has a next place).
  */
 export function nextGoal(save: SaveV2, from: SanctuaryId): NextGoal | null {
-  for (const where of [from, activeSanctuary(save)]) {
+  for (const where of [activeSanctuary(save), from]) {
     if (!where || !isOpen(save, where)) continue;
     const p = arrivalProgress(save, where);
     if (p) return { kind: 'animal', where, id: p.next.id, left: p.left };

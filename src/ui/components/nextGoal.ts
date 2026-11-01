@@ -38,11 +38,13 @@ export function nextGoalMarkup(g: NextGoal): string {
   </section>`;
 }
 
-/** Shows the next goal under the scene (after its cue slot), once per visit. */
-export function showNextGoal(root: HTMLElement, from: SanctuaryId): void {
+/** Shows the next goal under the scene (after its cue slot), once per visit; it rises in only the first time. */
+export function showNextGoal(root: HTMLElement, from: SanctuaryId, entering = false): void {
   if (root.querySelector('[data-next-goal]')) return;
   const g = nextGoal(app.save, from);
   const slot = root.querySelector('[data-cue-slot]');
   if (!g || !slot) return;
-  slot.after(h(nextGoalMarkup(g)));
+  const card = h(nextGoalMarkup(g));
+  if (entering) card.classList.add('is-entering');
+  slot.after(card);
 }

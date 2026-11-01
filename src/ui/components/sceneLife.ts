@@ -216,7 +216,8 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     figures: () => [...figs],
     cheer: () => {
       if (app.reducedMotion) return;
-      for (const [id, action] of parts.slice(0, 2)) ambient.trigger(id, action);
+      // Into free slots only, so no animal's hello is cut short.
+      for (const [id, action] of parts.slice(0, 2)) ambient.offer(id, action);
     },
     setLive: (on) => ambient.setLive(on),
     dispose: () => {

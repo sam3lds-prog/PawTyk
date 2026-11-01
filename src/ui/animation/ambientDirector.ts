@@ -141,6 +141,12 @@ export class AmbientDirector {
     return true;
   }
 
+  /** Like `trigger`, but only into a free slot: it never cuts short something already playing (D40, a welcome). */
+  offer(id: string, action: AmbientAction): boolean {
+    if (this.running.size >= this.max || this.running.has(id)) return false;
+    return this.trigger(id, action);
+  }
+
   dispose(): void {
     this.disposed = true;
     this.live = false;

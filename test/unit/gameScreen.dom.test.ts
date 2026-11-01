@@ -533,6 +533,27 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       expect(order).toEqual(['first', 'actions', 'more']);
     });
 
+    it('Zen: no stars, the step the world took up top; a replay: the stars still to earn up top, its note folded', () => {
+      app.save.world.growth.farm = 1;
+      app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+      startGame({ kind: 'zen', size: 5, seed: 7_000_321, rule: 'solo' });
+      solveBoard();
+      let first = sheet()!.querySelector('.win-stage-1')!;
+      expect(first.querySelector('.win-stars')).toBeNull();
+      expect(first.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
+      expect(sheet()!.querySelector('[data-win-more] .stats')).not.toBeNull();
+      (sheet()!.querySelector('[data-act="next"]') as HTMLButtonElement).click();
+      // A replay of level 4 (already solved): what's left to earn is the news.
+      app.save.journey.clears.L4 = { firstClearAt: '2026-10-30T00:00:00.000Z', bestSeconds: 999, bestMistakes: 2, clean: false, hintFree: true, stars: 2 };
+      app.save.world.grown.L4 = 'farm';
+      start(4);
+      solveBoard();
+      first = sheet()!.querySelector('.win-stage-1')!;
+      expect(first.querySelector('.win-replay')).not.toBeNull();
+      expect(first.querySelector('.win-plus')).toBeNull();
+      expect(sheet()!.querySelector('[data-win-more] [data-replay-note]')).not.toBeNull();
+    });
+
     it('an arrival keeps even the stars for the fold: the first view is the animal', () => {
       app.save.world.growth.farm = 3;
       app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
@@ -544,8 +565,9 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       expect(first.querySelector('.win-stars, .stats, .win-points')).toBeNull();
       const more = w.querySelector('[data-win-more]')!;
       expect(more.querySelector('.win-stars')).not.toBeNull();
-      // What's next after Truffle is there too, for whoever looks.
+      // What's next after Truffle is there too, for whoever looks, and the summary says so.
       expect(more.textContent).toMatch(/Buttercup the calf/);
+      expect(more.querySelector('summary')?.textContent).toMatch(/More rewards|Stars, time and what's next/);
     });
   });
 

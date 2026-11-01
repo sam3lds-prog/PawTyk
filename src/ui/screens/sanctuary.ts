@@ -300,18 +300,22 @@ export const sanctuaryScreen: ScreenDef = {
     const intro = () => offerStarterGift(scope, 'harmony', render);
     const arrivals = welcome.filter((w) => isHome(app.save, w));
     // The newcomer gets its moment in the light once the "came home" card is out of the way (D39).
+    // Straight from a win's Meet (not a later visit to someone who came home meanwhile), the arrival ends with its last
+    // two steps — the garden livens up for a moment, then the next goal (D40) — and the starter gift waits until then.
+    const met = route.screen === 'sanctuary' && !!route.welcome?.length;
     if (arrivals.length)
       introduce(scope, arrivals, () => {
         spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), arrivals[0]);
-        // D40, the arrival's last two steps: the garden livens up for a moment, then the next goal.
+        if (!met) return intro();
         scope.timeout(() => {
           life?.cheer();
           goalShown = true;
-          showNextGoal(el, 'harmony');
+          showNextGoal(el, 'harmony', true);
+          scope.timeout(intro, 900);
         }, app.reducedMotion ? 0 : 1200);
-        intro();
       });
     else intro();
+    if (met) app.router.settle({ screen: 'sanctuary' });
   },
 };
 

@@ -1537,11 +1537,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // badges, coins, points, missions) is one tap away in a fold under the buttons, with what it holds in its summary.
     const first =
       milestone && hero && growth
-        ? `${heroMarkup(growth, hero)}${growthMarkup(growth, hero)}`
+        ? `${heroMarkup(growth, hero)}${streak ? `<div class="win-badges">${streak}</div>` : ''}${growthMarkup(growth, hero)}`
         : `${winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}${stars}${streak ? `<div class="win-badges">${streak}</div>` : ''}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}`;
     const details = [
       milestone ? stars : '',
-      milestone && streak ? `<div class="win-badges">${streak}</div>` : '',
       stats,
       badges.length ? `<div class="win-badges">${badges.join('')}</div>` : '',
       skillMarkup(),
@@ -1561,6 +1560,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (rewards.decor.length) holds.push(rewards.decor.length === 1 ? 'a gift' : `${rewards.decor.length} gifts`);
     if (rewards.lives) holds.push(`+${plural(rewards.lives, 'extra life', 'extra lives')}`);
     if (rewards.hints) holds.push(`+${plural(rewards.hints, 'hint')}`);
+    // With no rewards to list, the summary still names what the fold holds.
+    const inside = [milestone && stars ? 'stars' : '', milestone || step.replay ? 'time' : 'time, mistakes and hints', milestone || step.replay ? "what's next" : ''].filter(Boolean);
+    const insideLine = capitalize(inside.length > 1 ? `${inside.slice(0, -1).join(', ')} and ${inside[inside.length - 1]}` : inside[0]);
     const visitQuiet =
       mode.kind === 'cup'
         ? ''
@@ -1586,7 +1588,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           }
         </div>
         <details class="win-more win-stage win-stage-3" data-win-more>
-          <summary class="win-more__summary"><span class="win-more__text"><b class="win-more__label">${holds.length ? 'More rewards' : 'Details'}</b><small class="win-more__holds">${esc(holds.length ? holds.join(' · ') : 'Time, mistakes and hints')}</small></span>${ICON.chevron}</summary>
+          <summary class="win-more__summary"><span class="win-more__text"><b class="win-more__label">${holds.length ? 'More rewards' : 'Details'}</b><small class="win-more__holds">${esc(holds.length ? holds.join(' · ') : insideLine)}</small></span>${ICON.chevron}</summary>
           <div class="win-more__body">${details}</div>
         </details>`,
     });

@@ -211,6 +211,15 @@ export class Router {
     else this.mount(canonical(fallback), 0);
   }
 
+  /**
+   * Rewrites the current screen's entry without re-mounting it (D40): a one-time moment carried by the route (an
+   * arrival's welcome, a stage that just grew) has played, so coming back to this screen — Back, a refresh — opens it
+   * plainly instead of playing the moment again.
+   */
+  settle(route: Route): void {
+    if (this.current) this.current = canonical(route);
+  }
+
   /** Re-mounts the current screen (e.g. after a settings change), keeping the reader's place. */
   refresh(): void {
     if (this.current) this.mount(this.current, window.scrollY);
