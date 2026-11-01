@@ -475,6 +475,27 @@ export class Session {
     return out;
   }
 
+  /**
+   * Why an animal just placed at (r,c) had to go there (D39): the row, column or region in which that tile was the only
+   * spot left for it, judged from what the player could see just before the move — the other animals on the board and
+   * the tiles their rules rule out, the player's own ✕ marks and the mistake marks. (Every ✕ in such a unit is true for
+   * this animal: the unit holds exactly one of it, here.) `prefer` units are tried first (the lines this move finished),
+   * then region, row, column. Null when no single line forced it: a longer chain of reasoning, or a lucky guess. Built
+   * only from the visible board, so it never reveals anything about the moves still to come.
+   */
+  whyPlaced(r: number, c: number, species: Species, prefer: readonly UnitRef[] = []): UnitRef | null {
+    if (this.cells[r]?.[c] !== species) return null;
+    const placed = this.placedKinds();
+    placed[r][c] = EMPTY;
+    const b = this.rule === 'solo' ? createSoloBoard(this.size, this.puzzle.regions, [], placed) : createBoard(this.size, this.puzzle.regions, [], placed);
+    const cand = b.cand[this.rule === 'solo' ? CAT : species];
+    if (!cand[r][c]) return null;
+    const open = (rr: number, cc: number) => cand[rr][cc] && this.cells[rr][cc] !== MARK && !this.hasError(rr, cc, species);
+    const units: UnitRef[] = [...prefer, { kind: 'region', index: this.puzzle.regions[r][c] }, { kind: 'row', index: r }, { kind: 'column', index: c }];
+    for (const u of units) if (this.unitCells(u).every(([rr, cc]) => (rr === r && cc === c) || !open(rr, cc))) return u;
+    return null;
+  }
+
   /** Placed animals only (no ✕), as a Kind grid for the deduction engine. */
   private placedKinds(): Kind[][] {
     return this.cells.map((row) => row.map((v) => (v === MARK ? EMPTY : v)));

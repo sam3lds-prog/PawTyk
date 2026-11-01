@@ -71,6 +71,8 @@ export interface Settings {
   largeBoard: boolean;
   /** Sanctuary animals as 3D toys (D34); off draws them flat, like before. */
   toys3d: boolean;
+  /** After a move that finishes a line or color, light the line that left it one spot and say so (D39). Off: only the first few. */
+  explainMoves: boolean;
   /** The pet tool the player last picked, so the next board opens with it selected. */
   lastSpecies: 'cat' | 'dog';
 }
@@ -242,6 +244,8 @@ export interface SaveV2 {
     controlsTipSeen: boolean;
     /** The one-time card explaining the loop (solve → the home grows → animals come home) has been dismissed (D39). */
     loopTipSeen: boolean;
+    /** How many moves have been explained ("only one spot was left in row 3") without the setting on; the first few always are (D39). */
+    whyShown: number;
   };
   /**
    * Boards in progress, one slot per mode (D38): the Journey board, the Daily and the latest Zen board. Starting or
@@ -347,6 +351,7 @@ export function defaultSettings(): Settings {
     showTimer: true,
     largeBoard: false,
     toys3d: true,
+    explainMoves: false,
     lastSpecies: 'cat',
   };
 }
@@ -451,6 +456,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       decorTipSeen: false,
       controlsTipSeen: false,
       loopTipSeen: false,
+      whyShown: 0,
     },
     sessions: emptySessions(),
     lastSession: null,
@@ -499,6 +505,7 @@ function normSettings(x: unknown): Settings {
     showTimer: bool(x.showTimer, d.showTimer),
     largeBoard: bool(x.largeBoard, d.largeBoard),
     toys3d: bool(x.toys3d, d.toys3d),
+    explainMoves: bool(x.explainMoves, d.explainMoves),
     lastSpecies: oneOf(x.lastSpecies, ['cat', 'dog'] as const, d.lastSpecies),
   };
 }
@@ -767,6 +774,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       decorTipSeen: bool(ob.decorTipSeen, false),
       controlsTipSeen: bool(ob.controlsTipSeen, false),
       loopTipSeen: bool(ob.loopTipSeen, false),
+      whyShown: int(ob.whyShown, 0, 0),
     },
     sessions,
     lastSession: newestSession({ sessions }),

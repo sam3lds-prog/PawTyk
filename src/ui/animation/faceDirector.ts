@@ -181,6 +181,19 @@ export class FaceDirector {
     });
   }
 
+  /**
+   * A small wave of one mood across some pets (D39: the halfway cheer): staggered, so the usual cap of a few reactions at
+   * once still holds and it reads as a ripple. Cleared with `calmAll` and on dispose, like the win wave.
+   */
+  wave(order: string[], mood: ReactionMood = 'happy', stepMs = 110): void {
+    if (this.disposed) return;
+    const keys = order.filter((k) => this.entries.has(k));
+    keys.forEach((k, i) => {
+      if (i === 0 || this.reduced) this.react(k, mood);
+      else this.celebrateTimers.push(this.clock.set(() => this.react(k, mood), Math.round(i * stepMs)));
+    });
+  }
+
   /** Any player input: wakes sleepy pets and restarts the doze timer. */
   activity(): void {
     this.wake();

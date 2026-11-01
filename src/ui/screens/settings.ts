@@ -17,7 +17,7 @@ import { currentRules, showRules } from './rules';
 import { animalSvg } from '../art/animals';
 import { ICON } from '../icons';
 
-type BoolKey = 'autoMark' | 'showTimer' | 'largeBoard' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
+type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
 
 function sw(key: BoolKey, label: string, help = ''): string {
   const on = app.settings[key];
@@ -87,6 +87,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         )}
         <p class="controls-preview" data-controls-preview aria-live="polite">${controlsPreview(app.settings.controls)}</p>
         ${sw('autoMark', 'Dot impossible tiles', 'On Easy boards, a small dot shows where no animal can go')}
+        ${sw('explainMoves', 'Explain finished lines', 'When a move finishes a line or color, light up the line that had one spot left. Your first few are explained anyway.')}
         ${sw('showTimer', 'Show the clock')}
         ${sw('largeBoard', 'Large board', 'Bigger tiles you can scroll around on small phones')}
       </div>

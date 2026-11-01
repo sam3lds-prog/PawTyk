@@ -261,6 +261,25 @@
   box-shadow: inset 0 0 0 2px rgba(213, 160, 75, 0.55);
   animation: ring-fade 900ms var(--ease) forwards;
 }
+/* D39: the line that left one spot for the animal just placed — a calm ring that holds, then fades. */
+.cell.is-why::before {
+  opacity: 1;
+  background: rgba(40, 123, 112, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(40, 123, 112, 0.7);
+  animation: why-fade 1500ms var(--ease) forwards;
+}
+@keyframes why-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+:root[data-motion='reduce'] .cell.is-why::before {
+  animation: none;
+}
 @keyframes ring-fade {
   0% {
     opacity: 1;

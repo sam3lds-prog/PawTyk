@@ -549,18 +549,30 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       sfx('place');
       haptic('place');
       board.flash([[r, c]], 'is-fresh', 720);
+      // The why (D39) is decided before the controls note can cover the coach line on a first placement.
+      const why = whyLine(r, c, res.placed, res.completed ?? []);
       maybeControlsTip();
       // One-animal boards: the color this animal settles is done; its tiles glow for a beat (overlay only).
       if (solo && !app.reducedMotion) board.flash(s.unitCells({ kind: 'region', index: s.puzzle.regions[r][c] }), 'is-glow', 700);
       const key = keyOf(r, c);
+      const half = halfwayNow();
       if (res.completed?.length) {
         const units = res.completed;
-        onUnits(units);
-        // The new pet and its partner in the completed line beam with pride (two faces at most).
-        react = () => petsIn(s.unitCells(units[0]), 2, key).forEach((k) => faces.react(k, 'proud'));
+        onUnits(units, why);
+        // The new pet and its partner in the completed line beam with pride; when one move finishes two or three lines
+        // at once, every pet in them joins in (four faces at most, D39).
+        const cells = units.flatMap((u) => s.unitCells(u));
+        react = () => {
+          if (units.length > 1) faces.wave(petsIn(cells, 4, key), 'proud', 90);
+          else petsIn(cells, 2, key).forEach((k) => faces.react(k, 'proud'));
+          if (half) cheerHalfway(key);
+        };
       } else {
-        coach(encouragement());
-        react = () => faces.react(key, 'happy');
+        coach(why ?? (half ? halfwayLine() : encouragement()));
+        react = () => {
+          faces.react(key, why ? 'proud' : 'happy');
+          if (half) cheerHalfway(key);
+        };
       }
     } else if (res.marked) {
       sfx('mark');
@@ -598,14 +610,64 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     else if (s.hearts > 0) coach(`Not ${withArticle(word)} spot, so it's marked. ${plural(s.hearts, 'heart')} left.`);
   }
 
-  function onUnits(units: UnitRef[]): void {
+  function onUnits(units: UnitRef[], why: string | null = null): void {
     sfx('unit');
     const cells: Array<[number, number]> = [];
     for (const u of units) cells.push(...s.unitCells(u));
     board.flash(cells, 'is-glow', 950);
+    if (units.length > 1) haptic('success');
     const u = units[0];
     const name = u.kind === 'region' ? `The ${board.regionName(u.index)} region` : `${capitalize(u.kind)} ${u.index + 1}`;
-    coach(units.length > 1 ? `${name} and ${units.length - 1} more are complete.` : `${name} is complete.`);
+    const done = units.length > 1 ? `${name} and ${units.length - 1} more are complete${units.length > 2 ? ' at once!' : '.'}` : `${name} is complete.`;
+    coach(why ? `${done} ${why}` : done);
+  }
+
+  /** The first few explanations are shown to everyone; after that only with the setting (D39). */
+  const WHY_FIRST = 3;
+
+  /**
+   * Why a correct placement had to go where it went (D39), when one line decided it: that line's tiles get a ring for a
+   * beat and the coach says it in one sentence. Only from what the player could see (`Session.whyPlaced`), never on the
+   * guided boards (they teach their own way) or in the Paw Cup (it's competition), never for the tile a hint had just
+   * pointed at (the hint already said why), and not while the one-time controls note covers the coach line.
+   */
+  function whyLine(r: number, c: number, sp: Species, completed: readonly UnitRef[]): string | null {
+    if (guided || mode.kind === 'cup') return null;
+    if (hint && hint.info.r === r && hint.info.c === c) return null;
+    if (el.querySelector('[data-controls-tip]') || !app.save.onboarding.controlsTipSeen) return null;
+    const ob = app.save.onboarding;
+    if (!app.settings.explainMoves && ob.whyShown >= WHY_FIRST) return null;
+    const u = s.whyPlaced(r, c, sp, completed);
+    if (!u) return null;
+    board.flash(s.unitCells(u), 'is-why', 1500);
+    if (!app.settings.explainMoves) {
+      ob.whyShown++;
+      app.persist();
+    }
+    track('onboarding_step', { step: 'why', unit: u.kind });
+    const word = wordOf(sp);
+    const where = unitPhrase(u);
+    if (completed.some((x) => x.kind === u.kind && x.index === u.index)) return `It was the only spot left there for ${withArticle(word)}.`;
+    if (completed.length) return `${capitalize(withArticle(word))} had one spot left in ${where}.`;
+    return `Only one spot was left for ${withArticle(word)} in ${where}.`;
+  }
+
+  /** Halfway through a board (half its animals placed), once per board (D39); a resumed board past halfway is done. */
+  const placedCount = () => s.cells.reduce((n, row) => n + row.filter((v) => v === CAT || v === DOG).length, 0);
+  const halfOf = Math.ceil((solo ? n : 2 * n) / 2);
+  let halfwayCheered = placedCount() >= halfOf;
+  function halfwayNow(): boolean {
+    if (halfwayCheered || guided || placedCount() < halfOf) return false;
+    halfwayCheered = true;
+    return true;
+  }
+  function halfwayLine(): string {
+    return 'Halfway there!';
+  }
+  /** A small ripple of smiles from the newest animals toward the oldest, the move's own animal first. */
+  function cheerHalfway(key: string): void {
+    const keys = [...tilePets.keys()].reverse();
+    faces.wave([key, ...keys.filter((k) => k !== key)].slice(0, 5), 'happy', 110);
   }
 
   let encourageIdx = 0;
