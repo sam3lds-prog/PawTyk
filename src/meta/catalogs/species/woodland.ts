@@ -175,7 +175,7 @@ export const SPECIES_WOODLAND: readonly SpeciesDef[] = [
      'body:bird head:small snout:beak mark:bib tail:feather',
      'D8B4A0 F8F4F0 2A2A2E 3E6EC0 beak:2A2A2E'),
   sp('wood-mouse', 'Wood mouse', 'woodland', 'Woods and hedges of Europe',
-     'Wood mice have been seen marking their paths with leaves and twigs.', 'rabbit', 'tiny',
+     'It hides seeds and nuts in secret stores to eat later.', 'rabbit', 'tiny',
      'ears:mouse snout:cat eyes:big tail:cat x:whiskers',
      'A8784E F2E6D6 2E241E A8784E'),
   sp('common-garter-snake', 'Common garter snake', 'woodland', 'Woods, fields and gardens of North America',

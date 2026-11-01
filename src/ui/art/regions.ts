@@ -15,6 +15,7 @@ import { biomeOfRegion, sanctuaryDef, type BaseRegionId, type RegionId } from '.
 import { BIOMES, isPlaceId, placeDef, placeIndex, type BiomeId, type LookId } from '../../meta/catalogs/places';
 import { companionFigure, figureTop, kitSpeciesOf, type CompanionMood, type FriendId } from './companions';
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
+import { LANDSCAPE_ART, LANDSCAPE_SPOTS, type NewBiome } from './landscapes';
 
 export type RegionDecorId = Extract<
   DecorId,
@@ -1032,8 +1033,10 @@ const PLACE_SPOTS: Record<BaseRegionId, PlaceSpots> = {
   },
 };
 
-/** Landscapes drawn beyond the hand-made regions (`landscapes.ts`), when there are any. */
-const NEW_LANDSCAPES: Partial<Record<BiomeId, { art: RegionArt; spots: PlaceSpots }>> = {};
+/** The landscapes drawn beyond the hand-made regions (`landscapes.ts`, D39 PR E). */
+const NEW_LANDSCAPES: Partial<Record<BiomeId, { art: RegionArt; spots: PlaceSpots }>> = Object.fromEntries(
+  (Object.keys(LANDSCAPE_ART) as NewBiome[]).map((b) => [b, { art: LANDSCAPE_ART[b], spots: LANDSCAPE_SPOTS[b] }]),
+);
 
 const isBaseArt = (b: BiomeId): b is BaseRegionId => b in REGION_ART;
 

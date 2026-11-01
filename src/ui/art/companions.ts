@@ -65,6 +65,8 @@ export interface FaceOpts {
   eyeFill?: string;
   /** Eyelid color on the animated rig, when the skin around the eyes isn't the fur (a patch, a tan face). */
   lid?: string;
+  /** Owl eyes: the iris color (default golden). */
+  iris?: string;
   /** Draw small brows on the animated rig (default true; birds have none). */
   brows?: boolean;
 }
@@ -87,7 +89,7 @@ export function face(mood: CompanionMood, o: FaceOpts = {}): string {
     open = `<g class="sp-eyes-open" style="opacity:${closed ? 0 : 1}">${[lx, rx]
       .map(
         (x, i) =>
-          `<circle cx="${x}" cy="${i ? ry : ly}" r="6" fill="#F2C230" stroke="${o.nose ? '#3B3F45' : INK}" stroke-width=".8"/><circle cx="${x}" cy="${i ? ry : ly}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${(i ? ry : ly) - 1.3}" r="1" fill="#fff"/>`,
+          `<circle cx="${x}" cy="${i ? ry : ly}" r="6" fill="${o.iris ?? '#F2C230'}" stroke="${o.nose ? '#3B3F45' : INK}" stroke-width=".8"/><circle cx="${x}" cy="${i ? ry : ly}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${(i ? ry : ly) - 1.3}" r="1" fill="#fff"/>`,
       )
       .join('')}</g>`;
     shut = `<g class="sp-eyes-closed" style="opacity:${closed ? 1 : 0}" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"><path d="M${lx - 4} ${ly} q4 3 8 0"/><path d="M${rx - 4} ${ry} q4 3 8 0"/></g>`;
@@ -532,7 +534,7 @@ function rigFace(o: FaceOpts, p: Pal): { cheeks: string; eyes: string; lids: str
     let rr: number;
     let rh: number;
     if (o.kind === 'owl') {
-      open = `<circle cx="${x}" cy="${y}" r="6" fill="#F2C230" stroke="${INK}" stroke-width=".8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${y - 1.3}" r="1" fill="#fff"/></g>`;
+      open = `<circle cx="${x}" cy="${y}" r="6" fill="${o.iris ?? '#F2C230'}" stroke="${INK}" stroke-width=".8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${y - 1.3}" r="1" fill="#fff"/></g>`;
       rr = rh = 6;
     } else if (o.kind === 'side') {
       open = `<circle cx="${x}" cy="${y}" r="5.4" fill="#6CC3E8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="2.7" fill="${INK}"/><circle cx="${x + 1}" cy="${y - 1}" r=".9" fill="#fff"/></g>`;

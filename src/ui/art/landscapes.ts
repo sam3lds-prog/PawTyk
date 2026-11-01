@@ -76,7 +76,7 @@ const foam = (f: (x: number) => number, x0: number, x1: number, step = 12, lift 
   return d;
 };
 
-/** A pointed leaf from (x, y), `len` long, at `deg` degrees (0 = right, 90 = down). */
+/** A pointed leaf from (x, y), `len` long, at `deg` degrees (0 = right, 90 = down); no `c` takes the group's fill. */
 function leaf(x: number, y: number, len: number, deg: number, c: string, w = 0.17): string {
   const a = rad(deg);
   const tx = x + len * Math.cos(a);
@@ -85,10 +85,10 @@ function leaf(x: number, y: number, len: number, deg: number, c: string, w = 0.1
   const my = (y + ty) / 2;
   const px = -Math.sin(a) * len * w;
   const py = Math.cos(a) * len * w;
-  return `<path d="M${n(x)} ${n(y)} Q${n(mx + px)} ${n(my + py)} ${n(tx)} ${n(ty)} Q${n(mx - px)} ${n(my - py)} ${n(x)} ${n(y)}Z" fill="${c}"/>`;
+  return `<path d="M${n(x)} ${n(y)} Q${n(mx + px)} ${n(my + py)} ${n(tx)} ${n(ty)} Q${n(mx - px)} ${n(my - py)} ${n(x)} ${n(y)}Z"${c ? ` fill="${c}"` : ''}/>`;
 }
 
-/** A conifer standing at (x, y), h tall. */
+/** A conifer standing at (x, y), h tall (no `hi`: a flat far-off one). */
 function pine(x: number, y: number, h: number, c = '#5f9a74', hi = '#78b08a', outline = true): string {
   const w = h * 0.52;
   let s = `<rect x="${n(x - h * 0.035)}" y="${n(y - h * 0.16)}" width="${n(h * 0.07)}" height="${n(h * 0.16)}" fill="#8a6a4f"/>`;
@@ -97,7 +97,7 @@ function pine(x: number, y: number, h: number, c = '#5f9a74', hi = '#78b08a', ou
     const ww = w * (1 - i * 0.26);
     const th = h * 0.42;
     s += `<path d="M${n(x - ww / 2)} ${n(yb)} Q${x} ${n(yb + h * 0.05)} ${n(x + ww / 2)} ${n(yb)} L${x} ${n(yb - th)} Z" fill="${c}" ${outline ? ol(0.8) : ''} stroke-linejoin="round"/>`;
-    s += `<path d="M${x} ${n(yb - th)} L${n(x - ww / 2)} ${n(yb)} Q${n(x - ww / 4)} ${n(yb + h * 0.03)} ${x} ${n(yb + h * 0.02)} Z" fill="${hi}" opacity="0.6"/>`;
+    if (hi) s += `<path d="M${x} ${n(yb - th)} L${n(x - ww / 2)} ${n(yb)} Q${n(x - ww / 4)} ${n(yb + h * 0.03)} ${x} ${n(yb + h * 0.02)} Z" fill="${hi}" opacity="0.6"/>`;
   }
   return s;
 }
@@ -177,18 +177,15 @@ const shell = (x: number, y: number, c = '#f6c9b8') =>
 // ------------------------------------------------------------------ bamboo forest
 
 /** A bamboo cane from the ground (x, y) up to `top`, w wide. */
-function cane(x: number, y: number, top: number, w: number, c: string, node: string, hi: string, outline = true): string {
+function cane(x: number, y: number, top: number, w: number, c: string, node: string, hi: string): string {
   const nodes: string[] = [];
   for (let ny = y - 16; ny > top + 8; ny -= 18) nodes.push(`M${n(x - w / 2)} ${n(ny)} h${n(w)}`);
-  return `<rect x="${n(x - w / 2)}" y="${top}" width="${n(w)}" height="${n(y - top)}" rx="${n(w / 2)}" fill="${c}" ${outline ? ol(0.8) : ''}/><path d="M${n(x - w * 0.18)} ${n(y - 3)} V${n(top + 3)}" stroke="${hi}" stroke-width="${n(w * 0.26)}" stroke-linecap="round"/><path d="${nodes.join(' ')}" stroke="${node}" stroke-width="${n(Math.max(0.8, w * 0.2))}"/>`;
+  return `<rect x="${n(x - w / 2)}" y="${top}" width="${n(w)}" height="${n(y - top)}" rx="${n(w / 2)}" fill="${c}" ${ol(0.8)}/><path d="M${n(x - w * 0.18)} ${n(y - 3)} V${n(top + 3)}" stroke="${hi}" stroke-width="${n(w * 0.26)}" stroke-linecap="round"/><path d="${nodes.join(' ')}" stroke="${node}" stroke-width="${n(Math.max(0.8, w * 0.2))}"/>`;
 }
 
-/** A spray of three bamboo leaves from a node, drooping to the right (dir 1) or left (dir -1). */
-const spray = (x: number, y: number, dir: number, c: string, s = 1, sway = true) => {
-  const angs = dir > 0 ? [-6, 20, 44] : [186, 160, 136];
-  const body = `<path d="M${x} ${y} l${dir * 4 * s} ${-2 * s}" stroke="${c}" stroke-width="1" />${angs.map((a, i) => leaf(x + dir * 3 * s, y - 1.5 * s, [18, 22, 16][i] * s, a, c, 0.15)).join('')}`;
-  return sway ? `<g class="sp-sway">${body}</g>` : body;
-};
+/** A swaying spray of three bamboo leaves from a node, drooping to the right (dir 1) or left (dir -1). */
+const spray = (x: number, y: number, dir: number, c: string, s = 1) =>
+  `<g class="sp-sway"><path d="M${x} ${y} l${dir * 4 * s} ${-2 * s}" stroke="${c}" stroke-width="1"/>${(dir > 0 ? [-6, 20, 44] : [186, 160, 136]).map((a, i) => leaf(x + dir * 3 * s, y - 1.5 * s, [18, 22, 16][i] * s, a, c, 0.15)).join('')}</g>`;
 
 const BAMBOO_BACK: Array<[number, number]> = [
   [4, 50],
@@ -208,6 +205,20 @@ const BAMBOO_BACK: Array<[number, number]> = [
   [336, 46],
   [350, 68],
 ];
+
+/** The pale grove behind the mist: canes, their nodes and leaves, each drawn with one shared fill. */
+const BAMBOO_GROVE = (() => {
+  const canes = BAMBOO_BACK.map(([x, top]) => `<rect x="${n(x - 1.8)}" y="${top}" width="3.6" height="${140 - top}" rx="1.8"/>`).join('');
+  const nodes = BAMBOO_BACK.map(([x, top]) => {
+    let d = '';
+    for (let ny = 124; ny > top + 8; ny -= 18) d += `M${n(x - 1.8)} ${ny}h3.6`;
+    return d;
+  }).join('');
+  const sprayAt = (x: number, y: number, dir: number, s: number) =>
+    (dir > 0 ? [-6, 20, 44] : [186, 160, 136]).map((a, i) => leaf(x + dir * 3 * s, y - 1.5 * s, [18, 22, 16][i] * s, a, '', 0.15)).join('');
+  const leaves = BAMBOO_BACK.map(([x, top], i) => sprayAt(x, top + 12 + (i % 3) * 9, i % 2 ? 1 : -1, 0.8) + sprayAt(x, top + 40 + (i % 2) * 10, i % 2 ? -1 : 1, 0.65)).join('');
+  return `<g fill="#a6cf9f">${canes}</g><path d="${nodes}" stroke="#90bd8b" stroke-width="0.8"/><g fill="#9fca99">${leaves}</g>`;
+})();
 
 const BAMBOO_FRONT = (() => {
   const c = '#7db866';
@@ -240,7 +251,7 @@ const BAMBOO: RegionArt = {
     <path d="M0 112 C10 82 32 62 52 70 C66 76 70 94 78 100 C88 72 100 50 118 52 C134 54 140 86 150 100 C170 90 194 66 212 68 C230 70 238 94 248 104 C262 80 282 48 302 50 C322 52 336 84 360 96 V140 H0Z" fill="#c3dccf"/>
     <path d="M0 86 C60 78 120 94 180 88 C240 82 300 92 360 84 V120 C300 126 240 114 180 120 C120 126 60 114 0 118Z" fill="url(#${id}-haze)"/>
     <path d="M0 126 C30 108 62 104 92 116 C122 102 160 100 190 114 C220 104 258 100 290 112 C320 104 344 106 360 110 V150 H0Z" fill="#aacfb6"/>
-    ${BAMBOO_BACK.map(([x, top], i) => cane(x, 140, top, 3.6, '#a6cf9f', '#90bd8b', '#bfe0b6', false) + spray(x, top + 12 + (i % 3) * 9, i % 2 ? 1 : -1, '#9fca99', 0.8, false) + spray(x, top + 40 + (i % 2) * 10, i % 2 ? -1 : 1, '#a9d2a2', 0.65, false)).join('')}
+    ${BAMBOO_GROVE}
     <path d="M0 110 C80 104 160 116 240 108 C300 102 340 110 360 108 V140 C300 136 240 142 160 138 C90 134 40 140 0 138Z" fill="url(#${id}-haze)"/>
     <path d="M0 132 C80 126 180 132 260 128 C300 126 330 130 360 128 V300 H0Z" fill="url(#${id}-ground)"/>
     <g stroke="#c4e3b8" stroke-width="10" opacity="0.3" fill="none"><path d="M0 238 C120 230 240 236 360 228"/><path d="M0 282 C120 274 250 280 360 272"/></g>
@@ -396,7 +407,7 @@ const MOUNTAIN: RegionArt = {
     <path d="M60 96 L76 82 L90 92 L80 94 Z M200 104 L214 92 L226 102 Z" fill="#b9c7da" opacity="0.8"/>
     <path d="M0 90 C60 82 120 100 200 92 C260 86 310 96 360 90 V124 C300 128 240 116 180 122 C110 128 60 116 0 122Z" fill="url(#${id}-haze)"/>
     <path d="M0 134 C40 120 80 122 120 128 C170 120 230 116 280 124 C320 118 340 120 360 122 V146 H0Z" fill="#8fb88f"/>
-    <g>${[8, 22, 36, 64, 86, 100, 146, 168, 196, 212, 236, 262, 300, 318, 342, 356].map((x, i) => pine(x, 134 - ((i * 5) % 4), 16 + ((i * 7) % 4) * 3, '#78a585', '#8fb898', false)).join('')}</g>
+    <g>${[8, 22, 36, 64, 86, 100, 146, 168, 196, 212, 236, 262, 300, 318, 342, 356].map((x, i) => pine(x, 134 - ((i * 5) % 4), 16 + ((i * 7) % 4) * 3, '#78a585', '', false)).join('')}</g>
     <path d="M0 140 C80 134 180 140 260 136 C300 134 330 138 360 136 V300 H0Z" fill="url(#${id}-meadow)"/>
     <g stroke="#d3e8a8" stroke-width="10" opacity="0.32" fill="none"><path d="M0 196 C120 188 240 194 360 186"/><path d="M0 252 C120 244 250 250 360 242"/></g>
     <path d="M182 300 C186 276 204 254 176 232 C156 216 128 206 108 198 L118 196 C140 202 168 212 188 226 C220 248 206 276 204 300 Z" fill="#e6dab6" opacity="0.85"/>
@@ -681,7 +692,7 @@ function fern(x: number, y: number, s = 1, c = '#6fa864'): string {
       const q = (t: number, a: number, b: number, e: number) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * e;
       const dq = (t: number, a: number, b: number, e: number) => 2 * (1 - t) * (b - a) + 2 * t * (e - b);
       let d = '';
-      for (let t = 0.22; t < 0.96; t += 0.1) {
+      for (let t = 0.22; t < 0.96; t += 0.13) {
         const px = q(t, x, cx, ex);
         const py = q(t, y, cy, ey);
         let tx = dq(t, x, cx, ex);
@@ -690,9 +701,10 @@ function fern(x: number, y: number, s = 1, c = '#6fa864'): string {
         tx /= l;
         ty /= l;
         const L = 6 * s * (1 - t * 0.7);
-        d += `M${n(px)} ${n(py)} L${n(px - ty * L + tx * L * 0.5)} ${n(py + tx * L + ty * L * 0.5)} M${n(px)} ${n(py)} L${n(px + ty * L + tx * L * 0.5)} ${n(py - tx * L + ty * L * 0.5)} `;
+        const r = Math.round;
+        d += `M${r(px - ty * L + tx * L * 0.5)} ${r(py + tx * L + ty * L * 0.5)} L${r(px)} ${r(py)} L${r(px + ty * L + tx * L * 0.5)} ${r(py - tx * L + ty * L * 0.5)} `;
       }
-      return `<path d="M${x} ${y} Q${n(cx)} ${n(cy)} ${n(ex)} ${n(ey)}" stroke="#5f9656" stroke-width="1.1" fill="none"/><path d="${d}" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`;
+      return `<path d="M${x} ${y} Q${n(cx)} ${n(cy)} ${n(ex)} ${n(ey)}" stroke="#5f9656" stroke-width="1.1" fill="none"/><path d="${d}" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
     })
     .join('')}</g>`;
 }
@@ -719,9 +731,9 @@ const WOODLAND: RegionArt = {
     <g fill="#fff" opacity="0.75"><ellipse cx="160" cy="30" rx="30" ry="5"/><ellipse cx="176" cy="25" rx="14" ry="5"/><ellipse cx="60" cy="52" rx="18" ry="3.4"/></g>`,
   land: (id) => `
     <g fill="#bed4c0">${Array.from({ length: 17 }, (_, i) => `<circle cx="${i * 23}" cy="${110 + ((i * 7) % 3) * 4}" r="${14 + ((i * 5) % 3) * 3}"/>`).join('')}</g>
-    <g>${[14, 60, 120, 168, 214, 256, 304, 346].map((x, i) => pine(x, 128, 44 + ((i * 3) % 4) * 6, '#a9c7ae', '#b9d2bc', false)).join('')}</g>
+    <g>${[14, 60, 120, 168, 214, 256, 304, 346].map((x, i) => pine(x, 128, 44 + ((i * 3) % 4) * 6, '#a9c7ae', '', false)).join('')}</g>
     <g fill="#9fc39c">${Array.from({ length: 16 }, (_, i) => `<circle cx="${10 + i * 24}" cy="${124 + ((i * 3) % 4) * 3}" r="${13 + ((i * 7) % 3) * 3}"/>`).join('')}</g>
-    <g>${[36, 96, 190, 280, 330].map((x, i) => pine(x, 136, 34 + (i % 2) * 8, '#87b28a', '#9cc19c', false)).join('')}</g>
+    <g>${[36, 96, 190, 280, 330].map((x, i) => pine(x, 136, 34 + (i % 2) * 8, '#87b28a', '', false)).join('')}</g>
     <path d="M0 136 C80 130 180 136 260 132 C300 130 330 134 360 132 V300 H0Z" fill="url(#${id}-moss)"/>
     <g fill="#8fb878"><circle cx="112" cy="140" r="9"/><circle cx="124" cy="138" r="7"/><circle cx="236" cy="138" r="8"/><circle cx="248" cy="140" r="6"/><circle cx="350" cy="140" r="8"/></g>
     ${birch(150, 152, 44)}${birch(168, 148, 34)}
@@ -945,7 +957,7 @@ const WETLAND: RegionArt = {
         [110, 196, `${iris(108, 194)}${iris(116, 198)}`],
         [72, 268, iris(72, 268)],
         [228, 292, iris(228, 292)],
-        [318, 296, iris(318, 296)],
+        [340, 296, iris(340, 296)],
         [10, 222, iris(10, 222)],
         [160, 290, iris(160, 290)],
         [40, 280, iris(40, 280)],

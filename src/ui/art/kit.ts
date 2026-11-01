@@ -551,7 +551,8 @@ function beastHead(s: SpeciesDef): KitHeadDef {
         mouthY: sn.mouthY,
         blushY: sn.blushY,
       };
-      if (s.colors.eye && (big || s.eyes === 'owl' || s.eyes === 'bulge')) o.eyeFill = s.colors.eye;
+      if (s.colors.eye && (big || s.eyes === 'bulge')) o.eyeFill = s.colors.eye;
+      if (s.colors.eye && s.eyes === 'owl') o.iris = s.colors.eye;
       if (p.head) o.lid = p.head;
       if (s.eyes === 'owl') {
         o.kind = 'owl';

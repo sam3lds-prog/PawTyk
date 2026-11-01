@@ -88,8 +88,9 @@ export function sp(
     ...(opts.coats
       ? {
           coats: opts.coats.map((s) => {
-            const [nm, rest] = s.split(/:\s*/, 2);
-            return { name: nm, ...colorsOf(rest) };
+            // "Silver: C9CCD1 F4F5F7 3B3F45 9AA4AE beak:F2C230": the name is everything before the first colon.
+            const i = s.indexOf(':');
+            return { name: s.slice(0, i).trim(), ...colorsOf(s.slice(i + 1)) };
           }),
         }
       : {}),

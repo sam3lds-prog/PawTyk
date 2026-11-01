@@ -40,8 +40,9 @@ See it: `npx tsx scripts/species-gallery.ts out.html --module path/to/file.ts`, 
   (raptors, parrots), `longbeak` (kiwi, ibis, hummingbird, curlew), `duck` (ducks, geese, swans, platypus), `bigbeak`
   (toucans, hornbills: drawn side-on), `trunk`, `croc`, `smile` (no snout: frogs, turtles, snakes, lizards,
   salamanders), `flat` (a little nose: seals, owls without beaks).
-- **eyes** [dot]: `dot`, `big` (lemurs, lorises, tarsiers, bushbabies, seals), `owl` (owls: big eyes on pale discs),
-  `bulge` (eyes on top: frogs, crocodiles, hippos).
+- **eyes** [dot]: `dot`, `big` (lemurs, lorises, tarsiers, bushbabies, seals), `owl` (owls: big eyes on pale discs;
+  `eye:HEX` colors the iris), `bulge` (eyes on top: frogs, crocodiles, hippos). (`side` is the one-eyed side view the kit
+  uses for big beaks and whole animals; you don't need to choose it.)
 - **mark** [none], all drawn in the *accent* color: `mask` (raccoon), `panda` (eye patches; also darkens a body's legs),
   `stripes`, `spots`, `rosettes` (leopard, jaguar), `blaze` (a pale stripe down the face, in *light*), `badger` (two
   stripes down the face), `cheeks`, `cap` (darker crown), `bib` (pale throat, in *light*), `eyeline` (cheetah tear
