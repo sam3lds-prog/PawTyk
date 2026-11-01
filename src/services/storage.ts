@@ -190,6 +190,10 @@ export interface SaveV2 {
     credits: Record<string, string>;
     /** Per sanctuary, what happened there that the player hasn't visited yet (an arrival, a stage, its opening): the "New" marker. */
     unseen: Record<string, UnseenNews>;
+    /** Puzzles (by mode key) that have grown the world, so a replay grows nothing more (growth policy 2, D38). */
+    grown: Record<string, string>;
+    /** The growth policy this save is on: 1 = every solve counted (D35); 2 = each puzzle once (D38). Missing = 1. */
+    policy?: number;
   };
   /** The online leaderboard (opt-in). Solved boards wait here until the server has checked them. */
   leaderboard: LeaderboardSave;
@@ -422,7 +426,7 @@ export function defaultSave(now = new Date()): SaveV2 {
     inventory: { ledger: [], pets: {}, accents: {}, equippedAccent: {}, favorites: {}, decor: {}, items: [], companions: {}, tricks: {} },
     sanctuary: { hidden: {}, visits: 0, affection: {}, patted: {}, fed: {} },
     ads: { day: null, rewarded: 0 },
-    world: { active: null, growth: {}, visited: {}, credits: {}, unseen: {} },
+    world: { active: null, growth: {}, visited: {}, credits: {}, unseen: {}, grown: {}, policy: 2 },
     leaderboard: defaultLeaderboard(),
     missions: { dayKey: null, weekKey: null, progress: {}, claimed: {} },
     achievements: {},
@@ -712,6 +716,8 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
               : undefined,
           )
         : {},
+      grown: isObj(x.world) ? rec(x.world.grown, strItem) : {},
+      ...(isObj(x.world) && typeof x.world.policy === 'number' && Number.isFinite(x.world.policy) ? { policy: Math.round(x.world.policy) } : {}),
     },
     leaderboard: normLeaderboard(x.leaderboard),
     missions: {
@@ -771,6 +777,9 @@ export function migrateV1(v1raw: unknown, seenRules: boolean, now = new Date()):
   s.migratedFrom = 'v1';
   // v1 numbered the two-animal levels from 1; `loadSave` moves them up for D35 (`upgradeLadder`).
   s.journey.ladder = 3;
+  // v1 grew nothing, but its cleared levels must not grow the world on a replay: the startup reconcile moves this save
+  // to growth policy 2 and marks them (world.upgradeGrowthPolicy), as it does for any save from before D38.
+  s.world.policy = 1;
   s.onboarding.seenRules = seenRules;
   if (!isObj(v1raw)) return s;
   const v1 = v1raw as Partial<ProgressV1>;
