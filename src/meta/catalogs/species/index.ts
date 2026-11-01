@@ -5,6 +5,8 @@
 
 import { DRAWN_SPECIES } from './drawn';
 import { NAMES_AMAZON, SPECIES_AMAZON } from './amazon';
+import { NAMES_ANTARCTIC, PLACE_WORDS_ANTARCTIC, SPECIES_ANTARCTIC } from './antarctic';
+import { NAMES_ARCTIC, SPECIES_ARCTIC } from './arctic';
 import { NAMES_BAMBOO, PLACE_WORDS_BAMBOO, SPECIES_BAMBOO } from './bamboo';
 import { NAMES_COAST, PLACE_WORDS_COAST, SPECIES_COAST } from './coast';
 import { NAMES_DESERT, PLACE_WORDS_DESERT, SPECIES_DESERT } from './desert';
@@ -12,6 +14,8 @@ import { NAMES_FARM, SPECIES_FARM } from './farm';
 import { NAMES_GRASSLAND, PLACE_WORDS_GRASSLAND, SPECIES_GRASSLAND } from './grassland';
 import { NAMES_ISLAND, PLACE_WORDS_ISLAND, SPECIES_ISLAND } from './island';
 import { NAMES_JUNGLE, PLACE_WORDS_JUNGLE, SPECIES_JUNGLE } from './jungle';
+import { NAMES_MOUNTAIN, PLACE_WORDS_MOUNTAIN, SPECIES_MOUNTAIN } from './mountain';
+import { NAMES_OUTBACK, SPECIES_OUTBACK } from './outback';
 import { NAMES_SAVANNA, SPECIES_SAVANNA } from './savanna';
 import { NAMES_WOODLAND, PLACE_WORDS_WOODLAND, SPECIES_WOODLAND } from './woodland';
 import { NAMES_WETLAND, PLACE_WORDS_WETLAND, SPECIES_WETLAND } from './wetland';
@@ -36,6 +40,10 @@ const FILES: Partial<Record<BiomeId, BiomeFile>> = {
   woodland: { species: SPECIES_WOODLAND, names: NAMES_WOODLAND, placeWords: PLACE_WORDS_WOODLAND },
   grassland: { species: SPECIES_GRASSLAND, names: NAMES_GRASSLAND, placeWords: PLACE_WORDS_GRASSLAND },
   farm: { species: SPECIES_FARM, names: NAMES_FARM },
+  arctic: { species: SPECIES_ARCTIC, names: NAMES_ARCTIC },
+  antarctic: { species: SPECIES_ANTARCTIC, names: NAMES_ANTARCTIC, placeWords: PLACE_WORDS_ANTARCTIC },
+  mountain: { species: SPECIES_MOUNTAIN, names: NAMES_MOUNTAIN, placeWords: PLACE_WORDS_MOUNTAIN },
+  outback: { species: SPECIES_OUTBACK, names: NAMES_OUTBACK },
 };
 
 export const SPECIES: readonly SpeciesDef[] = [...DRAWN_SPECIES, ...Object.values(FILES).flatMap((f) => f!.species)];

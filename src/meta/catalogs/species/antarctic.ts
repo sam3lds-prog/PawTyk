@@ -20,7 +20,7 @@ export const SPECIES_ANTARCTIC: readonly SpeciesDef[] = [
      'body:bird snout:hook tail:feather',
      'FBFBF8 FFFFFF 2A2A2E 3A3A3E beak:F2B8A0'),
   sp('antarctic-krill', 'Antarctic krill', 'antarctic', 'The Southern Ocean',
-     'Krill can glow with tiny blue-green lights.', 'rabbit', 'tiny',
+     'Krill can glow with tiny lights on their bodies.', 'rabbit', 'tiny',
      'form:crab',
      'F2967A FCD2C2 8A3A2A F6B8A0'),
   sp('king-penguin', 'King penguin', 'antarctic', 'Cold islands near Antarctica',

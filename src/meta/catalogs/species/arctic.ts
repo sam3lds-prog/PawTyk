@@ -88,7 +88,7 @@ export const SPECIES_ARCTIC: readonly SpeciesDef[] = [
      'form:bee',
      'F2C230 FFF3C2 2A2A2A 2A2A2A'),
   sp('ivory-gull', 'Ivory gull', 'arctic', 'Sea ice of the high Arctic',
-     'It is the only gull that is pure white all over.', 'seal', 'small',
+     'Grown-up ivory gulls are pure white all over, unlike other gulls.', 'seal', 'small',
      'body:bird head:small snout:beak tail:feather',
      'FBFBF8 FFFFFF 2A2A2E E6E8EA beak:8A9AA8'),
 ];
