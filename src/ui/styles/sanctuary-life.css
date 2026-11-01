@@ -346,8 +346,11 @@
     transform: none;
   }
 }
+/* The smile (and a good friend's beaming eyes) come once it has turned back; its own eyes stay until then. */
 .sanctuary__scene .sanctuary__friend[data-temper='shy'].is-greet .sp-mouth--idle,
 .sanctuary__scene .sanctuary__friend[data-temper='shy'].is-greet .sp-mouth--happy,
+.sanctuary__scene .sanctuary__friend[data-temper='shy'][data-beam].is-greet .sp-eyes-open,
+.sanctuary__scene .sanctuary__friend[data-temper='shy'][data-beam].is-greet .sp-eyes-closed,
 .sanctuary__scene .sanctuary__friend[data-temper='shy'][data-beam].is-greet .sp-eyes-beam {
   transition-delay: 480ms;
 }

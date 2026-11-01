@@ -67,20 +67,23 @@ const FRIENDS: Record<CompanionId, Temperament> = {
   pudding: 'gentle', // everyone's calmest friend
 };
 
+/** A whole-word match that also works with letters like ō and ñ (`\b` alone stops at them). */
+const words = (alternatives: string) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives})(?![\\p{L}\\p{N}])`, 'u');
+
 /** Kinds known for one character, by a word in their name (checked in this order: the first match wins). */
 const BY_NAME: Array<[RegExp, Temperament]> = [
   // Names that would otherwise be caught by a word that belongs to another animal.
-  [/\b(eagle ray|lion[’']s mane|tortoise|turtle|yak|donkey|mule|kiang)\b/, 'gentle'],
-  [/\b(sea lion|lovebird|booby|kākāpō|galah|kookaburra|coati)\b/, 'playful'],
-  [/\b(elephant seal|gila monster|binturong|groundhog|marmot)\b/, 'sleepy'],
-  [/\b(skylark|wolverine)\b/, 'energetic'],
-  [/\b(skunk)\b/, 'shy'],
-  [/\b(sloth|koala|dormouse|loris|potto|tarsier|aye-aye|kinkajou|opossum|possum|armadillo|bushbaby|galago|nightjar|frogmouth|giant panda|hippopotamus|hippo|walrus|crocodile|alligator|caiman|gharial|python|boa|anaconda|tuatara|nurse shark)\b/, 'sleepy'],
-  [/\b(otter|dolphin|porpoise|beluga|sea lion|raccoon|ferret|kea|kakapo|cockatoo|macaw|parrot|lorikeet|budgerigar|parakeet|chimpanzee|bonobo|capuchin|macaque|baboon|marmoset|tamarin|spider monkey|howler|squirrel monkey|monkey|lemur|penguin|puffin|seal|quokka|clownfish|axolotl|polar bear|bear cub|panda)\b/, 'playful'],
-  [/\b(squirrel|chipmunk|hummingbird|sunbird|meerkat|mongoose|weasel|stoat|mink|wolf|jackal|dingo|dhole|coyote|wild dog|kangaroo|wallaby|springbok|gazelle|impala|hare|jerboa|gerbil|hamster|robin|wren|sparrow|finch|tit|warbler|swallow|swift|kingfisher|roadrunner|bee|butterfly|dragonfly|cricket|grasshopper|gecko|anole|basilisk|frog|toad|goat|ibex|chamois)\b/, 'energetic'],
-  [/\b(lion|tiger|leopard|jaguar|cheetah|puma|cougar|lynx|caracal|serval|ocelot|eagle|hawk|falcon|kestrel|osprey|condor|vulture|kite|owl|peacock|peafowl|pheasant|rooster|turkey|swan|flamingo|crane|heron|stork|egret|secretary|ostrich|emu|cassowary|gorilla|orangutan|mandrill|stag|elk|moose|caribou|reindeer|markhor|bighorn|argali|oryx|kudu|eland|gemsbok|sable|wildebeest|rhinoceros|rhino|komodo|iguana|chameleon|stag beetle|rhinoceros beetle|horse|zebra|mustang|camel)\b/, 'proud'],
-  [/\b(mouse|mice|vole|shrew|mole|deer|fawn|okapi|chevrotain|duiker|dik-dik|klipspringer|pangolin|hedgehog|tenrec|echidna|porcupine|rabbit|bunny|pika|octopus|squid|seahorse|hermit crab|snail|slug|tapir|tree frog|newt|salamander|chinchilla|guinea pig|fennec|moth|duckling)\b/, 'shy'],
-  [/\b(elephant|whale|manatee|dugong|cow|bison|buffalo|ox|oxen|yak|llama|alpaca|vicuña|guanaco|giraffe|sheep|lamb|tortoise|turtle|ray|manta|jellyfish|starfish|sea star|bear|wombat|beaver|capybara|pig|boar|duck|goose|dove|pigeon|ladybug|ladybird)\b/, 'gentle'],
+  [words(`eagle ray|lion[’']s mane|tortoise|turtle|yak|donkey|mule|kiang`), 'gentle'],
+  [words(`sea lion|lovebird|booby|kākāpō|galah|kookaburra|coati`), 'playful'],
+  [words(`elephant seal|gila monster|binturong|groundhog|marmot`), 'sleepy'],
+  [words(`skylark|wolverine`), 'energetic'],
+  [words(`skunk`), 'shy'],
+  [words(`sloth|koala|dormouse|loris|potto|tarsier|aye-aye|kinkajou|opossum|possum|armadillo|bushbaby|galago|nightjar|frogmouth|giant panda|hippopotamus|hippo|walrus|crocodile|alligator|caiman|gharial|python|boa|anaconda|tuatara|nurse shark`), 'sleepy'],
+  [words(`otter|dolphin|porpoise|beluga|sea lion|raccoon|ferret|kea|kakapo|cockatoo|macaw|parrot|lorikeet|budgerigar|parakeet|chimpanzee|bonobo|capuchin|macaque|baboon|marmoset|tamarin|spider monkey|howler|squirrel monkey|monkey|lemur|penguin|puffin|seal|quokka|clownfish|axolotl|polar bear|bear cub|panda`), 'playful'],
+  [words(`squirrel|chipmunk|hummingbird|sunbird|meerkat|mongoose|weasel|stoat|mink|wolf|jackal|dingo|dhole|coyote|wild dog|kangaroo|wallaby|springbok|gazelle|impala|hare|jerboa|gerbil|hamster|robin|wren|sparrow|finch|tit|warbler|swallow|swift|kingfisher|roadrunner|bee|butterfly|dragonfly|cricket|grasshopper|gecko|anole|basilisk|frog|toad|goat|ibex|chamois`), 'energetic'],
+  [words(`lion|tiger|leopard|jaguar|cheetah|puma|cougar|lynx|caracal|serval|ocelot|eagle|hawk|falcon|kestrel|osprey|condor|vulture|kite|owl|peacock|peafowl|pheasant|rooster|turkey|swan|flamingo|crane|heron|stork|egret|secretary|ostrich|emu|cassowary|gorilla|orangutan|mandrill|stag|elk|moose|caribou|reindeer|markhor|bighorn|argali|oryx|kudu|eland|gemsbok|sable|wildebeest|rhinoceros|rhino|komodo|iguana|chameleon|stag beetle|rhinoceros beetle|horse|zebra|mustang|camel`), 'proud'],
+  [words(`mouse|mice|vole|shrew|mole|deer|fawn|okapi|chevrotain|duiker|dik-dik|klipspringer|pangolin|hedgehog|tenrec|echidna|porcupine|rabbit|bunny|pika|octopus|squid|seahorse|hermit crab|snail|slug|tapir|tree frog|newt|salamander|chinchilla|guinea pig|fennec|moth|duckling`), 'shy'],
+  [words(`elephant|whale|manatee|dugong|cow|bison|buffalo|ox|oxen|yak|llama|alpaca|vicuña|guanaco|giraffe|sheep|lamb|tortoise|turtle|ray|manta|jellyfish|starfish|sea star|bear|wombat|beaver|capybara|pig|boar|duck|goose|dove|pigeon|ladybug|ladybird`), 'gentle'],
 ];
 
 /** What a kind's shape suggests, when its name doesn't say. */

@@ -1053,7 +1053,7 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
   and Ember shy, Clover proud, Biscuit bouncy…); every other kind by its name (otters and penguins playful, owls and big
   cats proud, sloths and pythons sleepy, deer and hedgehogs shy, squirrels and wolves bouncy, whales and tortoises
   gentle), then by its shape. A kind keeps one temperament everywhere; no randomness, nothing saved. Across the 545
-  kinds: 115 playful, 47 sleepy, 61 shy, 116 proud, 132 bouncy, 74 gentle (a test keeps every one at 40 or more and
+  kinds: 116 playful, 47 sleepy, 61 shy, 115 proud, 132 bouncy, 74 gentle (a test keeps every one at 40 or more and
   none above 30%).
 - **Faces on the board** (`ui/art/pets.ts::TEMPER_POSE`): a friend's happy face is its temperament's — a playful grin,
   a sleepy closed-eye smile, a shy sideways glance with a deep blush, a proud chin-up, a bouncy beam with high brows, a

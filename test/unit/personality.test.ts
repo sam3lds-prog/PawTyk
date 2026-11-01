@@ -128,6 +128,16 @@ describe('bonding (D40 PR B)', () => {
     expect(normalizeSave(old).sanctuary.greeted).toEqual({});
   });
 
+  it("a shy good friend keeps its own eyes while it looks away; the beaming eyes come with the smile", async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('src/ui/styles/sanctuary-life.css', 'utf8');
+    const rule = css.match(/([^{}]*)\{\s*transition-delay:\s*480ms;\s*\}/)!;
+    expect(rule[1]).toContain(`[data-temper='shy']`);
+    for (const part of ['sp-eyes-open', 'sp-eyes-closed', 'sp-eyes-beam', 'sp-mouth--happy']) expect(rule[1], part).toContain(part);
+    // A Kākāpō is playful: names with letters like ā and ō are matched as whole words too.
+    expect(speciesTemperament(SPECIES.find((s) => s.name === 'Kākāpō')!)).toBe('playful');
+  });
+
   it('the beaming smile: every friend face can show it, and nothing else shows it by default', () => {
     const beam = face('beam');
     expect(beam).toMatch(/class="sp-eyes-beam" style="opacity:1"/);

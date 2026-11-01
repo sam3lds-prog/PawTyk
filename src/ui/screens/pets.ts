@@ -77,7 +77,7 @@ export const petsScreen: ScreenDef = {
           .map((p) => {
             const a = animalInfo(p.id as AnimalId);
             const attr = isPetId(p.id) ? `data-pet="${p.id}"` : `data-friend="${p.id}"`;
-            return `<li><button class="portrait-card card card--tap${p.golden ? ' is-golden' : ''}" ${attr} aria-label="${esc(`${a.name} the ${a.noun}'s portrait. Best friends${p.since ? ` ${when(p.since, a.kind).toLowerCase()}` : ''}${p.golden ? ', golden frame' : ''}`)}">
+            return `<li><button class="portrait-card card card--tap${p.golden ? ' is-golden' : ''}" ${attr} aria-label="${esc(`${a.name} the ${a.noun}'s portrait. Best friends${p.since ? ` ${when(p.since, a.kind).replace(/^Since/, 'since')}` : ''}${p.golden ? ', golden frame' : ''}`)}">
               <span class="portrait portrait--frame" style="--tint:${animalTint(p.id as AnimalId) ?? 'var(--surface-2)'}">${animalPortrait(p.id as AnimalId, 'beam')}</span>
               <b>${esc(a.name)}</b><small>${esc(when(p.since, a.kind))}</small>
             </button></li>`;
