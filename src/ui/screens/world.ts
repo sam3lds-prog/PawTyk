@@ -20,6 +20,7 @@ import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
+import { dismissLoopCoach, loopCoachMarkup, shouldShowLoopCoach } from '../components/loopCoach';
 import { sceneMarkup } from './sanctuary';
 
 const short = (d: SanctuaryDef) => d.short;
@@ -168,8 +169,11 @@ export const worldScreen: ScreenDef = {
       </button></li>`;
     }).join('');
 
-    // The first time here: one line on how the World works, dismissed for good with a tap.
-    const tip = !save.onboarding.worldTipSeen
+    // The loop, once (D39), wherever the player looks first; then, the first time here, one line on how the World works.
+    // Never both at once.
+    const tip = shouldShowLoopCoach(save)
+      ? loopCoachMarkup(save)
+      : !save.onboarding.worldTipSeen
       ? `<div class="world-tip card" data-world-tip role="note">
           <span class="world-tip__icon">${ICON.info}</span>
           <p>Your puzzles help one home grow at a time. You can change the home you're building whenever you like; progress elsewhere is kept.</p>
@@ -227,6 +231,7 @@ export const worldScreen: ScreenDef = {
           if (pin) wrap.scrollLeft = Math.max(0, pin.offsetLeft - wrap.clientWidth / 2);
         }
       }
+      else if (a.dataset.act === 'loop-ok') dismissLoopCoach(el, 'world');
       else if (a.dataset.act === 'tip-ok') {
         app.save.onboarding.worldTipSeen = true;
         app.persist();

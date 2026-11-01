@@ -101,7 +101,7 @@ const dailyToday = (): ModeRef => dailyFor(today, app.save.journey.nextLevel);
 beforeEach(() => {
   localStorage.clear();
   app.replaceSave(defaultSave(new Date(2026, 9, 31, 12)));
-  Object.assign(app.save.onboarding, { tutorialDone: true, seenRules: true, soloRulesSeen: true, pairRulesSeen: true, starterDecorChosen: true, seenPantryIntro: true, worldTipSeen: true });
+  Object.assign(app.save.onboarding, { tutorialDone: true, seenRules: true, soloRulesSeen: true, pairRulesSeen: true, starterDecorChosen: true, seenPantryIntro: true, worldTipSeen: true, loopTipSeen: true });
   app.save.journey.nextLevel = 8;
   app.save.world.growth.farm = 2;
   app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };

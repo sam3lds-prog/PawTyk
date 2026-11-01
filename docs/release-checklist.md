@@ -115,6 +115,12 @@
       the ring is still and goes away
 - [ ] Pet Garden arrival: the ring shows after *Welcome home* closes the card, not behind it
 
+### D39 PR B — the loop, once
+- [ ] Fresh install → guided first board → *Meet Cotton* → back to Journey: the *How Pawtopia works* card, with the
+      Farm and Truffle named, under the hero; *Play level 2* still on the first screen at 320×568
+- [ ] *Got it* → it never returns (Journey or World); the pantry card appears next time instead
+- [ ] VoiceOver reads the three steps as one sentence
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

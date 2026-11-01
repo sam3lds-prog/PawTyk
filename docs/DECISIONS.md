@@ -843,3 +843,16 @@ PRs (A–E), stacked, each reviewable on its own.
   ordinary win keeps *Play level N* as its one big button with the visit as a quiet link.
 - Tests: `test/unit/gameScreen.dom.test.ts` (finishing a sanctuary, everything open finished, a replay),
   `test/unit/newcomer.dom.test.ts` (Meet, the "New" marker, an ordinary visit, the Pet Garden after its card).
+
+### PR B — the loop, once
+- **One small card, once** (`components/loopCoach.ts`, `onboarding.loopTipSeen`): after the first puzzle has grown a
+  home (the guided first board brings Cotton in, so in practice right after it), the Journey hub — or the World,
+  whichever the player opens first — shows *How Pawtopia works*: three steps, *Solve a new puzzle → The Farm grows →
+  Truffle comes home*, filled in with this player's own sanctuary and the animal on its way (general words when nothing
+  is being built), and one line: *Every new puzzle grows the home you're building. Animals arrive one by one, and new
+  places open on the map as you go.* *Got it* or ✕ retires it on both screens.
+- A card in the flow, never a modal: on the hub it sits under the hero, so *Play level N* stays on the first screen;
+  screen readers get the three steps as one sentence (the list's label).
+- **One tip at a time**: while it shows, the hub's pantry card and the World's one-line tip wait their turn.
+- Existing players see it once too (harmless; dismissible), like D38's controls note.
+- Tests: `test/unit/loopCoach.dom.test.ts`.
