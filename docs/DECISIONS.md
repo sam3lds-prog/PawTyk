@@ -1277,4 +1277,5 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
   both PNGs have the right size and no alpha; every sky draws; the page links the icons).
 - Review fixes (independent agent): the palettes were copied rather than read from the game; a missing Playwright left
   new SVGs beside old PNGs, and nothing tied a PNG to its SVG; `--style` overwrote the shipped icon and broke the check;
-  the cat draft and its PNG are no longer in the history (the PR is one commit).
+  the cat draft's commit carries a 650 KB PNG of art that never shipped, so this PR is best merged with *Squash and
+  merge* to keep it out of `main`'s history.
