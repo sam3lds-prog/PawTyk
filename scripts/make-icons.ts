@@ -1,8 +1,8 @@
 /**
  * Writes the PawTyk icon (D42) and renders its PNG sizes.
  *
- *   npm run icons                       teal background, Pip winking (the shipped icon)
- *   npm run icons -- --style sunny      or berry; --open for both eyes open
+ *   npm run icons                       a clear summer day (the shipped icon)
+ *   npm run icons -- --style golden     or dusk: the same farm under another sky
  *   npm run icons -- --check            fails if the committed SVGs differ from what this would write
  *
  * Writes:
@@ -10,7 +10,7 @@
  *   assets/icon-only.png       1024 × 1024, no alpha: the App Store icon. Xcode 14+ needs only this one size
  *                              (App/Assets.xcassets → AppIcon, "Single Size"); `npx @capacitor/assets generate --ios`
  *                              reads it from here too
- *   public/favicon.svg         Pip's face alone, for browser tabs (and the tester page)
+ *   public/favicon.svg         the barn alone, for browser tabs (and the tester page)
  *   public/apple-touch-icon.png  180 × 180, for "Add to Home Screen" from Safari
  *
  * Rendering uses Playwright's Chromium, like the e2e smoke test (`npm i -D playwright && npx playwright install chromium`
@@ -23,9 +23,9 @@ import { faviconSvg, iconSvg, type IconStyle } from './iconArt';
 
 const args = process.argv.slice(2);
 const styleAt = args.indexOf('--style');
-const style = (styleAt >= 0 ? args[styleAt + 1] : 'teal') as IconStyle;
-if (!['teal', 'sunny', 'berry'].includes(style)) throw new Error(`unknown --style ${style} (teal, sunny or berry)`);
-const icon = iconSvg({ style, wink: !args.includes('--open') });
+const style = (styleAt >= 0 ? args[styleAt + 1] : 'day') as IconStyle;
+if (!['day', 'golden', 'dusk'].includes(style)) throw new Error(`unknown --style ${style} (day, golden or dusk)`);
+const icon = iconSvg({ style });
 const fav = faviconSvg();
 
 if (args.includes('--check')) {
@@ -62,7 +62,7 @@ const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath
 async function render(size: number, out: string): Promise<void> {
   const page = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
   const src = `data:image/svg+xml;base64,${Buffer.from(icon).toString('base64')}`;
-  await page.setContent(`<html><body style="margin:0;background:#1F6E64"><img src="${src}" width="${size}" height="${size}" style="display:block"></body></html>`);
+  await page.setContent(`<html><body style="margin:0;background:#6FC2EA"><img src="${src}" width="${size}" height="${size}" style="display:block"></body></html>`);
   await page.waitForTimeout(150);
   const png = await page.screenshot({ clip: { x: 0, y: 0, width: size, height: size } });
   // PNG header: width, height (bytes 16–23), bit depth 8 and color type 2 (RGB, no alpha) at bytes 24–25.
@@ -74,4 +74,4 @@ async function render(size: number, out: string): Promise<void> {
 await render(1024, 'assets/icon-only.png');
 await render(180, 'public/apple-touch-icon.png');
 await browser.close();
-console.log(`icons: ${style}${args.includes('--open') ? ', eyes open' : ', winking'} → assets/icon.svg, assets/icon-only.png, public/favicon.svg, public/apple-touch-icon.png`);
+console.log(`icons: ${style} → assets/icon.svg, assets/icon-only.png, public/favicon.svg, public/apple-touch-icon.png`);

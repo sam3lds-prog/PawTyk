@@ -1,115 +1,125 @@
 /**
  * The PawTyk app icon and favicon (D42), drawn in code like the rest of the game's art.
  *
- * Pip, the apricot tabby who "sparkles at every finished row", peeks over a little puzzle board with both paws on its
- * rim and gives a wink: the board is the game's own (a rim with corner posts as in D41, region-colored tiles, a ✕ mark
- * and Cotton the sheep on a tile), the face uses the face rig's geometry and Pip's palette (`ui/art/pets.ts`,
- * `meta/catalogs/pets.ts`), so the icon looks like the animals the player meets.
+ * Meadow Farm, where every player starts: the Farm's red barn (as drawn in `ui/art/regions.ts`, white trim and a white
+ * cross-braced door, which is also the game's ✕ mark), Cotton the sheep leaning out of the hayloft, Truffle the piglet
+ * sitting out front, a hay bale, and fields laid out like a puzzle board: a patchwork of region-colored plots with
+ * light seams between them, the way the board's colors sit on its mat. A paw-print weathervane tops the roof.
+ * Cotton's and Truffle's heads are the companion rigs' own shapes and colors (`ui/art/companions.ts`).
  *
  * `scripts/make-icons.ts` writes these SVGs to `assets/icon.svg` and `public/favicon.svg` and renders the PNG sizes.
  */
 
-import { PET_BY_ID, type PetPalette } from '../src/meta/catalogs/pets';
-
-export type IconStyle = 'teal' | 'sunny' | 'berry';
+export type IconStyle = 'day' | 'golden' | 'dusk';
 export interface IconOptions {
-  /** Background color family. Teal is the game's brand color (the default). */
+  /** The sky. A clear summer day is the default. */
   style?: IconStyle;
-  /** Pip winks (the default) or looks out with both sparkly eyes. */
-  wink?: boolean;
 }
 
-const PIP: PetPalette = PET_BY_ID.pip.palette;
-/** One crisp, opaque outline in Pip's own brow color: the rig's translucent outline turns into a dark halo at icon size. */
-const LINE = PIP.brow;
-
-const BACKGROUNDS: Record<IconStyle, { from: string; to: string; rays: string; spark: string }> = {
-  teal: { from: '#4DAE9F', to: '#1F6E64', rays: 'rgba(255,255,255,0.07)', spark: '#FFE7A8' },
-  sunny: { from: '#FFD66B', to: '#F2A93B', rays: 'rgba(255,255,255,0.16)', spark: '#FFFFFF' },
-  berry: { from: '#8B7BE0', to: '#4E3FA6', rays: 'rgba(255,255,255,0.08)', spark: '#FFE7A8' },
+const SKIES: Record<IconStyle, { top: string; bottom: string; sun: string; halo: string; cloud: string }> = {
+  day: { top: '#6FC2EA', bottom: '#C9ECF7', sun: '#FFD45C', halo: '#FFFFFF', cloud: '#FFFFFF' },
+  golden: { top: '#F6B65C', bottom: '#FCE3A6', sun: '#FFF1C4', halo: '#FFF8E0', cloud: '#FFF4DE' },
+  dusk: { top: '#6E6BC9', bottom: '#F2B6A6', sun: '#FFD9A0', halo: '#FFE9C9', cloud: '#F9E3E8' },
 };
 
-/** The board's region colors (tokens `--r1`…), a step richer so they still read as a puzzle at home-screen size. */
-const TILE = {
-  mint: '#bfe8cc',
-  apricot: '#f8cba9',
-  sky: '#b5dceb',
-  blush: '#f5c0cd',
-  butter: '#f1dc8c',
-  lavender: '#d0c2f3',
-  sea: '#b2e0d6',
-  peri: '#c0cdf4',
-};
+/** Barn colors from the Farm's stage-2 barn. */
+const BARN = { wall: '#C9483B', board: '#B13D31', door: '#A9372C', loft: '#7A2F26', trim: '#F3EFE6', pane: '#F8E6B8' };
+/** One opaque outline for the whole icon: the scenes' translucent outline turns into a dark halo at icon size. */
+const LINE = '#5E2F26';
+/** Companion palettes (`ui/art/companions.ts`). */
+const COTTON = { fur: '#F6F1E7', light: '#ECD9C3', dark: '#5A4A40', accent: '#F2B8B5' };
+const TRUFFLE = { fur: '#F5B9BB', light: '#FBD7D7', dark: '#A65E66', accent: '#EE9AA2' };
+/** Field plots in the board's color families (mint, butter, sage, apricot, sea glass), deepened so they read as crops. */
+const PLOTS = ['#9ED68A', '#F2D06A', '#BBD67C', '#F3B27E', '#86CDB8'];
+const SEAM = '#FBF8F1';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-/** Mirrors a path across x = 32 (absolute M/L/C/Q/Z with "x y" pairs only), as the face rig does. */
-const mirror = (d: string) => d.replace(/(-?\d+(?:\.\d+)?)[ ,](-?\d+(?:\.\d+)?)/g, (_m, x: string, y: string) => `${r2(64 - Number(x))} ${y}`);
-const pair = (d: string, attrs: string) => `<path d="${d}" ${attrs}/><path d="${mirror(d)}" ${attrs}/>`;
 
-function sparkle(x: number, y: number, r: number, color: string, rot = 0): string {
-  const t = r2(r * 0.24);
-  return `<path transform="translate(${x} ${y}) rotate(${rot})" d="M0 ${-r} Q${t} ${-t} ${r} 0 Q${t} ${t} 0 ${r} Q${-t} ${t} ${-r} 0 Q${-t} ${-t} 0 ${-r} Z" fill="${color}"/>`;
-}
-
-/** Pip's face in the rig's 64-unit space: pointed ears, tabby marks, big sparkly eyes (or a wink) and the widest grin. */
-function pipFace(wink: boolean): string {
-  const P = PIP;
-  const line = `stroke="${LINE}" stroke-width="0.95" stroke-linejoin="round"`;
-  const ears =
-    pair('M11.8 29.6 L13.2 9.4 C13.4 7.6 15 7 16.2 8.1 L29.6 19.4 Z', `fill="${P.ear}" ${line}`) +
-    pair('M15.2 25.4 L16 12.6 L25.4 19.8 Z', `fill="${P.innerEar}"`);
-  const head = `<path d="M32 18.6 C44.6 18.6 53.8 26.4 54.6 37 C55.4 46.8 46 55.4 32 55.4 C18 55.4 8.6 46.8 9.4 37 C10.2 26.4 19.4 18.6 32 18.6 Z" fill="${P.fur}" ${line}/>`;
-  const fluff = pair('M10.4 41.6 C9.4 45.2 11.4 48.6 14.6 50.2 C13 47.4 12.4 44.6 13.4 41.8 Z', `fill="${P.shade}" opacity="0.45"`);
-  const tabby =
-    `<g stroke="${P.shade}" stroke-width="2.1" stroke-linecap="round" fill="none"><path d="M32 20.8 V25"/><path d="M27.2 21.6 Q28 24 28.8 25"/><path d="M36.8 21.6 Q36 24 35.2 25"/></g>` +
-    pair('M10.8 37.4 L14.6 37.4 M11 40.8 L14.2 40.8', `stroke="${P.shade}" stroke-width="1.8" stroke-linecap="round" fill="none"`);
-  const cheeks = `<ellipse cx="16.6" cy="43.2" rx="3.9" ry="2.4" fill="${P.cheek}" opacity="0.85"/><ellipse cx="47.4" cy="43.2" rx="3.9" ry="2.4" fill="${P.cheek}" opacity="0.85"/>`;
-  const muzzle = `<ellipse cx="32" cy="46.4" rx="9.6" ry="6.8" fill="${P.muzzle}"/>`;
-  const whiskers = pair('M8.2 42.4 L16.6 43.6 M8.8 47 L16.8 46.2', `stroke="${P.whisker}" stroke-width="1.1" stroke-linecap="round" opacity="0.7" fill="none"`);
-  const nose = `<path d="M29.4 41.4 Q32 40.1 34.6 41.4 Q33.8 43.6 32 44.1 Q30.2 43.6 29.4 41.4 Z" fill="${P.nose}"/>`;
-  const eye = (cx: number, cy: number) => {
-    const rx = 4.3;
-    const ry = 5.1;
-    const hx = r2(cx + rx * 0.3);
-    const hy = r2(cy - ry * 0.34);
-    const s = 2.3;
-    const t = 0.42;
-    return (
-      `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${P.eye}"/>` +
-      `<path d="M${hx} ${r2(hy - s)} Q${r2(hx + t)} ${r2(hy - t)} ${r2(hx + s)} ${hy} Q${r2(hx + t)} ${r2(hy + t)} ${hx} ${r2(hy + s)} Q${r2(hx - t)} ${r2(hy + t)} ${r2(hx - s)} ${hy} Q${r2(hx - t)} ${r2(hy - t)} ${hx} ${r2(hy - s)} Z" fill="#fff"/>` +
-      `<circle cx="${r2(cx - rx * 0.36)}" cy="${r2(cy + ry * 0.44)}" r="0.75" fill="#fff" opacity="0.85"/>`
-    );
-  };
-  const winkEye = (cx: number, cy: number) =>
-    `<path d="M${r2(cx - 4.4)} ${cy + 1} Q${cx} ${r2(cy - 4.6)} ${r2(cx + 4.4)} ${cy + 1}" stroke="${P.eye}" stroke-width="2.2" stroke-linecap="round" fill="none"/>`;
-  const eyes = eye(22.8, 35.4) + (wink ? winkEye(41.2, 35.4) : eye(41.2, 35.4));
-  const brows = `<g stroke="${P.brow}" stroke-width="1.9" stroke-linecap="round" fill="none"><path d="M19.6 27.6 Q22.8 25.2 26 27.2"/><path d="M38 27.2 Q41.2 25.2 44.4 27.6"/></g>`;
-  const grin = `<path d="M26.2 45.4 Q32 54.4 37.8 45.4 Q32 48 26.2 45.4 Z" fill="${P.eye}"/><path d="M29.2 49.6 Q32 53 34.8 49.6 Q32 48.5 29.2 49.6 Z" fill="#EC8790"/>`;
-  return [ears, head, fluff, tabby, cheeks, muzzle, whiskers, nose, eyes, brows, grin].join('\n    ');
-}
-
-/** A front paw resting on the rim, centered on 0,0 (about 128 × 94 units). */
-function paw(): string {
+/** A face in the companion rigs' style: open eyes with a shine, rosy cheeks and a small smile, in 64-unit space. */
+function face(eyes: [number, number, number, number], r: [number, number], mouthY: number, blushY: number, ink: string): string {
+  const [lx, ly, rx, ry] = eyes;
+  const eye = (x: number, y: number) =>
+    `<ellipse cx="${x}" cy="${y}" rx="${r[0]}" ry="${r[1]}" fill="${ink}"/><circle cx="${r2(x + 0.8)}" cy="${r2(y - 1)}" r="0.95" fill="#fff"/>`;
   return (
-    `<path d="M-64 18 C-66 -22 -36 -46 0 -46 C36 -46 66 -22 64 18 C62 40 40 48 0 48 C-40 48 -62 40 -64 18 Z" fill="${PIP.fur}" stroke="${LINE}" stroke-width="10.5"/>` +
-    `<path d="M-20 -6 C-21 10 -20 28 -18 40 M20 -6 C21 10 20 28 18 40" stroke="${PIP.shade}" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.75"/>`
+    `<ellipse cx="${lx - 4.5}" cy="${blushY}" rx="3.2" ry="1.9" fill="#F09C98" opacity="0.75"/><ellipse cx="${rx + 4.5}" cy="${blushY}" rx="3.2" ry="1.9" fill="#F09C98" opacity="0.75"/>` +
+    eye(lx, ly) +
+    eye(rx, ry) +
+    `<path d="M28.4 ${mouthY - 0.6} Q30.2 ${mouthY + 1.8} 32 ${mouthY} Q33.8 ${mouthY + 1.8} 35.6 ${mouthY - 0.6}" stroke="${ink}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
   );
 }
 
-/** Cotton, the Farm's first sheep, small enough for one tile; centered on 0,0. */
-function cotton(): string {
-  const soft = 'stroke="rgba(40,52,52,0.34)" stroke-width="3"';
-  return [
-    '<ellipse cx="-40" cy="-6" rx="14" ry="9" fill="#5b4a44" transform="rotate(-24 -40 -6)"/>',
-    '<ellipse cx="40" cy="-6" rx="14" ry="9" fill="#5b4a44" transform="rotate(24 40 -6)"/>',
-    `<g fill="#fffaf2" ${soft}><circle cx="-22" cy="-30" r="15"/><circle cx="0" cy="-36" r="16"/><circle cx="22" cy="-30" r="15"/></g>`,
-    `<ellipse cx="0" cy="6" rx="31" ry="34" fill="#6d5a52" ${soft}/>`,
-    '<g fill="#fffaf2"><circle cx="-14" cy="-24" r="12"/><circle cx="0" cy="-28" r="13"/><circle cx="14" cy="-24" r="12"/></g>',
-    '<circle cx="-11" cy="2" r="5.5" fill="#2f2622"/><circle cx="11" cy="2" r="5.5" fill="#2f2622"/>',
-    '<circle cx="-9" cy="0" r="1.8" fill="#fff"/><circle cx="13" cy="0" r="1.8" fill="#fff"/>',
-    '<path d="M-8 22 Q0 28 8 22" stroke="#2f2622" stroke-width="3.2" stroke-linecap="round" fill="none"/>',
-    '<ellipse cx="-20" cy="16" rx="6" ry="3.6" fill="#ef8572" opacity="0.7"/><ellipse cx="20" cy="16" rx="6" ry="3.6" fill="#ef8572" opacity="0.7"/>',
-  ].join('');
+/** Cotton's head (the companion rig's shapes), 64-unit space. */
+function cottonHead(): string {
+  const p = COTTON;
+  const o = `stroke="${LINE}" stroke-width="1.1"`;
+  return `
+    <ellipse cx="11.5" cy="33" rx="8" ry="4" transform="rotate(18 11.5 33)" fill="${p.light}" ${o}/>
+    <ellipse cx="12.5" cy="33" rx="4.6" ry="2" transform="rotate(18 12.5 33)" fill="${p.accent}"/>
+    <ellipse cx="52.5" cy="33" rx="8" ry="4" transform="rotate(-18 52.5 33)" fill="${p.light}" ${o}/>
+    <ellipse cx="51.5" cy="33" rx="4.6" ry="2" transform="rotate(-18 51.5 33)" fill="${p.accent}"/>
+    <g fill="${p.fur}" ${o}><circle cx="19" cy="24" r="8"/><circle cx="45" cy="24" r="8"/><circle cx="25" cy="16.5" r="8"/><circle cx="39" cy="16.5" r="8"/><circle cx="32" cy="14" r="8.5"/></g>
+    <path d="M32 22 C42 22 47.5 30 47 38.5 C46.5 47 40 53.5 32 53.5 C24 53.5 17.5 47 17 38.5 C16.5 30 22 22 32 22 Z" fill="${p.light}" ${o}/>
+    <g fill="${p.fur}"><circle cx="25.5" cy="24" r="5.4"/><circle cx="32" cy="22" r="6"/><circle cx="38.5" cy="24" r="5.4"/></g>
+    <ellipse cx="32" cy="45" rx="8.5" ry="6.2" fill="#F6E9DA"/>
+    <path d="M29.6 42.2 h4.8 q-.4 2.2 -2.4 2.6 q-2 -.4 -2.4 -2.6z" fill="#C98F8A"/>
+    ${face([25.5, 36.5, 38.5, 36.5], [2.4, 2.9], 47.6, 41.8, p.dark)}`;
+}
+
+/** Truffle sitting: the companion rig's head over a round body with two front trotters, 64-unit space. */
+function truffleSitting(): string {
+  const p = TRUFFLE;
+  const o = `stroke="${LINE}" stroke-width="1.1"`;
+  return `
+    <ellipse cx="32" cy="62" rx="20" ry="15.5" fill="${p.fur}" ${o}/>
+    <ellipse cx="32" cy="65" rx="11" ry="8.5" fill="${p.light}"/>
+    <rect x="22" y="66" width="7.4" height="11" rx="3.7" fill="${p.fur}" ${o}/><rect x="34.6" y="66" width="7.4" height="11" rx="3.7" fill="${p.fur}" ${o}/>
+    <path d="M23.6 75.4 h4.2 M36.2 75.4 h4.2" stroke="${p.dark}" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M14 24 L12 9 L27 17 Z" fill="${p.fur}" ${o} stroke-linejoin="round"/><path d="M16 20 L15.2 12.6 L23.6 17.4 Z" fill="${p.accent}"/>
+    <path d="M50 24 L52 9 L37 17 Z" fill="${p.fur}" ${o} stroke-linejoin="round"/><path d="M48 20 L48.8 12.6 L40.4 17.4 Z" fill="${p.accent}"/>
+    <ellipse cx="32" cy="35" rx="21" ry="18.5" fill="${p.fur}" ${o}/>
+    <path d="M29 17.6 q2 -3.6 4 -.4 q1.6 -2.6 3.2 .2" stroke="${p.dark}" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".6"/>
+    <ellipse cx="32" cy="43" rx="9" ry="6.4" fill="${p.accent}" stroke="${p.dark}" stroke-width=".9"/>
+    <ellipse cx="29" cy="43" rx="1.5" ry="2.2" fill="${p.dark}"/><ellipse cx="35" cy="43" rx="1.5" ry="2.2" fill="${p.dark}"/>
+    ${face([23.5, 33, 40.5, 33], [2.4, 2.9], 51.3, 40, '#4A2F33')}`;
+}
+
+/** A paw print centered on 0,0 (pad plus four toes), about 60 units across. */
+function pawPrint(fill: string): string {
+  return `<g fill="${fill}" stroke="${LINE}" stroke-width="5"><path d="M0 2 C-14 2 -24 13 -24 22 C-24 29 -18 32 -11 32 C-6 32 -3 30 0 30 C3 30 6 32 11 32 C18 32 24 29 24 22 C24 13 14 2 0 2 Z"/>
+    <ellipse cx="-24" cy="-6" rx="7.5" ry="9.5" transform="rotate(-20 -24 -6)"/><ellipse cx="-9" cy="-17" rx="7.5" ry="10"/><ellipse cx="9" cy="-17" rx="7.5" ry="10"/><ellipse cx="24" cy="-6" rx="7.5" ry="9.5" transform="rotate(20 24 -6)"/></g>`;
+}
+
+/** The fields in front of the barn: two rows of plots fanning out toward the viewer, with light seams. */
+function fields(): string {
+  const top = 806;
+  const mid = 890;
+  const bottom = 1040;
+  const xsTop = [-60, 196, 410, 614, 828, 1084];
+  const at = (x: number, y: number) => r2(512 + (x - 512) * (1 + ((y - top) / (bottom - top)) * 0.75));
+  const rowColors = [
+    [2, 1, 0, 1, 2],
+    [0, 3, 4, 1, 0],
+  ];
+  let out = '';
+  [
+    [top, mid],
+    [mid, bottom],
+  ].forEach(([y0, y1], row) => {
+    for (let i = 0; i < xsTop.length - 1; i++) {
+      const a = xsTop[i];
+      const b = xsTop[i + 1];
+      const pts = `${at(a, y0)},${y0} ${at(b, y0)},${y0} ${at(b, y1)},${y1} ${at(a, y1)},${y1}`;
+      const fill = PLOTS[rowColors[row][i]];
+      out += `<polygon points="${pts}" fill="${fill}" stroke="${SEAM}" stroke-width="12" stroke-linejoin="round"/>`;
+      // A few crop rows, so a plot reads as a field.
+      const lines = row === 0 ? 2 : 3;
+      for (let k = 1; k <= lines; k++) {
+        const y = r2(y0 + ((y1 - y0) * k) / (lines + 1));
+        out += `<path d="M${r2(at(a, y) + 26)} ${y} L${r2(at(b, y) - 26)} ${y}" stroke="#ffffff" stroke-opacity="0.32" stroke-width="${row === 0 ? 5 : 7}" stroke-linecap="round"/>`;
+      }
+    }
+  });
+  return out;
 }
 
 /**
@@ -117,88 +127,106 @@ function cotton(): string {
  * nothing important sits in them.
  */
 export function iconSvg(o: IconOptions = {}): string {
-  const style = o.style ?? 'teal';
-  const wink = o.wink ?? true;
-  const bg = BACKGROUNDS[style];
+  const style = o.style ?? 'day';
+  const sky = SKIES[style];
   const id = `pt-${style}`;
 
-  // Sunburst rays from behind Pip's head.
-  const cx = 512;
-  const cy = 470;
-  const R = 1100;
-  let rays = '';
-  for (let i = 0; i < 16; i++) {
-    const a0 = (i * 2 * Math.PI) / 16;
-    const a1 = a0 + Math.PI / 16;
-    rays += `<path d="M${cx} ${cy} L${r2(cx + R * Math.cos(a0))} ${r2(cy + R * Math.sin(a0))} L${r2(cx + R * Math.cos(a1))} ${r2(cy + R * Math.sin(a1))} Z"/>`;
-  }
-  const sparks = [sparkle(150, 210, 44, bg.spark), sparkle(888, 260, 34, bg.spark, 12), sparkle(846, 120, 20, '#fff'), sparkle(205, 430, 18, '#fff', 8)].join('');
+  const backdrop = `
+  <rect width="1024" height="1024" fill="url(#${id}-sky)"/>
+  <circle cx="184" cy="190" r="112" fill="${sky.halo}" opacity="0.35"/>
+  <circle cx="184" cy="190" r="76" fill="${sky.sun}"/>
+  <g fill="${sky.cloud}" opacity="0.92"><ellipse cx="808" cy="196" rx="96" ry="30"/><ellipse cx="770" cy="176" rx="52" ry="34"/><ellipse cx="836" cy="168" rx="40" ry="28"/><ellipse cx="640" cy="104" rx="54" ry="16"/></g>
+  <path d="M0 640 C120 566 260 560 380 600 C520 552 700 548 820 590 C900 566 970 570 1024 588 V840 H0 Z" fill="#B9DE95"/>
+  <g fill="#93C774">${[54, 112, 166, 860, 916, 970].map((x, i) => `<circle cx="${x}" cy="${612 - (i % 2) * 10}" r="${30 + (i % 3) * 6}"/>`).join('')}</g>
+  <path d="M0 720 C200 690 420 700 620 712 C800 704 940 694 1024 700 V860 H0 Z" fill="#9CCF78"/>`;
 
-  // Pip: rig units → px.
-  const k = 12.4;
-  const face = `<g transform="translate(${r2(512 - 32 * k)} 58) scale(${k})">\n    ${pipFace(wink)}\n  </g>`;
+  // The barn: a gable with white trim, wall boards, the hayloft, two windows and the cross-braced door.
+  const L = 262;
+  const R = 762;
+  const eave = 432;
+  const peak = 262;
+  const base = 808;
+  const wall = `<path d="M${L} ${base} V${eave} L512 ${peak} L${R} ${eave} V${base} Z" fill="${BARN.wall}" stroke="${LINE}" stroke-width="12" stroke-linejoin="round"/>`;
+  const boards = `<g stroke="${BARN.board}" stroke-width="6" opacity="0.75">${[488, 548, 608, 668, 728].map((y) => `<path d="M${L + 8} ${y} H${R - 8}"/>`).join('')}</g>`;
+  const trim =
+    `<path d="M${L - 34} ${eave + 16} L512 ${peak - 22} L${R + 34} ${eave + 16}" stroke="${LINE}" stroke-width="50" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` +
+    `<path d="M${L - 34} ${eave + 16} L512 ${peak - 22} L${R + 34} ${eave + 16}" stroke="${BARN.trim}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+  const vane =
+    `<path d="M512 ${peak - 40} V146" stroke="${LINE}" stroke-width="10" stroke-linecap="round"/>` +
+    `<path d="M468 182 H556 M556 182 l-17 -11 M556 182 l-17 11" stroke="${LINE}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` +
+    `<g transform="translate(512 130) scale(0.92)">${pawPrint('#F2B84B')}</g>`;
+  const pane = (x: number) =>
+    `<rect x="${x}" y="566" width="76" height="76" rx="4" fill="${BARN.pane}" stroke="${BARN.trim}" stroke-width="13"/><path d="M${x + 38} 566 V642 M${x} 604 H${x + 76}" stroke="${BARN.trim}" stroke-width="7"/><rect x="${x - 6.5}" y="559.5" width="89" height="89" rx="8" fill="none" stroke="${LINE}" stroke-width="5"/>`;
+  const windows = pane(300) + pane(648);
+  // The door: one panel with a white frame and a white cross brace, the game's ✕.
+  const dx = 392;
+  const dy = 548;
+  const dw = 240;
+  const dh = base - dy;
+  const door =
+    `<rect x="${dx - 9}" y="${dy - 9}" width="${dw + 18}" height="${dh + 9}" fill="${LINE}"/>` +
+    `<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" fill="${BARN.door}" stroke="${BARN.trim}" stroke-width="20"/>` +
+    `<path d="M${dx + 10} ${dy + 10} L${dx + dw - 10} ${base - 10} M${dx + dw - 10} ${dy + 10} L${dx + 10} ${base - 10}" stroke="${BARN.trim}" stroke-width="22" stroke-linecap="butt"/>`;
+  // The hayloft, with Cotton leaning out on the sill.
+  const lx = 410;
+  const ly = 300;
+  const lw = 204;
+  const lh = 182;
+  const loft = `<rect x="${lx - 9}" y="${ly - 9}" width="${lw + 18}" height="${lh + 18}" rx="8" fill="${LINE}"/><rect x="${lx}" y="${ly}" width="${lw}" height="${lh}" fill="${BARN.loft}" stroke="${BARN.trim}" stroke-width="16"/>`;
+  const k = 3.75;
+  const cotton = `<g transform="translate(${r2(512 - 32 * k)} ${r2(ly + 14 - 5.5 * k)}) scale(${k})">${cottonHead()}</g>`;
+  const sillY = ly + lh;
+  const sill =
+    `<rect x="${lx - 22}" y="${sillY - 10}" width="${lw + 44}" height="26" rx="10" fill="${BARN.trim}" stroke="${LINE}" stroke-width="7"/>` +
+    [468, 556].map((x) => `<ellipse cx="${x}" cy="${sillY - 8}" rx="19" ry="13" fill="${COTTON.dark}" stroke="${LINE}" stroke-width="5"/>`).join('');
+  const barnShadow = `<ellipse cx="512" cy="${base + 6}" rx="320" ry="22" fill="rgba(40,70,30,0.25)"/>`;
 
-  // The board: a rim with a post at each top corner (D41) and two rows of four tiles; it runs off the bottom edge.
-  const bx = 150;
-  const by = 712;
-  const bw = 724;
-  const rimW = 30;
-  const gap = 10;
-  const inX = bx + rimW;
-  const inY = by + rimW;
-  const inW = bw - 2 * rimW;
-  const tw = (inW - 3 * gap) / 4;
-  const rows = [
-    [TILE.mint, TILE.apricot, TILE.sky, TILE.blush],
-    [TILE.butter, TILE.lavender, TILE.sea, TILE.peri],
-  ];
-  const at = (i: number, r: number) => [inX + i * (tw + gap), inY + r * (tw + gap)] as const;
-  const tiles = rows.flatMap((row, r) => row.map((c, i) => `<rect x="${at(i, r)[0]}" y="${at(i, r)[1]}" width="${tw}" height="${tw}" rx="22" fill="${c}"/>`)).join('');
-  const [x0, y0] = at(0, 0);
-  const [x3, y3] = at(3, 0);
-  const mark = `<path transform="translate(${x0 + tw / 2} ${y0 + tw / 2 + 6})" d="M-28 -28 L28 28 M28 -28 L-28 28" stroke="#4f5f59" stroke-width="15" stroke-linecap="round"/>`;
-  const sheep = `<g transform="translate(${x3 + tw / 2} ${y3 + tw / 2 + 4}) scale(1.05)">${cotton()}</g>`;
-  const posts = [bx + 4, bx + bw - 4]
-    .map((x) => `<circle cx="${x}" cy="${by + 4}" r="26" fill="#D9984F" stroke="${LINE}" stroke-width="9"/><circle cx="${x - 7}" cy="${by - 4}" r="7" fill="#fff" opacity="0.45"/>`)
-    .join('');
-  const board = [
-    `<rect x="${bx}" y="${by + 14}" width="${bw}" height="420" rx="54" fill="rgba(20,50,45,0.28)"/>`,
-    `<rect x="${bx}" y="${by}" width="${bw}" height="420" rx="54" fill="#F8E9CB" stroke="${LINE}" stroke-width="10"/>`,
-    `<rect x="${inX - 6}" y="${inY - 6}" width="${inW + 12}" height="420" rx="30" fill="#FBF8F1"/>`,
-    tiles,
-    mark,
-    sheep,
-    posts,
-  ].join('\n  ');
-  const paws = [512 - 176, 512 + 176].map((x) => `<g transform="translate(${x} ${by + 6}) scale(1.12)">${paw()}</g>`).join('');
+  const bale =
+    `<g transform="translate(218 856) scale(1.05)"><ellipse cx="0" cy="66" rx="78" ry="14" fill="rgba(40,70,30,0.25)"/><circle r="74" fill="#E8C76A" stroke="${LINE}" stroke-width="9"/>` +
+    `<circle r="46" fill="none" stroke="#C99F45" stroke-width="9"/><circle r="18" fill="#C99F45"/></g>`;
+  const kt = 3.35;
+  const truffle = `<g transform="translate(${r2(782 - 32 * kt)} ${r2(712)}) scale(${kt})">${truffleSitting()}</g>`;
+  const truffleShadow = `<ellipse cx="782" cy="976" rx="82" ry="14" fill="rgba(40,70,30,0.25)"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <title>PawTyk</title>
   <defs>
-    <radialGradient id="${id}-bg" cx="50%" cy="42%" r="72%"><stop offset="0" stop-color="${bg.from}"/><stop offset="1" stop-color="${bg.to}"/></radialGradient>
+    <linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.top}"/><stop offset="0.7" stop-color="${sky.bottom}"/></linearGradient>
   </defs>
-  <rect width="1024" height="1024" fill="url(#${id}-bg)"/>
-  <g fill="${bg.rays}">${rays}</g>
-  ${sparks}
-  ${face}
-  ${board}
-  ${paws}
+  ${backdrop}
+  ${fields()}
+  ${barnShadow}
+  <g transform="translate(512 ${base}) scale(1.1) translate(-512 -${base})">
+  ${vane}
+  ${wall}
+  ${boards}
+  ${trim}
+  ${windows}
+  ${door}
+  ${loft}
+  ${cotton}
+  ${sill}
+  </g>
+  ${bale}
+  ${truffleShadow}
+  ${truffle}
 </svg>
 `;
 }
 
-/** The favicon: Pip's winking face alone on the teal tile, so it still reads at 16 px. */
+/** The favicon: the red barn with its white ✕ door on a blue sky, which still reads at 16 px. */
 export function faviconSvg(): string {
-  const bg = BACKGROUNDS.teal;
+  const sky = SKIES.day;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>PawTyk</title>
-  <defs>
-    <radialGradient id="pt-fav-bg" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="${bg.from}"/><stop offset="1" stop-color="${bg.to}"/></radialGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="url(#pt-fav-bg)"/>
-  <g transform="translate(-2.56 -0.7) scale(1.08)">
-    ${pipFace(true)}
-  </g>
+  <defs><linearGradient id="pt-fav-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.top}"/><stop offset="1" stop-color="${sky.bottom}"/></linearGradient></defs>
+  <rect width="64" height="64" rx="14" fill="url(#pt-fav-sky)"/>
+  <path d="M0 50 H64 V50 A14 14 0 0 1 50 64 H14 A14 14 0 0 1 0 50 Z" fill="#9CCF78"/>
+  <path d="M12 54 V28 L32 13 L52 28 V54 Z" fill="${BARN.wall}" stroke="${LINE}" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M9 30 L32 12 L55 30" stroke="${BARN.trim}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="22" y="36" width="20" height="18" fill="${BARN.door}" stroke="${BARN.trim}" stroke-width="2.4"/>
+  <path d="M23.2 37.2 L40.8 52.8 M40.8 37.2 L23.2 52.8" stroke="${BARN.trim}" stroke-width="2.6"/>
+  <rect x="27" y="23" width="10" height="8" fill="${BARN.loft}" stroke="${BARN.trim}" stroke-width="1.8"/>
 </svg>
 `;
 }

@@ -13,7 +13,7 @@ function pngInfo(buf: Buffer) {
 }
 
 describe('the PawTyk icon (D42)', () => {
-  it('the committed art is what scripts/iconArt.ts draws (teal, winking)', () => {
+  it('the committed art is what scripts/iconArt.ts draws (the summer-day sky)', () => {
     expect(read('assets/icon.svg').toString()).toBe(iconSvg());
     expect(read('public/favicon.svg').toString()).toBe(faviconSvg());
   });
@@ -24,19 +24,21 @@ describe('the PawTyk icon (D42)', () => {
     expect(pngInfo(read('public/apple-touch-icon.png'))).toEqual({ width: 180, height: 180, depth: 8, colorType: 2 });
   });
 
-  it('is square and opaque, uses the game colors, and every variant draws', () => {
+  it('is square and opaque, draws the Farm in the game colors, and every sky draws', () => {
     const svg = iconSvg();
     expect(svg).toContain('viewBox="0 0 1024 1024"');
-    expect(svg).toMatch(/<rect width="1024" height="1024" fill="url\(#pt-teal-bg\)"\/>/); // a full-bleed background
-    expect(svg).toContain('#F3A762'); // Pip's fur
+    expect(svg).toMatch(/<rect width="1024" height="1024" fill="url\(#pt-day-sky\)"\/>/); // a full-bleed background
+    expect(svg).toContain('#C9483B'); // the Farm's barn red
+    expect(svg).toContain('#F6F1E7'); // Cotton's wool
+    expect(svg).toContain('#F5B9BB'); // Truffle
     expect(svg).toContain('<title>PawTyk</title>');
-    for (const style of ['teal', 'sunny', 'berry'] as const)
-      for (const wink of [true, false]) {
-        const v = iconSvg({ style, wink });
-        expect(v).not.toMatch(/NaN|undefined/);
-        expect(v.match(/<svg/g)).toHaveLength(1);
-      }
-    expect(iconSvg({ wink: false })).not.toBe(iconSvg());
+    for (const style of ['day', 'golden', 'dusk'] as const) {
+      const v = iconSvg({ style });
+      expect(v).not.toMatch(/NaN|undefined/);
+      expect(v.match(/<svg/g)).toHaveLength(1);
+      expect(v).toContain(`url(#pt-${style}-sky)`);
+    }
+    expect(iconSvg({ style: 'golden' })).not.toBe(iconSvg());
   });
 
   it('the page links the favicon and the touch icon', () => {

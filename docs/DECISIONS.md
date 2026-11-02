@@ -1242,21 +1242,23 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
 - Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/` or `index.html`; the app name and title; the bundle
   id, save keys, seeds and product ids unchanged); the leaderboard name test covers the new name.
 
-### PR B — the icon
-- **Pip peeks over a puzzle board and winks** (`scripts/iconArt.ts`). Pip — the apricot tabby who, in the game's own
-  words, sparkles at every finished row — rises out of a sunburst on the brand teal, both front paws on the rim of a little
-  board, one sparkly eye open and one winking, with the widest grin. The board is the game's own: a rim with a post at
-  each corner (D41), tiles in the region colors (a step richer, so they still read as a puzzle at 60 pt), a ✕ in one
-  and Cotton the sheep on another. So the icon says what the game is — animals and a logic grid — and the wink gives it
-  the "I've got this" of a solved row. Orange on teal keeps it easy to spot on any wallpaper, light or dark.
-- **Drawn the way the game's animals are**: the face rig's geometry and Pip's palette from `meta/catalogs/pets.ts`,
-  with one opaque outline in her brow color (the rig's translucent outline makes a dark halo at icon size). No text
-  in the icon; nothing important in the corners, which iOS rounds.
+### PR B — the icon: Meadow Farm
+- **The Farm, where every player starts** (`scripts/iconArt.ts`): the Farm's red barn as the scenes draw it (white
+  trim, wall boards, a white cross-braced door — which is also the game's ✕ mark), a size up so it carries the icon on
+  a home screen; Cotton the sheep leaning out of the hayloft with her hooves on the sill; Truffle the piglet sitting
+  out front; a round hay bale; and a paw-print weathervane on the roof, for the Paw in PawTyk. The fields in front are
+  laid out like the board: plots in the board's color families with light seams between them, as its colors sit on
+  its mat, so the icon says "farm" first and "puzzle" second. Clear summer sky, sun and clouds behind.
+- An earlier draft (Pip the cat peeking over a board) was dropped at Sam's request: too close to cat-and-grid puzzle
+  icons. The farm keeps PawTyk apart from them.
+- **Drawn the way the game's animals are**: Cotton's and Truffle's heads are the companion rigs' shapes and palettes
+  (`ui/art/companions.ts`), the barn uses the Farm scene's colors (`ui/art/regions.ts`); one opaque outline throughout
+  (the scenes' translucent outline makes a dark halo at icon size). No text; nothing important in the corners, which
+  iOS rounds.
 - **Files**: `assets/icon.svg` (master), `assets/icon-only.png` (1024 × 1024, RGB with no alpha channel, as the App
   Store requires; Xcode's single-size AppIcon or `npx @capacitor/assets generate --ios`), `public/apple-touch-icon.png`
-  (180 px, linked from `index.html`), and `public/favicon.svg` — Pip's winking face alone on the teal tile, because the
-  board turns to mush at 16 px. `npm run icons` writes all four; `npm run icons:check` confirms the committed SVGs
-  match the code. Also built, not shipped: `--style sunny` (golden) and `--style berry` (violet) backgrounds, and
-  `--open` (both eyes open), for a quick swap.
+  (180 px, linked from `index.html`), and `public/favicon.svg` — the barn alone with its white ✕ door, which still
+  reads at 16 px. `npm run icons` writes all four; `npm run icons:check` confirms the committed SVGs match the code.
+  Also built, not shipped: `--style golden` (golden hour) and `--style dusk` skies.
 - Tests: `test/unit/icon.test.ts` (the committed SVGs are what the code draws; both PNGs have the right size and no
-  alpha; every variant draws; the page links the icons).
+  alpha; every sky draws; the page links the icons).
