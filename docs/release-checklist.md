@@ -177,6 +177,18 @@
       board and a ✕ then places with a second tap; it never appears again
 - [ ] Wrong guesses: the coach never counts hearts, says *take your time* on the last one
 
+### D40 PR B — personalities and bonding
+- [ ] Farm: tap Truffle (two hops), Cotton (a slow blink and a nod), Pepper (three quick hops); Pet Garden: tap Juniper
+      (turns away, then smiles) and Clover (stands tall, eyes shut). Each sounds different; a mouse squeaks higher
+- [ ] On the board, a shy animal's happy face glances aside, a sleepy one smiles with its eyes shut; no tile moves
+- [ ] Tap the same animal twice in a day: one heart (its card's count goes up by one, not two)
+- [ ] An animal at 4 hearts: tap it → *… is your friend now!*; tap it later → a bigger heart and a warmer sound;
+      at 14 + a pat → *good friend*, and it beams (eyes in two happy arcs) in the scene, on its card and in the album
+- [ ] At 34 + a hello → the *Best friends!* card; *See the album* shows the framed portrait with today's date;
+      at 70 the frame turns gold
+- [ ] The card reads *Playful · Truffle is curious about everything…*, *3 hearts to Good friend: a beaming smile*
+- [ ] Reduce Motion: a tap changes only the face (a shy one still glances away first), no hops
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

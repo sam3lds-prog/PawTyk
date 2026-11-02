@@ -34,7 +34,8 @@ export type AnalyticsEvent =
   | 'region_build'
   | 'region_stage'
   | 'trick_played'
-  | 'trick_bought';
+  | 'trick_bought'
+  | 'friendship_level';
 
 export type EventProps = Record<string, string | number | boolean>;
 

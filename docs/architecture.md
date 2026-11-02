@@ -18,7 +18,8 @@ unchanged.
  modes, puzzles,  rewards, ledger, items, (scoring, verify,  (check, server,     (storage+migration,
  specs, grading,  points, world, feeding, leagueRules, cup,  nickname, queue —   kv guard, ads, iap,
  persistence)     missions, achievements, localCup)          shared with the     leaderboard, analytics,
-                  sanctuary, catalogs)                       Cloud Functions)    audio, haptics)
+                  sanctuary, temperament,                    Cloud Functions)    audio, haptics, feel)
+                  bonds, catalogs)
  engine/ (solver, deduce, generator, levels, rng ← unchanged from v1; solo: the one-animal rule, D35)
  data/ (levelPack: frozen levels 1–60; journeyPack2: 61–150; journeyPack3: 6–150 on spec 3; journeyPack4: one-animal 1–20)
  functions/ (Firebase callable functions: a thin Firestore/Auth adapter around leaderboard/server.ts)

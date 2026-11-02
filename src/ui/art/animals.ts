@@ -40,9 +40,9 @@ export function applyAnimalFace(svg: SVGElement, id: AnimalId, view: FaceView): 
   applyFace(svg, id, view);
 }
 
-/** A card portrait: residents' rigs, friends' storybook heads (with the gentle portrait moods). */
-export function animalPortrait(id: AnimalId, mood: 'idle' | 'happy' | 'sleepy' = 'happy', label?: string): string {
-  if (isPetId(id)) return petSvg(id as PetId, { mood: mood === 'sleepy' ? 'sleepy' : mood, label });
+/** A card portrait: residents' rigs, friends' storybook heads (with the gentle portrait moods; `beam` is a close friend's). */
+export function animalPortrait(id: AnimalId, mood: 'idle' | 'happy' | 'sleepy' | 'beam' = 'happy', label?: string): string {
+  if (isPetId(id)) return petSvg(id as PetId, { mood: mood === 'beam' ? 'celebrate' : mood, label });
   return companionSvg(id as FriendId, mood, label);
 }
 
