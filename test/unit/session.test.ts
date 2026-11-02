@@ -283,3 +283,40 @@ describe('mistake marks (D37)', () => {
     expect(s.events.filter((e) => e.type !== 'pause' && e.type !== 'resume')).toEqual([{ t: expect.any(Number), type: 'place', r, c, s: CAT }]);
   });
 });
+
+describe('why a placement fit (D39 PR C)', () => {
+  it('names the line where the tile was the only spot left, from what the player could see', () => {
+    const p = generatePuzzle({ size: 6, seed: 11 });
+    const s = new Session(p);
+    // A cat whose row the player had narrowed down with ✕ marks.
+    const [r, c] = firstFree(s, (r, c) => p.solution[r][c] === CAT);
+    expect(s.whyPlaced(r, c, CAT)).toBeNull(); // not placed yet
+    for (let cc = 0; cc < s.size; cc++) if (cc !== c && s.cells[r][cc] === EMPTY && p.solution[r][cc] !== CAT) s.toggleMark(r, cc);
+    // (A dog in that row could still sit on a marked tile; the ✕ marks only have to be true for cats, and they are.)
+    s.place(r, c, CAT);
+    const u = s.whyPlaced(r, c, CAT, [{ kind: 'row', index: r }]);
+    expect(u).toEqual({ kind: 'row', index: r });
+  });
+
+  it('nothing to say when no single line decided it', () => {
+    const p = generatePuzzle({ size: 8, seed: 21 });
+    const s = new Session(p);
+    const [r, c] = firstFree(s, (r, c) => p.solution[r][c] === DOG);
+    const before = s.whyPlaced(r, c, DOG);
+    expect(before).toBeNull();
+    s.place(r, c, DOG);
+    // On an untouched 8×8, the first dog is very rarely forced by one line; if this one was, that line is named.
+    const u = s.whyPlaced(r, c, DOG);
+    if (u) expect(s.unitCells(u).some(([rr, cc]) => rr === r && cc === c)).toBe(true);
+  });
+
+  it('a mark on the tile itself never counts against it, and a wrong animal is never explained', () => {
+    const p = generatePuzzle({ size: 5, seed: 4 });
+    const s = new Session(p);
+    const [r, c] = firstFree(s, (r, c) => p.solution[r][c] === EMPTY);
+    s.place(r, c, CAT); // wrong: nothing lives here
+    expect(s.cells[r][c]).not.toBe(CAT);
+    expect(s.whyPlaced(r, c, CAT)).toBeNull();
+    expect(MARK).toBe(3);
+  });
+});

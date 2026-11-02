@@ -121,6 +121,15 @@
 - [ ] *Got it* → it never returns (Journey or World); the pantry card appears next time instead
 - [ ] VoiceOver reads the three steps as one sentence
 
+### D39 PR C — why, and small celebrations
+- [ ] Level 2 onward (after the controls note has gone): ✕ the rest of a row, place its animal: the row is ringed for a
+      beat and the coach says *Only one spot was left…*; after three such moves it stops unless *Explain finished
+      lines* is on
+- [ ] Two-animal board: finishing a row by its last spot reads as one sentence; finishing two lines at once ripples the
+      faces and buzzes once
+- [ ] *Halfway there!* once per board; not again after leaving and resuming
+- [ ] High contrast: the why ring is still clear; Reduce Motion: it holds still and disappears
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

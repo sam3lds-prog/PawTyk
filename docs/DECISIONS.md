@@ -856,3 +856,29 @@ PRs (A–E), stacked, each reviewable on its own.
 - **One tip at a time**: while it shows, the hub's pantry card and the World's one-line tip wait their turn.
 - Existing players see it once too (harmless; dismissible), like D38's controls note.
 - Tests: `test/unit/loopCoach.dom.test.ts`.
+
+### PR C — a little "why", and small celebrations
+Two-animal boards already glowed a finished line, played its tone and made two faces proud (D23–D26); one-animal
+boards glowed the color on every placement. What was missing was any *why*, and anything between a placement and the
+win on a long board.
+
+- **Why a move fit** (`Session.whyPlaced`, `game.ts::whyLine`): after a correct placement, the row, column or region in
+  which that tile was the only spot left for the animal — judged only from what the player could see just before the
+  move (the other animals and the tiles their rules rule out, the player's ✕ marks, the mistake marks; every ✕ in such
+  a line is true for this animal, since the line holds exactly one of it, here). Its tiles get a calm ring for 1.5 s
+  (`.cell.is-why`, opacity only; still under reduced motion) and the coach says it in one sentence: *Only one spot was
+  left for a sheep in row 3* on a one-animal board; on a two-animal board it joins the completion line — *Row 3 is
+  complete. It was the only spot left there for a piglet.* Lines the move finished are named first, then region, row,
+  column. A move no single line decided (a longer chain, or a lucky guess) says nothing about why: nothing is invented.
+- **When**: the first three explanations are shown to everyone (`onboarding.whyShown`), then only with Settings →
+  *Explain finished lines* (`settings.explainMoves`, off by default). Never on the guided boards (they teach their own
+  way), never in the Paw Cup, never for the tile a hint had just pointed at, and not while D38's one-time controls note
+  covers the coach line. It never reveals anything about the moves still to come, so D37's rule (dots on impossible tiles
+  only on Easy boards) stands.
+- **Small celebrations**: a move that finishes two or three lines at once gets a ripple of proud faces across them (four
+  at most, under the usual cap of three at once), a success haptic and *…complete at once!*; and every board, either
+  rule, has one *Halfway there!* when half its animals are placed, with a small ripple of smiles from the newest animals
+  (`FaceDirector.wave`, staggered, cleared with the board). A resumed board already past halfway doesn't cheer again.
+  Faces only, as always (D11): no tile or head moves.
+- Tests: `test/unit/session.test.ts` (whyPlaced), `test/unit/gameScreen.dom.test.ts` (first three, the setting, no
+  invented reasons, two-animal sentence, guided boards, halfway once).

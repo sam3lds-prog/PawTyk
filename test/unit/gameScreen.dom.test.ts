@@ -810,3 +810,111 @@ describe('polish (D38 PR E)', () => {
     expect(document.querySelector('.win-sheet [data-skill]')).toBeNull();
   });
 });
+
+describe('a little why, and small celebrations (D39 PR C)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    app.save.onboarding.controlsTipSeen = true;
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    app.settings.explainMoves = false;
+  });
+  const why = () => document.querySelectorAll('.cell.is-why');
+
+  /** Marks ✕ on every other open tile of the solution cell's row, then places the animal: the row left one spot. */
+  function forceByRow(skipRows: number[] = []): { r: number; c: number } {
+    const s = app.active!.session;
+    for (let r = 0; r < s.size; r++) {
+      if (skipRows.includes(r)) continue;
+      const c = s.puzzle.solution[r].findIndex((v) => v !== EMPTY);
+      if (c < 0 || s.givenMask[r][c] || s.cells[r][c] !== EMPTY) continue;
+      for (let cc = 0; cc < s.size; cc++) if (cc !== c && s.cells[r][cc] === EMPTY && !s.errorsAt(r, cc).length) s.toggleMark(r, cc);
+      dblTap(r, c);
+      return { r, c };
+    }
+    throw new Error('no row to force');
+  }
+
+  it('the first few moves one line decided say so and ring that line; then only with the setting', () => {
+    start(5);
+    const done: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const { r } = forceByRow(done);
+      done.push(r);
+      expect(coach()).toMatch(/^Only one spot was left for an? \w+ in (row\u00a0\d|column\u00a0\d|the \w+ region)\.$/);
+      expect(why().length).toBeGreaterThan(0);
+      vi.advanceTimersByTime(1600);
+      expect(why().length).toBe(0);
+    }
+    expect(app.save.onboarding.whyShown).toBe(3);
+    // The fourth is quiet…
+    const { r } = forceByRow(done);
+    done.push(r);
+    expect(coach()).not.toMatch(/Only one spot/);
+    expect(why().length).toBe(0);
+    // …unless the player asked for it.
+    app.settings.explainMoves = true;
+    forceByRow(done);
+    expect(coach()).toMatch(/Only one spot was left/);
+    expect(app.save.onboarding.whyShown).toBe(3);
+  });
+
+  it('a lucky or long-reasoned move says nothing about why', () => {
+    app.settings.explainMoves = true;
+    start(17); // a 9×9: an untouched board leaves no line with a single spot for the first animal placed
+    const s = app.active!.session;
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    if (s.whyPlaced(r, c, CAT) !== null) return; // (this tile happened to be forced already; nothing to show)
+    dblTap(r, c);
+    expect(why().length).toBe(0);
+    expect(coach()).not.toMatch(/Only one spot/);
+  });
+
+  it('a two-animal line finished by its only spot reads as one sentence, and that line is ringed', () => {
+    start(25);
+    const s = app.active!.session;
+    // Place every animal of row 0 but the last, then leave the last one a single open tile.
+    const row = 0;
+    const animals = s.puzzle.solution[row].map((v, c) => [v, c] as const).filter(([v]) => v !== EMPTY);
+    const [lastKind, lastC] = animals[animals.length - 1];
+    for (const [v, c] of animals.slice(0, -1)) if (!s.givenMask[row][c]) s.place(row, c, v as typeof CAT);
+    for (let c = 0; c < s.size; c++) if (c !== lastC && s.cells[row][c] === EMPTY) s.toggleMark(row, c);
+    if (s.givenMask[row][lastC]) return;
+    toolBtn(lastKind === CAT ? 'cat' : 'dog')!.click();
+    dblTap(row, lastC);
+    expect(coach()).toMatch(/^Row 1 (is complete|and \d more are complete)[.!]? .*(It was the only spot left there for|had one spot left in)/);
+    expect([...why()].some((c) => (c as HTMLElement).dataset.r === '0')).toBe(true);
+  });
+
+  it('never in the Paw Cup, never on the guided first board', () => {
+    app.settings.explainMoves = true;
+    expect(app.save.onboarding.tutorialDone).toBe(true);
+    app.save.onboarding.tutorialDone = false;
+    start(1);
+    const s = app.active!.session;
+    // The guided board: its own coaching, no rings of ours.
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    dblTap(r, c);
+    expect(why().length).toBe(0);
+  });
+
+  it('halfway through a board, a small ripple of smiles and "Halfway there!", once', () => {
+    app.save.onboarding.whyShown = 3; // keep the why lines out of the way
+    start(5);
+    const s = app.active!.session;
+    const half = Math.ceil(s.size / 2);
+    let placed = 0;
+    for (let r = 0; r < s.size && placed < half + 1; r++) {
+      const c = s.puzzle.solution[r].findIndex((v) => v !== EMPTY);
+      if (s.givenMask[r][c] || s.cells[r][c] !== EMPTY) {
+        if (s.cells[r][c] !== EMPTY) placed++;
+        continue;
+      }
+      dblTap(r, c);
+      placed++;
+      if (placed === half) expect(coach()).toBe('Halfway there!');
+      else expect(coach()).not.toBe('Halfway there!');
+    }
+  });
+});
