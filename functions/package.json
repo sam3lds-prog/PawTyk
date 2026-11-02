@@ -1,6 +1,7 @@
 {
   "name": "pawtyk-functions",
   "private": true,
+  "license": "UNLICENSED",
   "description": "PawTyk leaderboard Cloud Functions. Built from functions/src (which imports the shared, tested logic in ../src/leaderboard) into lib/index.js by `npm run fb:build` in the repo root.",
   "main": "lib/index.js",
   "engines": {

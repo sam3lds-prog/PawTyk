@@ -1,0 +1,23 @@
+Copyright (c) 2026 Sam (github.com/sam3lds-prog). All rights reserved.
+
+PawTyk, including its source code, puzzle levels, artwork, characters, sounds, text,
+documentation and the name "PawTyk", is proprietary. This repository is published so it
+can be read; that is not a license to use it.
+
+Without prior written permission from the copyright holder, you may not copy, modify,
+merge, publish, distribute, sublicense, sell or create derivative works from any part of
+this repository, or use it to build or publish an app, game or other product.
+
+Viewing the files on GitHub, and forking the repository within GitHub as GitHub's Terms of
+Service allow, are permitted. A fork grants no other rights.
+
+Third-party components keep their own licenses and are not covered by this notice:
+  - The Fredoka and Nunito Sans fonts (bundled from @fontsource-variable/*) are under the
+    SIL Open Font License 1.1.
+  - Packages installed through npm (package.json, functions/package.json) are under the
+    licenses stated in each package.
+See docs/ASSETS.md for the full list of assets and their origins.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+For permission requests, open an issue at https://github.com/sam3lds-prog/PawTyk.
