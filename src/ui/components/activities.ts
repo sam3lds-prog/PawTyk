@@ -7,6 +7,7 @@
 
 import { activityFor, activityMarkup, type ActivityDef } from '../art/activities';
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
+import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { PET_BY_ID, type PetId } from '../../meta/catalogs/pets';
 
 export interface ActivityRunnerOptions {
@@ -169,5 +170,5 @@ export function startSceneActivities(svg: SVGSVGElement, chat: HTMLElement | nul
 
 /** An animal's name, resident or wildlife friend. */
 export function animalName(id: string): string {
-  return PET_BY_ID[id as PetId]?.name ?? COMPANION_BY_ID[id as CompanionId]?.name ?? 'Someone';
+  return PET_BY_ID[id as PetId]?.name ?? COMPANION_BY_ID[id as CompanionId]?.name ?? (isWildId(id) ? wildDef(id).name : 'Someone');
 }

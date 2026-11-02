@@ -27,7 +27,8 @@ import { finishAttempt } from '../../competitions/localCup';
 import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
-import { SANCTUARY_BY_ID, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
 import { animalInfo, withArticle, type AnimalId } from '../../meta/animals';
@@ -59,6 +60,12 @@ export const DOUBLE_TAP_MS = 380;
 
 /** In-memory ad cadence (resets each launch, which only makes ads rarer). */
 const cadence = { boardsSinceLast: 0, lastShownAt: null as number | null, shownToday: 0, day: '' };
+
+/** The board's "helps the …" chip: a region's short name; a place's first word (*Marula*), its full name in the label. */
+function chipName(id: SanctuaryId): string {
+  const d = sanctuaryDef(id);
+  return isPlaceId(id) ? d.name.split(' ')[0] : d.short;
+}
 
 export const gameScreen: ScreenDef = {
   tab: null,
@@ -135,7 +142,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
             <span class="status-left"><span data-progress class="num"></span><span class="status-board" aria-hidden="true">${n}×${n} · ${tierName}</span>${
               mode.kind === 'cup'
                 ? ''
-                : `<span class="status-for" data-for="${cast.sanctuary}" style="--accent:${SANCTUARY_BY_ID[cast.sanctuary].accent}" title="${esc(`This board helps the ${SANCTUARY_BY_ID[cast.sanctuary].name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${SANCTUARY_BY_ID[cast.sanctuary].short}`)}">${ICON.sprout}${esc(SANCTUARY_BY_ID[cast.sanctuary].short)}</span>`
+                : `<span class="status-for" data-for="${cast.sanctuary}" style="--accent:${sanctuaryDef(cast.sanctuary).accent}" title="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}`)}">${ICON.sprout}<span class="status-for__name">${esc(chipName(cast.sanctuary))}</span></span>`
             }</span>
             ${rules.timer && settings.showTimer ? `<span class="game-timer num" data-timer aria-label="Time">${ICON.clock}<span>0:00</span></span>` : ''}
           </div>
@@ -1209,10 +1216,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
 
   /** The milestone, as the centerpiece of the win sheet (in place of the small appreciative face). */
   function heroMarkup(g: GrowthNews, hero: NonNullable<Hero>): string {
-    const def = SANCTUARY_BY_ID[g.sanctuary];
+    const def = sanctuaryDef(g.sanctuary);
     switch (hero.kind) {
       case 'opened': {
-        const r = SANCTUARY_BY_ID[hero.region];
+        const r = sanctuaryDef(hero.region);
         const art = isRegionId(hero.region) ? `<svg viewBox="0 40 360 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${regionThumb(hero.region, 0, 'win-hero')}</svg>` : '';
         return `<div class="win-hero win-hero--opened" style="--accent:${r.accent}" data-hero="opened">
           <div class="win-hero__scene">${art}<span class="win-hero__badge">${ICON.globe}New</span></div>
@@ -1252,15 +1259,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const parts: string[] = [];
     for (const r of g.opened) {
       if (hero?.kind === 'opened' && hero.region === r) continue;
-      const def = SANCTUARY_BY_ID[r];
+      const def = sanctuaryDef(r);
       parts.push(
         `<div class="reward-item"><span class="reward-item__art reward-item__art--pantry" style="color:${def.accent}">${ICON.globe}</span><span><b>The ${esc(def.name)} is open!</b><small>${esc(def.blurb)}</small></span></div>`,
       );
     }
     if (g.growth > 0) {
-      const def = SANCTUARY_BY_ID[g.sanctuary];
+      const def = sanctuaryDef(g.sanctuary);
       if (g.redirectedFrom) {
-        const from = SANCTUARY_BY_ID[g.redirectedFrom];
+        const from = sanctuaryDef(g.redirectedFrom);
         parts.push(`<p class="win-note muted">${ICON.info}The ${esc(from.name)} is finished, so this board helped the ${esc(def.short)} instead.</p>`);
       }
       for (const id of g.arrived) {
@@ -1289,7 +1296,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
    */
   function replayWorldMarkup(): string {
     if (mode.kind === 'cup') return '';
-    const def = SANCTUARY_BY_ID[cast.sanctuary];
+    const def = sanctuaryDef(cast.sanctuary);
     return `<div class="win-world"><p class="win-note muted" data-replay-note>${ICON.info}A replay: it already grew the ${esc(def.short)} once. New levels, the Daily and Zen boards grow it.</p>${nextFriendMarkup(cast.sanctuary)}</div>`;
   }
 
@@ -1302,7 +1309,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (mode.kind === 'cup') return '';
     if (!where) return upNextMarkup(null);
     const p = arrivalProgress(app.save, where);
-    const def = SANCTUARY_BY_ID[where];
+    const def = sanctuaryDef(where);
     const plus = grew ? `<b class="win-plus">${esc(def.short)} +1</b> · ` : '';
     if (!p) {
       const st = nextStage(app.save, where);
@@ -1328,7 +1335,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   function upNextMarkup(finished: SanctuaryId | null): string {
     const act = activeSanctuary(app.save);
     if (act && act !== finished) {
-      const def = SANCTUARY_BY_ID[act];
+      const def = sanctuaryDef(act);
       const p = arrivalProgress(app.save, act);
       const st = nextStage(app.save, act);
       if (p) {
@@ -1432,11 +1439,11 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const visitAct = hero?.kind === 'opened' ? 'region' : meet ? 'meet' : 'region';
     const visitLabel =
       hero?.kind === 'opened'
-        ? `Explore the ${SANCTUARY_BY_ID[hero.region].short}`
+        ? `Explore the ${sanctuaryDef(hero.region).short}`
         : meet
           ? `Meet ${animalInfo(arrived[0]).name}`
           : worldVisit
-            ? `Visit the ${SANCTUARY_BY_ID[worldVisit].short}`
+            ? `Visit the ${sanctuaryDef(worldVisit).short}`
             : 'Visit sanctuary';
     const primaryLabel = milestone ? visitLabel : nextLabel;
     const badges: string[] = [];
@@ -1484,7 +1491,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           <div class="win-secondary"><button class="btn btn--quiet" data-act="share" aria-label="Share result">${ICON.share}Share</button></div>`
               : `<button class="btn btn--block" data-act="next" data-autofocus>${esc(primaryLabel)}</button>
           <div class="win-secondary">
-            ${mode.kind === 'cup' ? '' : worldVisit ? `<button class="btn btn--quiet" data-act="region">${ICON.globe}Visit the ${esc(SANCTUARY_BY_ID[worldVisit].short)}</button>` : growth?.growth ? `<button class="btn btn--quiet" data-act="region">${ICON.home}Visit the ${esc(SANCTUARY_BY_ID[growth.sanctuary].short)}</button>` : `<button class="btn btn--quiet" data-act="sanctuary">${ICON.home}Visit sanctuary</button>`}
+            ${mode.kind === 'cup' ? '' : worldVisit ? `<button class="btn btn--quiet" data-act="region">${ICON.globe}Visit the ${esc(sanctuaryDef(worldVisit).short)}</button>` : growth?.growth ? `<button class="btn btn--quiet" data-act="region">${ICON.home}Visit the ${esc(sanctuaryDef(growth.sanctuary).short)}</button>` : `<button class="btn btn--quiet" data-act="sanctuary">${ICON.home}Visit sanctuary</button>`}
             <button class="btn btn--quiet" data-act="share" aria-label="Share result">${ICON.share}Share</button>
           </div>`
           }

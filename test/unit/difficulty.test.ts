@@ -224,6 +224,15 @@ describe('versioned specs', () => {
     expect(old.size).toBe(journeyTargetV2(160).size);
   }, 60_000);
 
+  it('the Journey never ends (D39): far levels are valid, unique, logic-solvable, at most 9×9, and the same board every time', () => {
+    for (const L of [300, 1000, 5000]) {
+      const p = puzzleFor({ kind: 'level', level: L });
+      expect(p.size).toBeLessThanOrEqual(MAX_JOURNEY_SIZE);
+      expect(verifyBoard(p)).toEqual([]);
+      expect(puzzleDigest(p)).toBe(puzzleDigest(pickBoard(journeyTargetV3(L - SOLO_LEVELS))));
+    }
+  }, 60_000);
+
   it('no daily from the cut-over is larger than 8×8, and its label is measured', () => {
     let k = DAILY_V2_FROM;
     for (let i = 0; i < 366; i++, k = addDaysKey(k, 1)) expect(sizeFor({ kind: 'daily', dateKey: k })).toBeLessThanOrEqual(8);

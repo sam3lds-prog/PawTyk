@@ -9,6 +9,8 @@ to mark it ✕; double-tap to place the animal. A wrong guess costs a heart and 
 
 Every puzzle you solve builds a sanctuary: the Farm first (a sheep, a piglet, a calf, a goat kid, a chick, a pony),
 then the Pet Garden's bunny, cats and dogs, then the Outback, Savanna, Arctic and Amazon as the Journey opens them.
+After that the world never ends: a new place opens at the end of every chapter (or as soon as every home is finished),
+each with its own name, look and new animals — a silver koala, a ginger piglet, an arctic fox in a neckerchief.
 Animals come home one at a time, and the board shows the one you're bringing home. The animals on the board are alive
 in the smallest way: they blink, glance, smile and frown, but only their faces move.
 

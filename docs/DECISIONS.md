@@ -882,3 +882,67 @@ win on a long board.
   Faces only, as always (D11): no tile or head moves.
 - Tests: `test/unit/session.test.ts` (whyPlaced), `test/unit/gameScreen.dom.test.ts` (first three, the setting, no
   invented reasons, two-animal sentence, guided boards, halfway once).
+
+### PR D — a world that never runs out
+The Journey already had no end (past level 170 each board is generated on the device from its level number, the same
+board on every phone), but the world did: the six hand-made homes take about 180 new puzzles to finish, and after that
+a solve grew nothing. For players who never stop, the world now keeps going.
+
+- **Places** (`meta/catalogs/places.ts`): after the Amazon, place 1, 2, 3 … are generated from hand-written ingredients
+  as a pure function of their number. Each is one of the five drawn biomes (a farm, the outback, the savanna, the Arctic,
+  the rainforest; every five places visit all five, never the same twice in a row), with its own name (*Marula
+  Grasslands*, *Quandong Station*, *Narwhal Cove*; 200 per biome before any repeats), a look (golden light, autumn,
+  blossom, mist or dusk, as a color treatment and a light overlay on the region's own art; classic is the region as
+  drawn), mirroring (two places of a biome in a row never look alike), a pin inside its biome's part of the world (a
+  koala never lives in Siberia), the same five stages as a region (0/3/8/15/25) and its completion gift.
+- **New animals**: three natives per place — new individuals of the species already drawn for that biome, each with a
+  name (a biome's own names first, then a shared list; no two animals share a name for the first ~225), a coat (three
+  per species, taking turns), sometimes a knotted neckerchief, a trait and a short bio in the game's voice — and, every
+  other place of the farm, savanna and Arctic, a guest kind that lives there: a rabbit, a bat-eared fox, an arctic fox
+  or an arctic hare (drawn species in a new role and coat). Natives arrive in their region's order, so each stands on the
+  feature its stage brings (the goat on the bales); guests stand on open ground. They appear on boards like any animal
+  (the next one on its way is the board's animal), move like their species in the scene, and their 3D toys are the
+  species' toys recolored (the neckerchief is 2D only for now).
+- **Opening**: place k opens after Journey level 60 + 20k — one new place at the end of every chapter from level 80 —
+  or sooner, the moment every home before it is complete (`world.openPlaceCount`; open places are always 1…N, so one
+  walk finds them). A Zen-only player who finishes everything still always has somewhere new to build. The solve that
+  finishes a home announces the place it opened (`creditSolve` asks again after growing). The next place appears on the
+  map, locked, only once every hand-made home is open, so the early game is unchanged.
+- **Screens**: the World lists every home (`world.worldIds`); once the endless world has begun the list leads with
+  what's being built, then open homes, the next one, and the finished ones last, folded away once the list passes eight;
+  a place's pin is smaller and keeps its name to itself unless it's being built, has news or is next; at most three
+  news pills (the rest are one tap away); news chips name two animals and *N more*. A place's screen shows its animals
+  and has no decorations (its charm is its animals and its look; decorations stay with their hand-made homes). The album
+  has a group per home. Chapters after the fifth have names (*Thistle Path*, *Firefly Hollow* …) instead of "Far Fields
+  N", and the chapter card says which place its last level opens.
+- **Never changes once shipped**: saves keep growth and arrivals by place and animal id, so `PLACES_VERSION` and
+  `test/unit/fixtures/places-v1.json` (the first forty places, regenerated only with a version bump:
+  `npx tsx scripts/places-fixture.ts`) pin the recipe.
+- Tester shortcuts: *Skip to level 81* and *Finish every open home* (which opens the next place).
+- Tests: `test/unit/places.test.ts` (the fixture, 300 places well formed, looks, ids, who the animals are, opening by
+  level and by finishing, the board's cast, reload and reconcile, the shortcut, chapters, drawing, coats on portrait,
+  board face and toy), `test/unit/endlessWorld.dom.test.ts` (World, the fold, a place's screen, the album, the chapter
+  card), `test/unit/difficulty.test.ts` (levels 300, 1000 and 5000 are sound boards).
+
+### Review fixes (independent review of the stack)
+- **The Shop while a place is being built** (its Decor tab was blank): the Shop sells for the hand-made homes only, so while a
+  place is being built it opens on the hand-made region of the same biome (its decor and the treats its animals know).
+  A stale link to a place's decor lands there too.
+- **The newcomer's ring under 3D toys** (PR A): it was drawn inside the figure's group, which the toys hide; it now
+  sits just before the figure in the scene, still behind the body, and the toy stands on it.
+- **The board's status chip at 320 px**: place names are long, so the chip shows a place's first word (*Marula*; its
+  label has the full name) and, if even that doesn't fit, gives way with "…"; the timer and progress count never shrink.
+- **A long world stays light**: the World's fold of finished homes and the album's finished groups draw their cards
+  (a thumbnail or a row of portraits per home) the first time they open (`ui/components/fold.ts`). A finished home with
+  news stays in the list until it is visited, so *News in N more homes* always lands on a card you can see (it now has
+  its own action, so *Build elsewhere* still goes to the list). Favorites in the album are never folded.
+- **Neckerchiefs**: some kinds have no chin to tie one under (a toucan, a seal); an animal of those kinds never wears its
+  own, and now its card no longer says it does (`companions.ts::wearsNeckerchief`, the same test the art uses). The
+  recipe (and the fixture) are unchanged.
+- **3D toys of new animals keep their species' shape**: a recolored toy keeps its species' id, so the builder's
+  per-species touches (a kangaroo's big feet) apply.
+- **"Never take away" for places**: `openPlaceCount` also counts any place that has grown, so a save that somehow grew a
+  later place (an edited save, a future rule) opens everything up to it rather than hiding a home the player built.
+- Measured: at 150 places the World's first draw was about 2.3 MB of markup (1.9 MB of it the fold) and 0.8–0.9 s on a
+  4× slowed CPU; the fold is now empty until opened. Looking far ahead (place 9999) the first time walks every place
+  before it once (about 1.6 s); only tools do that today, and the walk is cached.

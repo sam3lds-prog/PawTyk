@@ -12,6 +12,7 @@ import { AmbientDirector, type AmbientAction } from '../animation/ambientDirecto
 import type { Clock } from '../animation/faceDirector';
 import type { FaceMood } from '../animation/faceMachine';
 import { applyFace } from '../art/pets';
+import { isWildId, wildDef } from '../../meta/catalogs/places';
 
 /** What each wildlife friend likes to do (the sleepy ones mostly blink and stretch). */
 const FRIEND_ACTIONS: Record<string, AmbientAction[]> = {
@@ -110,7 +111,9 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
     const id = `friend:${f}`;
     actors.set(id, g);
     figs.push(id);
-    ambient.add({ id, actions: FRIEND_ACTIONS[f] ?? ['blink', 'stretch'] });
+    // An animal of the endless world moves like its species (D39).
+    const species = isWildId(f) ? wildDef(f).base : f;
+    ambient.add({ id, actions: FRIEND_ACTIONS[species] ?? ['blink', 'stretch'] });
   }
   // Decorations and stage features: each lively group is one actor (its own part is what moves).
   let n = 0;

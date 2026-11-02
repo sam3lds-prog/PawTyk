@@ -7,7 +7,7 @@
  */
 
 import { app } from '../../app/app';
-import { SANCTUARY_BY_ID } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef } from '../../meta/catalogs/sanctuaries';
 import { animalInfo } from '../../meta/animals';
 import { activeSanctuary, arrivalProgress } from '../../meta/world';
 import type { SaveV2 } from '../../services/storage';
@@ -28,7 +28,7 @@ export function shouldShowLoopCoach(save: Pick<SaveV2, 'world' | 'inventory' | '
 /** The card, filled in with the home being built and who is on the way (generic words when nothing is being built). */
 export function loopCoachMarkup(save: SaveV2): string {
   const id = activeSanctuary(save);
-  const def = id ? SANCTUARY_BY_ID[id] : null;
+  const def = id ? sanctuaryDef(id) : null;
   const coming = id ? arrivalProgress(save, id) : null;
   const a = coming ? animalInfo(coming.next.id) : null;
   const grows = def ? `The ${esc(def.short)} grows` : 'Your home grows';

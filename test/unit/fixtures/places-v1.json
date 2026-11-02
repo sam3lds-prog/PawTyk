@@ -1,0 +1,1962 @@
+[
+ {
+  "id": "p1",
+  "name": "Marula Grasslands",
+  "biome": "savanna",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Savanna · Southern Africa",
+  "pin": [
+   17.4,
+   -19
+  ],
+  "opens": 80,
+  "accent": "#C08B3A",
+  "animals": [
+   [
+    "w1-0",
+    3,
+    "zuri",
+    null,
+    "Tumaini",
+    "chestnut-spotted",
+    null,
+    "Can see the whole sanctuary at once"
+   ],
+   [
+    "w1-1",
+    8,
+    "sunny",
+    null,
+    "Asante",
+    "russet",
+    "#A88BDB",
+    "On watch, always"
+   ],
+   [
+    "w1-2",
+    15,
+    "tembo",
+    null,
+    "Kito",
+    "rosy",
+    null,
+    "Splashes everyone, apologizes to no one"
+   ]
+  ]
+ },
+ {
+  "id": "p2",
+  "name": "Jade Glade",
+  "biome": "amazon",
+  "look": "misty",
+  "mirror": false,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -72.4,
+   -7.9
+  ],
+  "opens": 100,
+  "accent": "#3E9A62",
+  "animals": [
+   [
+    "w2-0",
+    3,
+    "rio",
+    null,
+    "Orchid",
+    "sunset",
+    "#F08A5D",
+    "Eats fruit with great ceremony"
+   ],
+   [
+    "w2-1",
+    8,
+    "mango",
+    null,
+    "Cacao",
+    "cocoa",
+    "#A88BDB",
+    "Slow, smiley and never in a hurry"
+   ],
+   [
+    "w2-2",
+    15,
+    "pudding",
+    null,
+    "Tamarind",
+    "russet",
+    null,
+    "Calm enough to be a pillow for birds"
+   ]
+  ]
+ },
+ {
+  "id": "p3",
+  "name": "Honey Hills",
+  "biome": "farm",
+  "look": "classic",
+  "mirror": false,
+  "place": "Farmland · New Zealand",
+  "pin": [
+   171.1,
+   -43.8
+  ],
+  "opens": 120,
+  "accent": "#B5683A",
+  "animals": [
+   [
+    "w3-0",
+    3,
+    "cotton",
+    null,
+    "Hollyhock",
+    "silver",
+    null,
+    "Leans on the fence to watch the clouds"
+   ],
+   [
+    "w3-1",
+    8,
+    "pepper",
+    null,
+    "Barnaby",
+    "brown",
+    null,
+    "Has opinions about every fence post"
+   ],
+   [
+    "w3-2",
+    15,
+    "marigold",
+    null,
+    "Clementine",
+    "cream",
+    "#F2B84B",
+    "Tiny, fluffy and absolutely fearless"
+   ]
+  ]
+ },
+ {
+  "id": "p4",
+  "name": "Narwhal Cove",
+  "biome": "arctic",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Arctic · Siberian Arctic",
+  "pin": [
+   82.1,
+   70.8
+  ],
+  "opens": 140,
+  "accent": "#4C8BB8",
+  "animals": [
+   [
+    "w4-0",
+    3,
+    "luna",
+    null,
+    "Snowdrop",
+    "speckled",
+    null,
+    "Turns her head almost all the way round"
+   ],
+   [
+    "w4-1",
+    8,
+    "frost",
+    null,
+    "Blizzard",
+    "honey",
+    "#F08A5D",
+    "Clumsy on the ice, proud of it"
+   ],
+   [
+    "w4-2",
+    15,
+    "pebble",
+    null,
+    "Sleet",
+    "snow-white",
+    "#3FB7A8",
+    "Round, sleek and fond of naps"
+   ]
+  ]
+ },
+ {
+  "id": "p5",
+  "name": "Quandong Station",
+  "biome": "outback",
+  "look": "golden",
+  "mirror": true,
+  "place": "Outback · Australia",
+  "pin": [
+   121.1,
+   -20.4
+  ],
+  "opens": 160,
+  "accent": "#D99550",
+  "animals": [
+   [
+    "w5-0",
+    3,
+    "gumnut",
+    null,
+    "Wattle",
+    "smoky",
+    null,
+    "Hugs the tree like an old friend"
+   ],
+   [
+    "w5-1",
+    8,
+    "skipper",
+    null,
+    "Ochre",
+    "grey",
+    null,
+    "Practices big jumps at sunrise"
+   ],
+   [
+    "w5-2",
+    15,
+    "dozer",
+    null,
+    "Billabong",
+    "sandy",
+    "#6FBF73",
+    "Square, sturdy and very sure of itself"
+   ]
+  ]
+ },
+ {
+  "id": "p6",
+  "name": "Passionflower Bend",
+  "biome": "amazon",
+  "look": "blossom",
+  "mirror": true,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -53.8,
+   -6
+  ],
+  "opens": 180,
+  "accent": "#55A874",
+  "animals": [
+   [
+    "w6-0",
+    3,
+    "rio",
+    null,
+    "Canopy",
+    "green-billed",
+    null,
+    "Bright beak, brighter mood"
+   ],
+   [
+    "w6-1",
+    8,
+    "mango",
+    null,
+    "Bromelia",
+    "pale",
+    null,
+    "Hangs out, in the most literal way"
+   ],
+   [
+    "w6-2",
+    15,
+    "pudding",
+    null,
+    "Liana",
+    "smoky",
+    "#F08A5D",
+    "Loves a warm bath and a good soak"
+   ]
+  ]
+ },
+ {
+  "id": "p7",
+  "name": "Barley Paddocks",
+  "biome": "farm",
+  "look": "golden",
+  "mirror": true,
+  "place": "Farmland · Central Europe",
+  "pin": [
+   15.7,
+   48.6
+  ],
+  "opens": 200,
+  "accent": "#C0583F",
+  "animals": [
+   [
+    "w7-0",
+    3,
+    "cotton",
+    null,
+    "Gooseberry",
+    "caramel",
+    null,
+    "Leans on the fence to watch the clouds"
+   ],
+   [
+    "w7-1",
+    8,
+    "truffle",
+    null,
+    "Wellington",
+    "sandy",
+    null,
+    "Loves a good mud bath, then a good nap"
+   ],
+   [
+    "w7-2",
+    15,
+    "pepper",
+    null,
+    "Clove",
+    "snow-white",
+    null,
+    "Climbs first, thinks later"
+   ],
+   [
+    "w7-3",
+    21,
+    "juniper",
+    "Rabbit",
+    "Oats",
+    "brown",
+    "#3FB7A8",
+    "Naps in the shade of the wheelbarrow"
+   ]
+  ]
+ },
+ {
+  "id": "p8",
+  "name": "Blue Ice Coast",
+  "biome": "arctic",
+  "look": "misty",
+  "mirror": true,
+  "place": "Arctic · Greenland",
+  "pin": [
+   -41.9,
+   71.3
+  ],
+  "opens": 220,
+  "accent": "#7AA9CF",
+  "animals": [
+   [
+    "w8-0",
+    3,
+    "luna",
+    null,
+    "Igloo",
+    "silver",
+    null,
+    "Silent wings, loud opinions"
+   ],
+   [
+    "w8-1",
+    8,
+    "frost",
+    null,
+    "Flurry",
+    "cream",
+    null,
+    "Big paws, bigger hugs"
+   ],
+   [
+    "w8-2",
+    15,
+    "pebble",
+    null,
+    "Polaris",
+    "spotted",
+    "#E5546C",
+    "Waddles on land, glides in water"
+   ],
+   [
+    "w8-3",
+    21,
+    "ember",
+    "Arctic fox",
+    "Aurora",
+    "snow-white",
+    "#3FB7A8",
+    "Curls up with its tail as a blanket"
+   ]
+  ]
+ },
+ {
+  "id": "p9",
+  "name": "Sandriver Ridge",
+  "biome": "savanna",
+  "look": "misty",
+  "mirror": true,
+  "place": "Savanna · Sahel",
+  "pin": [
+   6.3,
+   9.1
+  ],
+  "opens": 240,
+  "accent": "#C99A2E",
+  "animals": [
+   [
+    "w9-0",
+    3,
+    "zuri",
+    null,
+    "Baraka",
+    "pale",
+    "#5B9BD5",
+    "Shares the highest leaves with the birds"
+   ],
+   [
+    "w9-1",
+    8,
+    "sunny",
+    null,
+    "Sahara",
+    "golden",
+    null,
+    "Stands up straight to greet the sun"
+   ],
+   [
+    "w9-2",
+    15,
+    "tembo",
+    null,
+    "Amani",
+    "dusty",
+    null,
+    "Never forgets a friendly face"
+   ],
+   [
+    "w9-3",
+    21,
+    "ember",
+    "Bat-eared fox",
+    "Nia",
+    "sandy",
+    "#E5546C",
+    "Enormous ears that hear everything"
+   ]
+  ]
+ },
+ {
+  "id": "p10",
+  "name": "Ochre Springs",
+  "biome": "outback",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Outback · Australia",
+  "pin": [
+   141.3,
+   -22.1
+  ],
+  "opens": 260,
+  "accent": "#D99550",
+  "animals": [
+   [
+    "w10-0",
+    3,
+    "gumnut",
+    null,
+    "Dusty",
+    "cinnamon",
+    null,
+    "Sleeps most of the day, cuddles the rest"
+   ],
+   [
+    "w10-1",
+    8,
+    "skipper",
+    null,
+    "Saltbush",
+    "sandy",
+    null,
+    "Keeps snacks in her pouch for later"
+   ],
+   [
+    "w10-2",
+    15,
+    "dozer",
+    null,
+    "Banjo",
+    "ginger",
+    "#F08A5D",
+    "Wanders off, always comes back"
+   ]
+  ]
+ },
+ {
+  "id": "p11",
+  "name": "Riverbend Rapids",
+  "biome": "amazon",
+  "look": "classic",
+  "mirror": false,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -70.2,
+   0.6
+  ],
+  "opens": 280,
+  "accent": "#2F8A55",
+  "animals": [
+   [
+    "w11-0",
+    3,
+    "rio",
+    null,
+    "Mangrove",
+    "rainbow-billed",
+    null,
+    "Bright beak, brighter mood"
+   ],
+   [
+    "w11-1",
+    8,
+    "mango",
+    null,
+    "Kapok",
+    "mossy",
+    null,
+    "Hangs out, in the most literal way"
+   ],
+   [
+    "w11-2",
+    15,
+    "pudding",
+    null,
+    "Papaya",
+    "golden",
+    "#F2B84B",
+    "Everyone’s favorite neighbor"
+   ]
+  ]
+ },
+ {
+  "id": "p12",
+  "name": "Bluebell Croft",
+  "biome": "farm",
+  "look": "autumn",
+  "mirror": false,
+  "place": "Farmland · Pampas",
+  "pin": [
+   -59.2,
+   -36.3
+  ],
+  "opens": 300,
+  "accent": "#C0583F",
+  "animals": [
+   [
+    "w12-0",
+    3,
+    "cotton",
+    null,
+    "Dolly",
+    "chocolate",
+    null,
+    "Hums to herself while she grazes"
+   ],
+   [
+    "w12-1",
+    8,
+    "marigold",
+    null,
+    "Daffodil",
+    "snowy",
+    null,
+    "Tiny, fluffy and absolutely fearless"
+   ],
+   [
+    "w12-2",
+    15,
+    "hazel",
+    null,
+    "Gravy",
+    "grey",
+    "#6FBF73",
+    "Flicks her tail to say hello"
+   ]
+  ]
+ },
+ {
+  "id": "p13",
+  "name": "Tamarind Hills",
+  "biome": "savanna",
+  "look": "classic",
+  "mirror": false,
+  "place": "Savanna · Sahel",
+  "pin": [
+   -3.6,
+   11.7
+  ],
+  "opens": 320,
+  "accent": "#A98A2C",
+  "animals": [
+   [
+    "w13-0",
+    3,
+    "zuri",
+    null,
+    "Baobab",
+    "honey",
+    "#3FB7A8",
+    "Can see the whole sanctuary at once"
+   ],
+   [
+    "w13-1",
+    8,
+    "sunny",
+    null,
+    "Jabari",
+    "grey",
+    "#6FBF73",
+    "Knows where every friend is at any moment"
+   ],
+   [
+    "w13-2",
+    15,
+    "tembo",
+    null,
+    "Acacia",
+    "slate",
+    null,
+    "Trumpets softly when happy"
+   ]
+  ]
+ },
+ {
+  "id": "p14",
+  "name": "Northern Sound",
+  "biome": "arctic",
+  "look": "classic",
+  "mirror": false,
+  "place": "Arctic · Greenland",
+  "pin": [
+   -28.3,
+   65
+  ],
+  "opens": 340,
+  "accent": "#4C8BB8",
+  "animals": [
+   [
+    "w14-0",
+    3,
+    "luna",
+    null,
+    "Drift",
+    "cream",
+    null,
+    "Silent wings, loud opinions"
+   ],
+   [
+    "w14-1",
+    8,
+    "frost",
+    null,
+    "Icicle",
+    "snow-white",
+    null,
+    "Rolls in fresh snow every morning"
+   ],
+   [
+    "w14-2",
+    15,
+    "pebble",
+    null,
+    "Tundra",
+    "silver",
+    null,
+    "Waddles on land, glides in water"
+   ]
+  ]
+ },
+ {
+  "id": "p15",
+  "name": "Sundown Gully",
+  "biome": "outback",
+  "look": "classic",
+  "mirror": true,
+  "place": "Outback · Australia",
+  "pin": [
+   141.6,
+   -29.2
+  ],
+  "opens": 360,
+  "accent": "#D9824A",
+  "animals": [
+   [
+    "w15-0",
+    3,
+    "gumnut",
+    null,
+    "Quandong",
+    "silver",
+    "#5B9BD5",
+    "Picky about leaves, never about friends"
+   ],
+   [
+    "w15-1",
+    8,
+    "skipper",
+    null,
+    "Boomer",
+    "red",
+    "#F08A5D",
+    "Keeps snacks in her pouch for later"
+   ],
+   [
+    "w15-2",
+    15,
+    "dozer",
+    null,
+    "Ironbark",
+    "grey",
+    null,
+    "Digs a new tunnel every morning"
+   ]
+  ]
+ },
+ {
+  "id": "p16",
+  "name": "Whitecap Sound",
+  "biome": "arctic",
+  "look": "golden",
+  "mirror": true,
+  "place": "Arctic · Lapland",
+  "pin": [
+   21.6,
+   70.1
+  ],
+  "opens": 380,
+  "accent": "#7AA9CF",
+  "animals": [
+   [
+    "w16-0",
+    3,
+    "luna",
+    null,
+    "Floe",
+    "speckled",
+    "#E5546C",
+    "Turns her head almost all the way round"
+   ],
+   [
+    "w16-1",
+    8,
+    "frost",
+    null,
+    "Glacier",
+    "honey",
+    null,
+    "Big paws, bigger hugs"
+   ],
+   [
+    "w16-2",
+    15,
+    "pebble",
+    null,
+    "Borealis",
+    "snow-white",
+    null,
+    "Barks hello to every passing boat"
+   ],
+   [
+    "w16-3",
+    21,
+    "juniper",
+    "Arctic hare",
+    "Nordic",
+    "frosty grey",
+    "#F08A5D",
+    "Stands tall to see over the snow"
+   ]
+  ]
+ },
+ {
+  "id": "p17",
+  "name": "Acacia Waterhole",
+  "biome": "savanna",
+  "look": "golden",
+  "mirror": true,
+  "place": "Savanna · East Africa",
+  "pin": [
+   24.7,
+   -7.2
+  ],
+  "opens": 400,
+  "accent": "#C08B3A",
+  "animals": [
+   [
+    "w17-0",
+    3,
+    "zuri",
+    null,
+    "Neema",
+    "chestnut-spotted",
+    null,
+    "Shares the highest leaves with the birds"
+   ],
+   [
+    "w17-1",
+    8,
+    "sunny",
+    null,
+    "Marula",
+    "russet",
+    "#E5546C",
+    "On watch, always"
+   ],
+   [
+    "w17-2",
+    15,
+    "tembo",
+    null,
+    "Kibo",
+    "rosy",
+    "#F08A5D",
+    "Splashes everyone, apologizes to no one"
+   ],
+   [
+    "w17-3",
+    21,
+    "ember",
+    "Bat-eared fox",
+    "Zawadi",
+    "sandy",
+    null,
+    "Listens to the grass before it naps in it"
+   ]
+  ]
+ },
+ {
+  "id": "p18",
+  "name": "Pear Tree Meadows",
+  "biome": "farm",
+  "look": "blossom",
+  "mirror": true,
+  "place": "Farmland · New England",
+  "pin": [
+   -77.2,
+   44.8
+  ],
+  "opens": 420,
+  "accent": "#C0583F",
+  "animals": [
+   [
+    "w18-0",
+    3,
+    "truffle",
+    null,
+    "Pumpernickel",
+    "ginger",
+    "#A88BDB",
+    "Snuffles out every dropped apple"
+   ],
+   [
+    "w18-1",
+    8,
+    "pepper",
+    null,
+    "Haybale",
+    "brown",
+    "#F08A5D",
+    "Bounces when happy, which is often"
+   ],
+   [
+    "w18-2",
+    15,
+    "marigold",
+    null,
+    "Rhubarb",
+    "cream",
+    null,
+    "Cheeps a running report all day"
+   ],
+   [
+    "w18-3",
+    21,
+    "juniper",
+    "Rabbit",
+    "Mabel",
+    "grey",
+    null,
+    "Always the first to hear the gate"
+   ]
+  ]
+ },
+ {
+  "id": "p19",
+  "name": "Kapok Hollow",
+  "biome": "amazon",
+  "look": "golden",
+  "mirror": true,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -65.4,
+   -10.5
+  ],
+  "opens": 440,
+  "accent": "#55A874",
+  "animals": [
+   [
+    "w19-0",
+    3,
+    "rio",
+    null,
+    "Lima",
+    "sunset",
+    "#A88BDB",
+    "Hops from branch to branch to chat"
+   ],
+   [
+    "w19-1",
+    8,
+    "mango",
+    null,
+    "Lagoon",
+    "cocoa",
+    "#F2B84B",
+    "Takes an hour to wave, means it"
+   ],
+   [
+    "w19-2",
+    15,
+    "pudding",
+    null,
+    "Firefly",
+    "russet",
+    null,
+    "Calm enough to be a pillow for birds"
+   ]
+  ]
+ },
+ {
+  "id": "p20",
+  "name": "Desert Pea Gorge",
+  "biome": "outback",
+  "look": "golden",
+  "mirror": false,
+  "place": "Outback · Australia",
+  "pin": [
+   124.8,
+   -27.4
+  ],
+  "opens": 460,
+  "accent": "#D99550",
+  "animals": [
+   [
+    "w20-0",
+    3,
+    "gumnut",
+    null,
+    "Sandy",
+    "smoky",
+    "#F2B84B",
+    "Hugs the tree like an old friend"
+   ],
+   [
+    "w20-1",
+    8,
+    "skipper",
+    null,
+    "Coolabah",
+    "grey",
+    null,
+    "Bouncy, bold and always first to the water"
+   ],
+   [
+    "w20-2",
+    15,
+    "dozer",
+    null,
+    "Matilda",
+    "sandy",
+    null,
+    "Square, sturdy and very sure of itself"
+   ]
+  ]
+ },
+ {
+  "id": "p21",
+  "name": "Amber Hills",
+  "biome": "savanna",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Savanna · Southern Africa",
+  "pin": [
+   27.7,
+   -22.1
+  ],
+  "opens": 480,
+  "accent": "#C08B3A",
+  "animals": [
+   [
+    "w21-0",
+    3,
+    "zuri",
+    null,
+    "Imani",
+    "pale",
+    null,
+    "Shares the highest leaves with the birds"
+   ],
+   [
+    "w21-1",
+    8,
+    "sunny",
+    null,
+    "Olive",
+    "golden",
+    "#E5546C",
+    "Stands up straight to greet the sun"
+   ],
+   [
+    "w21-2",
+    15,
+    "tembo",
+    null,
+    "Otis",
+    "dusty",
+    "#5B9BD5",
+    "Never forgets a friendly face"
+   ]
+  ]
+ },
+ {
+  "id": "p22",
+  "name": "Hayloft Downs",
+  "biome": "farm",
+  "look": "misty",
+  "mirror": false,
+  "place": "Farmland · American Midwest",
+  "pin": [
+   -95.1,
+   41.8
+  ],
+  "opens": 500,
+  "accent": "#C0583F",
+  "animals": [
+   [
+    "w22-0",
+    3,
+    "truffle",
+    null,
+    "Lulu",
+    "sandy",
+    null,
+    "Snuffles out every dropped apple"
+   ],
+   [
+    "w22-1",
+    8,
+    "pepper",
+    null,
+    "Waffle",
+    "snow-white",
+    "#5B9BD5",
+    "Has opinions about every fence post"
+   ],
+   [
+    "w22-2",
+    15,
+    "marigold",
+    null,
+    "Ziggy",
+    "speckled",
+    "#E5546C",
+    "Leads the morning patrol"
+   ]
+  ]
+ },
+ {
+  "id": "p23",
+  "name": "Ironbark Flats",
+  "biome": "outback",
+  "look": "dusk",
+  "mirror": true,
+  "place": "Outback · Australia",
+  "pin": [
+   147.2,
+   -26
+  ],
+  "opens": 520,
+  "accent": "#C96E3C",
+  "animals": [
+   [
+    "w23-0",
+    3,
+    "gumnut",
+    null,
+    "Spinifex",
+    "cinnamon",
+    "#3FB7A8",
+    "Sleeps most of the day, cuddles the rest"
+   ],
+   [
+    "w23-1",
+    8,
+    "skipper",
+    null,
+    "Kookie",
+    "sandy",
+    "#E5546C",
+    "Keeps snacks in her pouch for later"
+   ],
+   [
+    "w23-2",
+    15,
+    "dozer",
+    null,
+    "Mallee",
+    "ginger",
+    null,
+    "Square, sturdy and very sure of itself"
+   ]
+  ]
+ },
+ {
+  "id": "p24",
+  "name": "Narwhal Bay",
+  "biome": "arctic",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Arctic · Canadian Arctic",
+  "pin": [
+   -112.1,
+   67.8
+  ],
+  "opens": 540,
+  "accent": "#4C8BB8",
+  "animals": [
+   [
+    "w24-0",
+    3,
+    "luna",
+    null,
+    "Crystal",
+    "silver",
+    null,
+    "Wise-looking, but mostly sleepy"
+   ],
+   [
+    "w24-1",
+    8,
+    "frost",
+    null,
+    "Lolly",
+    "cream",
+    null,
+    "Rolls in fresh snow every morning"
+   ],
+   [
+    "w24-2",
+    15,
+    "pebble",
+    null,
+    "Pickle",
+    "spotted",
+    "#A88BDB",
+    "Barks hello to every passing boat"
+   ]
+  ]
+ },
+ {
+  "id": "p25",
+  "name": "Cacao Backwater",
+  "biome": "amazon",
+  "look": "misty",
+  "mirror": false,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -57.6,
+   -11.6
+  ],
+  "opens": 560,
+  "accent": "#4AA36B",
+  "animals": [
+   [
+    "w25-0",
+    3,
+    "rio",
+    null,
+    "Acai",
+    "green-billed",
+    null,
+    "Hops from branch to branch to chat"
+   ],
+   [
+    "w25-1",
+    8,
+    "mango",
+    null,
+    "Guava",
+    "pale",
+    null,
+    "Slow, smiley and never in a hurry"
+   ],
+   [
+    "w25-2",
+    15,
+    "pudding",
+    null,
+    "Bonita",
+    "smoky",
+    "#A88BDB",
+    "Calm enough to be a pillow for birds"
+   ]
+  ]
+ },
+ {
+  "id": "p26",
+  "name": "Bramble Croft",
+  "biome": "farm",
+  "look": "classic",
+  "mirror": true,
+  "place": "Farmland · Central Europe",
+  "pin": [
+   25,
+   50
+  ],
+  "opens": 580,
+  "accent": "#9C5B3F",
+  "animals": [
+   [
+    "w26-0",
+    3,
+    "cotton",
+    null,
+    "Comet",
+    "chocolate",
+    null,
+    "Hums to herself while she grazes"
+   ],
+   [
+    "w26-1",
+    8,
+    "pepper",
+    null,
+    "Teacup",
+    "grey",
+    null,
+    "Bounces when happy, which is often"
+   ],
+   [
+    "w26-2",
+    15,
+    "marigold",
+    null,
+    "Fudge",
+    "snowy",
+    null,
+    "Cheeps a running report all day"
+   ],
+   [
+    "w26-3",
+    21,
+    "juniper",
+    "Rabbit",
+    "Lily",
+    "snow-white",
+    "#A88BDB",
+    "Quick, curious and fond of clover"
+   ]
+  ]
+ },
+ {
+  "id": "p27",
+  "name": "Moonlit Tundra",
+  "biome": "arctic",
+  "look": "misty",
+  "mirror": true,
+  "place": "Arctic · Siberian Arctic",
+  "pin": [
+   137.5,
+   72.3
+  ],
+  "opens": 600,
+  "accent": "#5B9BC4",
+  "animals": [
+   [
+    "w27-0",
+    3,
+    "luna",
+    null,
+    "Amber",
+    "cream",
+    null,
+    "Turns her head almost all the way round"
+   ],
+   [
+    "w27-1",
+    8,
+    "frost",
+    null,
+    "Thistle",
+    "snow-white",
+    "#F08A5D",
+    "Big paws, bigger hugs"
+   ],
+   [
+    "w27-2",
+    15,
+    "pebble",
+    null,
+    "Fig",
+    "silver",
+    null,
+    "Barks hello to every passing boat"
+   ],
+   [
+    "w27-3",
+    21,
+    "ember",
+    "Arctic fox",
+    "Apricot",
+    "snow-white",
+    null,
+    "Pounces on snowdrifts for fun"
+   ]
+  ]
+ },
+ {
+  "id": "p28",
+  "name": "Red Oat Crossing",
+  "biome": "savanna",
+  "look": "misty",
+  "mirror": true,
+  "place": "Savanna · Sahel",
+  "pin": [
+   -11.4,
+   10.6
+  ],
+  "opens": 620,
+  "accent": "#A98A2C",
+  "animals": [
+   [
+    "w28-0",
+    3,
+    "zuri",
+    null,
+    "Aster",
+    "honey",
+    null,
+    "Shares the highest leaves with the birds"
+   ],
+   [
+    "w28-1",
+    8,
+    "sunny",
+    null,
+    "Petal",
+    "grey",
+    null,
+    "On watch, always"
+   ],
+   [
+    "w28-2",
+    15,
+    "tembo",
+    null,
+    "Yarrow",
+    "slate",
+    "#5B9BD5",
+    "Never forgets a friendly face"
+   ],
+   [
+    "w28-3",
+    21,
+    "ember",
+    "Bat-eared fox",
+    "Shortbread",
+    "sandy",
+    null,
+    "Chatty at sunset"
+   ]
+  ]
+ },
+ {
+  "id": "p29",
+  "name": "Wattle Plains",
+  "biome": "outback",
+  "look": "classic",
+  "mirror": false,
+  "place": "Outback · Australia",
+  "pin": [
+   134.9,
+   -30.8
+  ],
+  "opens": 640,
+  "accent": "#D9824A",
+  "animals": [
+   [
+    "w29-0",
+    3,
+    "gumnut",
+    null,
+    "Brioche",
+    "silver",
+    null,
+    "Sleeps most of the day, cuddles the rest"
+   ],
+   [
+    "w29-1",
+    8,
+    "skipper",
+    null,
+    "Linden",
+    "red",
+    null,
+    "Keeps snacks in her pouch for later"
+   ],
+   [
+    "w29-2",
+    15,
+    "dozer",
+    null,
+    "Echo",
+    "grey",
+    null,
+    "Wanders off, always comes back"
+   ]
+  ]
+ },
+ {
+  "id": "p30",
+  "name": "Orchid Backwater",
+  "biome": "amazon",
+  "look": "blossom",
+  "mirror": true,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -59,
+   0.5
+  ],
+  "opens": 660,
+  "accent": "#4AA36B",
+  "animals": [
+   [
+    "w30-0",
+    3,
+    "rio",
+    null,
+    "Ivy",
+    "rainbow-billed",
+    "#3FB7A8",
+    "Hops from branch to branch to chat"
+   ],
+   [
+    "w30-1",
+    8,
+    "mango",
+    null,
+    "Bean",
+    "mossy",
+    "#E5546C",
+    "Slow, smiley and never in a hurry"
+   ],
+   [
+    "w30-2",
+    15,
+    "pudding",
+    null,
+    "Lentil",
+    "golden",
+    null,
+    "Everyone’s favorite neighbor"
+   ]
+  ]
+ },
+ {
+  "id": "p31",
+  "name": "Sorrel Meadows",
+  "biome": "farm",
+  "look": "golden",
+  "mirror": false,
+  "place": "Farmland · American Midwest",
+  "pin": [
+   -84.9,
+   39.1
+  ],
+  "opens": 680,
+  "accent": "#B5683A",
+  "animals": [
+   [
+    "w31-0",
+    3,
+    "truffle",
+    null,
+    "Sorrel",
+    "ginger",
+    null,
+    "Loves a good mud bath, then a good nap"
+   ],
+   [
+    "w31-1",
+    8,
+    "marigold",
+    null,
+    "Cocoa",
+    "cream",
+    null,
+    "Cheeps a running report all day"
+   ],
+   [
+    "w31-2",
+    15,
+    "hazel",
+    null,
+    "Jelly",
+    "palomino",
+    null,
+    "Flicks her tail to say hello"
+   ]
+  ]
+ },
+ {
+  "id": "p32",
+  "name": "Kopje Crossing",
+  "biome": "savanna",
+  "look": "classic",
+  "mirror": false,
+  "place": "Savanna · East Africa",
+  "pin": [
+   36.5,
+   -12.7
+  ],
+  "opens": 700,
+  "accent": "#A98A2C",
+  "animals": [
+   [
+    "w32-0",
+    3,
+    "zuri",
+    null,
+    "Quince",
+    "chestnut-spotted",
+    null,
+    "Tall, gentle and fond of treetops"
+   ],
+   [
+    "w32-1",
+    8,
+    "sunny",
+    null,
+    "Acorn",
+    "russet",
+    "#E5546C",
+    "Knows where every friend is at any moment"
+   ],
+   [
+    "w32-2",
+    15,
+    "tembo",
+    null,
+    "Button",
+    "rosy",
+    "#5B9BD5",
+    "Trumpets softly when happy"
+   ]
+  ]
+ },
+ {
+  "id": "p33",
+  "name": "Crystal Point",
+  "biome": "arctic",
+  "look": "classic",
+  "mirror": false,
+  "place": "Arctic · Siberian Arctic",
+  "pin": [
+   61,
+   69.9
+  ],
+  "opens": 720,
+  "accent": "#5590B0",
+  "animals": [
+   [
+    "w33-0",
+    3,
+    "luna",
+    null,
+    "Pippin",
+    "speckled",
+    "#F2B84B",
+    "Silent wings, loud opinions"
+   ],
+   [
+    "w33-1",
+    8,
+    "frost",
+    null,
+    "Misty",
+    "honey",
+    null,
+    "Big paws, bigger hugs"
+   ],
+   [
+    "w33-2",
+    15,
+    "pebble",
+    null,
+    "Holly",
+    "snow-white",
+    null,
+    "Waddles on land, glides in water"
+   ]
+  ]
+ },
+ {
+  "id": "p34",
+  "name": "Bottlebrush Range",
+  "biome": "outback",
+  "look": "golden",
+  "mirror": true,
+  "place": "Outback · Australia",
+  "pin": [
+   119,
+   -28.2
+  ],
+  "opens": 740,
+  "accent": "#BF6A45",
+  "animals": [
+   [
+    "w34-0",
+    3,
+    "gumnut",
+    null,
+    "Myrtle",
+    "smoky",
+    null,
+    "Picky about leaves, never about friends"
+   ],
+   [
+    "w34-1",
+    8,
+    "skipper",
+    null,
+    "Sage",
+    "grey",
+    "#3FB7A8",
+    "Bouncy, bold and always first to the water"
+   ],
+   [
+    "w34-2",
+    15,
+    "dozer",
+    null,
+    "Kiwi",
+    "sandy",
+    null,
+    "Wanders off, always comes back"
+   ]
+  ]
+ },
+ {
+  "id": "p35",
+  "name": "Canopy Grove",
+  "biome": "amazon",
+  "look": "classic",
+  "mirror": false,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -67.6,
+   -6.3
+  ],
+  "opens": 760,
+  "accent": "#4AA36B",
+  "animals": [
+   [
+    "w35-0",
+    3,
+    "rio",
+    null,
+    "Muffin",
+    "sunset",
+    "#5B9BD5",
+    "Bright beak, brighter mood"
+   ],
+   [
+    "w35-1",
+    8,
+    "mango",
+    null,
+    "Sesame",
+    "cocoa",
+    "#F08A5D",
+    "Hangs out, in the most literal way"
+   ],
+   [
+    "w35-2",
+    15,
+    "pudding",
+    null,
+    "Turnip",
+    "russet",
+    null,
+    "Loves a warm bath and a good soak"
+   ]
+  ]
+ },
+ {
+  "id": "p36",
+  "name": "Primrose Orchards",
+  "biome": "farm",
+  "look": "autumn",
+  "mirror": true,
+  "place": "Farmland · Western Europe",
+  "pin": [
+   7.5,
+   47.8
+  ],
+  "opens": 780,
+  "accent": "#C0583F",
+  "animals": [
+   [
+    "w36-0",
+    3,
+    "cotton",
+    null,
+    "Wren",
+    "caramel",
+    "#F08A5D",
+    "Leans on the fence to watch the clouds"
+   ],
+   [
+    "w36-1",
+    8,
+    "pepper",
+    null,
+    "Puddle",
+    "snow-white",
+    "#5B9BD5",
+    "Has opinions about every fence post"
+   ],
+   [
+    "w36-2",
+    15,
+    "marigold",
+    null,
+    "Peony",
+    "speckled",
+    null,
+    "Leads the morning patrol"
+   ],
+   [
+    "w36-3",
+    21,
+    "juniper",
+    "Rabbit",
+    "Twig",
+    "brown",
+    null,
+    "Quick, curious and fond of clover"
+   ]
+  ]
+ },
+ {
+  "id": "p37",
+  "name": "Glacier Floe",
+  "biome": "arctic",
+  "look": "golden",
+  "mirror": true,
+  "place": "Arctic · Siberian Arctic",
+  "pin": [
+   109.6,
+   68.5
+  ],
+  "opens": 800,
+  "accent": "#7AA9CF",
+  "animals": [
+   [
+    "w37-0",
+    3,
+    "luna",
+    null,
+    "Maize",
+    "silver",
+    "#6FBF73",
+    "Turns her head almost all the way round"
+   ],
+   [
+    "w37-1",
+    8,
+    "frost",
+    null,
+    "Gumdrop",
+    "cream",
+    null,
+    "Clumsy on the ice, proud of it"
+   ],
+   [
+    "w37-2",
+    15,
+    "pebble",
+    null,
+    "Blossom",
+    "spotted",
+    null,
+    "Round, sleek and fond of naps"
+   ],
+   [
+    "w37-3",
+    21,
+    "juniper",
+    "Arctic hare",
+    "Bramble",
+    "frosty grey",
+    "#A88BDB",
+    "Stands tall to see over the snow"
+   ]
+  ]
+ },
+ {
+  "id": "p38",
+  "name": "Marula Pan",
+  "biome": "savanna",
+  "look": "golden",
+  "mirror": true,
+  "place": "Savanna · East Africa",
+  "pin": [
+   23.7,
+   6
+  ],
+  "opens": 820,
+  "accent": "#A98A2C",
+  "animals": [
+   [
+    "w38-0",
+    3,
+    "zuri",
+    null,
+    "Flapjack",
+    "pale",
+    null,
+    "Can see the whole sanctuary at once"
+   ],
+   [
+    "w38-1",
+    8,
+    "sunny",
+    null,
+    "Basil",
+    "golden",
+    null,
+    "On watch, always"
+   ],
+   [
+    "w38-2",
+    15,
+    "tembo",
+    null,
+    "Jingle",
+    "dusty",
+    "#A88BDB",
+    "Trumpets softly when happy"
+   ],
+   [
+    "w38-3",
+    21,
+    "ember",
+    "Bat-eared fox",
+    "Lark",
+    "sandy",
+    null,
+    "Listens to the grass before it naps in it"
+   ]
+  ]
+ },
+ {
+  "id": "p39",
+  "name": "Spinifex Gorge",
+  "biome": "outback",
+  "look": "dusk",
+  "mirror": false,
+  "place": "Outback · Australia",
+  "pin": [
+   128.4,
+   -21.2
+  ],
+  "opens": 840,
+  "accent": "#BF6A45",
+  "animals": [
+   [
+    "w39-0",
+    3,
+    "gumnut",
+    null,
+    "Bluebell",
+    "cinnamon",
+    "#6FBF73",
+    "Sleeps most of the day, cuddles the rest"
+   ],
+   [
+    "w39-1",
+    8,
+    "skipper",
+    null,
+    "Hopscotch",
+    "sandy",
+    null,
+    "Practices big jumps at sunrise"
+   ],
+   [
+    "w39-2",
+    15,
+    "dozer",
+    null,
+    "Ginger",
+    "ginger",
+    null,
+    "Square, sturdy and very sure of itself"
+   ]
+  ]
+ },
+ {
+  "id": "p40",
+  "name": "Riverbend Grove",
+  "biome": "amazon",
+  "look": "golden",
+  "mirror": true,
+  "place": "Rainforest · Amazon basin",
+  "pin": [
+   -52.3,
+   -1.4
+  ],
+  "opens": 860,
+  "accent": "#3B8C5E",
+  "animals": [
+   [
+    "w40-0",
+    3,
+    "rio",
+    null,
+    "Sundae",
+    "green-billed",
+    null,
+    "Hops from branch to branch to chat"
+   ],
+   [
+    "w40-1",
+    8,
+    "mango",
+    null,
+    "Sprout",
+    "pale",
+    null,
+    "Takes an hour to wave, means it"
+   ],
+   [
+    "w40-2",
+    15,
+    "pudding",
+    null,
+    "Nutmeg",
+    "smoky",
+    "#5B9BD5",
+    "Everyone’s favorite neighbor"
+   ]
+  ]
+ }
+]

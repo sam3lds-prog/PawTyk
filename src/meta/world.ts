@@ -11,18 +11,8 @@
 
 import type { ModeRef } from '../game/modes';
 import type { SaveV2, UnseenNews } from '../services/storage';
-import {
-  REGIONS,
-  SANCTUARIES,
-  SANCTUARY_BY_ID,
-  isSanctuaryId,
-  type AnimalId,
-  type Arrival,
-  type RegionId,
-  type SanctuaryDef,
-  type SanctuaryId,
-  type StageDef,
-} from './catalogs/sanctuaries';
+import { sanctuaryDef, arrivalOf, REGIONS, SANCTUARIES, SANCTUARY_BY_ID, isSanctuaryId, type AnimalId, type Arrival, type RegionId, type SanctuaryDef, type SanctuaryId, type StageDef } from './catalogs/sanctuaries';
+import { FIRST_PLACE_AFTER, LEVELS_PER_PLACE, MAX_PLACE, isPlaceId, placeDef, placeId, placeIndex, type PlaceId } from './catalogs/places';
 import { animalInfo, homeAnimals, homeSince, isHome, nextArrivalIn, welcomeAnimal } from './animals';
 import { grant } from './ledger';
 
@@ -35,9 +25,61 @@ export function growthOf(save: Pick<SaveV2, 'world'>, id: SanctuaryId): number {
   return save.world.growth[id] ?? 0;
 }
 
-/** Open once its Journey level is cleared; one you already started building stays open whatever the level. */
-export function isOpen(save: Pick<SaveV2, 'journey' | 'world'>, id: SanctuaryId): boolean {
-  return cleared(save) >= SANCTUARY_BY_ID[id].opensAfterLevel || growthOf(save, id) > 0;
+type OpenSave = Pick<SaveV2, 'journey' | 'world'> & Partial<Pick<SaveV2, 'inventory'>>;
+
+/**
+ * Open once its Journey level is cleared; one you already started building stays open whatever the level. A place of
+ * the endless world (D39) also opens as soon as every home before it is complete, so a player who has finished
+ * everything always has somewhere new to build.
+ */
+export function isOpen(save: OpenSave, id: SanctuaryId): boolean {
+  if (isPlaceId(id)) {
+    // Most places are open by level or because they have grown (cheap); only the one after those needs the full walk.
+    const k = placeIndex(id);
+    const n = placesOpenSoFar(save);
+    return k <= n || (k === n + 1 && openPlaceCount(save) > n);
+  }
+  return cleared(save) >= sanctuaryDef(id).opensAfterLevel || growthOf(save, id) > 0;
+}
+
+/**
+ * Places open by level (closed form, nothing to generate) or because they have grown: the highest place that has grown
+ * was opened by the "everything before is complete" rule, and anything that has grown stays open (never take away).
+ */
+function placesOpenSoFar(save: OpenSave): number {
+  const c = cleared(save);
+  let n = c >= FIRST_PLACE_AFTER ? Math.min(MAX_PLACE, Math.floor((c - FIRST_PLACE_AFTER) / LEVELS_PER_PLACE) + 1) : 0;
+  for (const [key, g] of Object.entries(save.world.growth)) if ((g ?? 0) > 0 && isPlaceId(key)) n = Math.max(n, placeIndex(key));
+  return n;
+}
+
+/**
+ * How many places of the endless world are open. They open in order (each one's level comes after the last one's, and
+ * the "everything before is complete" rule can only reach a place after the one before it), so the open places are
+ * always places 1…N; one walk finds N.
+ */
+export function openPlaceCount(save: OpenSave): number {
+  const n = placesOpenSoFar(save);
+  // Every home up to n finished: the next one opens now.
+  const inv = save.inventory;
+  if (!inv || n >= MAX_PLACE) return n;
+  const done = (id: SanctuaryId) => isComplete({ world: save.world, inventory: inv }, id);
+  if (!SANCTUARIES.every((s) => done(s.id))) return n;
+  for (let k = 1; k <= n; k++) if (!done(placeId(k))) return n;
+  return n + 1;
+}
+
+/**
+ * Every sanctuary the world has for this save, in building order: the six hand-made ones, each open place, and the
+ * next place still to open (so the map and the lists always show what comes next).
+ */
+export function worldIds(save: OpenSave): SanctuaryId[] {
+  const n = openPlaceCount(save);
+  // The next place shows once every hand-made home is open (from level 60): before that, the regions are what's next.
+  const teaser = n > 0 || SANCTUARIES.every((s) => isOpen(save, s.id)) ? 1 : 0;
+  const places: PlaceId[] = [];
+  for (let k = 1; k <= Math.min(MAX_PLACE, n + teaser); k++) places.push(placeId(k));
+  return [...SANCTUARIES.map((s) => s.id), ...places];
 }
 
 /** Stage index reached at a growth count (0 = empty land; always 0 for the Pet Garden, which has no stages). */
@@ -48,20 +90,20 @@ export function stageAt(def: SanctuaryDef, growth: number): number {
 }
 
 export function stageOf(save: Pick<SaveV2, 'world'>, id: SanctuaryId): number {
-  return stageAt(SANCTUARY_BY_ID[id], growthOf(save, id));
+  return stageAt(sanctuaryDef(id), growthOf(save, id));
 }
 
 const lastStage = (def: SanctuaryDef) => Math.max(0, def.stages.length - 1);
 
 /** Everyone has arrived and the last stage (if any) is reached. */
 export function isComplete(save: Pick<SaveV2, 'world' | 'inventory'>, id: SanctuaryId): boolean {
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   return stageOf(save, id) >= lastStage(def) && def.arrivals.every((a) => isHome(save, a.id));
 }
 
 /** Progress toward the next stage, for bars and labels. Null when there are no more stages. */
 export function nextStage(save: Pick<SaveV2, 'world'>, id: SanctuaryId): { stage: StageDef; index: number; have: number; need: number; from: number } | null {
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   const s = stageOf(save, id);
   if (s >= def.stages.length - 1) return null;
   const g = growthOf(save, id);
@@ -78,7 +120,7 @@ export function arrivalProgress(
 ): { next: Arrival; have: number; need: number; from: number; left: number } | null {
   const next = nextArrivalIn(save, id);
   if (!next) return null;
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   const i = def.arrivals.indexOf(next);
   const from = i > 0 ? def.arrivals[i - 1].at : 0;
   const have = growthOf(save, id);
@@ -87,19 +129,21 @@ export function arrivalProgress(
 
 /** Overall completion, 0–1 (for the map pin ring): growth toward the last stage or the last arrival, whichever is later. */
 export function progressOf(save: Pick<SaveV2, 'world'>, id: SanctuaryId): number {
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   const last = Math.max(def.stages[def.stages.length - 1]?.at ?? 0, def.arrivals[def.arrivals.length - 1]?.at ?? 0, 1);
   return Math.min(1, growthOf(save, id) / last);
 }
 
-/** Sanctuaries in building order: the Farm, the Pet Garden, then the regions as they open. */
-const ORDER: SanctuaryId[] = SANCTUARIES.map((s) => s.id);
 
 /** The sanctuary you're building: the chosen one if it's open and unfinished, else the first such one, else null. */
 export function activeSanctuary(save: WorldSave): SanctuaryId | null {
   const a = save.world.active;
   if (isSanctuaryId(a) && isOpen(save, a) && !isComplete(save, a)) return a;
-  return ORDER.find((id) => isOpen(save, id) && !isComplete(save, id)) ?? null;
+  // In building order: the Farm, the Pet Garden, the regions as they open, then the endless world's open places (one
+  // walk each, so a long world stays quick).
+  for (const s of SANCTUARIES) if (isOpen(save, s.id) && !isComplete(save, s.id)) return s.id;
+  for (let k = 1, n = openPlaceCount(save); k <= n; k++) if (!isComplete(save, placeId(k))) return placeId(k);
+  return null;
 }
 
 /** Chooses which open, unfinished sanctuary to build. */
@@ -113,7 +157,7 @@ export function setActive(save: WorldSave, id: SanctuaryId): boolean {
 function welcomeArrivals(save: WorldSave, id: SanctuaryId, now: Date): AnimalId[] {
   const g = growthOf(save, id);
   const out: AnimalId[] = [];
-  for (const a of SANCTUARY_BY_ID[id].arrivals) if (a.at <= g && welcomeAnimal(save, a.id, now)) out.push(a.id);
+  for (const a of sanctuaryDef(id).arrivals) if (a.at <= g && welcomeAnimal(save, a.id, now)) out.push(a.id);
   return out;
 }
 
@@ -244,7 +288,7 @@ export function creditSolve(save: WorldSave, ctx: SolveContext, now = new Date()
     noteUnseen(save, only, now);
     return only;
   }
-  const def = SANCTUARY_BY_ID[id];
+  const def = sanctuaryDef(id);
   const before = stageOf(save, id);
   save.world.growth[id] = growthOf(save, id) + 1;
   recordGrown(save, ctx.puzzle, now);
@@ -253,6 +297,8 @@ export function creditSolve(save: WorldSave, ctx: SolveContext, now = new Date()
   const completed = isComplete(save, id);
   let coins = 0;
   if (completed && grant(save, `world:complete:${id}`, def.completeCoins, 'gift', now, `${def.name} complete`)) coins = def.completeCoins;
+  // Finishing a home can open the next place of the endless world (D39), so what opened is asked again now.
+  const openedNow = openRegions(save).filter((r) => !ctx.openedBefore.includes(r));
   const news: GrowthNews = {
     sanctuary: id,
     growth: save.world.growth[id]!,
@@ -260,7 +306,7 @@ export function creditSolve(save: WorldSave, ctx: SolveContext, now = new Date()
     arrived,
     completed: completed && coins > 0,
     coins,
-    opened,
+    opened: openedNow,
     redirectedFrom,
     replayed: false,
   };
@@ -300,9 +346,14 @@ export function unseenIn(save: Pick<SaveV2, 'world'>, id: SanctuaryId): UnseenNe
   return save.world.unseen?.[id] ?? null;
 }
 
+/** Building order of any sanctuary: the hand-made ones first (catalog order), then places by number. */
+function orderKey(id: SanctuaryId): number {
+  return isPlaceId(id) ? SANCTUARIES.length + placeIndex(id) : SANCTUARIES.findIndex((s) => s.id === id);
+}
+
 /** Sanctuaries with news the player hasn't visited yet. */
 export function unseenSanctuaries(save: Pick<SaveV2, 'world'>): SanctuaryId[] {
-  return SANCTUARIES.map((s) => s.id).filter((id) => !!save.world.unseen?.[id]);
+  return Object.keys(save.world.unseen ?? {}).filter((id): id is SanctuaryId => isSanctuaryId(id) && !!save.world.unseen?.[id]).sort((a, b) => orderKey(a) - orderKey(b));
 }
 
 /** A visit clears the sanctuary's "New" marker. Returns what it was, so the screen can say hello to the newcomers. */
@@ -322,7 +373,9 @@ export function growOnSolve(save: WorldSave, openedBefore: RegionId[], now = new
 
 /** Regions (the Farm and the exotic ones) that are open. */
 export function openRegions(save: Pick<SaveV2, 'journey' | 'world'>): RegionId[] {
-  return REGIONS.map((r) => r.id as RegionId).filter((id) => isOpen(save, id));
+  const places: RegionId[] = [];
+  for (let k = 1, n = openPlaceCount(save); k <= n; k++) places.push(placeId(k));
+  return [...REGIONS.map((r) => r.id as RegionId).filter((id) => isOpen(save, id)), ...places];
 }
 
 /**
@@ -339,21 +392,28 @@ export function reconcileWorld(save: WorldSave & Pick<SaveV2, 'daily'>, now = ne
     if (reached > 0) save.world.growth.harmony = reached;
   }
   const out: AnimalId[] = [];
-  for (const s of SANCTUARIES) {
-    out.push(...welcomeArrivals(save, s.id, now));
+  for (const id of worldIds(save)) {
+    if (!isOpen(save, id) && growthOf(save, id) === 0) continue;
+    const s = sanctuaryDef(id);
+    out.push(...welcomeArrivals(save, id, now));
     // A sanctuary that is already finished (an earlier save whose garden filled up above) still pays its gift, once.
-    if (isComplete(save, s.id)) grant(save, `world:complete:${s.id}`, s.completeCoins, 'gift', now, `${s.name} complete`);
+    if (isComplete(save, id)) grant(save, `world:complete:${id}`, s.completeCoins, 'gift', now, `${s.name} complete`);
   }
   return out;
 }
 
 /** The next exotic region still to open, and how many Journey levels until it does. */
-export function nextToOpen(save: Pick<SaveV2, 'journey' | 'world'>): { id: RegionId; def: SanctuaryDef; left: number } | null {
+export function nextToOpen(save: OpenSave): { id: RegionId; def: SanctuaryDef; left: number; orSooner: boolean } | null {
   for (const r of REGIONS) {
     const id = r.id as RegionId;
-    if (!isOpen(save, id)) return { id, def: r, left: r.opensAfterLevel - cleared(save) };
+    if (!isOpen(save, id)) return { id, def: r, left: r.opensAfterLevel - cleared(save), orSooner: false };
   }
-  return null;
+  // The endless world (D39): the next place always exists. It opens at its level, or sooner, the moment every home
+  // before it is complete.
+  const k = openPlaceCount(save) + 1;
+  if (k > MAX_PLACE) return null;
+  const def = placeDef(k);
+  return { id: def.id, def, left: Math.max(1, def.opensAfterLevel - cleared(save)), orSooner: true };
 }
 
 /** Puzzles still to solve (while building it) before a sanctuary's next stage. */
@@ -387,7 +447,8 @@ export function regionChat(save: Pick<SaveV2, 'journey' | 'world' | 'inventory'>
 
 /** When an animal who hasn't come home yet will arrive, in one sentence for its card. */
 export function arrivalLine(save: Pick<SaveV2, 'journey' | 'world' | 'inventory'>, id: AnimalId): string {
-  const def = SANCTUARIES.find((sd) => sd.arrivals.some((a) => a.id === id));
+  const at = arrivalOf(id);
+  const def = at ? sanctuaryDef(at.sanctuary) : null;
   if (!def) return 'Arriving soon.';
   if (!isOpen(save, def.id)) return `Lives at the ${def.short}, which opens after level ${def.opensAfterLevel}.`;
   const p = arrivalProgress(save, def.id);

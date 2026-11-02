@@ -13,7 +13,7 @@ import { DECOR, DECOR_BY_ID, decorHome, decorTier, type DecorId, type DecorTier 
 import { FOODS, FOOD_BY_ID, foodsOf, type FoodId } from '../../meta/catalogs/foods';
 import { chapterAt } from '../../meta/chapters';
 import { buyDecor, decorPrice, decorUnlocked, owns, walletBalance } from '../../meta/sanctuary';
-import { SANCTUARIES, SANCTUARY_BY_ID, isRegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { biomeOfRegion, sanctuaryDef, SANCTUARIES, isBaseSanctuaryId, isRegionId, type BaseSanctuaryId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { activeSanctuary, isOpen } from '../../meta/world';
 import { buyFood, foodCount, FOOD_CAP_EACH } from '../../meta/feeding';
 import { grantGemPurchase, isGemPack } from '../../meta/gems';
@@ -41,9 +41,17 @@ type Tab = 'decor' | 'food' | 'tricks' | 'gems';
 const TAB_LABEL: Record<Tab, string> = { decor: 'Decor', food: 'Food', tricks: 'Tricks', gems: 'Gems' };
 /** The tab and sanctuary the player last looked at, for this app session. */
 let lastTab: Tab = 'decor';
-let lastPlace: SanctuaryId | null = null;
+let lastPlace: BaseSanctuaryId | null = null;
 
-const placeShort = (id: SanctuaryId) => SANCTUARY_BY_ID[id].short;
+/**
+ * The Shop sells for the hand-made homes only (D39: places of the endless world have no decorations). While a place is
+ * being built, the Shop opens on the hand-made region of the same biome: its decor, and the treats its animals know.
+ */
+function shopHome(id: SanctuaryId): BaseSanctuaryId {
+  return isBaseSanctuaryId(id) ? id : biomeOfRegion(id);
+}
+
+const placeShort = (id: SanctuaryId) => sanctuaryDef(id).short;
 /** Where a decoration's sanctuary is shown: the Pet Garden's screen, or the Farm's or a region's. */
 function goSee(id: DecorId): void {
   const home = decorHome(DECOR_BY_ID[id]);
@@ -52,7 +60,7 @@ function goSee(id: DecorId): void {
 }
 function whereText(id: DecorId): string {
   const home = decorHome(DECOR_BY_ID[id]);
-  return home === 'harmony' ? 'the Pet Garden' : `the ${SANCTUARY_BY_ID[home].name}`;
+  return home === 'harmony' ? 'the Pet Garden' : `the ${sanctuaryDef(home).name}`;
 }
 
 const CURRENCY_ICON = { coins: ICON.coin, vtoken: ICON.videoToken, gem: ICON.gem } as const;
@@ -67,11 +75,11 @@ export const shopScreen: ScreenDef = {
     let tab: Tab = lastTab;
     if (route.screen === 'shop' && route.sanctuary) {
       tab = lastTab = 'decor';
-      lastPlace = route.sanctuary;
+      lastPlace = shopHome(route.sanctuary);
     }
     if (route.screen === 'shop' && route.tab) tab = lastTab = route.tab;
     // The sanctuary you're building comes first, until you pick another.
-    let place: SanctuaryId = lastPlace ?? activeSanctuary(app.save) ?? 'farm';
+    let place: BaseSanctuaryId = lastPlace ?? shopHome(activeSanctuary(app.save) ?? 'farm');
     let products: ProductInfo[] = PRODUCT_CATALOG.map((p) => ({ ...p, price: null }));
     void iap.products().then((ps) => {
       if (!scope.alive) return;
@@ -91,14 +99,14 @@ export const shopScreen: ScreenDef = {
       let action: string;
       const locked = !have && !decorUnlocked(app.save, id);
       if (have) action = `<span class="shop-card__state">${ICON.check}Owned</span>`;
-      else if (locked) action = `<span class="shop-card__state">${ICON.lock}Level ${SANCTUARY_BY_ID[decorHome(d)].opensAfterLevel}</span>`;
+      else if (locked) action = `<span class="shop-card__state">${ICON.lock}Level ${sanctuaryDef(decorHome(d)).opensAfterLevel}</span>`;
       else if (d.unlock.kind === 'chapter')
         action = `<span class="shop-card__state shop-card__state--gift">${ICON.gift}Finish ${esc(chapterAt(d.unlock.chapter - 1).name)}</span>`;
       else action = price ? priceTag(price.currency, price.amount) : '';
       const label = have
         ? `${d.name}, owned`
         : locked
-          ? `${d.name}, opens with the ${SANCTUARY_BY_ID[decorHome(d)].name}`
+          ? `${d.name}, opens with the ${sanctuaryDef(decorHome(d)).name}`
           : d.unlock.kind === 'chapter'
             ? `${d.name}, chapter gift`
             : price
@@ -146,7 +154,7 @@ export const shopScreen: ScreenDef = {
       const regionLocked = !isOpen(app.save, place);
       return `
         ${placeChips()}
-        ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(SANCTUARY_BY_ID[place].name)} opens after level ${SANCTUARY_BY_ID[place].opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
+        ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(sanctuaryDef(place).name)} opens after level ${sanctuaryDef(place).opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
         ${decorSection('everyday', `${placeShort(place)} decor`, 'Paid for with Paw Coins, which you earn by solving puzzles.')}
         ${decorSection('video', 'Special decor', 'Only for video tokens.', videoTokenCard())}
         ${decorSection('premium', 'Premium decor', `For gems. ${iap.available ? '' : 'Gem packs are coming soon.'}`)}`;
@@ -260,7 +268,7 @@ export const shopScreen: ScreenDef = {
 
     // Opened from a sanctuary: Back returns there (the tab bar still opens the Shop on its own).
     const prev = app.router.previous;
-    const from = prev?.screen === 'region' ? SANCTUARY_BY_ID[prev.id].short : prev?.screen === 'sanctuary' ? 'Pet Garden' : null;
+    const from = prev?.screen === 'region' ? sanctuaryDef(prev.id).short : prev?.screen === 'sanctuary' ? 'Pet Garden' : null;
 
     function render(): void {
       el.innerHTML = `
@@ -288,7 +296,7 @@ export const shopScreen: ScreenDef = {
       }
       const pc = t.closest('[data-place]') as HTMLElement | null;
       if (pc) {
-        place = lastPlace = pc.dataset.place as SanctuaryId;
+        place = lastPlace = pc.dataset.place as BaseSanctuaryId;
         render();
         (el.querySelector(`[data-place="${place}"]`) as HTMLElement | null)?.focus();
         return;
@@ -369,7 +377,7 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
   let actions: string;
   if (have) actions = `<button class="btn btn--block" data-act="visit">See it in ${esc(whereText(id))}</button>`;
   else if (!decorUnlocked(app.save, id)) {
-    const sd = SANCTUARY_BY_ID[decorHome(d)];
+    const sd = sanctuaryDef(decorHome(d));
     actions = `<p class="muted">For the ${esc(sd.name)}, which opens after level ${sd.opensAfterLevel}. You can buy it once it opens.</p>`;
   } else if (d.unlock.kind === 'chapter')
     actions = `<p class="muted">A gift for finishing ${esc(chapterAt(d.unlock.chapter - 1).name)} (level ${d.unlock.chapter * 20}).</p>`;

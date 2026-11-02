@@ -13,12 +13,18 @@
 
 import type { CompanionId } from './companions';
 import type { PetId } from './pets';
+import { isPlaceId, isWildId, placeDef, placeIndex, placeOfWild, wildDef, type BiomeId, type PlaceId, type WildId } from './places';
 
-export type SanctuaryId = 'farm' | 'harmony' | 'outback' | 'savanna' | 'arctic' | 'amazon';
-/** Sanctuaries with a drawn region scene and growth stages (the Farm and the exotic regions). */
+/** The six hand-made sanctuaries. */
+export type BaseSanctuaryId = 'farm' | 'harmony' | 'outback' | 'savanna' | 'arctic' | 'amazon';
+/** A hand-made sanctuary or a place of the endless world (`p1`, `p2`, …; D39). */
+export type SanctuaryId = BaseSanctuaryId | PlaceId;
+/** Sanctuaries with a drawn region scene and growth stages (the Farm, the exotic regions and every place). */
 export type RegionId = Exclude<SanctuaryId, 'harmony'>;
-/** Every animal in the game: the cat and dog residents and every other friend. */
-export type AnimalId = PetId | CompanionId;
+/** The hand-made regions; each is also a biome the endless world's places are drawn from. */
+export type BaseRegionId = Exclude<BaseSanctuaryId, 'harmony'>;
+/** Every animal in the game: the cat and dog residents, every hand-made friend, and the endless world's animals. */
+export type AnimalId = PetId | CompanionId | WildId;
 
 export interface Arrival {
   id: AnimalId;
@@ -213,7 +219,17 @@ export const SANCTUARIES: readonly SanctuaryDef[] = [
   },
 ] as const;
 
-export const SANCTUARY_BY_ID: Record<SanctuaryId, SanctuaryDef> = Object.fromEntries(SANCTUARIES.map((s) => [s.id, s])) as Record<SanctuaryId, SanctuaryDef>;
+export const SANCTUARY_BY_ID: Record<BaseSanctuaryId, SanctuaryDef> = Object.fromEntries(SANCTUARIES.map((s) => [s.id, s])) as Record<BaseSanctuaryId, SanctuaryDef>;
+
+/** Any sanctuary's definition: a hand-made one, or a place of the endless world (generated, cached). */
+export function sanctuaryDef(id: SanctuaryId): SanctuaryDef {
+  return isPlaceId(id) ? placeDef(placeIndex(id)) : SANCTUARY_BY_ID[id];
+}
+
+/** The drawn biome a region's scene comes from: itself for the hand-made regions, its biome for a place. */
+export function biomeOfRegion(id: RegionId): BiomeId {
+  return isPlaceId(id) ? placeDef(placeIndex(id)).biome : id;
+}
 /** Sanctuaries with a region scene and stages: the Farm, then the exotic regions in opening order. */
 export const REGIONS = SANCTUARIES.filter((s) => s.id !== 'harmony') as readonly SanctuaryDef[];
 /** The exotic regions only (open at Journey levels). */
@@ -221,11 +237,16 @@ export const EXOTIC = SANCTUARIES.filter((s) => !s.beginner) as readonly Sanctua
 
 /** The sanctuary an animal lives in. */
 export function homeOf(id: AnimalId): SanctuaryId {
+  if (isWildId(id)) return placeOfWild(id);
   return SANCTUARIES.find((s) => s.arrivals.some((a) => a.id === id))?.id ?? 'harmony';
 }
 
 /** When an animal arrives (growth count of its sanctuary), and its place in the line. */
 export function arrivalOf(id: AnimalId): (Arrival & { sanctuary: SanctuaryId; index: number }) | null {
+  if (isWildId(id)) {
+    const w = wildDef(id);
+    return { id, at: w.at, sanctuary: w.place, index: w.slot };
+  }
   for (const s of SANCTUARIES) {
     const index = s.arrivals.findIndex((a) => a.id === id);
     if (index >= 0) return { ...s.arrivals[index], sanctuary: s.id, index };
@@ -233,8 +254,11 @@ export function arrivalOf(id: AnimalId): (Arrival & { sanctuary: SanctuaryId; in
   return null;
 }
 
+export function isBaseSanctuaryId(x: unknown): x is BaseSanctuaryId {
+  return typeof x === 'string' && Object.prototype.hasOwnProperty.call(SANCTUARY_BY_ID, x);
+}
 export function isSanctuaryId(x: unknown): x is SanctuaryId {
-  return typeof x === 'string' && x in SANCTUARY_BY_ID;
+  return isBaseSanctuaryId(x) || isPlaceId(x);
 }
 export function isRegionId(x: unknown): x is RegionId {
   return isSanctuaryId(x) && x !== 'harmony';

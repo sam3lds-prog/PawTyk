@@ -597,6 +597,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   color: var(--muted-ink);
   font-weight: 700;
   font-size: var(--t-sm);
@@ -610,6 +611,7 @@
 }
 .status-left [data-progress] {
   white-space: nowrap;
+  flex-shrink: 0;
 }
 /* Short phones hide the header chip; the size and difficulty move down beside the progress count. */
 .status-board {
@@ -624,6 +626,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 .game-timer .ico {
   width: 16px;
@@ -800,10 +803,19 @@
   border: 1px solid var(--line);
   color: var(--accent, var(--muted-ink));
   white-space: nowrap;
+  /* Places of the endless world have long names (D39): the chip gives way, ending in "…" (its label has the full name). */
+  min-width: 0;
+  max-width: 100%;
+}
+.status-for__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .status-for .ico {
   width: 13px;
   height: 13px;
+  flex-shrink: 0;
 }
 
 /* Small phones: tighten chrome so the board keeps its space. */

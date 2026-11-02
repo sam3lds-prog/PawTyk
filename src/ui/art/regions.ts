@@ -11,8 +11,9 @@
 import type { CompanionId } from '../../meta/catalogs/companions';
 import { COMPANIONS } from '../../meta/catalogs/companions';
 import { DECOR_BY_ID, decorHome, type DecorId } from '../../meta/catalogs/decor';
-import { SANCTUARY_BY_ID, type RegionId } from '../../meta/catalogs/sanctuaries';
-import { companionFigure, figureTop, type CompanionMood } from './companions';
+import { biomeOfRegion, sanctuaryDef, type BaseRegionId, type RegionId } from '../../meta/catalogs/sanctuaries';
+import { isPlaceId, placeDef, placeIndex, type BiomeId, type LookId } from '../../meta/catalogs/places';
+import { companionFigure, figureTop, type CompanionMood, type FriendId } from './companions';
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
 
 export type RegionDecorId = Extract<
@@ -459,7 +460,7 @@ const FARM_FENCE = (() => {
     <path d="M98 ${y(98) - 24} V${y(98)} M144 ${y(144) - 24} V${y(144)}" stroke="#b98a5e" stroke-width="2.6" stroke-linecap="round"/></g>`;
 })();
 
-const REGION_ART: Record<RegionId, RegionArt> = {
+const REGION_ART: Record<BaseRegionId, RegionArt> = {
   farm: {
     sky: (id) => `
       <defs>
@@ -964,42 +965,113 @@ const REGION_ART: Record<RegionId, RegionArt> = {
 
 export interface RegionSceneState {
   stage: number;
-  companions: CompanionId[];
+  /** Friends living here (hand-made ones, or a place's own animals). */
+  companions: readonly FriendId[];
   decor: DecorId[];
   evening?: boolean;
 }
 
+/**
+ * Where a place's guest (D39: a rabbit on a farm, an arctic fox, a bat-eared fox) stands: open ground in its biome's
+ * scene, clear of the natives' spots and the stage features.
+ */
+const GUEST_SPOTS: Record<BiomeId, Spot> = {
+  farm: { x: 104, y: 278, H: 24, mood: 'happy' },
+  outback: { x: 300, y: 276, H: 26, mood: 'happy' },
+  savanna: { x: 150, y: 282, H: 28, mood: 'happy' },
+  arctic: { x: 140, y: 272, H: 28, mood: 'happy' },
+  amazon: { x: 300, y: 282, H: 26, mood: 'happy' },
+};
+
+/** A place's look (D39): a color treatment on its sky and land, and sometimes a light overlay. Classic is the region's own. */
+function lookDefs(look: LookId, id: string): string {
+  const m = (v: string) => `<feColorMatrix type="matrix" values="${v}"/>`;
+  switch (look) {
+    case 'golden':
+      return `<filter id="${id}-sky-look">${m('1.05 0.08 0 0 0.03  0.03 0.97 0 0 0.02  0 0 0.8 0 0  0 0 0 1 0')}</filter><filter id="${id}-land-look">${m('1.04 0.06 0 0 0.02  0.02 0.98 0 0 0.01  0 0 0.86 0 0  0 0 0 1 0')}</filter>`;
+    case 'autumn':
+      return `<filter id="${id}-land-look"><feColorMatrix type="hueRotate" values="-34"/>${m('1.06 0 0 0 0.02  0 1 0 0 0  0 0 0.92 0 0  0 0 0 1 0')}</filter>`;
+    case 'blossom':
+      return `<filter id="${id}-sky-look">${m('1.02 0 0 0 0.05  0 0.96 0 0 0.02  0 0 1 0 0.03  0 0 0 1 0')}</filter>`;
+    case 'dusk':
+      return `<filter id="${id}-sky-look">${m('0.95 0.1 0.05 0 0.05  0.04 0.8 0.06 0 0  0.12 0.06 0.95 0 0.05  0 0 0 1 0')}</filter><filter id="${id}-land-look">${m('0.92 0.04 0 0 0  0 0.9 0.02 0 0  0.04 0.02 0.95 0 0.02  0 0 0 1 0')}</filter>`;
+    case 'misty':
+      return `<linearGradient id="${id}-mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>`;
+    default:
+      return '';
+  }
+}
+
+/** What a look lays over the land, behind everything that stands on it. */
+function lookOverlay(look: LookId, id: string): string {
+  if (look === 'misty') return `<rect x="0" y="120" width="360" height="110" fill="url(#${id}-mist)" pointer-events="none"/>`;
+  if (look === 'blossom' || look === 'autumn') {
+    const c = look === 'blossom' ? ['#F6B6C8', '#F9CFDB', '#F3A5BC'] : ['#E8923A', '#D9632E', '#F2B84B'];
+    const pts: Array<[number, number, number]> = [
+      [40, 60, 20],
+      [96, 34, -30],
+      [150, 78, 50],
+      [214, 46, 10],
+      [262, 92, -40],
+      [318, 58, 30],
+      [72, 118, -10],
+      [300, 128, 60],
+    ];
+    return `<g pointer-events="none">${pts.map(([x, y, r], i) => `<ellipse cx="${x}" cy="${y}" rx="3.2" ry="1.8" transform="rotate(${r} ${x} ${y})" fill="${c[i % 3]}" opacity="0.9"/>`).join('')}</g>`;
+  }
+  return '';
+}
+
 export function regionScene(region: RegionId, st: RegionSceneState, id = 'region'): string {
-  const art = REGION_ART[region];
+  const biome = biomeOfRegion(region);
+  const art = REGION_ART[biome];
+  const place = isPlaceId(region) ? placeDef(placeIndex(region)) : null;
+  const look: LookId = place?.look ?? 'classic';
+  // A mirrored place flips its whole land and every feature; its animals are drawn upright at the mirrored spots.
+  const flip = (svg: string) => (place?.mirror ? `<g transform="matrix(-1 0 0 1 360 0)">${svg}</g>` : svg);
+  const fx = (x: number) => (place?.mirror ? 360 - x : x);
+  const defs = lookDefs(look, id);
   const sky: string[] = [];
   const items: Feature[] = [];
   for (const s of [1, 2, 3, 4] as const) {
     if (st.stage < s) continue;
     for (const f of art.stages[s]) {
-      const g = `<g class="sp-stage" data-stage="${s}">${f.svg}</g>`;
+      const g = `<g class="sp-stage" data-stage="${s}">${flip(f.svg)}</g>`;
       if (f.base < 0) sky.push(g);
       else items.push({ base: f.base, svg: g });
     }
   }
-  for (const d of st.decor) {
-    const a = (REGION_DECOR_ART as Record<string, DecorArt | undefined>)[d];
-    if (!a || !DECOR_BY_ID[d] || decorHome(DECOR_BY_ID[d]) !== region) continue;
-    const g = `<g data-decor="${d}">${a.draw()}</g>`;
-    if (a.base < 0) sky.push(g);
-    else items.push({ base: a.base, svg: g });
-  }
-  const accent = SANCTUARY_BY_ID[region].accent;
-  items.push({ base: art.sign[1], svg: sign(art.sign[0], art.sign[1], accent) });
-  for (const c of COMPANIONS) {
-    if (c.sanctuary !== region || !st.companions.includes(c.id)) continue;
-    const spot = SPOTS[c.id as RegionalCompanion];
-    const top = figureTop(c.id, spot.y, spot.H);
-    const fig = companionFigure(c.id, spot.x, spot.y, spot.H, spot.mood).replace(/<\/g>$/, `${heartAbove(spot.x, top - 2)}</g>`);
+  // Decorations belong to their own hand-made sanctuary; the endless world's places have none (yet).
+  if (!place)
+    for (const d of st.decor) {
+      const a = (REGION_DECOR_ART as Record<string, DecorArt | undefined>)[d];
+      if (!a || !DECOR_BY_ID[d] || decorHome(DECOR_BY_ID[d]) !== region) continue;
+      const g = `<g data-decor="${d}">${a.draw()}</g>`;
+      if (a.base < 0) sky.push(g);
+      else items.push({ base: a.base, svg: g });
+    }
+  const accent = sanctuaryDef(region).accent;
+  items.push({ base: art.sign[1], svg: sign(fx(art.sign[0]), art.sign[1], accent) });
+  const figure = (fid: FriendId, spot: Spot) => {
+    const x = fx(spot.x);
+    const top = figureTop(fid, spot.y, spot.H);
+    const fig = companionFigure(fid, x, spot.y, spot.H, spot.mood).replace(/<\/g>$/, `${heartAbove(x, top - 2)}</g>`);
     items.push({ base: (spot.base ?? spot.y) + 0.6, svg: fig });
-  }
+  };
+  if (place) {
+    for (const w of place.animals) if (st.companions.includes(w.id)) figure(w.id, w.guest ? GUEST_SPOTS[biome] : SPOTS[w.base as RegionalCompanion]);
+  } else
+    for (const c of COMPANIONS) {
+      if (c.sanctuary !== region || !st.companions.includes(c.id)) continue;
+      figure(c.id, SPOTS[c.id as RegionalCompanion]);
+    }
   items.sort((a, b) => a.base - b.base);
-  const evening = st.evening ? dusk(art.evening) : '';
-  return art.sky(id) + sky.join('') + art.land(id) + items.map((i) => i.svg).join('') + evening;
+  const evening = st.evening ? dusk(art.evening.map(([x, y]) => [fx(x), y] as [number, number])) : '';
+  const skyLook = /-sky-look/.test(defs) ? ` filter="url(#${id}-sky-look)"` : '';
+  const landLook = /-land-look/.test(defs) ? ` filter="url(#${id}-land-look)"` : '';
+  const bg = look === 'classic' ? flip(art.sky(id)) : `<g${skyLook}>${flip(art.sky(id))}</g>`;
+  const ground = look === 'classic' ? flip(art.land(id)) : `<g${landLook}>${flip(art.land(id))}</g>`;
+  return (defs ? `<defs>${defs}</defs>` : '') + bg + sky.join('') + ground + lookOverlay(look, id) + items.map((i) => i.svg).join('') + evening;
 }
 
 /** The scene for a sanctuary's world-map card: its land at the stage reached, with no figures. */

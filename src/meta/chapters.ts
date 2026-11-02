@@ -1,5 +1,8 @@
 /** Journey chapters: 20 levels each. The first three are the curated, verified launch pack. */
 
+import { hashString, mulberry32, shuffle } from '../engine/rng';
+import { FIRST_PLACE_AFTER, LEVELS_PER_PLACE } from './catalogs/places';
+
 export interface Chapter {
   index: number; // 0-based
   name: string;
@@ -20,8 +23,37 @@ export const LEVELS_PER_CHAPTER = 20;
 /** Levels shipped as a frozen, verified pack (see src/data/levelPack.ts). */
 export const CURATED_LEVELS = 60;
 
+/**
+ * Names for the chapters after the hand-written five (D39): the Journey never ends, so neither do its chapters. A fixed
+ * shuffle of these words, the same on every device; after all two hundred, they come round again with a number.
+ */
+const MORE_FIRST = ['Thistle', 'Firefly', 'Bramble', 'Comet', 'Juniper', 'Clover', 'Saffron', 'Hollyhock', 'Moss', 'Amber', 'Larkspur', 'Cedar', 'Heather', 'Primrose', 'Starling', 'Rowan', 'Pebble', 'Teasel', 'Honeysuckle', 'Kestrel'];
+const MORE_SECOND = ['Path', 'Hollow', 'Bend', 'Ridge', 'Brook', 'Steps', 'Crossing', 'Rise', 'Trail', 'Dell'];
+const MORE_BLURBS = [
+  'Big boards and long chains of reasoning.',
+  'Every size, with the hardest tricks you know.',
+  'Nine by nine, mostly. Take it one color at a time.',
+  'Small boards that bite and big ones that breathe.',
+];
+let moreNames: string[] | null = null;
+function moreName(i: number): string {
+  if (!moreNames) {
+    const all: string[] = [];
+    for (const a of MORE_FIRST) for (const b of MORE_SECOND) all.push(`${a} ${b}`);
+    moreNames = shuffle(mulberry32(hashString('pawtopia-chapters-v1')), all);
+  }
+  const lap = Math.floor(i / moreNames.length);
+  return `${moreNames[i % moreNames.length]}${lap ? ` ${lap + 1}` : ''}`;
+}
+
+/** The place of the endless world that opens when a chapter is finished (chapter 4, levels 61–80, opens place 1), or null. */
+export function placeAfterChapter(index: number): number | null {
+  const k = (index + 1) * LEVELS_PER_CHAPTER >= FIRST_PLACE_AFTER ? ((index + 1) * LEVELS_PER_CHAPTER - FIRST_PLACE_AFTER) / LEVELS_PER_PLACE + 1 : 0;
+  return Number.isInteger(k) && k >= 1 ? k : null;
+}
+
 export function chapterAt(index: number): Chapter {
-  const [name, blurb] = NAMES[index] ?? [`Far Fields ${index - NAMES.length + 2}`, 'Endless boards, generated and verified on your device.'];
+  const [name, blurb] = NAMES[index] ?? [moreName(index - NAMES.length), MORE_BLURBS[(index - NAMES.length) % MORE_BLURBS.length]];
   const first = index * LEVELS_PER_CHAPTER + 1;
   return { index, name, first, last: first + LEVELS_PER_CHAPTER - 1, blurb };
 }

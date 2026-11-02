@@ -9,7 +9,8 @@ import type { SaveV2 } from '../services/storage';
 import { COMPANION_BY_ID, isCompanionId, type CompanionId } from './catalogs/companions';
 import type { AnimalKind } from './catalogs/foods';
 import { PET_BY_ID, isPetId, type PetId } from './catalogs/pets';
-import { SANCTUARY_BY_ID, arrivalOf, homeOf, type AnimalId, type Arrival, type SanctuaryId } from './catalogs/sanctuaries';
+import { isWildId, wildDef } from './catalogs/places';
+import { sanctuaryDef, SANCTUARY_BY_ID, arrivalOf, homeOf, type AnimalId, type Arrival, type SanctuaryId } from './catalogs/sanctuaries';
 
 export type { AnimalId } from './catalogs/sanctuaries';
 
@@ -30,7 +31,7 @@ export interface AnimalInfo {
 }
 
 export function isAnimalId(x: unknown): x is AnimalId {
-  return isPetId(x) || isCompanionId(x);
+  return isPetId(x) || isCompanionId(x) || isWildId(x);
 }
 
 export function animalInfo(id: AnimalId): AnimalInfo {
@@ -38,6 +39,13 @@ export function animalInfo(id: AnimalId): AnimalInfo {
     const p = PET_BY_ID[id];
     const kind = p.species === 'cat' ? 'Cat' : 'Dog';
     return { id, name: p.name, kind, noun: kind.toLowerCase(), animal: p.species, trait: p.trait, bio: p.bio, sanctuary: 'harmony', resident: true };
+  }
+  if (isWildId(id)) {
+    // The endless world's animals (D39): a new individual of a drawn species, or a guest kind with its own name.
+    const w = wildDef(id);
+    const base = COMPANION_BY_ID[w.base];
+    const kind = w.kind || base.kind;
+    return { id, name: w.name, kind, noun: kind.toLowerCase(), animal: w.animal ?? base.animal, trait: w.trait, bio: w.bio, sanctuary: w.place, resident: false };
   }
   const c = COMPANION_BY_ID[id as CompanionId];
   return { id, name: c.name, kind: c.kind, noun: c.kind.toLowerCase(), animal: c.animal, trait: c.trait, bio: c.bio, sanctuary: c.sanctuary, resident: false };
@@ -77,7 +85,7 @@ export function welcomeAnimal(save: Pick<SaveV2, 'inventory'>, id: AnimalId, now
 
 /** A sanctuary's animals in arrival order. */
 export function animalsOf(sanctuary: SanctuaryId): AnimalId[] {
-  return SANCTUARY_BY_ID[sanctuary].arrivals.map((a) => a.id);
+  return sanctuaryDef(sanctuary).arrivals.map((a) => a.id);
 }
 
 /** Animals already living in a sanctuary, in arrival order. */
@@ -85,14 +93,21 @@ export function homeAnimals(save: Pick<SaveV2, 'inventory'>, sanctuary: Sanctuar
   return animalsOf(sanctuary).filter((id) => isHome(save, id));
 }
 
-/** Every animal that has moved in anywhere, sanctuary by sanctuary. */
+/** Every animal that has moved in anywhere, sanctuary by sanctuary (the hand-made ones, then the endless world's in order). */
 export function allHomeAnimals(save: Pick<SaveV2, 'inventory'>): AnimalId[] {
-  return (Object.keys(SANCTUARY_BY_ID) as SanctuaryId[]).flatMap((s) => homeAnimals(save, s));
+  const wild = Object.keys(save.inventory.companions)
+    .filter(isWildId)
+    .sort((a, b) => {
+      const [pa, sa] = a.slice(1).split('-').map(Number);
+      const [pb, sb] = b.slice(1).split('-').map(Number);
+      return pa - pb || sa - sb;
+    });
+  return [...(Object.keys(SANCTUARY_BY_ID) as SanctuaryId[]).flatMap((s) => homeAnimals(save, s)), ...wild];
 }
 
 /** The next animal still to arrive in a sanctuary (the one boards show while you build it), or null when all are home. */
 export function nextArrivalIn(save: Pick<SaveV2, 'inventory'>, sanctuary: SanctuaryId): Arrival | null {
-  return SANCTUARY_BY_ID[sanctuary].arrivals.find((a) => !isHome(save, a.id)) ?? null;
+  return sanctuaryDef(sanctuary).arrivals.find((a) => !isHome(save, a.id)) ?? null;
 }
 
 export { arrivalOf, homeOf };

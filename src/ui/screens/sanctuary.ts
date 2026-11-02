@@ -13,12 +13,13 @@ import { chooseStarter, isShown, owns, sanctuaryChat, setShown, shownDecorIds } 
 import { bindFriendPanel, friendPanelMarkup, type FeedEvents } from '../components/feedPanel';
 import { unlockedCompanions, unlockedPets } from '../../meta/rewards';
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
-import { SANCTUARY_BY_ID, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
-import { companionSvg } from '../art/companions';
+import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
+import { companionSvg, wearsNeckerchief, type FriendId } from '../art/companions';
+import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { animalInfo, animalsOf, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
 import { activeSanctuary, arrivalLine, arrivalProgress, markSeen, setActive } from '../../meta/world';
 import { isPetId } from '../../meta/catalogs/pets';
-import { animalPortrait } from '../art/animals';
+import { animalPortrait, animalTint } from '../art/animals';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray } from '../components/tricks';
@@ -54,8 +55,8 @@ export function sceneMarkup(id: string): string {
 }
 
 /** Portrait for a wildlife friend, matching resident portraits. */
-export function friendPortrait(id: CompanionId, locked = false): string {
-  return `<span class="portrait${locked ? ' is-locked' : ''}" style="--tint:${COMPANION_BY_ID[id].tint}">${companionSvg(id, locked ? 'idle' : 'happy')}</span>`;
+export function friendPortrait(id: FriendId, locked = false): string {
+  return `<span class="portrait${locked ? ' is-locked' : ''}" style="--tint:${animalTint(id) ?? 'var(--surface-2)'}">${companionSvg(id, locked ? 'idle' : 'happy')}</span>`;
 }
 
 export const sanctuaryScreen: ScreenDef = {
@@ -312,22 +313,22 @@ export function arrivalText(id: AnimalId): string {
 }
 
 /** A wildlife friend's card, with the once-a-day pat and feeding. */
-export function showFriendSheet(scope: Scope, id: CompanionId, ev: FeedEvents = {}): void {
-  const c = COMPANION_BY_ID[id];
+export function showFriendSheet(scope: Scope, id: FriendId, ev: FeedEvents = {}): void {
+  const c = animalInfo(id);
   const owned = !!app.save.inventory.companions[id];
   const sh = openSheet(scope, {
-    title: owned ? `${c.name} the ${c.kind.toLowerCase()}` : `A ${c.kind.toLowerCase()} (arriving soon)`,
+    title: owned ? `${c.name} the ${c.noun}` : `A ${c.noun} (arriving soon)`,
     className: 'pet-sheet',
     onClose: ev.onClose,
     body: `
       <div class="pet-sheet__hero">${friendPortrait(id, !owned)}</div>
-      <p class="pet-sheet__trait">${esc(owned ? c.trait : c.sanctuary === 'harmony' ? 'Someone is watching the garden from the hedge.' : `Someone is waiting for a home at the ${SANCTUARY_BY_ID[c.sanctuary].short}.`)}</p>
+      <p class="pet-sheet__trait">${esc(owned ? c.trait : c.sanctuary === 'harmony' ? 'Someone is watching the garden from the hedge.' : `Someone is waiting for a home at the ${sanctuaryDef(c.sanctuary).short}.`)}</p>
       <p class="sheet__lead">${esc(owned ? c.bio : arrivalText(id))}</p>
       ${
         owned
           ? `<dl class="pet-sheet__facts">
               <div><dt>Lives</dt><dd>${esc(habitatLabel(id))}</dd></div>
-              <div><dt>Kind</dt><dd>${esc(c.kind)}</dd></div>
+              <div><dt>Kind</dt><dd>${esc(isWildId(id) ? `${c.kind}, ${wildDef(id).coat.name} coat` : c.kind)}</dd></div>
             </dl>
             ${friendPanelMarkup(id, c.name)}
             <p class="muted">Pats and food are just for fun. They make friends happy and change nothing in your puzzles.</p>`
@@ -337,9 +338,14 @@ export function showFriendSheet(scope: Scope, id: CompanionId, ev: FeedEvents = 
   if (owned) bindFriendPanel(sh.scope, sh.el, id, c.name, ev);
 }
 
-function habitatLabel(id: CompanionId): string {
+function habitatLabel(id: FriendId): string {
+  if (isWildId(id)) {
+    const w = wildDef(id);
+    const where = sanctuaryDef(w.place);
+    return `${where.name}, ${where.place}${wearsNeckerchief(id) ? '. Wears a neckerchief' : ''}`;
+  }
   const c = COMPANION_BY_ID[id];
-  if (c.sanctuary !== 'harmony') return `${SANCTUARY_BY_ID[c.sanctuary].name}, ${SANCTUARY_BY_ID[c.sanctuary].place.replace(/ · beginner$/, '')}`;
+  if (c.sanctuary !== 'harmony') return `${sanctuaryDef(c.sanctuary).name}, ${sanctuaryDef(c.sanctuary).place.replace(/ · beginner$/, '')}`;
   if (c.habitat === 'ground') return 'In a burrow under the garden hedge';
   return c.habitat === 'woodland' ? 'By the woodland log' : 'In the blossom tree (when it is out)';
 }
@@ -383,7 +389,7 @@ export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () 
     dismissible: false,
     className: 'starter-sheet',
     body: `
-      <p class="sheet__lead">Choose one for the ${esc(SANCTUARY_BY_ID[where].short)}. The other stays in the Shop for later.</p>
+      <p class="sheet__lead">Choose one for the ${esc(sanctuaryDef(where).short)}. The other stays in the Shop for later.</p>
       <div class="starter-choices">
         ${choices
           .map((id) => {
@@ -407,7 +413,7 @@ export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () 
       track('onboarding_step', { step: 'starter_gift', item: id });
       sh.close();
       rerender();
-      toast(`${DECOR_BY_ID[id].name} is in the ${SANCTUARY_BY_ID[where].short}.`);
+      toast(`${DECOR_BY_ID[id].name} is in the ${sanctuaryDef(where).short}.`);
       offerNext(scope);
     }
   });

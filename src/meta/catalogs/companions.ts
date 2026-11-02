@@ -9,7 +9,7 @@
  */
 
 import type { AnimalKind } from './foods';
-import { SANCTUARY_BY_ID, type SanctuaryId } from './sanctuaries';
+import { sanctuaryDef, type SanctuaryId } from './sanctuaries';
 
 export type CompanionId =
   // Farm
@@ -303,6 +303,6 @@ export function isCompanionId(x: unknown): x is CompanionId {
 
 /** A sanctuary's friends (not the cat and dog residents), in the order they arrive. */
 export function companionsOf(sanctuary: SanctuaryId): CompanionDefinition[] {
-  const order = SANCTUARY_BY_ID[sanctuary].arrivals.map((a) => a.id as string);
+  const order = sanctuaryDef(sanctuary).arrivals.map((a) => a.id as string);
   return COMPANIONS.filter((c) => c.sanctuary === sanctuary).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 }

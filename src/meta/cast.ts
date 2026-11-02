@@ -10,7 +10,7 @@
 import { hashString } from '../engine/rng';
 import type { Rule } from '../engine/types';
 import type { SaveV2 } from '../services/storage';
-import { SANCTUARY_BY_ID, type SanctuaryId } from './catalogs/sanctuaries';
+import { isSanctuaryId, type SanctuaryId } from './catalogs/sanctuaries';
 import { allHomeAnimals, animalInfo, animalsOf, homeAnimals, isAnimalId, nextArrivalIn, type AnimalId } from './animals';
 import { activeSanctuary } from './world';
 
@@ -54,7 +54,7 @@ export function castFor(save: CastSave, rule: Rule, seed: number): Cast {
 export function parseCast(x: unknown, rule: Rule): Cast | null {
   if (!x || typeof x !== 'object') return null;
   const o = x as Record<string, unknown>;
-  if (!isAnimalId(o.a) || !(typeof o.sanctuary === 'string' && o.sanctuary in SANCTUARY_BY_ID)) return null;
+  if (!isAnimalId(o.a) || !isSanctuaryId(o.sanctuary)) return null;
   if (rule === 'pair' && (!isAnimalId(o.b) || o.b === o.a)) return null;
   return { a: o.a, ...(rule === 'pair' ? { b: o.b as AnimalId } : {}), sanctuary: o.sanctuary as SanctuaryId };
 }

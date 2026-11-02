@@ -123,6 +123,21 @@ drawn figure's `data-gx/gy/gh`, and mirrors the drawn figures' state (`is-<actio
 `.sp-act` rider) with a MutationObserver, so nothing upstream knows the toys exist. `toys.html` (dev only) is a
 gallery of every toy: `?clip=backflip&t=0.5`, `?face=love`. In dev, `window.__stage3d.freezeAt(ms)` steps a clip.
 
+## The endless world (D39)
+
+`meta/catalogs/places.ts` generates place k (`p1`, `p2`, …) and its animals (`w{k}-{slot}`) as a pure function of k:
+a biome (one of the five drawn regions, never twice in a row), a name, a look (a color treatment and overlay on the
+region's own art, `ui/art/regions.ts::lookDefs`), mirroring, a pin inside the biome's part of the world, and three
+natives (new individuals of the biome's drawn species: name, coat, sometimes a neckerchief, a trait and a bio) plus,
+every other place of some biomes, a guest kind. `sanctuaryDef(id)` resolves any sanctuary; `world.isOpen` opens place k
+after level 60 + 20k or as soon as every home before it is complete (`openPlaceCount`, one walk; open places are always
+1…N, and any place that has grown counts as open, so nothing built is ever hidden); `world.worldIds` lists what this save's world has (the next place shows once every hand-made home is open). Art
+draws a wild animal as its species with its coat (`ui/art/companions.ts::artOf`), and its 3D toy is the species' toy
+recolored (`three/species.ts::wildToy`). Saves keep places and animals by id, so a shipped place must never change:
+`test/unit/fixtures/places-v1.json` pins the first forty (`scripts/places-fixture.ts`). A long world's folds (the World's
+finished homes, the album's finished groups) draw their contents on first open (`ui/components/fold.ts`); the Shop
+sells for the hand-made homes and opens on the one matching the biome being built.
+
 ## World map
 
 `ui/art/worldMap.data.ts` is generated once by `scripts/build-world-map.ts` (Natural Earth via world-atlas, Natural

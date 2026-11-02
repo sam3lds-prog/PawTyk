@@ -11,6 +11,7 @@ import { localDateKey } from '../game/dates';
 import { FOOD_BY_ID, isFavorite, type AnimalKind, type FoodId } from './catalogs/foods';
 import { PET_BY_ID, isPetId } from './catalogs/pets';
 import { COMPANION_BY_ID, isCompanionId } from './catalogs/companions';
+import { isWildId, wildDef } from './catalogs/places';
 import { balance, spend } from './ledger';
 import { grantItem, itemBalance, refBalance, spendItem } from './items';
 
@@ -48,6 +49,10 @@ export function buyFood(save: SaveV2, food: FoodId, now = new Date()): BuyFoodRe
 export function animalKindOf(id: string): AnimalKind | null {
   if (isPetId(id)) return PET_BY_ID[id].species;
   if (isCompanionId(id)) return COMPANION_BY_ID[id].animal;
+  if (isWildId(id)) {
+    const w = wildDef(id);
+    return w.animal ?? COMPANION_BY_ID[w.base].animal;
+  }
   return null;
 }
 
