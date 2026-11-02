@@ -1108,3 +1108,47 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
   milestone titles), `test/unit/newcomer.dom.test.ts` (the next goal after *Meet*, in the Pet Garden, and what it
   points at as homes fill); e2e: the arrival's first view and its closed fold.
 
+### PR D — visits worth making
+- **A first visit leads straight to a reaction** (`sceneCues.ts`, `components/selection.ts`): the one-time cue names an
+  animal — the newcomer if there is one, else the first animal in the scene — *Tap Cotton to say hello.*, and a
+  dashed ring sits on the ground under that animal until the cue is done. Tapping it plays its hello (PR A), its
+  temperament's greeting (PR B) and counts its heart; the cue and the ring go.
+- **Easy to find and choose** (`selection.ts`): a tap on or near an animal reaches it — a figure's target is its own
+  height and width plus a margin, and never less than 44 scene units (about 44 points on a phone), the nearest animal
+  winning — so a mouse or a chick is as easy to tap as a cow. Decorations' own taps still come first. The tapped
+  animal gets a soft ring on the ground and a name tag over its head (*Truffle · Playful*) for 2.6 s; tapping another
+  moves both. With 3D toys the rings sit under the toys, as the newcomer's ring does (D39).
+- **Every growth milestone is visible** (`region.ts`): a stage that just appeared — from the solve that reached it, or
+  reached while the player was elsewhere (the "New" marker) — glows for 2.6 s (a glow, so also under reduced motion)
+  as it grows in, and a line under the scene says what changed: *New at the Farm: Barn raising · A red barn goes up
+  beside the pasture.*
+- **Ambience, restrained on purpose**: nothing new loops. The scene already plays one small thing every 3.5–9 s, at
+  most three at once, paused when hidden; the only addition is the one-off liveliness of a welcome (PR C). Reduced
+  motion and the drawn (no-WebGL) scenes are unchanged; every new ring and tag is still.
+- Tests: `test/unit/visits.dom.test.ts` (the target geometry, the named cue and its ring, the reaction, moving the
+  selection, a stage's glow and line from a solve and from the "New" marker), `navigation.dom.test.ts` updated; e2e:
+  the named, ringed cue on the first Farm visit, and a tap just above a small animal reaching it in a real browser.
+
+### Review fixes (independent review of the D40 stack)
+- **D11 held** (A): the touch squeeze scaled a struck animal (`.cell__tried`); now only ✕ marks give, and the faces test
+  covers struck and ghost art too.
+- **Screen readers** (A): the coach line keeps the hearts left in a screen-reader-only span (it is the live region);
+  on screen it stays kind and count-free.
+- **Words** (A, B): two animals of one kind are told apart by name (*Not Mochi's spot*); on a two-animal board *no
+  need to try the cat here again* (the other animal may live there); the two-step offer asks *Double taps coming a
+  little slow?*; names with letters like ā, ō and ñ match their rule (the Kākāpō is playful); the album's label keeps
+  the month's capital.
+- **A shy good friend keeps its eyes** (B) while it turns away; the beaming arcs come with its smile.
+- **An arrival plays once** (C): `Router.settle` rewrites the route once the welcome (or a fresh stage) has played, so
+  Back from a board or a refresh opens the place plainly instead of replaying the toast, the greeting and the goal.
+- **A new player sees the whole first arrival** (C): the starter gift waits until the welcome has played (it opened at
+  once and covered steps 3 and 4).
+- **The next goal is honest** (C): it looks at the home being built first, so it never says *comes home in 2 more
+  puzzles* about a home those puzzles won't grow; the Pet Garden shows it only after *Meet*.
+- **Liveliness never interrupts** (C): `SceneLife.cheer` only takes free slots (`AmbientDirector.offer`).
+- **Small** (C, D): the next goal and the stage line rise in once, not on every re-render; a Daily milestone keeps
+  its streak chip up top (as an ordinary Daily does); the fold's summary names what it holds when there are no
+  rewards (*Stars, time and what's next*); the name tag is measured and kept whole inside the scene's frame.
+- Tests added: no replay on Back, gift timing, the honest goal, later visits, `offer()`, the Zen and replay first
+  views, a named two-animal mistake, the screen-reader hearts, the shy beam timing, the Kākāpō.
+

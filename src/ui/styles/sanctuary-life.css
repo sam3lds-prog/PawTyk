@@ -496,6 +496,60 @@
   opacity: 1 !important;
 }
 
+/* D40 PR D: the animal you tapped, for a moment — a soft ring on the ground and its name tag. Still, never looping. */
+.sanctuary__scene .sp-select {
+  fill: rgba(255, 255, 255, 0.5);
+  stroke: rgba(40, 123, 112, 0.85);
+  stroke-width: 1.6;
+  pointer-events: none;
+  animation: sp-select-in 220ms ease-out both;
+}
+@keyframes sp-select-in {
+  from {
+    opacity: 0;
+  }
+}
+/* The animal the one-time "Tap Cotton to say hello" cue names: a dashed ring until the cue is done. */
+.sanctuary__scene .sp-cue-ring {
+  fill: rgba(255, 244, 196, 0.45);
+  stroke: rgba(235, 137, 120, 0.9);
+  stroke-width: 1.8;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+.sanctuary__scene {
+  position: relative;
+}
+.sanctuary__scene .scene-tag {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -100%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px -6px rgba(40, 52, 52, 0.5);
+  pointer-events: none;
+  animation: sp-tag-in 220ms ease-out both;
+}
+.sanctuary__scene .scene-tag:not([style]) {
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+}
+@keyframes sp-tag-in {
+  from {
+    opacity: 0;
+  }
+}
+/* A stage that just appeared glows for a moment (also under reduced motion: a glow, not a movement). */
+.sanctuary__scene .sp-stage.is-fresh {
+  filter: drop-shadow(0 0 3px rgba(255, 236, 160, 0.95)) drop-shadow(0 0 8px rgba(255, 214, 120, 0.7));
+}
+
 /* A stage just reached grows in. */
 .sanctuary__scene.is-live .sp-stage.is-new {
   transform-box: fill-box;

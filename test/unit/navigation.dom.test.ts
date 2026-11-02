@@ -320,7 +320,7 @@ describe('first run and first visits (PR 5)', () => {
 
   it('the Farm shows one cue to tap an animal, once; tapping one is what dismisses it', () => {
     router.reset({ screen: 'region', id: 'farm' });
-    expect(text('[data-scene-cue="tap"]')).toMatch(/Try tapping an animal/);
+    expect(text('[data-scene-cue="tap"]')).toMatch(/^Tap \w+ to say hello\.$/);
     (el('.sanctuary__scene .sanctuary__pet') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(el('[data-scene-cue]')).toBeNull();
     expect(app.save.onboarding.sceneTapTipSeen).toBe(true);

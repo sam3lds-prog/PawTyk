@@ -8,6 +8,7 @@
 import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
+import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, decorOf, type DecorId } from '../../meta/catalogs/decor';
@@ -111,8 +112,12 @@ export const sanctuaryScreen: ScreenDef = {
       const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       life = svg ? startSceneLife(svg, 'sanct') : null;
       acts = svg ? startSceneActivities(svg, el.querySelector('[data-chat]'), () => app.reducedMotion, animalName) : null;
+      // The tap cue names an animal (the newcomer if there is one) and rings it (D40).
       const slot = el.querySelector('[data-cue-slot]');
-      if (slot) slot.innerHTML = sceneCueMarkup(sceneCue(!!svg?.querySelector('.sanctuary__pet'), !!svg?.querySelector('[data-decor].has-act')));
+      const cue = sceneCue(!!svg?.querySelector('.sanctuary__pet'), !!svg?.querySelector('[data-decor].has-act'));
+      const cued = cue === 'tap' ? cueFigure(svg, welcome[0]) : null;
+      if (slot) slot.innerHTML = sceneCueMarkup(cue, cued?.dataset.name);
+      ringCued(cued);
       s3d.attach(el.querySelector<HTMLElement>('.sanctuary__scene'), svg);
       const btn = tricksBtn();
       if (btn) btn.hidden = !svg?.querySelector('.sanctuary__pet');
@@ -241,11 +246,16 @@ export const sanctuaryScreen: ScreenDef = {
         dismissSceneCue(el, (cueOk.closest('[data-scene-cue]') as HTMLElement).dataset.sceneCue as SceneCue);
         return;
       }
-      const fig = t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null;
+      // An animal, or a tap close to one (D40: little animals are small targets), but never a decoration's own tap.
+      const svgEl = t.closest('.sanctuary__scene svg') as SVGSVGElement | null;
+      const fig =
+        (t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null) ??
+        (svgEl && !t.closest('[data-decor].has-act') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
         // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
         greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
+        selectFigure(scope, el.querySelector<HTMLElement>('.sanctuary__scene')!, fig);
         life?.tap(fig);
         tray.open(fig as unknown as SVGGElement);
         return;
