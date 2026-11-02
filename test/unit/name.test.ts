@@ -5,6 +5,7 @@ import config from '../../capacitor.config';
 import { STORE_PRODUCTS } from '../../src/config/services';
 import { KV_SEQ_KEY } from '../../src/services/kv';
 import { APP_KEY_PREFIXES, SESSIONS_SIDE_KEY, V1_BACKUP_KEY, V2_KEY } from '../../src/services/storage';
+import { chapterAt } from '../../src/meta/chapters';
 
 const ROOT = join(__dirname, '../..');
 
@@ -22,8 +23,11 @@ describe('the game is called PawTyk (D42)', () => {
     expect(config.appName).toBe('PawTyk');
     const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
     expect(html).toContain('<title>PawTyk</title>');
-    // The old display name is gone from the app's code, styles and page (lowercase ids are checked below).
-    const stale = [join(ROOT, 'index.html'), ...filesUnder(join(ROOT, 'src'))].filter((f) => readFileSync(f, 'utf8').includes('Pawtopia'));
+    expect(html).toContain('<meta name="apple-mobile-web-app-title" content="PawTyk" />');
+    // The old display name is gone from the app's code, styles, page, native config and tester page (lowercase ids are
+    // checked below).
+    const shipped = [join(ROOT, 'index.html'), join(ROOT, 'capacitor.config.ts'), join(ROOT, 'scripts/make-artifact.mjs'), ...filesUnder(join(ROOT, 'src'))];
+    const stale = shipped.filter((f) => readFileSync(f, 'utf8').includes('Pawtopia'));
     expect(stale.map((f) => f.slice(ROOT.length + 1))).toEqual([]);
   });
 
@@ -41,8 +45,16 @@ describe('the game is called PawTyk (D42)', () => {
       gems_160: 'pawtopia.gems.160',
       gems_420: 'pawtopia.gems.420',
     });
-    const places = readFileSync(join(ROOT, 'src/meta/catalogs/places.ts'), 'utf8');
-    expect(places).toContain('`pawtopia-places-v${PLACES_VERSION}:');
-    expect(readFileSync(join(ROOT, 'src/meta/chapters.ts'), 'utf8')).toContain("hashString('pawtopia-chapters-v1')");
+    // Generated places are pinned by the places fixture (places.test.ts); chapter names past the hand-named ones come
+    // from a seed with the old name too, so a few are pinned here: a changed seed would rename them in every save.
+    expect([5, 6, 7, 15, 40, 200, 1000].map((i) => chapterAt(i).name)).toEqual([
+      'Bramble Path',
+      'Saffron Brook',
+      'Juniper Dell',
+      'Comet Brook',
+      'Amber Ridge',
+      'Clover Bend',
+      'Clover Bend 5',
+    ]);
   });
 });

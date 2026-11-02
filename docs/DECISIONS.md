@@ -1235,12 +1235,22 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
   names (`pawtopia-places-v1`, `pawtopia-chapters-v1`), or every generated place and chapter a save holds would change
   (the places fixture would fail); the App Store product ids (`pawtopia.gems.*`, `pawtopia.removeads`), which players
   never see and which can't be renamed once they exist in App Store Connect. A comment at each says why.
-- **Leaderboard names**: *PawTyk* joins *Pawtopia* on the impersonation list (*PawTyk Team*, *Paw Tyk Mod* and
-  *P4wTyk* are refused). The rule lives in the shared code, so the server enforces it after the next `fb:deploy`.
+- **Leaderboard names**: nobody can pose as the game under its new name or its old one: *PawTyk* and *Pawtopia* are
+  refused inside a word (*PawTyk Team*, *P4wTyk*) or written as the words themselves (*Paw Tyk*, *Paw-Tyk*), but not
+  where ordinary words only run together (*Pawty Kat*, *Paw Tyke*), which the spaces-removed rule for strong words
+  would have caught. The rule lives in the shared code, so the server enforces it after the next `fb:deploy`.
+- **Safari's Add to Home Screen** is labelled *PawTyk* from any tab (`apple-mobile-web-app-title`; it used the page
+  title, *World · PawTyk*). On iOS, `appName` reaches the home screen only when `cap add ios` creates the project; an
+  older project's *Display Name* is set in Xcode (`docs/native-setup.md` §0).
 - No player-facing *Pawtopia is now PawTyk* note: the Pawtopia name never reached the App Store (the listing is still
   Cats vs Dogs), so the only rename players see is v1's, which the welcome sheet already explains.
-- Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/` or `index.html`; the app name and title; the bundle
-  id, save keys, seeds and product ids unchanged); the leaderboard name test covers the new name.
+- Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/`, `index.html`, `capacitor.config.ts` or the tester
+  page's script; the app name, title and home-screen title; the bundle id, save keys and product ids unchanged; the
+  generated chapter names pinned, as the places fixture pins places); the leaderboard name test covers both names and
+  the ordinary names that must stay allowed.
+- Review fixes (independent agent): the name rule refused innocent names like *Pawty Kat*; Safari's home-screen label
+  followed the tab; the name scan missed the tester page's script; the seeds were checked as source text rather than by
+  what they produce; the Xcode *Display Name* step belonged with the rename.
 
 ### PR B — the icon: Meadow Farm
 - **The Farm, where every player starts** (`scripts/iconArt.ts`): the Farm's red barn as the scenes draw it (white
@@ -1249,16 +1259,22 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
   out front; a round hay bale; and a paw-print weathervane on the roof, for the Paw in PawTyk. The fields in front are
   laid out like the board: plots in the board's color families with light seams between them, as its colors sit on
   its mat, so the icon says "farm" first and "puzzle" second. Clear summer sky, sun and clouds behind.
-- An earlier draft (Pip the cat peeking over a board) was dropped at Sam's request: too close to cat-and-grid puzzle
-  icons. The farm keeps PawTyk apart from them.
-- **Drawn the way the game's animals are**: Cotton's and Truffle's heads are the companion rigs' shapes and palettes
-  (`ui/art/companions.ts`), the barn uses the Farm scene's colors (`ui/art/regions.ts`); one opaque outline throughout
-  (the scenes' translucent outline makes a dark halo at icon size). No text; nothing important in the corners, which
-  iOS rounds.
+- A first draft, Pip the cat peeking over a little board, was dropped: Sam felt it looked too much like another
+  puzzle game's cat icon and asked for something about farms.
+- **Drawn the way the game's animals are**: Cotton's and Truffle's heads are the companion rigs' shapes, in their own
+  palettes read from `ui/art/companions.ts` (`friendPalette`), so the icon follows a palette change; the barn's colors
+  are copied from the Farm scene's barn (`ui/art/regions.ts`). One opaque outline throughout (the scenes' translucent
+  outline makes a dark halo at icon size). No text; nothing important in the corners, which iOS rounds.
 - **Files**: `assets/icon.svg` (master), `assets/icon-only.png` (1024 × 1024, RGB with no alpha channel, as the App
   Store requires; Xcode's single-size AppIcon or `npx @capacitor/assets generate --ios`), `public/apple-touch-icon.png`
   (180 px, linked from `index.html`), and `public/favicon.svg` — the barn alone with its white ✕ door, which still
-  reads at 16 px. `npm run icons` writes all four; `npm run icons:check` confirms the committed SVGs match the code.
-  Also built, not shipped: `--style golden` (golden hour) and `--style dusk` skies.
-- Tests: `test/unit/icon.test.ts` (the committed SVGs are what the code draws; both PNGs have the right size and no
-  alpha; every sky draws; the page links the icons).
+  reads at 16 px. `npm run icons` renders the PNGs first and writes the SVGs last; each PNG records the SHA-256 of the
+  SVG it came from (a `tEXt` chunk), so `npm run icons:check` and the test catch a PNG left over from older art.
+- **Other skies**: `golden` (golden hour) and `dusk` are built in. `npm run icons -- --style golden` renders a preview
+  to `artifact/icon-golden.png` without touching the shipped files; shipping one means setting `ICON_STYLE` in
+  `scripts/iconArt.ts` and running `npm run icons`.
+- Tests: `test/unit/icon.test.ts` (the committed SVGs are what the code draws and the PNGs were rendered from them;
+  both PNGs have the right size and no alpha; every sky draws; the page links the icons).
+- Review fixes (independent agent): the palettes were copied rather than read from the game; a missing Playwright left
+  new SVGs beside old PNGs, and nothing tied a PNG to its SVG; `--style` overwrote the shipped icon and broke the check;
+  the cat draft and its PNG are no longer in the history (the PR is one commit).
