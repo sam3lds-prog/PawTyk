@@ -106,6 +106,15 @@ describe('sanctuary ambient life', () => {
     expect(active()).toBe(0);
   });
 
+  it("a welcome's liveliness only takes a free slot: it never cuts an animal's hello short (D40)", () => {
+    const { d, log } = setup();
+    for (const id of ['mochi', 'biscuit', 'pip']) d.trigger(id, 'hop');
+    expect(d.offer('decor:fountain', 'sparkle')).toBe(false);
+    expect(log.filter((e) => e.kind === 'end')).toHaveLength(0);
+    const free = setup();
+    expect(free.d.offer('decor:fountain', 'sparkle')).toBe(true);
+  });
+
   it('a tap plays even when paused, and makes room instead of exceeding the cap', () => {
     const { d, peak } = setup();
     const ids = ['mochi', 'biscuit', 'pip', 'nori', 'friend:ember'];

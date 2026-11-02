@@ -35,6 +35,7 @@ import { friendPortrait, isEvening, offerStarterGift, showFriendSheet } from './
 import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
+import { showNextGoal } from '../components/nextGoal';
 
 export const regionScreen: ScreenDef = {
   tab: 'world',
@@ -219,7 +220,9 @@ export const regionScreen: ScreenDef = {
       if (btn) btn.hidden = !open || !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
+      if (goalShown) showNextGoal(el, id);
     }
+    let goalShown = false;
     render();
 
     // Arrival: a new stage grows in, then everyone says hello (a bigger hello on the first visit of the day, or right
@@ -229,8 +232,13 @@ export const regionScreen: ScreenDef = {
       if (freshStage && svg && !app.reducedMotion) for (const g of svg.querySelectorAll(`.sp-stage[data-stage="${freshStage}"]`)) g.classList.add('is-new');
       greetAll(life, (fn, ms) => scope.timeout(fn, ms), route.fresh !== undefined || firstVisitToday);
     }
-    // After the first board: a starter gift for the Farm (if the Pet Garden hasn't offered it already).
-    if (isOpen(app.save, id)) offerStarterGift(scope, id, render);
+    // After the first board: a starter gift for the Farm (if the Pet Garden hasn't offered it already). Straight from a
+    // win's Meet, it waits until the arrival has played out, so its card never covers the welcome (D40 review).
+    const welcoming = !!newcomers.length && !!route.welcome?.includes(newcomers[0]);
+    if (isOpen(app.save, id)) {
+      if (welcoming) scope.timeout(() => offerStarterGift(scope, id, render), app.reducedMotion ? 600 : 3200);
+      else offerStarterGift(scope, id, render);
+    }
     // Someone came home, just now or while the player was elsewhere: say so, ring them in the scene, and let them say hello.
     if (newcomers.length) {
       const a = animalInfo(newcomers[0]);
@@ -244,7 +252,16 @@ export const regionScreen: ScreenDef = {
         scope.timeout(() => fig?.classList.remove('is-arriving'), 900);
       }
       scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
+      // D40, the arrival's last two steps: the place livens up for a moment around its newcomer, then the next goal.
+      if (welcoming)
+        scope.timeout(() => {
+          life?.cheer();
+          goalShown = true;
+          showNextGoal(el, id, true);
+        }, app.reducedMotion ? 0 : 2300);
     }
+    // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
+    if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;

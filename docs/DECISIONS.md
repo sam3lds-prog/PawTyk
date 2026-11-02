@@ -1081,3 +1081,30 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
   (figures carry their temperament, a tap counts once a day, a new level is announced and changes the greeting, the
   best-friend card and the album, the card's lines); e2e: Cotton greets sleepily and a hello counts once.
 
+### PR C — the reward first; an arrival in four steps
+- **An ordinary win** (`game.ts::showWin`): the sheet is titled *Puzzle solved!*; its first view is the board's smiling
+  animal, a small row of stars (owner decision), the step the world took (*Meadow Farm +1*), what it brought closer
+  (*One puzzle closer to Truffle!*, with the bar moving and *Truffle the piglet: 3 → 2 puzzles away* under it), then
+  *Play level N* and the quiet *Visit the Farm*. Everything else — time, mistakes and hints, *Clean solve* and *New best*,
+  the skill line, Paw Points and rank, coins, gifts and pantry items, badges and missions, Share — is in one closed
+  fold under the buttons, *More rewards*, whose summary says what it holds (*+45 coins · +175 Paw Points · 2 badges*).
+  Nothing was removed: the same reward logic, revealed when asked. A Daily keeps its streak chip up top; a Paw Cup win
+  keeps its score card up top; a replay shows which stars are still to earn up top, and the replay note in the fold.
+- **An arrival**: the sheet's title is the news (*Truffle is home!*), then the animal's face, *Your new piglet*, *A new
+  little friend has arrived at the Farm.*, and its temperament (*Playful · Truffle is curious about everything and
+  delighted to see you.*); *Meet Truffle* is the main action and *Play level N* the full second button (D36). Even the
+  stars wait in the fold, with what's coming next. Other milestones work the same way: the title is the news (*The
+  Outback Sanctuary is open!*, *The Meadow Farm is complete!*, *Farm: Duck pond!*), the picture and its line below.
+- **The four steps**: (1) the puzzle completes — the success melody, the board's animals smile in a wave; (2) the new
+  friend is revealed — its own warm chime and pulse as its portrait comes up (PR A), its name, kind and one character
+  detail; (3) welcome home — *Meet* opens its home, where it settles in, is ringed, greets in its own way, and the
+  scene livens up for a moment (`SceneLife.cheer`: two of its lively parts play once; nothing under reduced motion);
+  (4) the next goal — a small card under the scene (`components/nextGoal.ts`, `world.ts::nextGoal`): *Next goal ·
+  Buttercup the calf comes home in 3 more puzzles* with *Play level N*; with every animal home here it is the next
+  stage, then the home being built now, then the next home to open. The Pet Garden shows it once its "came home" card
+  is closed.
+- The coach line on the board says *Puzzle solved!* too.
+- Tests: `test/unit/gameScreen.dom.test.ts` (the first view and the fold for an ordinary win and an arrival; the
+  milestone titles), `test/unit/newcomer.dom.test.ts` (the next goal after *Meet*, in the Pet Garden, and what it
+  points at as homes fill); e2e: the arrival's first view and its closed fold.
+

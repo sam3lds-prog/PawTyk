@@ -189,6 +189,18 @@
 - [ ] The card reads *Playful · Truffle is curious about everything…*, *3 hearts to Good friend: a beaming smile*
 - [ ] Reduce Motion: a tap changes only the face (a shy one still glances away first), no hops
 
+### D40 PR C — the win, and an arrival in four steps
+- [ ] Ordinary win, 320×568 and 390×844: *Puzzle solved!*, a small star row, *Meadow Farm +1*, *One puzzle closer to
+      Truffle!* and *Play level N* all fit in the first view with no scrolling; *More rewards* is closed and its summary
+      lists what's inside; opening it shows time, badges, Paw Points, coins, missions and Share
+- [ ] Arrival: *Truffle is home!*, her face, *Your new piglet*, her temperament; the warm chime comes a beat after the
+      melody; *Meet Truffle* → she settles, is ringed and greets in her own way, the pond sparkles once, then *Next goal*
+      appears under the scene with *Play level N*
+- [ ] Pet Garden arrival: the next goal comes after the "came home" card is closed
+- [ ] Daily: the streak chip is in the first view; Paw Cup: the score card is; a replay: the stars still to earn are
+- [ ] VoiceOver: the fold reads as *More rewards*, collapsed, with its summary; the stars read "2 of 3 stars"
+- [ ] Reduce Motion: no rise or bar slide; the next goal appears at once
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
