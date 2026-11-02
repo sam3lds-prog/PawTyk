@@ -1,7 +1,7 @@
 /**
  * Ads. The game talks to `AdService` only.
  *
- * Pawtopia shows **reward videos only, and only when the player asks for one** (an extra life, a hint, or a video
+ * PawTyk shows **reward videos only, and only when the player asks for one** (an extra life, a hint, or a video
  * token). No banners, and no interstitials: `INTERSTITIALS_ENABLED` is false, so the cadence rule below is kept for the
  * record but never reached. A reward is granted only when the ad network confirms the video was watched.
  *

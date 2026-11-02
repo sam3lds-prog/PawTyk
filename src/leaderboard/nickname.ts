@@ -18,7 +18,7 @@ export type NickResult = { ok: true; name: string } | { ok: false; problem: Nick
  *  - WORDS: short words that are also parts of ordinary names (Hancock, Dickens, Sussex, Skillful, Grape), so they are
  *    blocked only as a whole word (or its plural).
  */
-const ANYWHERE = ['fuck', 'fuk', 'shit', 'cunt', 'nigg', 'whore', 'slut', 'porn', 'hitler', 'bitch', 'pussy', 'penis', 'vagina', 'asshole', 'wank', 'retard', 'suicide', 'rapist', 'pawtopia', 'anthropic'];
+const ANYWHERE = ['fuck', 'fuk', 'shit', 'cunt', 'nigg', 'whore', 'slut', 'porn', 'hitler', 'bitch', 'pussy', 'penis', 'vagina', 'asshole', 'wank', 'retard', 'suicide', 'rapist', 'pawtyk', 'pawtopia', 'anthropic'];
 const WORDS = ['dick', 'cock', 'sex', 'sexy', 'kill', 'killer', 'rape', 'tit', 'tits', 'boob', 'fag', 'nazi', 'ass', 'bastard', 'admin', 'moderator', 'mod', 'official', 'support', 'staff'];
 
 const SWAPS: Record<string, string> = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', $: 's', '!': 'i' };

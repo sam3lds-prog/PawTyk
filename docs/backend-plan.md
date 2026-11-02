@@ -1,4 +1,4 @@
-# Pawtopia — Online backend
+# PawTyk — Online backend
 
 ## Built: the Paw Points leaderboard (Sprint J, D30)
 

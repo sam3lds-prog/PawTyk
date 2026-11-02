@@ -40,6 +40,7 @@ function moreName(i: number): string {
   if (!moreNames) {
     const all: string[] = [];
     for (const a of MORE_FIRST) for (const b of MORE_SECOND) all.push(`${a} ${b}`);
+    // The seed keeps the game's earlier name (D42): changing it would rename every chapter past the hand-named ones.
     moreNames = shuffle(mulberry32(hashString('pawtopia-chapters-v1')), all);
   }
   const lap = Math.floor(i / moreNames.length);

@@ -1,7 +1,7 @@
 {
-  "name": "pawtopia-functions",
+  "name": "pawtyk-functions",
   "private": true,
-  "description": "Pawtopia leaderboard Cloud Functions. Built from functions/src (which imports the shared, tested logic in ../src/leaderboard) into lib/index.js by `npm run fb:build` in the repo root.",
+  "description": "PawTyk leaderboard Cloud Functions. Built from functions/src (which imports the shared, tested logic in ../src/leaderboard) into lib/index.js by `npm run fb:build` in the repo root.",
   "main": "lib/index.js",
   "engines": {
     "node": "22"

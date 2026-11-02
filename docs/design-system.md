@@ -1,4 +1,4 @@
-# Pawtopia — Design system
+# PawTyk — Design system
 
 Direction: boutique storybook meets a calm modern puzzle app. Warm ivory surfaces, one teal action color, coral and
 gold used sparingly for warmth and achievement, soft region pastels that keep dark facial features legible.

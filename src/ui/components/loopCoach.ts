@@ -38,7 +38,7 @@ export function loopCoachMarkup(save: SaveV2): string {
   const story = `Solve a new puzzle, then ${def ? `the ${def.short}` : 'your home'} grows, then ${a ? `${a.name} comes home` : 'animals come home'}.`;
   return `<section class="card loop-coach" data-loop-coach style="--accent:${def?.accent ?? 'var(--brand)'}" aria-labelledby="loop-title">
     <div class="loop-coach__head">
-      <h2 id="loop-title">How Pawtopia works</h2>
+      <h2 id="loop-title">How PawTyk works</h2>
       <button class="icon-btn icon-btn--bare" data-act="loop-ok" aria-label="Dismiss">${ICON.close}</button>
     </div>
     <ol class="loop-coach__steps" aria-label="${esc(story)}">

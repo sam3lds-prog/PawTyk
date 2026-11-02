@@ -240,7 +240,7 @@ export const shopScreen: ScreenDef = {
         ? iap.isStub
           ? `<p class="notice notice--dev">${ICON.info}Test store: nothing is charged, and test gems never carry into a release build.</p>`
           : ''
-        : `<p class="notice">${ICON.info}Gem packs are coming soon. Everything else in Pawtopia is earned by playing.</p>`;
+        : `<p class="notice">${ICON.info}Gem packs are coming soon. Everything else in PawTyk is earned by playing.</p>`;
       return `
         <section class="shop-section">
           <div class="section-head"><h2>Gems</h2><span class="muted num">${ICON.gem}${walletBalance(app.save, 'gem')}</span></div>
@@ -341,7 +341,7 @@ export const shopScreen: ScreenDef = {
           }
           app.persist();
           track('iap_success', { product: id });
-          toast(gems ? `+${gems} gems. Thank you for supporting Pawtopia!` : 'Thank you for supporting Pawtopia!', ICON.gem);
+          toast(gems ? `+${gems} gems. Thank you for supporting PawTyk!` : 'Thank you for supporting PawTyk!', ICON.gem);
         } else {
           track('iap_failed', { product: id, reason: r.reason });
           if (r.reason !== 'cancelled') toast('The purchase did not go through. You were not charged.');

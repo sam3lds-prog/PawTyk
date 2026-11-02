@@ -651,6 +651,7 @@ export interface PlaceDef extends SanctuaryDef {
   animals: readonly WildDef[];
 }
 
+// The seed text keeps the game's earlier name (D42): changing it would change every generated place a save already holds.
 const rngFor = (key: string) => mulberry32(hashString(`pawtopia-places-v${PLACES_VERSION}:${key}`));
 const pick = <T>(list: readonly T[], key: string): T => list[hashString(`pawtopia-places-v${PLACES_VERSION}:${key}`) % list.length];
 

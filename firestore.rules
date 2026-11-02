@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Pawtopia leaderboard. Clients never write: every change goes through the callable Cloud Functions
+// PawTyk leaderboard. Clients never write: every change goes through the callable Cloud Functions
 // (functions/src/index.ts), which replay each solved board before awarding points. Clients may read the public
 // scores (signed in), and their own player document and awards. Everything else is denied.
 // Tested by test/firebase/rules.test.ts (`npm run fb:test`, needs the Firestore emulator).

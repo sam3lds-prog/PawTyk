@@ -1,4 +1,4 @@
-# Difficulty: how Pawtopia measures and labels boards
+# Difficulty: how PawTyk measures and labels boards
 
 Labels players see ("7×7 · Expert") come from measuring the board, never from what a level or a day asked for.
 Code: `src/game/grading.ts` (measurement, `GRADING_VERSION = 1`), `src/game/specs.ts` (which board a level or day gets).

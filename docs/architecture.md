@@ -1,4 +1,4 @@
-# Pawtopia — Architecture
+# PawTyk — Architecture
 
 Framework-free TypeScript on Vite, wrapped by Capacitor for iOS. Pure logic is separated from the DOM so that the
 engine, economy, scoring and verification are unit-testable in Node and the scoring/verifier can move to a server

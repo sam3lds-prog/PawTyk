@@ -1,4 +1,4 @@
-# Pawtopia Cloud Functions (leaderboard)
+# PawTyk Cloud Functions (leaderboard)
 
 Four callable functions (2nd gen, Node 22). They are thin: every rule lives in the shared, unit-tested code in
 `../src/leaderboard` (`check.ts` rebuilds and replays each solved board; `server.ts` awards Paw Points once per award

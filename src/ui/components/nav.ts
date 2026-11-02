@@ -45,7 +45,7 @@ export function mountNav(router: Router): void {
       if (b.dataset.tab === def.tab) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
     }
-    document.title = def.title === 'Pawtopia' ? 'Pawtopia' : `${def.title} · Pawtopia`;
+    document.title = def.title === 'PawTyk' ? 'PawTyk' : `${def.title} · PawTyk`;
     syncNews();
   });
   app.onChange(syncNews);

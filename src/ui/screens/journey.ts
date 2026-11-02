@@ -214,7 +214,7 @@ function chapterPlaceLine(index: number): string {
 
 export const journeyScreen: ScreenDef = {
   tab: 'journey',
-  title: 'Pawtopia',
+  title: 'PawTyk',
   mount(root, scope, route: CanonicalRoute) {
     if (route.screen === 'journey' && route.view === 'path') mountPath(root, scope, route.chapter);
     else mountHub(root, scope);
@@ -250,7 +250,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   const el = h(`
     <div class="journey">
       <header class="home-head">
-        <h1 class="wordmark" data-autofocus>Pawtopia</h1>
+        <h1 class="wordmark" data-autofocus>PawTyk</h1>
         <div class="screen-head__end">
           ${coinPill()}
           <button class="icon-btn" data-act="journal" aria-label="Journal: stats and badges">${ICON.star}</button>
@@ -376,7 +376,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   // D35 moved an earlier save's levels up by 20: say so once, in plain words.
   const movedTo = app.save.onboarding.ladderNotice ? app.save.journey.nextLevel : 0;
   const movedLine = movedTo
-    ? `Pawtopia now opens with twenty one-animal puzzles, so your Journey moved up to make room: you're on level ${movedTo}, with every clear, star and best time. Levels 1 to 20 are new and open whenever you'd like them.`
+    ? `PawTyk now opens with twenty one-animal puzzles, so your Journey moved up to make room: you're on level ${movedTo}, with every clear, star and best time. Levels 1 to 20 are new and open whenever you'd like them.`
     : '';
   const caught = app.ladderGift;
   app.ladderGift = null;
@@ -394,9 +394,9 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   if (gift) {
     app.upgradeGift = null;
     const gs = openSheet(scope, {
-      title: 'Welcome to Pawtopia',
+      title: 'Welcome to PawTyk',
       center: true,
-      body: `<p class="sheet__lead">Cats vs Dogs has grown into Pawtopia. Every level you solved is still solved, and it earned you a head start:</p>
+      body: `<p class="sheet__lead">Cats vs Dogs has grown into PawTyk. Every level you solved is still solved, and it earned you a head start:</p>
         ${movedLine ? `<p>${esc(movedLine)}</p>` : ''}
         <div class="win-rewards">
           ${gift.coins ? `<div class="reward-coins"><span class="reward-coins__amt">${ICON.coin}<b class="num">+${gift.coins}</b></span><span class="muted">Paw Coins for ${plural(Object.keys(app.save.journey.clears).length, 'solved level')}</span></div>` : ''}

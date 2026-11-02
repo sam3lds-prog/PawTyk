@@ -1,5 +1,5 @@
 /**
- * Pawtopia leaderboard Cloud Functions (2nd gen, callable). Thin adapters: every decision is made by the shared,
+ * PawTyk leaderboard Cloud Functions (2nd gen, callable). Thin adapters: every decision is made by the shared,
  * unit-tested logic in src/leaderboard (bundled in by `npm run fb:build`). Clients can't write Firestore directly
  * (firestore.rules); these functions are the only way in, and they ignore anything a client claims about points.
  *

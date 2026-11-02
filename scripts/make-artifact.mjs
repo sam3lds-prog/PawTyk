@@ -1,6 +1,6 @@
 // Builds a single self-contained HTML file of the release game (fonts, code and icon inlined), for sharing a
-// playable web preview. Usage: npm run artifact  →  artifact/pawtopia.html
-//                              npm run artifact -- --qa  →  artifact/pawtopia-qa.html (adds Tester shortcuts in Settings)
+// playable web preview. Usage: npm run artifact  →  artifact/pawtyk.html
+//                              npm run artifact -- --qa  →  artifact/pawtyk-qa.html (adds Tester shortcuts in Settings)
 //
 // It is a release build: no dev hooks, no test store, no test ads. Progress is kept in that browser only.
 // Being one file, it carries the 3D toys' code (three.js) from the start; the app itself loads it only when a sanctuary
@@ -42,7 +42,7 @@ const body = html.match(/<body>([\s\S]*?)<\/body>/)[1].replace(/<script[^>]*><\/
 // The artifact viewer already pads the page by the top safe area; avoid doubling it.
 const hostFix = ':root{--safe-top:0px}';
 const out = `<meta charset="utf-8">
-<title>${qa ? 'Pawtopia Tester Preview' : 'Pawtopia'}</title>
+<title>${qa ? 'PawTyk Tester Preview' : 'PawTyk'}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <link rel="icon" href="data:image/svg+xml;base64,${Buffer.from(favicon).toString('base64')}">
 <style>${css}${hostFix}</style>
@@ -50,6 +50,6 @@ ${body}
 <script type="module">${js.replace(/<\/script/g, '<\\/script')}</script>
 `;
 mkdirSync('artifact', { recursive: true });
-const file = qa ? 'artifact/pawtopia-qa.html' : 'artifact/pawtopia.html';
+const file = qa ? 'artifact/pawtyk-qa.html' : 'artifact/pawtyk.html';
 writeFileSync(file, out);
 console.log(`${file} ${(out.length / 1024).toFixed(0)} KB`);

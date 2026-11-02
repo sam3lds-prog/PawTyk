@@ -18,6 +18,7 @@ import { dailySpec, levelSpec } from '../engine/levels';
 import { SOLO_LEVELS, levelRewardKey, pairSourceOf } from '../game/specs';
 
 // ------------------------------------------------------------------ keys
+// The `pawtopia.` prefix predates the PawTyk name (D42) and stays: renaming a key would strand every existing save.
 
 export const V1_KEY = 'cvd.progress.v1';
 export const V1_RULES_KEY = 'cvd.seenRules';

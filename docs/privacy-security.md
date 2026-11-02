@@ -1,10 +1,10 @@
-# Pawtopia — Privacy & security
+# PawTyk — Privacy & security
 
 ## What leaves the device
 
-Pawtopia plays fully offline. Progress lives in WebView local storage under `pawtopia.*` keys (v1's `cvd.*` keys are
-kept as a backup). Three optional services can talk to the network, each off until it is configured *and* the player
-uses it:
+PawTyk plays fully offline. Progress lives in WebView local storage under `pawtopia.*` keys (the prefix predates the
+PawTyk name and stays, so saves carry over; v1's `cvd.*` keys are kept as a backup). Three optional services can
+talk to the network, each off until it is configured *and* the player uses it:
 
 | Service | When | What it gets |
 | --- | --- | --- |

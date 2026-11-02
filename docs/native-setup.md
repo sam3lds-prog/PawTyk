@@ -1,4 +1,4 @@
-# Pawtopia — Native setup (iOS app, App Store, AdMob, RevenueCat, Firebase)
+# PawTyk — Native setup (iOS app, App Store, AdMob, RevenueCat, Firebase)
 
 Everything outside the game itself is **off until you configure it**. A build with no settings plays fully offline,
 sells nothing, shows no videos and makes no network calls. Turn services on one at a time.
@@ -28,13 +28,13 @@ the plugin; nothing else to configure. The first launch of this build copies an 
 
 ## 1. Reward videos — Google AdMob (`@capacitor-community/admob`)
 
-Pawtopia only shows **reward videos the player asks for** (an extra life, a hint, a video token). No banners, no
+PawTyk only shows **reward videos the player asks for** (an extra life, a hint, a video token). No banners, no
 interstitials. Consent (Google UMP) and Apple's tracking prompt are asked the first time a player chooses a video.
 
 1. In `ios/App/App/Info.plist` add:
    - `GADApplicationIdentifier` = your AdMob **app id**. Until you have one, use Google's test app id
      `ca-app-pub-3940256099942544~1458002511`.
-   - `NSUserTrackingUsageDescription` = "Pawtopia asks so the optional reward videos can be more relevant. You can say
+   - `NSUserTrackingUsageDescription` = "PawTyk asks so the optional reward videos can be more relevant. You can say
      no and still get every reward."
    - `SKAdNetworkItems` = the list from Google's iOS quick-start (copy it from the AdMob docs; it changes over time).
 2. In the AdMob console create a **Rewarded** ad unit for the iOS app; put its id in `.env.local`:
@@ -96,5 +96,5 @@ preview run the same server logic on the device (a table with only you on it).
 
 ## 4. Tester builds
 
-`npm run artifact -- --qa` builds `artifact/pawtopia-qa.html`: a single-file web build with a **test store** (free,
+`npm run artifact -- --qa` builds `artifact/pawtyk-qa.html`: a single-file web build with a **test store** (free,
 labeled gems), **test videos** and the Tester shortcuts in Settings. Test gems never count in a release build.

@@ -22,6 +22,8 @@ export const REVENUECAT = {
 /**
  * App Store product identifiers. Create these in App Store Connect (and attach them in RevenueCat) with exactly these
  * ids. Gem packs are consumables; remove-ads is a non-consumable. Prices always come from the store.
+ * The ids keep the game's earlier name (D42): players never see them, and an id can't be renamed once it exists in
+ * App Store Connect.
  */
 export const STORE_PRODUCTS = {
   remove_ads: 'pawtopia.removeads',
