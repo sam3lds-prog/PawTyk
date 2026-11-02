@@ -23,7 +23,7 @@ import { claimMissionDetailed, missionStates, type MissionDef } from '../../meta
 import { CASUAL_HEARTS, FIRST_PAIR_LEVEL, dailyFor, modeKey, playsSolo, type ModeRef } from '../../game/modes';
 import { MAX_NEW_BOARD_SIZE } from '../../game/specs';
 import { itemBalance } from '../../meta/items';
-import { sfx } from '../../services/audio';
+import { feel } from '../../services/feel';
 import { track } from '../../services/analytics';
 import { miniBoard } from '../components/board';
 import { coinPill } from '../components/wallet';
@@ -431,7 +431,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
       const coins = got.coins + got.overflowCoins;
       if (got.coins) {
         app.persist();
-        sfx('coin');
+        feel('coin');
         track('mission_claimed', { coins });
         renderMissions();
         const pill = el.querySelector('[data-coins]');

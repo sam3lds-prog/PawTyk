@@ -15,6 +15,9 @@ import { PALETTE_NAMES, assignRegionColors } from './regionColors';
  * there, or the board has one animal), or the one animal tried there on a two-animal board ("no cat here" says nothing
  * about the other animal). 0 when there is none.
  */
+
+/** How long a tile's touch acknowledgment lasts (D40). */
+const PRESS_MS = 240;
 export type ErrorMark = 0 | 'x' | Species;
 
 export interface BoardView {
@@ -296,6 +299,13 @@ export class Board {
 
   private bindInput(): void {
     const s = this.scope;
+    // D40: a finger on a tile is acknowledged at once (a soft press glow), before the move itself lands. Any scheme,
+    // pannable boards too; keyboard and assistive activations skip it (they get the move's own feedback).
+    s.on(this.el, 'pointerdown', (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      const cell = this.cellFromPoint(e.clientX, e.clientY);
+      if (cell) this.flash([cell], 'is-press', PRESS_MS);
+    });
     if (!this.opts.pannable) {
       s.on(this.el, 'pointerdown', (e: PointerEvent) => {
         if (e.button !== 0 || this.drag) return;

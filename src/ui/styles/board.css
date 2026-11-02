@@ -243,11 +243,53 @@
   box-shadow: inset 0 0 0 3px var(--brand);
 }
 
-/* Mistake: red ring plus hatch, never color alone. */
+/* Mistake: a soft ring plus hatch (never color alone) that eases away (D40: a gentle note, not an alarm). */
 .cell.is-miss::before {
   opacity: 1;
-  box-shadow: inset 0 0 0 3px var(--error);
-  background: repeating-linear-gradient(-45deg, rgba(200, 80, 80, 0.2) 0 4px, transparent 4px 9px);
+  box-shadow: inset 0 0 0 2.5px var(--error);
+  background: repeating-linear-gradient(-45deg, rgba(200, 80, 80, 0.14) 0 4px, transparent 4px 9px);
+  animation: why-fade 700ms var(--ease) forwards;
+}
+
+/* D40: a finger on a tile, acknowledged at once: a soft light glow, and a mark on the tile gives a little (a fresh ✕
+   settles in from the same squeeze). Animals never move on the board (D11), not even a struck one: their tile only
+   glows. Under reduced motion
+   the animations are cut and only the move itself shows. */
+.cell::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: 1;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.42);
+}
+.cell.is-press::after {
+  animation: press-glow 240ms var(--ease) forwards;
+}
+.cell.is-press > .cell__mark,
+.cell.is-press > .cell__err {
+  animation: press-give 220ms var(--ease);
+}
+@keyframes press-glow {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes press-give {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Correct placement: a faint success ring that fades. */

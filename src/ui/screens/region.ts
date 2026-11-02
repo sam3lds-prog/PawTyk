@@ -18,7 +18,7 @@ import { animalInfo, isHome, nextArrivalIn, type AnimalId } from '../../meta/ani
 import { animalPortrait } from '../art/animals';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
-import { sfx } from '../../services/audio';
+import { feel } from '../../services/feel';
 import { regionScene } from '../art/regions';
 import { decorIcon, SCENE_VIEWBOX } from '../art/sanctuary';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
@@ -310,7 +310,7 @@ export const regionScreen: ScreenDef = {
         case 'build':
           if (setActive(app.save, id)) {
             app.persist();
-            sfx('coin');
+            feel('coin');
             track('region_build', { region: id });
             toast(buildHereMessage(id));
             render();

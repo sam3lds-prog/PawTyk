@@ -1007,3 +1007,43 @@ places brought new *individuals* of the eighteen drawn species; now each place b
   for every player); loading them only once places begin is a follow-up. New landscape thumbnails are heavier than the
   regions' (the World's finished fold draws them only when opened).
 
+## 2026-11-01 · D40 — How it feels: sound and touch, a calmer win, animals with personalities, visits worth making
+Owner request (2026-11-01): simplify the win screen (the reward first, the accounting folded away), a four-step
+arrival, stronger animal personalities with small bonding milestones, more rewarding sanctuary visits, and one
+coherent sound-and-haptics system; plus polished microinteractions and a two-step control option. Checked against
+the D39 stack (#14–#18) first: two-step tap, *Meet* first on an arrival, the newcomer's ring, friendship levels and the
+synthesized sounds already existed, so this builds the gaps. Owner decisions (2026-11-01): **double-tap stays the
+default** (D37), two-step stays a choice and is offered when it would help; **a small star row stays** in an ordinary
+win's first view; **every animal** gets a personality; friendship levels unlock **a warmer greeting, a new
+expression and a portrait**, with hello, pat and food each counting once a day. Four PRs (A–D), stacked on #18.
+
+### PR A — one feel for every moment
+- **One table** (`services/feel.ts::FEEL`): every event that sounds or buzzes goes through `feel(event)`, so its sound
+  and haptic are chosen together. Mark ✕: a quiet tick and a light tap. Place (a correct animal): a gentle bright pop
+  and a firm (medium) tap, stronger than a ✕ (owner request, 2026-11-01: the ✕ was the barely-there selection tick and
+  the placement a light tap). A row, column or color finished: a short rising tone and a firm tap, landing with the
+  placement's as one (more lines at once: a three-note rise, still one tap). Dragging ✕ across tiles keeps the
+  lightest tick per tile, so a run never rattles. Wrong guess: one muted soft note and the gentle warning pattern (never a buzzer).
+  Solved: the game's own melody (C–E–G, then a ringing high C) and success. A new animal: a warm chime over a soft chord,
+  a sound used for nothing else, and one heavy pulse, a beat after the melody as its portrait comes up. Tapping an
+  animal: a tiny hello (below). Undo, a tool, a drag: the lightest haptic, no sound.
+- **Quiet by default**: the master level dropped from 0.55 to 0.42; every sound peaks far below full scale (rendered
+  offline in Chrome and measured: the melody peaks at 0.11, a ✕ tick at 0.02). A drag across many tiles never piles
+  sounds up (the same sound at most every 40–140 ms). Turning *Sound effects* off also silences anything still ringing,
+  at once; turning sound or haptics on plays a small sample. Sound and haptics keep separate switches.
+- **An animal's hello** (`components/hello.ts`): tapping an animal in a sanctuary plays a tiny cue pitched by its size
+  (a mouse squeaks higher than a bison); PR B gives it the animal's temperament's rhythm.
+- **A finger is acknowledged at once** (`Board`, `.cell.is-press`): on pointerdown a tile glows softly for 240 ms and a
+  ✕ on it gives a little, before the move lands, under either scheme and on pannable boards. Animals on the board still
+  never move (D11): their tile only glows.
+- **A kinder wrong guess**: the coach line no longer counts hearts (the hearts above the board do): *Not a cat spot.
+  It's marked for you, so there's no need to try it again.*; only the last heart is mentioned, as *take your time*. The
+  mistake flash is a thinner ring with a lighter hatch that eases away instead of holding.
+- **Two-step tap, offered when it helps** (`game.ts::maybeOfferTwoStep`, `onboarding.twoStepOffered`): double-tap stays
+  the default (owner decision). When two double taps come a little too slowly (a second tap on the same ✕ between 380
+  and 900 ms, which only clears it), a one-time note offers two-step tap with one tap to switch; the board carries on
+  under the new controls. Never on the guided boards, never for a player already on two-step.
+- Tests: `test/unit/sound.dom.test.ts` (the table, each switch silences only its own half, quiet level, no pile-up,
+  every hello style and size), `test/unit/gameScreen.dom.test.ts` (the press, the wrong-guess words, the offer once and
+  the switch).
+

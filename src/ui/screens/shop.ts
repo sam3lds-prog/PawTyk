@@ -21,8 +21,7 @@ import { grantGemPurchase, isGemPack } from '../../meta/gems';
 import { track } from '../../services/analytics';
 import { afterDecorChange } from '../../app/events';
 import { canOfferVideo, videosLeftToday, watchVideoFor } from '../../app/rewarded';
-import { sfx } from '../../services/audio';
-import { haptic } from '../../services/haptics';
+import { feel } from '../../services/feel';
 import { GEM_PACKS, iap, PRODUCT_CATALOG, type ProductId, type ProductInfo } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { decorIcon } from '../art/sanctuary';
@@ -425,8 +424,7 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
       if (r === 'ok') {
         const news = afterDecorChange();
         app.persist();
-        sfx('coin');
-        haptic('success');
+        feel('buy');
         track('decor_bought', { item: id, tier, amount: price?.amount ?? 0 });
         sh.close();
         rerender();
@@ -478,8 +476,7 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
       const r = buyFood(app.save, id);
       if (r === 'ok') {
         app.persist();
-        sfx('coin');
-        haptic('tap');
+        feel('coin');
         track('food_bought', { food: id });
         const have = sh.el.querySelector('[data-have]');
         if (have) have.textContent = `${foodCount(app.save, id)} of ${FOOD_CAP_EACH}`;

@@ -8,8 +8,7 @@ import { FOODS, FOOD_BY_ID, isFavorite, type FoodId } from '../../meta/catalogs/
 import { animalKindOf, feedAnimal, foodCount, fedToday, FOOD_AFFECTION_PER_DAY, friendship } from '../../meta/feeding';
 import { patFriend, pattedToday } from '../../meta/sanctuary';
 import { track } from '../../services/analytics';
-import { sfx } from '../../services/audio';
-import { haptic } from '../../services/haptics';
+import { feel } from '../../services/feel';
 import { foodIcon } from '../art/foods';
 import { esc } from '../dom';
 import { ICON } from '../icons';
@@ -69,8 +68,7 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
     if (pat && !pat.disabled) {
       if (patFriend(app.save, animal)) {
         app.persist();
-        sfx('coin');
-        haptic('tap');
+        feel('hello');
         ev.onPat?.();
         rerender();
       }
@@ -82,8 +80,7 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
     const r = feedAnimal(app.save, animal, food);
     if (r.ok) {
       app.persist();
-      sfx('unit');
-      haptic('success');
+      feel('treat');
       track('animal_fed', { food, favorite: r.favorite });
       toast(`${name} ${r.favorite ? 'loved' : 'enjoyed'} the ${FOOD_BY_ID[food].name}! +${r.gained}`, ICON.heart);
       ev.onFed?.(food, r.favorite);

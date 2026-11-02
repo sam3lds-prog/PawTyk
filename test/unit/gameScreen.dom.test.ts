@@ -137,7 +137,10 @@ describe('tap marks, double-tap places (D37)', () => {
     expect(cell(r, c).querySelector('.cell__err')).not.toBeNull();
     expect(cell(r, c).querySelector('.cell__mark')).toBeNull();
     expect(cell(r, c).getAttribute('aria-label')).toMatch(/a mistake, no animal here$/);
-    expect(coach()).toMatch(/so it's marked/);
+    // D40: kind words, no heart count on screen (the hearts above the board show it); a screen reader still hears it.
+    expect(coach()).toMatch(/It's marked for you/);
+    expect(document.querySelector('[data-coach]')!.childNodes[0].textContent).not.toMatch(/hearts? left/);
+    expect(document.querySelector('[data-coach] .sr-only')?.textContent).toMatch(/\d hearts left\./);
     // The same guess again, on purpose or a double-fired tap: no second heart, no second event.
     const events = s.events.length;
     dblTap(r, c);
@@ -916,5 +919,95 @@ describe('a little why, and small celebrations (D39 PR C)', () => {
       if (placed === half) expect(coach()).toBe('Halfway there!');
       else expect(coach()).not.toBe('Halfway there!');
     }
+  });
+});
+
+describe('how the board feels (D40 PR A)', () => {
+  it('a finger on a tile is acknowledged at once, under either scheme, before the move lands', () => {
+    for (const scheme of ['tap', 'classic'] as const) {
+      app.active = null;
+      mountRouter();
+      start(5, scheme);
+      const s = app.active!.session;
+      const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+      const el = cell(r, c);
+      document.elementFromPoint = () => el;
+      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 7, clientX: 4, clientY: 4 }));
+      expect(el.classList.contains('is-press'), scheme).toBe(true);
+      el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 7 }));
+    }
+  });
+
+  it('two animals of one kind are told apart by name, and the other may still live on a tile', () => {
+    // Level 21+ casts can be two cats; a wrong one reads "Not Mochi's spot", never "a Mochi spot".
+    start(25);
+    const s = app.active!.session;
+    expect(app.active!.cast?.b).toBeTruthy();
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    toolBtn('cat')?.click();
+    dblTap(r, c);
+    expect(coach()).not.toMatch(/Not a [A-Z]/);
+    expect(coach()).toMatch(/no need to try (the \w[\w ’'-]*|[A-Z]\w+) here again/);
+  });
+
+  it('a wrong guess is a kind word, and only the last heart is mentioned (take your time)', () => {
+    start(5);
+    const s = app.active!.session;
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    dblTap(r, c);
+    expect(coach()).toMatch(/^Not a .* spot\. It's marked for you/);
+    while (s.hearts > 2) {
+      const [r2, c2] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+      dblTap(r2, c2);
+    }
+    const [r3, c3] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    dblTap(r3, c3);
+    expect(s.hearts).toBe(1);
+    expect(coach()).toMatch(/One heart left, so take your time/);
+  });
+
+  it('two double taps that came a little slowly offer two-step tap once; one tap switches, and the board carries on', () => {
+    start(5);
+    const s = app.active!.session;
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    // A slow second tap clears the ✕ (the default stays the fast double tap).
+    tap(r, c);
+    tap(r, c, 520);
+    expect(s.cells[r][c]).toBe(EMPTY);
+    expect(document.querySelector('[data-two-step-offer]')).toBeNull();
+    // A really slow second tap (a change of mind) is not counted.
+    tap(r, c);
+    tap(r, c, 2_000);
+    expect(document.querySelector('[data-two-step-offer]')).toBeNull();
+    tap(r, c);
+    tap(r, c, 600);
+    const offer = document.querySelector('[data-two-step-offer]')!;
+    expect(offer.textContent).toMatch(/two-step tap/);
+    expect(app.save.onboarding.twoStepOffered).toBe(true);
+    expect(app.settings.controls).toBe('tap');
+    const [er, ec] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    tap(er, ec);
+    expect(s.cells[er][ec]).toBe(MARK);
+    (offer.querySelector('[data-act="use-two-step"]') as HTMLButtonElement).click();
+    expect(app.settings.controls).toBe('classic');
+    // Same board, now two-step: the ✕ is still there, and tapping a ✕ places.
+    const s2 = app.active!.session;
+    expect(s2.cells[er][ec]).toBe(MARK);
+    tap(r, c);
+    tap(r, c, 3_000);
+    expect(s2.cells[r][c]).toBe(CAT);
+    expect(document.querySelector('[data-two-step-offer]')).toBeNull();
+  });
+
+  it('the offer is shown once ever, and never on the two-step scheme', () => {
+    app.save.onboarding.twoStepOffered = true;
+    start(5);
+    const s = app.active!.session;
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    for (let i = 0; i < 3; i++) {
+      tap(r, c);
+      tap(r, c, 500);
+    }
+    expect(document.querySelector('[data-two-step-offer]')).toBeNull();
   });
 });
