@@ -15,6 +15,7 @@ import { chapterAt } from '../../meta/chapters';
 import { buyDecor, decorPrice, decorUnlocked, owns, walletBalance } from '../../meta/sanctuary';
 import { biomeOfRegion, sanctuaryDef, SANCTUARIES, isBaseSanctuaryId, isRegionId, type BaseSanctuaryId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { activeSanctuary, isOpen } from '../../meta/world';
+import { BIOMES } from '../../meta/catalogs/places';
 import { buyFood, foodCount, FOOD_CAP_EACH } from '../../meta/feeding';
 import { grantGemPurchase, isGemPack } from '../../meta/gems';
 import { track } from '../../services/analytics';
@@ -45,10 +46,14 @@ let lastPlace: BaseSanctuaryId | null = null;
 
 /**
  * The Shop sells for the hand-made homes only (D39: places of the endless world have no decorations). While a place is
- * being built, the Shop opens on the hand-made region of the same biome: its decor, and the treats its animals know.
+ * being built, the Shop opens on the hand-made region its landscape is drawn as (or, for the new landscapes, the
+ * Pet Garden): its decor, and its treats.
  */
 function shopHome(id: SanctuaryId): BaseSanctuaryId {
-  return isBaseSanctuaryId(id) ? id : biomeOfRegion(id);
+  if (isBaseSanctuaryId(id)) return id;
+  // A landscape drawn as a hand-made region opens on that region; the others (bamboo, mountains…) on the Pet Garden.
+  const art = BIOMES[biomeOfRegion(id)].art;
+  return isBaseSanctuaryId(art) ? art : 'harmony';
 }
 
 const placeShort = (id: SanctuaryId) => sanctuaryDef(id).short;

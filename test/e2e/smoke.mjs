@@ -667,6 +667,50 @@ try {
   await page.waitForSelector('.lb-join');
   check('leaving the leaderboard deletes your entry', await page.evaluate(() => !window.__pt.app.save.leaderboard.joined && !(localStorage.getItem('pawtopia.lb.device') ?? '').includes('Cozy Otter 77')));
 
+  // The endless world's animals (D39 PR E): a place shows its kinds, drawn by the kit; as 3D toys when every one of them
+  // can be a toy, and all drawn when one can't (a snake, a fish).
+  const places = await page.evaluate(async () => {
+    const pl = await import('/src/meta/catalogs/places.ts');
+    const kit = await import('/src/ui/art/kit.ts');
+    const sp = await import('/src/meta/catalogs/species/index.ts');
+    const world = await import('/src/meta/world.ts');
+    const qa = await import('/src/app/qaTools.ts');
+    const { app } = window.__pt;
+    const toyable = (a) => !!a.base || kit.kitHasToy(sp.speciesById(a.species));
+    let all = 0;
+    let some = 0;
+    for (let k = 1; k <= 60 && !(all && some); k++) {
+      const animals = pl.placeDef(k).animals;
+      if (!all && animals.every(toyable) && animals.some((a) => !a.base)) all = k;
+      if (!some && animals.some((a) => !toyable(a))) some = k;
+    }
+    qa.skipToLevel(app.save, 80 + 20 * Math.max(all, some));
+    for (const k of [all, some]) app.save.world.growth[`p${k}`] = 25;
+    world.reconcileWorld(app.save);
+    app.persist();
+    return { all, some, kits: [all, some].map((k) => pl.placeDef(k).animals.filter((a) => !a.base).length) };
+  });
+  await page.evaluate((k) => window.__pt.go({ screen: 'region', id: `p${k}` }), places.all);
+  await page.waitForSelector('.sanctuary__scene .sanctuary__friend', { timeout: 8000 }).catch(() => {});
+  check(
+    'a place of the endless world shows its kinds of animal, drawn by the kit',
+    (await page.evaluate(() => document.querySelectorAll('.sanctuary__scene .sanctuary__friend[data-kit]').length)) === places.kits[0],
+  );
+  await page.waitForSelector('.sanctuary__scene.has-3d > canvas.scene3d', { timeout: 15000 }).catch(() => {});
+  check('a place whose animals can all be toys shows them in 3D', await page.evaluate(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d')));
+  await page.evaluate((k) => window.__pt.go({ screen: 'region', id: `p${k}` }), places.some);
+  await page.waitForSelector('.sanctuary__scene .sanctuary__friend', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  check(
+    'a place with an animal that has no toy yet stays drawn, every animal visible',
+    await page.evaluate(
+      () =>
+        !document.querySelector('.sanctuary__scene.has-3d') &&
+        !!document.querySelector('.sanctuary__scene [data-no-toy]') &&
+        [...document.querySelectorAll('.sanctuary__scene .sanctuary__pet')].every((g) => getComputedStyle(g).opacity === '1'),
+    ),
+  );
+
   // Scoped reset
   // Settings → 3D animals off: the drawn animals come back, and no 3D layer is made.
   await page.evaluate(() => window.__pt.go({ screen: 'home' }));

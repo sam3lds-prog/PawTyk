@@ -15,6 +15,7 @@ import { unlockedCompanions, unlockedPets } from '../../meta/rewards';
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { companionSvg, wearsNeckerchief, type FriendId } from '../art/companions';
+import { speciesById } from '../../meta/catalogs/species/index';
 import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { animalInfo, animalsOf, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
 import { activeSanctuary, arrivalLine, arrivalProgress, markSeen, setActive } from '../../meta/world';
@@ -328,7 +329,8 @@ export function showFriendSheet(scope: Scope, id: FriendId, ev: FeedEvents = {})
         owned
           ? `<dl class="pet-sheet__facts">
               <div><dt>Lives</dt><dd>${esc(habitatLabel(id))}</dd></div>
-              <div><dt>Kind</dt><dd>${esc(isWildId(id) ? `${c.kind}, ${wildDef(id).coat.name} coat` : c.kind)}</dd></div>
+              <div><dt>Kind</dt><dd>${esc(isWildId(id) && wildDef(id).coat.name ? `${c.kind}, ${wildDef(id).coat.name} coat` : c.kind)}</dd></div>
+              ${isWildId(id) && speciesById(wildDef(id).species) ? `<div><dt>In the wild</dt><dd>${esc(speciesById(wildDef(id).species)!.from)}</dd></div>` : ''}
             </dl>
             ${friendPanelMarkup(id, c.name)}
             <p class="muted">Pats and food are just for fun. They make friends happy and change nothing in your puzzles.</p>`

@@ -150,6 +150,18 @@
 - [ ] A toucan or seal of a place: its card never mentions a neckerchief; a kangaroo's toy has the big feet
 - [ ] 3D animals on: *Meet* after an arrival rings the ground under the newcomer's toy
 
+### D39 PR E — five hundred kinds of animal
+- [ ] Tester shortcuts → *Skip to level 81*, then *Finish every open home* a few times: each new place brings three or
+      four kinds you haven't met, in a landscape that suits them (a panda in a bamboo forest, a camel in the desert)
+- [ ] The eight new landscapes (bamboo, mountains, desert, woodland, wetland, coast, island, grassland) look finished at
+      stage 0 and at stage 4 on an older iPhone, and scroll smoothly; water sparkles and lanterns glow now and then
+- [ ] A coast or wetland place: fish, whales and rays float in the water, not on the sand
+- [ ] 3D animals on: a place of seated or perched animals shows toys; a place with a snake, fish or turtle shows the
+      drawn scene (no toys at all)
+- [ ] A kit animal on a board tile blinks, glances and cheers like the others; its card shows its kind, its fact and
+      "In the wild"
+- [ ] The album: "N of 545 kinds met" once places have begun
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

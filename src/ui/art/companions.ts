@@ -9,6 +9,9 @@
 
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { isWildId, wildDef, type WildId } from '../../meta/catalogs/places';
+import { speciesById } from '../../meta/catalogs/species/index';
+import type { SpeciesDef } from '../../meta/catalogs/species/types';
+import { kitBody, kitHasToy, kitHead, kitPal, kitScale, type KitPal } from './kit';
 
 /** A friend that can be drawn: a hand-made one, or an animal of the endless world (a coat on a drawn species; D39). */
 export type FriendId = CompanionId | WildId;
@@ -19,7 +22,7 @@ const INK = '#2F2A27';
 
 export type CompanionMood = 'idle' | 'happy' | 'sleepy';
 
-interface Pal {
+export interface Pal {
   fur: string;
   light: string;
   dark: string;
@@ -50,7 +53,7 @@ const PAL: Record<CompanionId, Pal> = {
   pudding: { fur: '#B58A62', light: '#C99D74', dark: '#3A2E28', accent: '#9E7452' },
 };
 
-interface FaceOpts {
+export interface FaceOpts {
   eyes?: [number, number, number, number];
   eyeR?: [number, number];
   nose?: string;
@@ -62,17 +65,19 @@ interface FaceOpts {
   eyeFill?: string;
   /** Eyelid color on the animated rig, when the skin around the eyes isn't the fur (a patch, a tan face). */
   lid?: string;
+  /** Owl eyes: the iris color (default golden). */
+  iris?: string;
   /** Draw small brows on the animated rig (default true; birds have none). */
   brows?: boolean;
 }
 
 /** A head: its drawn art (ears, head, markings) and where its face sits. */
-interface HeadDef {
+export interface HeadDef {
   art: (p: Pal) => string;
   face: (p: Pal) => FaceOpts;
 }
 
-function face(mood: CompanionMood, o: FaceOpts = {}): string {
+export function face(mood: CompanionMood, o: FaceOpts = {}): string {
   const closed = mood === 'sleepy';
   const happy = mood === 'happy';
   const [lx, ly, rx, ry] = o.eyes ?? [24, 33, 40, 33];
@@ -84,7 +89,7 @@ function face(mood: CompanionMood, o: FaceOpts = {}): string {
     open = `<g class="sp-eyes-open" style="opacity:${closed ? 0 : 1}">${[lx, rx]
       .map(
         (x, i) =>
-          `<circle cx="${x}" cy="${i ? ry : ly}" r="6" fill="#F2C230" stroke="${o.nose ? '#3B3F45' : INK}" stroke-width=".8"/><circle cx="${x}" cy="${i ? ry : ly}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${(i ? ry : ly) - 1.3}" r="1" fill="#fff"/>`,
+          `<circle cx="${x}" cy="${i ? ry : ly}" r="6" fill="${o.iris ?? '#F2C230'}" stroke="${o.nose ? '#3B3F45' : INK}" stroke-width=".8"/><circle cx="${x}" cy="${i ? ry : ly}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${(i ? ry : ly) - 1.3}" r="1" fill="#fff"/>`,
       )
       .join('')}</g>`;
     shut = `<g class="sp-eyes-closed" style="opacity:${closed ? 1 : 0}" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"><path d="M${lx - 4} ${ly} q4 3 8 0"/><path d="M${rx - 4} ${ry} q4 3 8 0"/></g>`;
@@ -436,14 +441,40 @@ const NECK: Partial<Record<CompanionId, [number, number, number]>> = {
   pudding: [32, 54, 11],
 };
 
-/** The art recipe for any friend: its drawn species, its colors, and its neckerchief (if any). */
-function artOf(id: FriendId): { base: CompanionId; p: Pal; neck: string | null } {
+/**
+ * The art recipe for any friend: a hand-drawn head (its species, recolored by its coat) or a kit species' (D39 PR E),
+ * its colors, and its neckerchief (if any) with where it sits.
+ */
+interface Art {
+  head: HeadDef;
+  p: Pal;
+  neck: { color: string; at: [number, number, number] } | null;
+  /** The hand-drawn species, or null for a kit animal. */
+  base: CompanionId | null;
+  /** The kit species, for a kit animal. */
+  kit: SpeciesDef | null;
+}
+
+const artCache = new Map<FriendId, Art>();
+function artOf(id: FriendId): Art {
+  const hit = artCache.get(id);
+  if (hit) return hit;
+  let art: Art;
   if (isWildId(id)) {
     const w = wildDef(id);
     const c = w.coat;
-    return { base: w.base, p: { fur: c.fur, light: c.light, dark: c.dark, accent: c.accent }, neck: NECK[w.base] ? w.neckerchief : null };
-  }
-  return { base: id, p: PAL[id], neck: null };
+    if (w.base) {
+      const at = NECK[w.base];
+      art = { head: HEADS[w.base], p: { fur: c.fur, light: c.light, dark: c.dark, accent: c.accent }, neck: at && w.neckerchief ? { color: w.neckerchief, at } : null, base: w.base, kit: null };
+    } else {
+      const s = speciesById(w.species)!;
+      const h = kitHead(s);
+      const p: KitPal = { ...kitPal(s.colors), fur: c.fur, light: c.light, dark: c.dark, accent: c.accent };
+      art = { head: h, p, neck: h.neck && w.neckerchief ? { color: w.neckerchief, at: h.neck } : null, base: null, kit: s };
+    }
+  } else art = { head: HEADS[id], p: PAL[id], neck: null, base: id, kit: null };
+  artCache.set(id, art);
+  return art;
 }
 
 /**
@@ -454,23 +485,30 @@ export function wearsNeckerchief(id: FriendId): boolean {
   return artOf(id).neck !== null;
 }
 
+/** The kit species a friend is drawn as (D39 PR E), or null for a hand-drawn one. */
+export function kitSpeciesOf(id: FriendId): SpeciesDef | null {
+  return artOf(id).kit;
+}
+
+/** Text for an attribute value (names are plain words today; this keeps a quote or an ampersand from breaking a scene). */
+const attr = (t: string) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
 /** The friend's name, for figures' data attributes. */
 function friendName(id: FriendId): string {
   return isWildId(id) ? wildDef(id).name : COMPANION_BY_ID[id].name;
 }
 
 /** A knotted neckerchief under the chin, in head units. */
-function neckerchief(base: CompanionId, color: string | null): string {
-  const n = NECK[base];
-  if (!n || !color) return '';
-  const [x, y, w] = n;
+function neckerchief(neck: Art['neck']): string {
+  if (!neck) return '';
+  const color = neck.color;
+  const [x, y, w] = neck.at;
   return `<g class="sp-neck"><path d="M${x - w} ${y - 1.4} Q${x} ${y + 1.6} ${x + w} ${y - 1.4} L${x + w * 0.35} ${y + 3.4} L${x} ${y + 7.4} L${x - w * 0.35} ${y + 3.4} Z" fill="${color}" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/><circle cx="${x}" cy="${y + 1.2}" r="1.6" fill="${color}" stroke="${OUT}" stroke-width=".6"/><g fill="#fff" opacity=".7"><circle cx="${x - w * 0.45}" cy="${y + 0.6}" r=".7"/><circle cx="${x + w * 0.45}" cy="${y + 0.6}" r=".7"/><circle cx="${x}" cy="${y + 4.6}" r=".7"/></g></g>`;
 }
 
 function head(id: FriendId, mood: CompanionMood): string {
-  const { base, p, neck } = artOf(id);
-  const d = HEADS[base];
-  return d.art(p) + face(mood, d.face(p)) + neckerchief(base, neck);
+  const { head: d, p, neck } = artOf(id);
+  return d.art(p) + face(mood, d.face(p)) + neckerchief(neck);
 }
 
 // ------------------------------------------------------------------ animated rig (board tiles)
@@ -499,7 +537,7 @@ function rigFace(o: FaceOpts, p: Pal): { cheeks: string; eyes: string; lids: str
     let rr: number;
     let rh: number;
     if (o.kind === 'owl') {
-      open = `<circle cx="${x}" cy="${y}" r="6" fill="#F2C230" stroke="${INK}" stroke-width=".8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${y - 1.3}" r="1" fill="#fff"/></g>`;
+      open = `<circle cx="${x}" cy="${y}" r="6" fill="${o.iris ?? '#F2C230'}" stroke="${INK}" stroke-width=".8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="3.1" fill="${INK}"/><circle cx="${x + 1.2}" cy="${y - 1.3}" r="1" fill="#fff"/></g>`;
       rr = rh = 6;
     } else if (o.kind === 'side') {
       open = `<circle cx="${x}" cy="${y}" r="5.4" fill="#6CC3E8"/><g class="pf-look"><circle cx="${x}" cy="${y}" r="2.7" fill="${INK}"/><circle cx="${x + 1}" cy="${y - 1}" r=".9" fill="#fff"/></g>`;
@@ -556,12 +594,11 @@ const rigCache = new Map<FriendId, string>();
 export function friendRigBody(id: FriendId): string {
   const hit = rigCache.get(id);
   if (hit) return hit;
-  const { base, p, neck } = artOf(id);
-  const d = HEADS[base];
+  const { head: d, p, neck } = artOf(id);
   const o = d.face(p);
   const f = rigFace(o, p);
   const body =
-    `<g data-layer="head-static">${d.art(p)}${o.nose ?? ''}${neckerchief(base, neck)}</g>` +
+    `<g data-layer="head-static">${d.art(p)}${o.nose ?? ''}${neckerchief(neck)}</g>` +
     `<g data-layer="cheeks">${f.cheeks}</g>` +
     `<g data-layer="eyes">${f.eyes}</g>` +
     `<g data-layer="lids">${f.lids}</g>` +
@@ -609,7 +646,16 @@ const PLAIN_BELLY = new Set<CompanionId>(['cotton', 'buttercup']);
  * ambient classes; the tail is its own group so it can wag around its base.
  */
 export function companionFigure(fid: FriendId, x: number, y: number, H: number, mood: CompanionMood): string {
-  const { base: id, p } = artOf(fid);
+  const art = artOf(fid);
+  if (art.kit) {
+    // A kit animal (D39 PR E): its own body, sized for its kind, with the same head rig and data attributes as any friend.
+    const s = art.kit;
+    const h = H * kitScale(s);
+    const f = kitBody(s, art.p as KitPal, x, y, h);
+    return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${attr(friendName(fid))}" data-gx="${x}" data-gy="${y}" data-gh="${h.toFixed(1)}" data-mood="${mood}" data-kit="${s.form === 'beast' ? s.body : s.form}"${kitHasToy(s) ? '' : ' data-no-toy="1"'}>${f.behind}${f.body}<g class="sp-tail">${f.tail}</g><g transform="translate(${f.headX.toFixed(1)} ${f.headTop.toFixed(1)}) scale(${f.k.toFixed(3)})">${head(fid, mood)}</g></g>`;
+  }
+  const id = art.base!;
+  const p = art.p;
   const P = (dx: number, dy: number) => `${(x + dx * H).toFixed(1)} ${(y + dy * H).toFixed(1)}`;
   const kind = BODY[id] ?? 'seated';
   const big = kind === 'big';
@@ -679,7 +725,7 @@ export function companionFigure(fid: FriendId, x: number, y: number, H: number, 
     if (kind === 'tall') headTop -= H * 0.4;
   }
   const name = friendName(fid);
-  return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${name}" data-gx="${x}" data-gy="${y}" data-gh="${H}" data-mood="${mood}">${bodySvg}<g class="sp-tail">${tail}</g><g transform="translate(${headX.toFixed(1)} ${headTop.toFixed(1)}) scale(${k.toFixed(3)})">${head(fid, mood)}</g></g>`;
+  return `<g class="sanctuary__pet sanctuary__friend" data-friend="${fid}" data-name="${attr(name)}" data-gx="${x}" data-gy="${y}" data-gh="${H}" data-mood="${mood}">${bodySvg}<g class="sp-tail">${tail}</g><g transform="translate(${headX.toFixed(1)} ${headTop.toFixed(1)}) scale(${k.toFixed(3)})">${head(fid, mood)}</g></g>`;
 }
 
 /** Coat details drawn over a seated body: a sheep's wool curls, a calf's patches. */
@@ -699,7 +745,9 @@ function bodyExtras(id: CompanionId, p: Pal, x: number, by: number, bw: number, 
 
 /** The figure's head-top y, for placing a floating heart above it. */
 export function figureTop(fid: FriendId, y: number, H: number): number {
-  const id = isWildId(fid) ? wildDef(fid).base : fid;
+  const art = artOf(fid);
+  if (art.kit) return kitBody(art.kit, art.p as KitPal, 0, y, H * kitScale(art.kit)).headTop;
+  const id = art.base!;
   const kind = BODY[id] ?? 'seated';
   const big = kind === 'big';
   const bh = H * (big ? 0.27 : 0.24);

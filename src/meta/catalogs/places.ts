@@ -1,32 +1,35 @@
 /**
- * The endless world (D39 PR D). After the six hand-made sanctuaries, the map keeps going: place 1, 2, 3 … are
- * generated from a few hand-written ingredients, so a player who never stops always has somewhere new to build.
+ * The endless world (D39 PRs D and E). After the six hand-made sanctuaries, the map keeps going: place 1, 2, 3 … are
+ * generated from hand-written ingredients, so a player who never stops always has somewhere new to build.
  *
- * - A **place** (`p1`, `p2`, …) is one of the five drawn biomes (a farm, the outback, the savanna, the Arctic, the
- *   rainforest), with its own name (*the Wattle Flats*), a look (golden light, autumn, blossom, mist, dusk), sometimes
- *   mirrored, a pin inside its biome's part of the world, and the same five stages as a region (growth 0/3/8/15/25).
- * - Its **animals** (`w12-0`, `w12-1`, …) are new individuals of the species already drawn for that biome — a silver
- *   koala, a ginger piglet, a cream polar bear cub — each with a name, a coat, sometimes a neckerchief, a trait and a
- *   short bio; every other place also gets a guest from a kind that lives there (a rabbit on a farm, an arctic fox, a
- *   bat-eared fox), so the cast keeps changing.
+ * - A **place** (`p1`, `p2`, …) is in one of fifteen landscapes (the five hand-made regions' own — a farm, the outback,
+ *   the savanna, the Arctic, the rainforest — and the Antarctic, Asian and African jungle, bamboo forest, mountains,
+ *   desert, woodland, wetland, coast, islands and grassland), with its own name, a look (golden light, autumn, blossom,
+ *   mist, dusk), sometimes mirrored, a pin inside its landscape's part of the world, and five stages (growth 0/3/8/15/25).
+ * - Its **animals** (`w12-0`, `w12-1`, …) are species of that landscape (`species/`), met in the landscape's own order:
+ *   three per place, four in every other place of a landscape, so each visit brings kinds the player hasn't met
+ *   (a giant panda, a red-crowned crane, a golden snub-nosed monkey). After the last, the landscape's kinds come round
+ *   again as new individuals (and new coats, where a kind has them). Each has a name, sometimes a neckerchief, a trait
+ *   and a short bio with a true fact.
  * - Place k opens after Journey level 60 + 20k (one new place at the end of every chapter from level 80), or earlier,
  *   as soon as every home before it is complete (`world.isOpen`), so the world never runs out.
  *
  * Everything is a pure function of k: the same place, names and animals on every device, forever. Saves keep growth and
  * arrivals by these ids, so a shipped place must never change: `test/unit/places.test.ts` pins the first places to a
  * fixture. To change the recipe, bump PLACES_VERSION and keep the old recipe for saves that have it.
- *
- * Pure data, with type-only imports, so the other catalogs can import it without a cycle.
  */
 
 import { hashString, mulberry32, shuffle } from '../../engine/rng';
 import type { AnimalKind } from './foods';
 import type { CompanionId } from './companions';
 import type { Arrival, SanctuaryDef, StageDef } from './sanctuaries';
+import { NAMES_BY_BIOME, PLACE_WORDS_BY_BIOME, speciesOfBiome } from './species/index';
+import type { BiomeId, SpeciesDef, SpeciesId } from './species/types';
+
+export type { BiomeId } from './species/types';
 
 export const PLACES_VERSION = 1;
 
-export type BiomeId = 'farm' | 'outback' | 'savanna' | 'arctic' | 'amazon';
 export type PlaceId = `p${number}`;
 export type WildId = `w${number}-${number}`;
 export type LookId = 'classic' | 'golden' | 'autumn' | 'blossom' | 'misty' | 'dusk';
@@ -147,6 +150,16 @@ export const COATS: Partial<Record<CompanionId, readonly Coat[]>> = {
     { name: 'pale', fur: '#CDB89D', light: '#F2E8D8', dark: '#5A4636', accent: '#DCC9AE' },
     { name: 'mossy', fur: '#A9A27F', light: '#E5E0CA', dark: '#4E4A36', accent: '#BDB592' },
     { name: 'cocoa', fur: '#9C7F63', light: '#E3D2BC', dark: '#4A3828', accent: '#B39878' },
+  ],
+  ember: [
+    { name: 'russet', fur: '#D9763E', light: '#FFF1DE', dark: '#4E3228', accent: '#EFA46E' },
+    { name: 'silver', fur: '#9DA1A6', light: '#F1F2F3', dark: '#2F3033', accent: '#C7CACD' },
+    { name: 'cross', fur: '#B97A4E', light: '#F4E6D6', dark: '#3A2A22', accent: '#8E5A3A' },
+  ],
+  maple: [
+    { name: 'ruby', fur: '#B84E2C', light: '#FFF4E6', dark: '#40241D', accent: '#E39A62' },
+    { name: 'amber', fur: '#CF6A35', light: '#FFF7EC', dark: '#4A2A22', accent: '#F0B47A' },
+    { name: 'chestnut', fur: '#A9502F', light: '#FBEFE2', dark: '#3A221C', accent: '#D99062' },
   ],
   pudding: [
     { name: 'golden', fur: '#C69A68', light: '#D9B184', dark: '#3A2E28', accent: '#AD8155' },
@@ -292,7 +305,8 @@ const SHARED_NAMES = [
   'Teacup', 'Thimble', 'Thistle', 'Toffee', 'Tulip', 'Turnip', 'Twig', 'Waffle', 'Walnut', 'Willow', 'Wren', 'Yarrow', 'Ziggy',
 ];
 
-const BIOME_NAMES: Record<BiomeId, readonly string[]> = {
+/** Each landscape's own names (the hand-made regions' first, then the species writers' lists). */
+const OLD_NAMES: Partial<Record<BiomeId, readonly string[]>> = {
   farm: ['Haybale', 'Turnip', 'Clementine', 'Dolly', 'Rhubarb', 'Pumpernickel', 'Gravy', 'Hollyhock', 'Mabel', 'Oats', 'Barnaby', 'Daffodil', 'Gooseberry', 'Wellington', 'Clove'],
   outback: ['Wattle', 'Banjo', 'Quandong', 'Billabong', 'Kookie', 'Coolabah', 'Saltbush', 'Dusty', 'Ochre', 'Spinifex', 'Boomer', 'Matilda', 'Ironbark', 'Sandy', 'Mallee'],
   savanna: ['Baraka', 'Imani', 'Jabari', 'Nia', 'Asante', 'Kito', 'Marula', 'Acacia', 'Zawadi', 'Tumaini', 'Amani', 'Baobab', 'Sahara', 'Kibo', 'Neema'],
@@ -300,20 +314,17 @@ const BIOME_NAMES: Record<BiomeId, readonly string[]> = {
   amazon: ['Orchid', 'Kapok', 'Papaya', 'Cacao', 'Guava', 'Lagoon', 'Bromelia', 'Bonita', 'Acai', 'Lima', 'Tamarind', 'Liana', 'Mangrove', 'Canopy', 'Firefly'],
 };
 
-// ------------------------------------------------------------------ biomes
+// ------------------------------------------------------------------ landscapes
 
-/** A part of the world a biome's places sit in: [lonMin, lonMax, latMin, latMax, words for the card]. */
+/** A part of the world a landscape's places sit in: [lonMin, lonMax, latMin, latMax, words for the card]. */
 type Zone = readonly [number, number, number, number, string];
 
 interface Biome {
   id: BiomeId;
   /** Shown before the zone on a card: "Farmland · Northern Europe". */
   label: string;
-  /** The drawn species, in the order their stage features appear (each arrives with its stage, as in its region). */
-  natives: readonly CompanionId[];
-  /** Natives that need a stage feature to stand on: the slot they can first take (the Farm's goat on the hay bales). */
-  minSlot?: Partial<Record<CompanionId, number>>;
-  guests: ReadonlyArray<keyof typeof GUESTS>;
+  /** The drawn scene its places use (the Antarctic is drawn as the Arctic, the jungle as the rainforest). */
+  art: BiomeId;
   adjectives: readonly string[];
   nouns: readonly string[];
   accents: readonly string[];
@@ -324,13 +335,14 @@ interface Biome {
   scenery: string;
 }
 
+const STAGES5 = (a: string, b: string, c: string, d: string, e: string) => [a, b, c, d, e] as const;
+const words = (b: BiomeId, fallback: { adjectives: readonly string[]; nouns: readonly string[] }) => PLACE_WORDS_BY_BIOME[b] ?? fallback;
+
 export const BIOMES: Record<BiomeId, Biome> = {
   farm: {
     id: 'farm',
     label: 'Farmland',
-    natives: ['cotton', 'truffle', 'buttercup', 'pepper', 'marigold', 'hazel'],
-    minSlot: { pepper: 1 },
-    guests: ['rabbit'],
+    art: 'farm',
     adjectives: ['Clover', 'Honey', 'Bramble', 'Willow', 'Larkspur', 'Hollyhock', 'Apple', 'Bluebell', 'Thistle', 'Foxglove', 'Primrose', 'Mill', 'Cherry', 'Barley', 'Sorrel', 'Elderflower', 'Daisy', 'Pear Tree', 'Hayloft', 'Brook'],
     nouns: ['Acres', 'Meadows', 'Fields', 'Orchards', 'Paddocks', 'Hills', 'Hollow', 'Croft', 'Downs', 'Homestead'],
     accents: ['#C0583F', '#B5683A', '#A8574B', '#C4793D', '#9C5B3F'],
@@ -350,24 +362,23 @@ export const BIOMES: Record<BiomeId, Biome> = {
   outback: {
     id: 'outback',
     label: 'Outback',
-    natives: ['gumnut', 'skipper', 'dozer'],
-    guests: [],
+    art: 'outback',
     adjectives: ['Wattle', 'Red Gum', 'Saltbush', 'Ochre', 'Spinifex', 'Quandong', 'Coolabah', 'Ironbark', 'Sundown', 'Emu', 'Mulga', 'Desert Pea', 'Banksia', 'Bottlebrush', 'Dingo Fence', 'Starlight', 'Opal', 'Billabong', 'Paperbark', 'Kurrajong'],
     nouns: ['Flats', 'Plains', 'Station', 'Range', 'Creek', 'Gorge', 'Springs', 'Downs', 'Ridge', 'Gully'],
     accents: ['#D9824A', '#C96E3C', '#D99550', '#BF6A45', '#E08A55'],
     looks: ['classic', 'golden', 'dusk'],
     zones: [
       [118, 148, -31, -20, 'Australia'],
+      [141, 147, -8, -5, 'New Guinea'],
     ],
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['Untouched and quiet', 'Gum trees take root, and the first friend climbs in', 'A shade shelter goes up', 'The billabong fills', 'Desert peas bloom across the red sand'],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Untouched and quiet', 'Gum trees take root, and the first friend climbs in', 'A shade shelter goes up', 'The billabong fills', 'Desert peas bloom across the red sand'),
     scenery: 'Red earth and gum trees under big skies',
   },
   savanna: {
     id: 'savanna',
     label: 'Savanna',
-    natives: ['zuri', 'sunny', 'tembo'],
-    guests: ['batearedfox'],
+    art: 'savanna',
     adjectives: ['Acacia', 'Baobab', 'Golden', 'Marula', 'Sunrise', 'Amber', 'Weaver', 'Tamarind', 'Kopje', 'Lion Rock', 'Fever Tree', 'Long Grass', 'Mango Tree', 'Thornbush', 'Sandriver', 'Red Oat', 'Hornbill', 'Morning Star', 'Ostrich', 'Twin Hills'],
     nouns: ['Plains', 'Valley', 'Grasslands', 'Waterhole', 'Springs', 'Pan', 'Ridge', 'Crossing', 'Hills', 'Basin'],
     accents: ['#C99A2E', '#B8862A', '#D2A63E', '#C08B3A', '#A98A2C'],
@@ -377,15 +388,14 @@ export const BIOMES: Record<BiomeId, Biome> = {
       [-12, 10, 9, 13, 'the Sahel'],
       [16, 30, -26, -18, 'Southern Africa'],
     ],
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['Untouched and quiet', 'An acacia grows tall, and the first friend comes by', 'A rocky lookout rises', 'The waterhole fills', 'Wildflowers and weaver birds everywhere'],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Untouched and quiet', 'An acacia grows tall, and the first friend comes by', 'A rocky lookout rises', 'The waterhole fills', 'Wildflowers and weaver birds everywhere'),
     scenery: 'Golden grass under a huge sun',
   },
   arctic: {
     id: 'arctic',
     label: 'Arctic',
-    natives: ['luna', 'frost', 'pebble'],
-    guests: ['arcticfox', 'arctichare'],
+    art: 'arctic',
     adjectives: ['Snowdrift', 'Aurora', 'Polar', 'Frost', 'Northern', 'Glacier', 'Midnight Sun', 'Silver', 'Icefall', 'Starry', 'Whitecap', 'Narwhal', 'Snowberry', 'Lichen', 'Blue Ice', 'Moonlit', 'Puffin', 'Hoarfrost', 'Crystal', 'Seal Rock'],
     nouns: ['Shore', 'Bay', 'Fjord', 'Point', 'Tundra', 'Cove', 'Floe', 'Sound', 'Inlet', 'Coast'],
     accents: ['#5B9BC4', '#4C8BB8', '#6AA6C9', '#5590B0', '#7AA9CF'],
@@ -396,35 +406,217 @@ export const BIOMES: Record<BiomeId, Biome> = {
       [16, 32, 68, 71, 'Lapland'],
       [60, 140, 67, 73, 'the Siberian Arctic'],
     ],
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['Untouched and quiet', 'Snowdrifts settle, and the first friend arrives', 'A snow den is dug', 'Open water by the ice', 'Cotton grass and starry nights'],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Untouched and quiet', 'Snowdrifts settle, and the first friend arrives', 'A snow den is dug', 'Open water by the ice', 'Cotton grass and starry nights'),
     scenery: 'Snow, sea ice and the midnight sun',
   },
   amazon: {
     id: 'amazon',
     label: 'Rainforest',
-    natives: ['rio', 'mango', 'pudding'],
-    guests: [],
+    art: 'amazon',
     adjectives: ['Orchid', 'Kapok', 'Mossy', 'Emerald', 'Fern', 'Canopy', 'Firefly', 'Lily', 'Passionflower', 'Bromeliad', 'Rainy', 'Cacao', 'Morpho', 'Hummingbird', 'Liana', 'Misty Leaf', 'Jade', 'Papaya', 'Golden Frog', 'Riverbend'],
     nouns: ['Grove', 'Lagoon', 'Bend', 'Falls', 'Glade', 'Hollow', 'Rapids', 'Backwater', 'Clearing', 'Islands'],
     accents: ['#3E9A62', '#2F8A55', '#4AA36B', '#3B8C5E', '#55A874'],
-    looks: ['classic', 'golden', 'misty', 'blossom'],
+    looks: ['classic', 'golden', 'misty'],
     zones: [
       [-73, -52, -12, 1, 'the Amazon basin'],
+      [-85, -77, 7, 12, 'Central America'],
     ],
-    stageNames: ['Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'],
-    stageLines: ['Untouched and quiet', 'Giant leaves unfurl, and the first friend flies in', 'A tree platform goes up', 'Giant lily pads on the river', 'Heliconia flowers and butterflies'],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Untouched and quiet', 'Giant leaves unfurl, and the first friend flies in', 'A tree platform goes up', 'Giant lily pads on the river', 'Heliconia flowers and butterflies'),
     scenery: 'Giant leaves and a slow brown river',
+  },
+  antarctic: {
+    id: 'antarctic',
+    label: 'Antarctica',
+    art: 'arctic',
+    ...words('antarctic', { adjectives: ['Penguin', 'Iceberg', 'Snow Petrel', 'Krill', 'Blue', 'Southern', 'Frozen', 'Albatross'], nouns: ['Shelf', 'Bay', 'Point', 'Floe', 'Cape'] }),
+    accents: ['#4C8BB8', '#5B9BC4', '#3F7FAE', '#6AA6C9', '#5590B0'],
+    looks: ['classic', 'golden', 'dusk', 'misty'],
+    zones: [
+      [-68, -56, -70, -63, 'the Antarctic Peninsula'],
+      [-45, -30, -62, -54, 'South Georgia'],
+      [60, 120, -69, -65, 'East Antarctica'],
+    ],
+    stageNames: STAGES5('Wild ice', 'First friend', 'Shelter', 'Open water', 'Thriving'),
+    stageLines: STAGES5('Wind, ice and a quiet shore', 'Snowdrifts settle, and the first friend waddles in', 'A snow shelter is dug', 'Open water by the ice', 'Clear skies and starry nights'),
+    scenery: 'Ice shelves and penguin beaches at the bottom of the world',
+  },
+  jungle: {
+    id: 'jungle',
+    label: 'Jungle',
+    art: 'amazon',
+    ...words('jungle', { adjectives: ['Monsoon', 'Teak', 'Banyan', 'Orchid', 'Jade', 'Hornbill', 'Rattan', 'Mangosteen'], nouns: ['Grove', 'Valley', 'Falls', 'Hollow', 'River'] }),
+    accents: ['#2F8A55', '#3E9A62', '#357F50', '#4AA36B', '#2E7A58'],
+    looks: ['classic', 'golden', 'misty'],
+    zones: [
+      [100, 118, -3, 5, 'Borneo and Sumatra'],
+      [98, 106, 6, 18, 'Southeast Asia'],
+      [74, 90, 10, 24, 'India'],
+      [12, 28, -4, 4, 'the Congo Basin'],
+      [-12, -4, 5, 9, 'West Africa'],
+    ],
+    stageNames: STAGES5('Wild forest', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Deep green and quiet', 'Giant leaves unfurl, and the first friend swings in', 'A tree platform goes up', 'Lily pads on the river', 'Flowers and butterflies everywhere'),
+    scenery: 'Tall trees, warm rain and a lazy river',
+  },
+  bamboo: {
+    id: 'bamboo',
+    label: 'Bamboo forest',
+    art: 'bamboo',
+    ...words('bamboo', { adjectives: ['Misty', 'Jade', 'Plum Blossom', 'Moon', 'Pine'], nouns: ['Grove', 'Valley', 'Terrace', 'Stream'] }),
+    accents: ['#3F8F7E', '#358574', '#448C7A', '#2E7E6E', '#43927F'],
+    looks: ['classic', 'misty', 'blossom', 'golden'],
+    zones: [
+      [102, 112, 26, 34, 'central China'],
+      [131, 141, 33, 40, 'Japan'],
+      [126, 129, 35, 38, 'Korea'],
+      [131, 137, 43, 48, 'the Russian Far East'],
+    ],
+    stageNames: STAGES5('Quiet grove', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Bamboo, mist and a dry stream bed', 'Tall bamboo sways, and the first friend arrives', 'A little pavilion goes up', 'The stream runs under a wooden bridge', 'Blossom, lanterns and birdsong'),
+    scenery: 'Tall green bamboo and misty hills',
+  },
+  mountain: {
+    id: 'mountain',
+    label: 'Mountains',
+    art: 'mountain',
+    ...words('mountain', { adjectives: ['Granite', 'Snowcap', 'Edelweiss', 'Eagle', 'Cloud'], nouns: ['Peak', 'Ridge', 'Pass', 'Meadow'] }),
+    accents: ['#5B77A6', '#4F6C98', '#6680B0', '#56709E', '#4A6890'],
+    looks: ['classic', 'misty', 'golden', 'autumn', 'dusk'],
+    zones: [
+      [78, 95, 28, 34, 'the Himalayas'],
+      [-77, -66, -30, -10, 'the Andes'],
+      [6, 14, 45.5, 47.5, 'the Alps'],
+      [-118, -106, 40, 52, 'the Rocky Mountains'],
+      [37, 40, 9, 13, 'the Ethiopian Highlands'],
+      [-8, -3, 30, 34, 'the Atlas Mountains'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Mountain hut', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Snowy peaks and a quiet meadow', 'Rocky ledges rise, and the first friend climbs up', 'A cozy hut goes up on the meadow', 'Snowmelt fills a clear blue lake', 'Alpine flowers everywhere'),
+    scenery: 'Snowy peaks above an alpine meadow',
+  },
+  desert: {
+    id: 'desert',
+    label: 'Desert',
+    art: 'desert',
+    ...words('desert', { adjectives: ['Dune', 'Saffron', 'Mirage', 'Date Palm', 'Sandstone'], nouns: ['Oasis', 'Mesa', 'Wells', 'Canyon'] }),
+    accents: ['#C0694F', '#B45F4C', '#C4744F', '#AD5B48', '#BC6E56'],
+    looks: ['classic', 'golden', 'dusk'],
+    zones: [
+      [-6, 28, 18, 30, 'the Sahara'],
+      [42, 55, 17, 25, 'Arabia'],
+      [96, 110, 40, 45, 'the Gobi'],
+      [-116, -109, 31, 35.5, 'the Sonoran Desert'],
+      [17, 24, -27, -21, 'the Kalahari'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Oasis', 'Thriving'),
+    stageLines: STAGES5('Rolling dunes under a pale sky', 'A tall cactus grows, and the first friend arrives', 'A cool clay house goes up', 'An oasis fills under the date palms', 'Cactus flowers and a balloon drifting by'),
+    scenery: 'Golden dunes and rosy mesas',
+  },
+  woodland: {
+    id: 'woodland',
+    label: 'Woodland',
+    art: 'woodland',
+    ...words('woodland', { adjectives: ['Mossy', 'Birchwood', 'Foxglove', 'Acorn', 'Fernhill'], nouns: ['Hollow', 'Glade', 'Wood', 'Dell'] }),
+    accents: ['#6A8A3E', '#5E8244', '#7A8A3A', '#8A6E48', '#668E4A'],
+    looks: ['classic', 'autumn', 'misty', 'blossom', 'golden'],
+    zones: [
+      [-4, 28, 47, 60, 'the forests of Europe'],
+      [-90, -70, 40, 47, 'the woods of North America'],
+      [-125, -118, 44, 50, 'the Pacific Northwest'],
+      [-110, -65, 50, 57, 'the forests of Canada'],
+      [24, 40, 56, 64, 'the northern forests'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Stump house', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('A quiet path through the trees', 'A great oak spreads out, and the first friend arrives', 'A cozy stump house opens its door', 'A forest pool fills by the pines', 'Toadstools, bluebells and butterflies'),
+    scenery: 'Oaks, pines and mossy paths',
+  },
+  wetland: {
+    id: 'wetland',
+    label: 'Wetland',
+    art: 'wetland',
+    ...words('wetland', { adjectives: ['Reed', 'Lily', 'Heron', 'Willow', 'Misty'], nouns: ['Marsh', 'Fen', 'Bayou', 'Pools'] }),
+    accents: ['#3A8791', '#2F7D88', '#438E96', '#36818C', '#4A8A86'],
+    looks: ['classic', 'misty', 'golden', 'dusk', 'autumn'],
+    zones: [
+      [-82, -80, 25, 27.5, 'the Everglades'],
+      [-58, -55, -20, -16, 'the Pantanal'],
+      [22, 24, -20, -18, 'the Okavango Delta'],
+      [30, 33, 12, 22, 'the Nile'],
+      [104, 107, 9, 12, 'the Mekong Delta'],
+      [-92, -89, 29, 31, 'the bayous of Louisiana'],
+      [3, 7, 51, 53.5, 'the marshes of the Low Countries'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Boardwalk', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Still water and a wide sky', 'Reeds rustle, and the first friend arrives', 'A boardwalk leads to a little hut', 'Water lilies bloom under a willow', 'Irises and dragonflies everywhere'),
+    scenery: 'Reeds, lily pads and slow water',
+  },
+  coast: {
+    id: 'coast',
+    label: 'Coast',
+    art: 'coast',
+    ...words('coast', { adjectives: ['Coral', 'Driftwood', 'Seashell', 'Tidepool', 'Saltwind'], nouns: ['Bay', 'Cove', 'Reef', 'Shore'] }),
+    accents: ['#3A7FB0', '#3477A6', '#4386B5', '#2F6F9C', '#4A82AE'],
+    looks: ['classic', 'golden', 'misty', 'dusk'],
+    zones: [
+      [143, 153, -24, -13, 'the Great Barrier Reef'],
+      [-125, -117, 33, 40, 'the California coast'],
+      [-10, -5, 50, 58, 'the North Atlantic coast'],
+      [-88, -78, 16, 22, 'the Caribbean'],
+      [17, 20, -35, -33, 'the Cape coast'],
+      [119, 125, 8, 14, 'the Coral Triangle'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Beach hut', 'Rock pools', 'Thriving'),
+    stageLines: STAGES5('Waves on an empty beach', 'Rocks and driftwood wash up, and the first friend arrives', 'A striped beach hut goes up', 'Rock pools fill, and a sunshade opens', 'A lighthouse, a sailboat and gulls'),
+    scenery: 'Sandy beach, rock pools and the open sea',
+  },
+  island: {
+    id: 'island',
+    label: 'Island',
+    art: 'island',
+    ...words('island', { adjectives: ['Lagoon', 'Coconut', 'Volcano', 'Hibiscus', 'Coral'], nouns: ['Isle', 'Cove', 'Atoll', 'Key'] }),
+    accents: ['#1F8F8A', '#178580', '#269690', '#13807C', '#2A8E86'],
+    looks: ['classic', 'golden', 'dusk'],
+    zones: [
+      [43, 50, -25, -13, 'Madagascar'],
+      [-92, -89, -1.5, 0.5, 'the Galápagos'],
+      [167, 178, -46, -35, 'New Zealand'],
+      [119, 121, -9, -8, 'Komodo'],
+      [122, 126, 8, 12, 'the Philippines'],
+      [-160, -155, 19, 22, 'Hawaii'],
+      [-84, -75, 20, 22.5, 'the Caribbean islands'],
+      [-67.2, -65.6, 17.9, 18.5, 'Puerto Rico'],
+      [105.5, 105.8, -10.6, -10.4, 'Christmas Island'],
+    ],
+    stageNames: STAGES5('Wild land', 'First friend', 'Shelter', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('White sand and a green peak', 'Palms lean over the sand, and the first friend arrives', 'A hut on stilts stands in the lagoon', 'A waterfall tumbles down the peak', 'Flowers, a canoe and seabirds'),
+    scenery: 'Palm trees and a turquoise lagoon',
+  },
+  grassland: {
+    id: 'grassland',
+    label: 'Grassland',
+    art: 'grassland',
+    ...words('grassland', { adjectives: ['Prairie', 'Wildflower', 'Skylark', 'Sweetgrass', 'Golden'], nouns: ['Plains', 'Meadow', 'Downs', 'Rise'] }),
+    accents: ['#73883A', '#687F3C', '#7E8C38', '#62803E', '#867F36'],
+    looks: ['classic', 'golden', 'autumn', 'blossom', 'dusk'],
+    zones: [
+      [-105, -96, 36, 48, 'the Great Plains'],
+      [62, 100, 46, 51, 'the steppe'],
+      [-64, -58, -38, -33, 'the Pampas'],
+      [24, 40, 46, 50, 'the steppe of eastern Europe'],
+    ],
+    stageNames: STAGES5('Open prairie', 'First friend', 'Windmill', 'Water and shade', 'Thriving'),
+    stageLines: STAGES5('Tall grass under a big sky', 'A lone tree grows on the hill, and the first friend arrives', 'A windmill starts to turn', 'A pond fills below the windmill', 'Wildflowers, butterflies and a kite'),
+    scenery: 'Rolling prairie under a big sky',
   },
 };
 
-export const BIOME_IDS: readonly BiomeId[] = ['farm', 'outback', 'savanna', 'arctic', 'amazon'];
+export const BIOME_IDS: readonly BiomeId[] = ['farm', 'outback', 'savanna', 'arctic', 'amazon', 'antarctic', 'jungle', 'bamboo', 'mountain', 'desert', 'woodland', 'wetland', 'coast', 'island', 'grassland'];
 
 /** Growth counts for a place's stages and its animals (the regions' own numbers, D28). */
 const STAGE_AT = [0, 3, 8, 15, 25] as const;
-const SLOT_AT = [3, 8, 15] as const;
-/** A guest arrives between the third animal and the last stage. */
-const GUEST_AT = 21;
+const SLOT_AT = [3, 8, 15, 21] as const;
 
 // ------------------------------------------------------------------ the recipe
 
@@ -432,18 +624,19 @@ export interface WildDef {
   id: WildId;
   place: PlaceId;
   slot: number;
-  /** The drawn species this animal is a version of (its art, its 3D toy, its spot in the scene). */
-  base: CompanionId;
+  /** Its species (`species/`): what kind of animal it is, how it is drawn, what it eats. */
+  species: SpeciesId;
+  /** For a hand-drawn kind, the drawn friend it is a version of (its art, its 3D toy); null for a kit species. */
+  base: CompanionId | null;
   name: string;
+  /** The kind, capitalized ("Snow leopard"). */
   kind: string;
-  animal: AnimalKind | null;
+  animal: AnimalKind;
   coat: Coat;
   /** Neckerchief color, or null. */
   neckerchief: string | null;
   trait: string;
   bio: string;
-  /** A guest stands on its biome's open ground (natives have their own spots). */
-  guest: boolean;
   /** Growth count of its place when it arrives. */
   at: number;
 }
@@ -461,35 +654,29 @@ export interface PlaceDef extends SanctuaryDef {
 const rngFor = (key: string) => mulberry32(hashString(`pawtopia-places-v${PLACES_VERSION}:${key}`));
 const pick = <T>(list: readonly T[], key: string): T => list[hashString(`pawtopia-places-v${PLACES_VERSION}:${key}`) % list.length];
 
-/** Biome of place k: every five places visit all five biomes, shuffled, never the same biome twice in a row. */
+/** Landscape of place k: every fifteen places visit all fifteen, shuffled, never the same twice in a row. */
+const ROUND = BIOME_IDS.length;
 const roundCache = new Map<number, BiomeId[]>();
 function round(r: number): BiomeId[] {
   const hit = roundCache.get(r);
   if (hit) return hit;
   let order = shuffle(rngFor(`round:${r}`), [...BIOME_IDS]);
   if (r > 0) {
-    const prevLast = round(r - 1)[4];
+    const prevLast = round(r - 1)[ROUND - 1];
     if (order[0] === prevLast) order = [...order.slice(1), order[0]];
   }
   roundCache.set(r, order);
   return order;
 }
 export function biomeOf(k: number): BiomeId {
-  return round(Math.floor((k - 1) / 5))[(k - 1) % 5];
+  return round(Math.floor((k - 1) / ROUND))[(k - 1) % ROUND];
 }
 
-/** How many places of the same biome come before place k (for names that don't repeat within a biome). */
-const ordinalCache: number[] = [];
+/** How many places of the same landscape come before place k (its names, its species and its look follow from it). */
 function biomeOrdinal(k: number): number {
-  if (ordinalCache[k] !== undefined) return ordinalCache[k];
-  // Walk forward from the last known place, counting per biome (linear once, then cached).
-  const seen: Record<BiomeId, number> = { farm: 0, outback: 0, savanna: 0, arctic: 0, amazon: 0 };
-  for (let j = 1; j <= k; j++) {
-    const b = biomeOf(j);
-    ordinalCache[j] = seen[b];
-    seen[b]++;
-  }
-  return ordinalCache[k];
+  // Each round of fifteen visits every landscape once: the earlier rounds, plus this round up to k.
+  const r = Math.floor((k - 1) / ROUND);
+  return r;
 }
 
 const nameCache = new Map<BiomeId, string[]>();
@@ -504,7 +691,7 @@ function placeNames(b: BiomeId): string[] {
   return out;
 }
 
-/** The shared names in a fixed shuffled order, and each biome's own names in theirs. */
+/** The shared names in a fixed shuffled order, and each landscape's own names in theirs. */
 let sharedOrder: string[] | null = null;
 const ownOrder = new Map<BiomeId, string[]>();
 function sharedNames(): string[] {
@@ -514,65 +701,83 @@ function ownNames(b: BiomeId): string[] {
   let o = ownOrder.get(b);
   if (!o) {
     const shared = new Set(SHARED_NAMES);
-    o = shuffle(rngFor(`animal-names:${b}`), BIOME_NAMES[b].filter((n) => !RESERVED.has(n.toLowerCase()) && !shared.has(n)));
+    const seen = new Set<string>();
+    const all = [...(OLD_NAMES[b] ?? []), ...(NAMES_BY_BIOME[b] ?? [])].filter((n) => {
+      const key = n.toLowerCase();
+      if (RESERVED.has(key) || shared.has(n) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    o = shuffle(rngFor(`animal-names:${b}`), all);
     ownOrder.set(b, o);
   }
   return o;
 }
 
 /**
- * The names of every place's animals, handed out in order across the whole world: a biome's own names first (an
- * outback koala called Wattle), then the shared ones, so no two animals share a name until both lists have been used.
+ * The names of every place's animals, handed out in order across the whole world: a landscape's own names first (a
+ * koala called Wattle), then the shared ones, so no two animals share a name until both lists have been used.
  */
 const namesByPlace: string[][] = [];
 function animalNamesOf(k: number): string[] {
   if (namesByPlace[k]) return namesByPlace[k];
-  const ownUsed: Record<BiomeId, number> = { farm: 0, outback: 0, savanna: 0, arctic: 0, amazon: 0 };
+  const ownUsed = new Map<BiomeId, number>();
   let sharedUsed = 0;
+  const shared = sharedNames();
+  // Names already used anywhere in the world (own lists can share a name across landscapes).
+  const taken = new Set<string>();
   for (let j = 1; j <= k; j++) {
     const b = biomeOf(j);
     const own = ownNames(b);
-    const shared = sharedNames();
     const names: string[] = [];
     for (let slot = 0; slot < slotsOf(j); slot++) {
-      if (ownUsed[b] < own.length) names.push(own[ownUsed[b]++]);
-      else {
-        const lap = Math.floor(sharedUsed / shared.length);
-        names.push(`${shared[sharedUsed % shared.length]}${lap ? ` ${lap + 1}` : ''}`);
-        sharedUsed++;
+      let n: string | null = null;
+      let u = ownUsed.get(b) ?? 0;
+      while (u < own.length && taken.has(own[u])) u++;
+      if (u < own.length) n = own[u++];
+      ownUsed.set(b, u);
+      if (!n) {
+        do {
+          const lap = Math.floor(sharedUsed / shared.length);
+          n = `${shared[sharedUsed % shared.length]}${lap ? ` ${lap + 1}` : ''}`;
+          sharedUsed++;
+        } while (taken.has(n));
       }
+      taken.add(n);
+      names.push(n);
     }
     namesByPlace[j] ??= names;
   }
   return namesByPlace[k];
 }
 
-/** Every other place of a biome with guests has one (the second, fourth, … of that biome). */
-function hasGuest(k: number): boolean {
-  return BIOMES[biomeOf(k)].guests.length > 0 && biomeOrdinal(k) % 2 === 1;
-}
-/** How many animals place k has: three, or four with a guest. */
+/** How many animals place k has: three, or four in every other place of its landscape. */
 export function slotsOf(k: number): number {
-  return k >= 1 && k <= MAX_PLACE && hasGuest(k) ? 4 : 3;
+  return k >= 1 && k <= MAX_PLACE && biomeOrdinal(k) % 2 === 1 ? 4 : 3;
 }
 
-/** The three natives of a place, in stage order. Farms pick three of their six (the goat never first: it needs the bales). */
-function nativesOf(k: number): CompanionId[] {
-  const b = BIOMES[biomeOf(k)];
-  if (b.natives.length <= 3) return [...b.natives];
-  const trios: CompanionId[][] = [];
-  const n = b.natives;
-  for (let i = 0; i < n.length; i++)
-    for (let j = i + 1; j < n.length; j++)
-      for (let l = j + 1; l < n.length; l++) {
-        const t = [n[i], n[j], n[l]];
-        if (t.every((id, slot) => slot >= (b.minSlot?.[id] ?? 0))) trios.push(t);
-      }
-  return trios[hashString(`pawtopia-places-v${PLACES_VERSION}:trio:${k}`) % trios.length];
+/** Where in its landscape's list of species place k starts: three per visit, four every other visit. */
+function speciesCursor(k: number): number {
+  const n = biomeOrdinal(k);
+  return 3 * n + Math.floor(n / 2);
 }
 
-function fill(s: string, name: string): string {
-  return s.replace(/\{name\}/g, name);
+/** A landscape's species in the order they are met: its new kinds, the drawn guests a little way in, the known kinds last. */
+const orderCache = new Map<BiomeId, readonly SpeciesDef[]>();
+export function biomeSpecies(b: BiomeId): readonly SpeciesDef[] {
+  const hit = orderCache.get(b);
+  if (hit) return hit;
+  const all = speciesOfBiome(b);
+  const kit = all.filter((s) => !s.drawn);
+  const guests = all.filter((s) => s.drawn && s.guest);
+  const known = all.filter((s) => s.drawn && !s.guest);
+  const out = [...kit.slice(0, 4), ...guests, ...kit.slice(4), ...known];
+  orderCache.set(b, out);
+  return out;
+}
+
+function fill(s: string, vars: Record<string, string>): string {
+  return s.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
 }
 
 /** Great-circle-ish distance in degrees, good enough to keep pins apart. */
@@ -616,32 +821,81 @@ function pinOf(k: number): { lon: number; lat: number; where: string } {
   return out;
 }
 
-function wildOf(k: number, slot: number, base: CompanionId, guest: keyof typeof GUESTS | null): WildDef {
+/** Personality lines for the kit's species (true of any animal; the species' own fact is in its bio). */
+const KIT_TRAITS = [
+  'Curious about everything',
+  'Gentle and a little shy',
+  'Brave, bright and always first',
+  'Happiest with friends nearby',
+  'Never in a hurry',
+  'Full of bounce',
+  'Always up for an adventure',
+  'Notices the little things',
+  'Makes friends easily',
+  'Loves a sunny spot',
+  'Quiet, patient and wise',
+  'Funny without trying',
+  'A champion napper',
+  'Chatty in the mornings',
+  'Kind to everyone it meets',
+  'Proud of its home',
+  'Bold, bouncy and brave',
+  'Likes things just so',
+  'A great listener',
+  'Always the last to bed',
+];
+
+/** The four colors of a kit species, as a coat (it has no coat name of its own). */
+function speciesCoat(s: SpeciesDef, lap: number): Coat {
+  if (s.coats?.length && lap > 0) {
+    const c = s.coats[(lap - 1) % s.coats.length];
+    return { name: c.name, fur: c.fur, light: c.light, dark: c.dark, accent: c.accent };
+  }
+  return { name: '', fur: s.colors.fur, light: s.colors.light, dark: s.colors.dark, accent: s.colors.accent };
+}
+
+function wildOf(k: number, slot: number, s: SpeciesDef, lap: number): WildDef {
   const name = animalNamesOf(k)[slot];
   const key = `${k}:${slot}`;
-  const g = guest ? GUESTS[guest] : null;
-  const coats = g ? g.coats : (COATS[base] ?? []);
-  // Coats take turns: the same species in the next place of its biome wears the next coat.
-  const coat = coats[(biomeOrdinal(k) + (hashString(`pawtopia-places-v${PLACES_VERSION}:coat:${g ? guest : base}`) % coats.length)) % coats.length];
-  const traits = g ? g.traits : (TRAITS[base] ?? ['A new friend']);
-  const bios = g ? g.bios : (BIOS[base] ?? ['{name} is glad to have a home.']);
-  const neck = hashString(`pawtopia-places-v${PLACES_VERSION}:neck:${key}`) % 5 < 2 ? pick(NECKERCHIEFS, `neck-color:${key}`) : null;
+  const g = s.guest ? GUESTS[s.guest] : null;
+  let coat: Coat;
+  let traits: readonly string[];
+  let bios: readonly string[];
+  if (s.drawn) {
+    // Every hand-drawn kind has coats (a test checks); its own colors are the fallback, never nothing.
+    const coats = g ? g.coats : (COATS[s.drawn] ?? [speciesCoat(s, 0)]);
+    // A drawn kind wears the next coat each time its landscape brings it round again.
+    coat = coats[(lap + (hashString(`pawtopia-places-v${PLACES_VERSION}:coat:${s.id}`) % coats.length)) % coats.length];
+    traits = g ? g.traits : (TRAITS[s.drawn] ?? KIT_TRAITS);
+    bios = g ? g.bios : (BIOS[s.drawn] ?? ['{name} is glad to have a home.']);
+  } else {
+    coat = speciesCoat(s, lap);
+    traits = KIT_TRAITS;
+    // A kit species' story is its true fact; where it lives in the wild is on its card.
+    bios = ['{fact}'];
+  }
+  // Two in five wear a neckerchief; one who comes round again always does (so two of a kind are easy to tell apart).
+  const neck = lap > 0 || hashString(`pawtopia-places-v${PLACES_VERSION}:neck:${key}`) % 5 < 2 ? pick(NECKERCHIEFS, `neck-color:${key}`) : null;
   return {
     id: wildId(k, slot),
     place: placeId(k),
     slot,
-    base: g ? g.base : base,
+    species: s.id,
+    base: s.drawn ?? null,
     name,
-    kind: g ? g.kind : '',
-    animal: g ? g.animal : null,
+    kind: s.name,
+    animal: s.eats,
     coat,
     neckerchief: neck,
     trait: pick(traits, `trait:${key}`),
-    bio: fill(pick(bios, `bio:${key}`), name),
-    guest: !!g,
-    at: slot < 3 ? SLOT_AT[slot] : GUEST_AT,
+    bio: fill(pick(bios, `bio:${key}`), { name, fact: s.fact }),
+    at: SLOT_AT[slot],
   };
 }
+
+/** Scenes with water from the start (a sea, a lagoon, a river), and the kinds that live in it. */
+const WATER_FROM_START = new Set<BiomeId>(['coast', 'wetland', 'island', 'amazon']);
+const SWIMMERS = new Set(['fish', 'whale', 'ray', 'jelly', 'octopus']);
 
 const placeCache = new Map<number, PlaceDef>();
 
@@ -656,12 +910,13 @@ export function placeDef(k: number): PlaceDef {
   const n = biomeOrdinal(k);
   const lap = Math.floor(n / names.length);
   const name = `${names[n % names.length]}${lap ? ` ${lap + 1}` : ''}`;
-  const natives = nativesOf(k);
-  const animals: WildDef[] = natives.map((base, slot) => wildOf(k, slot, base, null));
-  if (hasGuest(k)) {
-    const gk = b.guests[Math.floor(n / 2) % b.guests.length];
-    animals.push(wildOf(k, 3, GUESTS[gk].base, gk));
-  }
+  const list = biomeSpecies(biome);
+  const cursor = speciesCursor(k);
+  const picks = Array.from({ length: slotsOf(k) }, (_, j) => ({ s: list[(cursor + j) % list.length], lap: Math.floor((cursor + j) / list.length) }));
+  // Where a scene's water only comes with its third stage (an oasis, a pond by the ice), swimmers arrive last, when it
+  // is there (review of D39 PR E).
+  if (!WATER_FROM_START.has(b.art)) picks.sort((x, y) => Number(SWIMMERS.has(x.s.form)) - Number(SWIMMERS.has(y.s.form)));
+  const animals: WildDef[] = picks.map((pk, slot) => wildOf(k, slot, pk.s, pk.lap));
   const pin = pinOf(k);
   const stages: StageDef[] = STAGE_AT.map((at, i) => ({ at, name: b.stageNames[i], change: b.stageLines[i] }));
   const arrivals: Arrival[] = animals.map((a) => ({ id: a.id, at: a.at }));
@@ -669,7 +924,7 @@ export function placeDef(k: number): PlaceDef {
     id: placeId(k),
     index: k,
     biome,
-    // Places of one biome take its looks in turn and alternate their mirroring, so two of a kind never look alike.
+    // Places of one landscape take its looks in turn and alternate their mirroring, so two of a kind never look alike.
     look: b.looks[(n + (hashString(`pawtopia-places-v${PLACES_VERSION}:look:${biome}`) % b.looks.length)) % b.looks.length],
     mirror: (n + hashString(`pawtopia-places-v${PLACES_VERSION}:mirror:${biome}`)) % 2 === 1,
     animals,
@@ -700,7 +955,7 @@ export function placeOfWild(id: WildId): PlaceId {
   return `p${Number(/^w(\d+)-/.exec(id)![1])}` as PlaceId;
 }
 
-/** The coat words for a sentence: "a silver koala", "a snow-white arctic fox". */
+/** The coat words for a sentence: "a silver koala", "a snow-white arctic fox" (just the kind when it has no coat name). */
 export function coatPhrase(w: WildDef, noun: string): string {
-  return `${w.coat.name} ${noun}`;
+  return w.coat.name ? `${w.coat.name} ${noun}` : noun;
 }

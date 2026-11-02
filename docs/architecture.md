@@ -138,6 +138,22 @@ recolored (`three/species.ts::wildToy`). Saves keep places and animals by id, so
 finished homes, the album's finished groups) draw their contents on first open (`ui/components/fold.ts`); the Shop
 sells for the hand-made homes and opens on the one matching the biome being built.
 
+## Kinds of animal (D39 PR E)
+
+`meta/catalogs/species/` lists every kind of animal of the endless world as data: one file per landscape
+(`woodland.ts`, `savanna.ts`, …) written with `define.ts::sp()`, plus `drawn.ts` for the kinds that already had
+hand-drawn art (the regions' animals, the Pet Garden's fox and red panda, and PR D's guests), which keep that art and
+their coats. `vocabulary.ts` holds the part words and the checks (`scripts/species-check.ts`, `species.test.ts`);
+`docs/species-kit.md` is the authoring guide. `ui/art/kit.ts` draws a kit species from its parts: a 64×64 head that
+plugs into the same face rig as every friend (`companions.ts::artOf` picks the hand-drawn head or the kit's), or a whole
+animal for fish, whales, rays, crabs, octopuses, jellies, sea stars, snails and bugs, and a scene figure on one of twelve
+bodies, sized by the kind. `three/species.ts::kitToy` turns a kit species into a 3D toy when the builder has its
+parts (`kit.ts::kitHasToy`); otherwise its figure carries `data-no-toy` and `ui/components/scene3d.ts` keeps that whole
+scene drawn. Places (`places.ts`) meet their landscape's kinds in file order, three or four per place
+(`biomeSpecies`), so every visit brings new kinds until the landscape has shown them all. Landscapes beyond the five
+hand-made regions are drawn in `ui/art/landscapes.ts`; the Antarctic reuses the Arctic's scene and the jungle the
+rainforest's. `scripts/species-gallery.ts` draws every species on one page for review.
+
 ## World map
 
 `ui/art/worldMap.data.ts` is generated once by `scripts/build-world-map.ts` (Natural Earth via world-atlas, Natural

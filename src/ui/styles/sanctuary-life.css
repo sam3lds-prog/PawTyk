@@ -139,8 +139,9 @@
   opacity: 1 !important;
 }
 
-/* Decorations catching the light. */
-.sanctuary__scene.is-live [data-decor].is-sparkle .sp-water {
+/* Decorations (and, D39 PR E, a landscape's own stage features) catching the light. */
+.sanctuary__scene.is-live [data-decor].is-sparkle .sp-water,
+.sanctuary__scene.is-live .sp-stage.is-sparkle .sp-water {
   stroke-dasharray: 3 3;
   animation: sp-sparkle 1600ms linear;
 }
@@ -157,7 +158,8 @@
     opacity: 1;
   }
 }
-.sanctuary__scene.is-live [data-decor].is-glow .sp-glow {
+.sanctuary__scene.is-live [data-decor].is-glow .sp-glow,
+.sanctuary__scene.is-live .sp-stage.is-glow .sp-glow {
   animation: sp-glow 1800ms ease-in-out;
 }
 @keyframes sp-glow {
@@ -165,7 +167,8 @@
     opacity: 0.8;
   }
 }
-.sanctuary__scene.is-live [data-decor].is-drift .sp-petals {
+.sanctuary__scene.is-live [data-decor].is-drift .sp-petals,
+.sanctuary__scene.is-live .sp-stage.is-drift .sp-petals {
   animation: sp-drift 1800ms ease-in;
 }
 @keyframes sp-drift {

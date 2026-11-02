@@ -10,6 +10,9 @@ import { COMPANION_BY_ID, isCompanionId, type CompanionId } from './catalogs/com
 import type { AnimalKind } from './catalogs/foods';
 import { PET_BY_ID, isPetId, type PetId } from './catalogs/pets';
 import { isWildId, wildDef } from './catalogs/places';
+import { DRAWN_SPECIES } from './catalogs/species/drawn';
+import { SPECIES } from './catalogs/species/index';
+import type { SpeciesId } from './catalogs/species/types';
 import { sanctuaryDef, SANCTUARY_BY_ID, arrivalOf, homeOf, type AnimalId, type Arrival, type SanctuaryId } from './catalogs/sanctuaries';
 
 export type { AnimalId } from './catalogs/sanctuaries';
@@ -41,28 +44,45 @@ export function animalInfo(id: AnimalId): AnimalInfo {
     return { id, name: p.name, kind, noun: kind.toLowerCase(), animal: p.species, trait: p.trait, bio: p.bio, sanctuary: 'harmony', resident: true };
   }
   if (isWildId(id)) {
-    // The endless world's animals (D39): a new individual of a drawn species, or a guest kind with its own name.
+    // The endless world's animals (D39): one of its landscape's species, with its own name.
     const w = wildDef(id);
-    const base = COMPANION_BY_ID[w.base];
-    const kind = w.kind || base.kind;
-    return { id, name: w.name, kind, noun: kind.toLowerCase(), animal: w.animal ?? base.animal, trait: w.trait, bio: w.bio, sanctuary: w.place, resident: false };
+    return { id, name: w.name, kind: w.kind, noun: kindNoun(w.kind), animal: w.animal, trait: w.trait, bio: w.bio, sanctuary: w.place, resident: false };
   }
   const c = COMPANION_BY_ID[id as CompanionId];
   return { id, name: c.name, kind: c.kind, noun: c.kind.toLowerCase(), animal: c.animal, trait: c.trait, bio: c.bio, sanctuary: c.sanctuary, resident: false };
 }
 
+/**
+ * A kind as a noun in a sentence: "Snow leopard" → "snow leopard", but a kind named for a place or a person keeps its
+ * capital ("Galápagos tortoise", "Przewalski's horse").
+ */
+export function kindNoun(kind: string): string {
+  const words = kind.split(' ');
+  const first = words[0];
+  // A name of a place or a person keeps its capital: "Galápagos tortoise", "Przewalski's horse", and a two-word name
+  // whose second word is capitalized too ("North American river otter", "Christmas Island red crab").
+  if (PROPER.test(first) || (/['’]s$/.test(first) && !/^lion['’]s$/i.test(first)) || (/^(North|South|East|West|New|Christmas|Rajah|Saint|Great)$/.test(first) && /^[A-Z]/.test(words[1] ?? ''))) return kind;
+  return kind.charAt(0).toLowerCase() + kind.slice(1);
+}
+const PROPER =
+  /^(African|American|Amazon|Andean|Antarctic|Arabian|Asian|Asiatic|Atlantic|Australian|Bactrian|Barbary|Bengal|Bornean|Brazilian|Californian?|Canadian|Caribbean|Chinese|Eurasian|European|Egyptian|Ethiopian|Galápagos|Hawaiian|Himalayan|Humboldt|Indian|Japanese|Javan|Komodo|Madagascar|Malagasy|Malayan|Mexican|Mongolian|Nile|Pacific|Patagonian|Philippine|Siberian|Sumatran|Tasmanian|Tibetan|Amur|Adélie|Gila|Pallas|Bennett|Goodfellow|Darwin|Hector|Grevy|Thomson|Rothschild|Sri|Iberian|Scottish|Cape|Nubian|Alaskan|Hermann|Spix|Victoria|Patas|Diana|Norway|Senegal|Congo|Kalahari|Sahara|Steller|Atlas|Andes)$/;
+
 /** "sheep", "piglets", "calves", "ponies", "foxes": the plural of an animal noun. */
 export function pluralNoun(noun: string): string {
-  if (/sheep$/i.test(noun)) return noun;
-  if (/calf$/i.test(noun)) return noun.replace(/calf$/i, 'calves');
+  // The same in the plural: sheep, deer, moose, bison, fish (and kinds named for them: "red deer", "zebrafish").
+  if (/(sheep|deer|moose|bison|fish|salmon|trout|squid|krill|buffalo|elk|aphid)$/i.test(noun)) return noun;
+  if (/(calf|wolf)$/i.test(noun)) return noun.replace(/f$/i, 'ves');
+  if (/(^| )ox$/i.test(noun)) return noun + 'en';
+  if (/mouse$/i.test(noun)) return noun.replace(/mouse$/i, 'mice');
+  if (/goose$/i.test(noun)) return noun.replace(/goose$/i, 'geese');
   if (/[^aeiou]y$/i.test(noun)) return noun.slice(0, -1) + 'ies';
   if (/(s|x|z|ch|sh)$/i.test(noun)) return noun + 'es';
   return noun + 's';
 }
 
-/** "a sheep", "an elephant calf". */
+/** "a sheep", "an elephant calf", "a European robin" (an "eu", "uni" or "one" sound starts with a y or a w). */
 export function withArticle(noun: string): string {
-  return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+  return `${/^[aeiou]/i.test(noun) && !/^(eu|uni|use|usu|one)/i.test(noun) ? 'an' : 'a'} ${noun}`;
 }
 
 export function isHome(save: Pick<SaveV2, 'inventory'>, id: AnimalId): boolean {
@@ -111,3 +131,27 @@ export function nextArrivalIn(save: Pick<SaveV2, 'inventory'>, sanctuary: Sanctu
 }
 
 export { arrivalOf, homeOf };
+
+// ------------------------------------------------------------------ kinds (D39 PR E)
+
+/** How many kinds of animal the world has (the hand-drawn kinds and every landscape's species). */
+export const KINDS_TOTAL = SPECIES.length;
+
+/** The kind a friend is (a place's animal's species, a hand-made friend's kind), or null for the cat and dog residents. */
+export function speciesOfAnimal(id: AnimalId): SpeciesId | null {
+  if (isPetId(id)) return null;
+  if (isWildId(id)) return wildDef(id).species;
+  const own = DRAWN_SPECIES.find((s) => s.drawn === id && !s.guest) ?? DRAWN_SPECIES.find((s) => s.drawn === id);
+  return own?.id ?? null;
+}
+
+/** How many different kinds of animal have come home anywhere. */
+export function kindsMet(save: Pick<SaveV2, 'inventory'>): number {
+  const kinds = new Set<SpeciesId>();
+  for (const id of Object.keys(save.inventory.companions)) {
+    if (!isAnimalId(id)) continue;
+    const k = speciesOfAnimal(id);
+    if (k) kinds.add(k);
+  }
+  return kinds.size;
+}

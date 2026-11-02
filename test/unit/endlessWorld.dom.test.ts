@@ -15,7 +15,7 @@ import { shopScreen } from '../../src/ui/screens/shop';
 import { defaultSave } from '../../src/services/storage';
 import { SANCTUARIES, sanctuaryDef as sanctuaryDefOf } from '../../src/meta/catalogs/sanctuaries';
 import { PETS } from '../../src/meta/catalogs/pets';
-import { placeDef } from '../../src/meta/catalogs/places';
+import { BIOMES, placeDef } from '../../src/meta/catalogs/places';
 import { finishOpenHomes, skipToLevel } from '../../src/app/qaTools';
 import { activeSanctuary } from '../../src/meta/world';
 
@@ -132,11 +132,19 @@ describe('the endless world on screen (D39)', () => {
     expect(document.querySelector('.sanctuary__scene [data-friend="w1-0"]')).not.toBeNull();
     expect(document.querySelector('#rdecor-title')).toBeNull();
     expect(document.querySelector('[data-act="shop"]')).toBeNull();
-    // Its first friend's card: name, kind and coat.
+    // Its first friend's card: name, kind, its true fact, and where its kind lives in the wild (D39 PR E).
     (document.querySelector('[data-friend-card="w1-0"]') as HTMLButtonElement).click();
     const sheet = document.querySelector('.pet-sheet')!;
-    expect(sheet.textContent).toContain(p1.animals[0].name);
-    expect(sheet.textContent).toContain(`${p1.animals[0].coat.name} coat`);
+    const w = p1.animals[0];
+    expect(sheet.textContent).toContain(w.name);
+    expect(sheet.textContent).toContain(w.kind);
+    // A kit kind has no coat name: the card names its kind alone.
+    expect(w.base).toBeNull();
+    expect(sheet.textContent).not.toContain(' coat');
+    {
+      expect(sheet.textContent).toContain(w.bio);
+      expect(sheet.textContent).toContain('In the wild');
+    }
   });
 
   it('the album has a group for the place, with who is home and who is next', () => {
@@ -154,15 +162,17 @@ describe('the endless world on screen (D39)', () => {
     expect(document.querySelector('.chapter__place')?.textContent).toMatch(new RegExp(`Finish it and the ${placeDef(2).name} opens on the map`));
   });
 
-  it('the Shop, while a place is being built, opens on the hand-made home of the same biome', () => {
+  it('the Shop, while a place is being built, opens on the hand-made home its landscape is drawn as (or the Pet Garden)', () => {
     const p1 = placeDef(1);
+    const art = BIOMES[p1.biome].art;
+    const home = SANCTUARIES.some((d) => d.id === art) ? art : 'harmony';
     router.go({ screen: 'shop', tab: 'decor' } as never);
     const chip = document.querySelector<HTMLElement>('.place-chip[aria-selected="true"]');
-    expect(chip?.dataset.place).toBe(p1.biome);
+    expect(chip?.dataset.place).toBe(home);
     expect(document.querySelectorAll('.shop-section').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('.shop-card[data-decor]').length).toBeGreaterThan(0);
     // A stale link to a place's decor lands there too.
     router.go({ screen: 'shop', sanctuary: 'p1' } as never);
-    expect(document.querySelector<HTMLElement>('.place-chip[aria-selected="true"]')?.dataset.place).toBe(p1.biome);
+    expect(document.querySelector<HTMLElement>('.place-chip[aria-selected="true"]')?.dataset.place).toBe(home);
   });
 });

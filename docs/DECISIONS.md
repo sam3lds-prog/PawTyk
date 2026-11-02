@@ -946,3 +946,64 @@ a solve grew nothing. For players who never stop, the world now keeps going.
 - Measured: at 150 places the World's first draw was about 2.3 MB of markup (1.9 MB of it the fold) and 0.8–0.9 s on a
   4× slowed CPU; the fold is now empty until opened. Looking far ahead (place 9999) the first time walks every place
   before it once (about 1.6 s); only tools do that today, and the walk is cached.
+
+### PR E — five hundred kinds of animal
+Sam asked for at least 500 unique animals: "there are so many countries, biomes with so many different animals". PR D's
+places brought new *individuals* of the eighteen drawn species; now each place brings new *kinds*.
+
+- **The kit** (`ui/art/kit.ts`): a species is a few words of data (`meta/catalogs/species/`, written with `sp()`): head
+  shape, ears, a crown (horns, antlers, a crest, a mane…), snout or beak, eyes, a marking, extras (whiskers, tusks, a
+  pouch…), a tail, one of twelve bodies (seated, big, long-necked, upright, perched, wading, lying, long and low, shelled,
+  coiled, frog, bat) or a whole form (fish, whale, ray, crab, octopus, jelly, sea star, snail, butterfly, bee, ladybird,
+  beetle), a size, and four colors (plus optional head, wing, shell, face, beak and eye colors). The head plugs into the
+  same face rig as every friend, so a kit animal's board tile blinks, glances and grins like Cotton's.
+- **545 kinds across fifteen landscapes**: the five hand-made regions' (farm, outback, savanna, Arctic, rainforest), the
+  Antarctic (drawn as the Arctic), the jungles of Asia and Africa (drawn as the rainforest), and eight new scenes
+  (`ui/art/landscapes.ts`): bamboo forest, mountains, desert, woodland, wetland, coast, island and grassland. 521 are
+  kit species; the 24 hand-drawn kinds (the regions' animals, the Pet Garden's fox and red panda, PR D's guests) keep
+  their own art and coats. Every one has where it lives in the wild and one short, true fact (its story on its card).
+  The lists were written by landscape, checked against the vocabulary (`scripts/species-check.ts`), and looked at one
+  by one in the gallery (`scripts/species-gallery.ts`); facts were kept to well-established ones.
+- **Places meet new kinds**: three per place, four in every other place of a landscape, in the landscape's own order
+  (its best-loved first, shapes mixed); the hand-drawn kinds come after the new ones (the player knows them), the drawn
+  guests a little way in. A landscape shows every kind before any comes round again, then they return as new
+  individuals (with a neckerchief, and their real color forms where they have them). The first hundred places alone
+  meet over three hundred kinds. Each landscape has its own names for its animals and its own words for place names.
+- **3D**: a kit species becomes a toy when the toy builder has its parts (seated, big, long-necked, upright, perched or
+  lying; 369 kinds with the hand-drawn ones). A scene with any animal that can't be a toy yet (a snake, a fish, a
+  turtle) stays drawn, all of it, rather than mixing toys and drawings (`data-no-toy`, `ui/components/scene3d.ts`).
+- **Small things**: the album counts *kinds met* once the endless world has begun; a kit animal's card adds "In the
+  wild"; treats follow what a kind eats (an oryx loves hay); the new landscapes' water, lanterns and petals sparkle,
+  glow and drift like the regions' decorations; the Shop, while a new landscape is being built, opens on the Pet Garden.
+- **Not yet** (the kit's limits, noted by the writers): long-necked swimming birds (a swan reads as a white duck),
+  forked or streaming tails, beetle jaws, tail-tip colors, scales on reptiles' tiles, more than one antler shape. Two
+  kinds are forms of one species, kept as separate animals children know: the Bengal and Amur tigers, the grey and
+  Arctic wolves.
+- `PLACES_VERSION` stays 1: nothing of PR D has shipped, so the recipe changed before any save could hold a place; the
+  fixture (`test/unit/fixtures/places-v1.json`) was regenerated for the new recipe and pins it from here.
+- Tests: `test/unit/species.test.ts` (at least 500 kinds, all well formed, every landscape's order, no repeats before
+  a landscape is done, every species draws in three moods and as a figure, toys and the drawn-scene rule, kinds met,
+  nouns), `test/unit/places.test.ts` and `endlessWorld.dom.test.ts` updated, and three e2e checks (a place's kit
+  animals, a toyable place in 3D, a place with a snake or fish kept drawn).
+
+#### PR E review fixes (independent review)
+- **A red fox or red panda place crashed** (the first around place 109): the Pet Garden's fox and red panda had no
+  coats. They have three each now, a hand-drawn kind falls back to its own colors, and a test draws every place animal
+  over a full lap of every landscape (places 1–300) through every renderer (portrait, board rig, scene figure, tint, toy).
+- **Every list a place is made from is pinned**, not just the first forty places: each landscape's species order,
+  names, words, zones, looks, accents and stages, plus every 25th place to 1000 (`placesSnapshot.ts::worldFixture`).
+  `docs/species-kit.md` says what that means once places ship.
+- **Swimmers arrive when their water is there**: where a scene's water comes with its third stage (an oasis, a pond by
+  the ice), a place's fish and whales arrive last; the desert has an oasis spot. Checked over 3,000 places: none early.
+- **Words**: kinds named for places keep their capitals ("North American river otter", "Christmas Island red crab"),
+  others don't ("giant Pacific octopus", "gentoo penguin"); "a European robin"; "grey wolves", "wood mice", "musk oxen".
+- **3D**: a scene that changes to one that stays drawn while three.js is still loading no longer makes a stage.
+- **Content**: the Pekin duck (a domestic mallard, the wetland's mallard already) is now the Muscovy duck, its own
+  species; repeated facts rewritten (llama, bilby, red-necked wallaby, Arctic hare); the Virginia opossum is "the only
+  marsupial" north of Mexico; the green tree python lives in the outback's landscape (New Guinea).
+- Small: names are escaped in figure attributes; `data-no-toy="1"`; coats' colors are checked; unused landscape text
+  removed (places.ts holds it).
+- Noted, not changed: the startup bundle grows by about 78 kB gzipped (the catalog, the kit and the landscapes load
+  for every player); loading them only once places begin is a follow-up. New landscape thumbnails are heavier than the
+  regions' (the World's finished fold draws them only when opened).
+

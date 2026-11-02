@@ -62,6 +62,12 @@ export function createScene3D(): Scene3D {
     loading
       .then((m) => {
         if (disposed) return settle(false);
+        // The scene changed while three.js loaded (to one that stays drawn): make no stage (no WebGL context) until a
+        // scene that wants toys attaches again (review of D39 PR E).
+        if (!target) {
+          started = false;
+          return;
+        }
         stage = new m.SceneStage({ reducedMotion: () => app.reducedMotion });
         liveStages.push(stage);
         stage.setLive(live);
@@ -77,6 +83,18 @@ export function createScene3D(): Scene3D {
     ready,
     attach(figure, svg) {
       target = figure && svg ? [figure, svg] : null;
+      // A scene with an animal the toy builder can't make yet (a snake, a fish; D39 PR E) stays drawn, all of it.
+      if (svg?.querySelector('[data-no-toy]')) {
+        target = null;
+        if (stage) {
+          liveStages.splice(liveStages.indexOf(stage), 1);
+          stage.dispose();
+          stage = null;
+          started = false;
+        }
+        settle(false);
+        return;
+      }
       if (!target) return;
       if (stage) {
         stage.attach(...target);

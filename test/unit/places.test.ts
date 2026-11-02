@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * The endless world (D39 PR D): generated places and their animals, pinned so a shipped place never changes, and the
+ * The endless world (D39 PRs D and E): generated places and their animals, pinned so a shipped place never changes, and the
  * world logic that opens them (by level, and as soon as every home before is complete), grows them, and draws them.
  */
 import { readFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ import {
   slotsOf,
   wildDef,
 } from '../../src/meta/catalogs/places';
-import { placesSnapshot } from '../../src/meta/catalogs/placesSnapshot';
+import { worldFixture } from '../../src/meta/catalogs/placesSnapshot';
 import { SANCTUARIES, arrivalOf, homeOf, isSanctuaryId, sanctuaryDef } from '../../src/meta/catalogs/sanctuaries';
 import { COMPANIONS } from '../../src/meta/catalogs/companions';
 import { PETS } from '../../src/meta/catalogs/pets';
@@ -39,6 +39,8 @@ import { defaultSave, normalizeSave, type SaveV2 } from '../../src/services/stor
 import { regionScene } from '../../src/ui/art/regions';
 import { companionSvg, friendRigBody, wearsNeckerchief } from '../../src/ui/art/companions';
 import { toySpec } from '../../src/three/species';
+import { speciesById } from '../../src/meta/catalogs/species/index';
+import { kitHasToy } from '../../src/ui/art/kit';
 import { finishOpenHomes, skipToLevel } from '../../src/app/qaTools';
 
 const fresh = (): SaveV2 => defaultSave(new Date(2026, 9, 31, 12));
@@ -56,9 +58,13 @@ function finishBase(s: SaveV2): void {
 }
 
 describe('places are pinned: a shipped place never changes (D39)', () => {
-  it('the first forty places match the fixture exactly', () => {
+  it('the first forty places, a sample to place 1000, and every list they are made from match the fixture exactly', () => {
     const fixture = JSON.parse(readFileSync('test/unit/fixtures/places-v1.json', 'utf8'));
-    expect(JSON.parse(JSON.stringify(placesSnapshot(40)))).toEqual(fixture);
+    const now = JSON.parse(JSON.stringify(worldFixture()));
+    // Every list a place is made from (a reordered or edited species list changes places far past the first forty).
+    expect(now.inputs).toEqual(fixture.inputs);
+    expect(now.first).toEqual(fixture.first);
+    expect(now.sampled).toEqual(fixture.sampled);
   });
 
   it('hundreds of places are well formed: names unique in a biome, animals unique by name, stages and arrivals in order', () => {
@@ -89,15 +95,14 @@ describe('places are pinned: a shipped place never changes (D39)', () => {
           expect(animalNames.has(w.name), w.name).toBe(false);
           animalNames.add(w.name);
         }
-        if (!w.guest) {
-          expect(b.natives).toContain(w.base);
-          expect(slot).toBeGreaterThanOrEqual(b.minSlot?.[w.base] ?? 0);
-        }
-        expect(w.bio).toContain(w.name);
+        // Each is one of its landscape's species; a hand-drawn kind's story names it, a kit kind's is its true fact.
+        const sp = speciesById(w.species)!;
+        expect(sp.biome).toBe(p.biome);
+        expect(w.kind).toBe(sp.name);
+        expect(w.base).toBe(sp.drawn ?? null);
+        if (w.base) expect(w.bio).toContain(w.name);
+        else expect(w.bio).toBe(sp.fact);
       }
-      // Natives keep their region's order (each stands on the feature its stage brings).
-      const natives = p.animals.filter((w) => !w.guest).map((w) => b.natives.indexOf(w.base));
-      expect([...natives].sort((x, y) => x - y)).toEqual(natives);
     }
   });
 
@@ -126,25 +131,27 @@ describe('places are pinned: a shipped place never changes (D39)', () => {
 });
 
 describe("who the endless world's animals are", () => {
-  it('a native is a new individual of a drawn species, with its own name, coat, trait and story', () => {
+  it("an animal is one of its landscape's species, with its own name, trait and story", () => {
     const w = wildDef('w5-0');
+    const sp = speciesById(w.species)!;
     const info = animalInfo('w5-0');
     expect(info.name).toBe(w.name);
-    expect(info.kind).toBe(COMPANIONS.find((c) => c.id === w.base)!.kind);
+    expect(info.kind).toBe(sp.name);
     expect(info.sanctuary).toBe('p5');
     expect(homeOf('w5-0')).toBe('p5');
     expect(arrivalOf('w5-0')).toMatchObject({ sanctuary: 'p5', at: 3, index: 0 });
-    expect(animalKindOf('w5-0')).toBe(COMPANIONS.find((c) => c.id === w.base)!.animal);
+    expect(animalKindOf('w5-0')).toBe(sp.eats);
   });
 
-  it('a guest has its own kind (a rabbit on a farm, an arctic fox) and eats like one', () => {
+  it('a hand-drawn kind in a place keeps its drawing, in a coat of its own (an arctic fox, a rabbit)', () => {
     let guest = null as ReturnType<typeof wildDef> | null;
-    for (let k = 1; k <= 40 && !guest; k++) guest = placeDef(k).animals.find((a) => a.guest) ?? null;
+    for (let k = 1; k <= 120 && !guest; k++) guest = placeDef(k).animals.find((a) => a.base && speciesById(a.species)!.guest) ?? null;
     expect(guest).not.toBeNull();
     const info = animalInfo(guest!.id);
     expect(info.kind).toBe(guest!.kind);
     expect(['rabbit', 'fox']).toContain(info.animal);
     expect(animalKindOf(guest!.id)).toBe(info.animal);
+    expect(guest!.coat.name).not.toBe('');
   });
 });
 
@@ -263,17 +270,22 @@ describe('drawing the endless world', () => {
   });
 
   it('an animal wears its coat (and its neckerchief) on its portrait, its board face and its 3D toy', () => {
-    let withNeck = null as ReturnType<typeof wildDef> | null;
-    for (let k = 1; k <= 40 && !withNeck; k++) withNeck = placeDef(k).animals.find((a) => a.neckerchief && ['cotton', 'frost', 'gumnut', 'pudding', 'sunny'].includes(a.base)) ?? null;
-    expect(withNeck).not.toBeNull();
-    const w = withNeck!;
-    expect(companionSvg(w.id)).toContain(w.coat.fur);
-    expect(companionSvg(w.id)).toContain('class="sp-neck"');
-    expect(friendRigBody(w.id)).toContain('class="sp-neck"');
-    const toy = toySpec(w.id)!;
-    expect(toy.id).toBe(w.base); // built as its species
-    expect(toy.fur).toBe(w.coat.fur);
-    expect(toy.fur).not.toBe(toySpec(w.base)!.fur);
+    const all = Array.from({ length: 200 }, (_, i) => placeDef(i + 1).animals).flat();
+    // A hand-drawn kind in a coat.
+    const drawn = all.find((a) => a.base && a.neckerchief && wearsNeckerchief(a.id))!;
+    expect(drawn).toBeDefined();
+    expect(companionSvg(drawn.id)).toContain(drawn.coat.fur);
+    expect(companionSvg(drawn.id)).toContain('class="sp-neck"');
+    expect(friendRigBody(drawn.id)).toContain('class="sp-neck"');
+    const toy = toySpec(drawn.id)!;
+    expect(toy.id).toBe(drawn.base); // built as its species
+    expect(toy.fur).toBe(drawn.coat.fur);
+    // A kit kind with a neckerchief, and its toy.
+    const kit = all.find((a) => !a.base && a.neckerchief && wearsNeckerchief(a.id) && kitHasToy(speciesById(a.species)!))!;
+    expect(kit).toBeDefined();
+    expect(companionSvg(kit.id)).toContain('class="sp-neck"');
+    expect(companionSvg(kit.id)).toContain(kit.coat.fur);
+    expect(toySpec(kit.id)?.fur).toBe(kit.coat.fur);
   });
 
   it("an animal's card says it wears a neckerchief only when one is drawn", () => {
@@ -288,7 +300,7 @@ describe('drawing the endless world', () => {
   });
 
   it("a kangaroo of the endless world keeps the kangaroo's big feet as a toy", () => {
-    const roo = Array.from({ length: 60 }, (_, i) => placeDef(i + 1).animals).flat().find((a) => a.base === 'skipper');
+    const roo = Array.from({ length: 400 }, (_, i) => placeDef(i + 1).animals).flat().find((a) => a.base === 'skipper');
     expect(roo).toBeDefined();
     expect(toySpec(roo!.id)!.id).toBe('skipper');
   });
