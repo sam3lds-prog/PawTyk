@@ -22,6 +22,10 @@ npx cap open ios
 
 Set your Team in Xcode, keep the bundle id `com.sam3lds.catsvsdogs` (D9), and run on a device.
 
+**Home-screen name** (D42): `appName` in `capacitor.config.ts` (*PawTyk*) is written into the iOS project only when
+`npx cap add ios` creates it; `cap sync` doesn't change it. On a project made earlier, set *Display Name* to PawTyk in
+Xcode (target → General).
+
 Progress is kept in the app's own storage on a device (`@capacitor/preferences` → UserDefaults, D38 PR F), not only
 in the WebView's localStorage, so iOS can't evict it and it rides along in device backups. `npx cap sync ios` adds
 the plugin; nothing else to configure. The first launch of this build copies an existing player's save over.

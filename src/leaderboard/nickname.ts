@@ -18,8 +18,18 @@ export type NickResult = { ok: true; name: string } | { ok: false; problem: Nick
  *  - WORDS: short words that are also parts of ordinary names (Hancock, Dickens, Sussex, Skillful, Grape), so they are
  *    blocked only as a whole word (or its plural).
  */
-const ANYWHERE = ['fuck', 'fuk', 'shit', 'cunt', 'nigg', 'whore', 'slut', 'porn', 'hitler', 'bitch', 'pussy', 'penis', 'vagina', 'asshole', 'wank', 'retard', 'suicide', 'rapist', 'pawtyk', 'pawtopia', 'anthropic'];
+const ANYWHERE = ['fuck', 'fuk', 'shit', 'cunt', 'nigg', 'whore', 'slut', 'porn', 'hitler', 'bitch', 'pussy', 'penis', 'vagina', 'asshole', 'wank', 'retard', 'suicide', 'rapist', 'anthropic'];
 const WORDS = ['dick', 'cock', 'sex', 'sexy', 'kill', 'killer', 'rape', 'tit', 'tits', 'boob', 'fag', 'nazi', 'ass', 'bastard', 'admin', 'moderator', 'mod', 'official', 'support', 'staff'];
+
+/**
+ * The game's own names, so nobody poses as the game: refused inside a word ("PawTyk Team", "P4wTyk") or spelled out as
+ * the words themselves ("Paw Tyk", "Paw-Tyk"), but not when ordinary words happen to run together ("Pawty Kat", "Paw
+ * Tyke"), which the ANYWHERE rule would catch.
+ */
+const NAMES = [
+  ['paw', 'tyk'],
+  ['paw', 'topia'],
+];
 
 const SWAPS: Record<string, string> = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', $: 's', '!': 'i' };
 
@@ -30,6 +40,11 @@ function blocked(name: string): boolean {
   const flat = plain.replace(/[^\p{L}]/gu, '');
   if (ANYWHERE.some((w) => flat.includes(w))) return true;
   const words = plain.split(/[^\p{L}]+/u).filter(Boolean);
+  for (const parts of NAMES) {
+    const whole = parts.join('');
+    if (words.some((w) => w.includes(whole))) return true;
+    for (let i = 0; i + parts.length <= words.length; i++) if (parts.every((p, k) => words[i + k] === p)) return true;
+  }
   return words.some((w) => WORDS.includes(w) || (w.endsWith('s') && WORDS.includes(w.slice(0, -1))));
 }
 

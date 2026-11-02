@@ -1235,9 +1235,19 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
   names (`pawtopia-places-v1`, `pawtopia-chapters-v1`), or every generated place and chapter a save holds would change
   (the places fixture would fail); the App Store product ids (`pawtopia.gems.*`, `pawtopia.removeads`), which players
   never see and which can't be renamed once they exist in App Store Connect. A comment at each says why.
-- **Leaderboard names**: *PawTyk* joins *Pawtopia* on the impersonation list (*PawTyk Team*, *Paw Tyk Mod* and
-  *P4wTyk* are refused). The rule lives in the shared code, so the server enforces it after the next `fb:deploy`.
+- **Leaderboard names**: nobody can pose as the game under its new name or its old one: *PawTyk* and *Pawtopia* are
+  refused inside a word (*PawTyk Team*, *P4wTyk*) or written as the words themselves (*Paw Tyk*, *Paw-Tyk*), but not
+  where ordinary words only run together (*Pawty Kat*, *Paw Tyke*), which the spaces-removed rule for strong words
+  would have caught. The rule lives in the shared code, so the server enforces it after the next `fb:deploy`.
+- **Safari's Add to Home Screen** is labelled *PawTyk* from any tab (`apple-mobile-web-app-title`; it used the page
+  title, *World · PawTyk*). On iOS, `appName` reaches the home screen only when `cap add ios` creates the project; an
+  older project's *Display Name* is set in Xcode (`docs/native-setup.md` §0).
 - No player-facing *Pawtopia is now PawTyk* note: the Pawtopia name never reached the App Store (the listing is still
   Cats vs Dogs), so the only rename players see is v1's, which the welcome sheet already explains.
-- Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/` or `index.html`; the app name and title; the bundle
-  id, save keys, seeds and product ids unchanged); the leaderboard name test covers the new name.
+- Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/`, `index.html`, `capacitor.config.ts` or the tester
+  page's script; the app name, title and home-screen title; the bundle id, save keys and product ids unchanged; the
+  generated chapter names pinned, as the places fixture pins places); the leaderboard name test covers both names and
+  the ordinary names that must stay allowed.
+- Review fixes (independent agent): the name rule refused innocent names like *Pawty Kat*; Safari's home-screen label
+  followed the tab; the name scan missed the tester page's script; the seeds were checked as source text rather than by
+  what they produce; the Xcode *Display Name* step belonged with the rename.

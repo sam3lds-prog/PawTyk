@@ -239,7 +239,7 @@
 
 ### D42 PR A — the name
 - [ ] Install over a build from before D42: the Journey, every saved board, the world's places and the coins are all
-      still there; the home screen label reads *PawTyk*
+      still there; the home screen label reads *PawTyk* (on an older Xcode project, after setting *Display Name*)
 - [ ] The Journey and welcome wordmarks, *How PawTyk works*, Settings' footer and the Daily's Share text say PawTyk
 - [ ] A v1 (Cats vs Dogs) save: the welcome sheet reads *Cats vs Dogs has grown into PawTyk*
 - [ ] Leaderboard (when configured, after `fb:deploy`): the name *PawTyk Team* is refused
