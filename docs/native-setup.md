@@ -22,6 +22,13 @@ npx cap open ios
 
 Set your Team in Xcode, keep the bundle id `com.sam3lds.catsvsdogs` (D9), and run on a device.
 
+**App icon** (D42): in Xcode, open `App/Assets.xcassets` → `AppIcon`, set it to *Single Size*, and drop in
+`assets/icon-only.png` (1024 × 1024, no transparency, as the App Store requires; iOS rounds the corners). Or run
+`npx @capacitor/assets generate --ios`, which reads the same file. Display name: `appName` in `capacitor.config.ts`
+(*PawTyk*) is written into the project by `cap add`; on a project made earlier, set *Display Name* in Xcode's General tab.
+To change it, edit `scripts/iconArt.ts` and run `npm run icons` (`npm run icons -- --style sunny` or `berry`, and
+`--open` for both eyes open).
+
 Progress is kept in the app's own storage on a device (`@capacitor/preferences` → UserDefaults, D38 PR F), not only
 in the WebView's localStorage, so iOS can't evict it and it rides along in device backups. `npx cap sync ios` adds
 the plugin; nothing else to configure. The first launch of this build copies an existing player's save over.

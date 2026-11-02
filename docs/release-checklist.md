@@ -244,6 +244,12 @@
 - [ ] A v1 (Cats vs Dogs) save: the welcome sheet reads *Cats vs Dogs has grown into PawTyk*
 - [ ] Leaderboard (when configured, after `fb:deploy`): the name *PawTyk Team* is refused
 
+### D42 PR B — the icon
+- [ ] Xcode: AppIcon (Single Size) holds `assets/icon-only.png`; the home screen shows Pip winking over the board, the
+      label *PawTyk*; check it on a light and a dark wallpaper, and in Settings and Spotlight (small sizes)
+- [ ] App Store Connect accepts the 1024 px icon (no alpha); the listing's icon matches the app's
+- [ ] Safari → Share → Add to Home Screen uses the touch icon; a browser tab shows Pip's face
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
