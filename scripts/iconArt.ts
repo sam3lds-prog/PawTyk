@@ -5,16 +5,22 @@
  * cross-braced door, which is also the game's ✕ mark), Cotton the sheep leaning out of the hayloft, Truffle the piglet
  * sitting out front, a hay bale, and fields laid out like a puzzle board: a patchwork of region-colored plots with
  * light seams between them, the way the board's colors sit on its mat. A paw-print weathervane tops the roof.
- * Cotton's and Truffle's heads are the companion rigs' own shapes and colors (`ui/art/companions.ts`).
+ * Cotton's and Truffle's heads are the companion rigs' shapes, in their palettes read from `ui/art/companions.ts`; the
+ * barn's colors are copied from the Farm scene's barn.
  *
  * `scripts/make-icons.ts` writes these SVGs to `assets/icon.svg` and `public/favicon.svg` and renders the PNG sizes.
  */
 
+import { friendPalette } from '../src/ui/art/companions';
+
 export type IconStyle = 'day' | 'golden' | 'dusk';
 export interface IconOptions {
-  /** The sky. A clear summer day is the default. */
+  /** The sky. Defaults to the shipped one, `ICON_STYLE`. */
   style?: IconStyle;
 }
+
+/** The sky the shipped icon uses. To ship another, change this and run `npm run icons`. */
+export const ICON_STYLE: IconStyle = 'day';
 
 const SKIES: Record<IconStyle, { top: string; bottom: string; sun: string; halo: string; cloud: string }> = {
   day: { top: '#6FC2EA', bottom: '#C9ECF7', sun: '#FFD45C', halo: '#FFFFFF', cloud: '#FFFFFF' },
@@ -22,13 +28,13 @@ const SKIES: Record<IconStyle, { top: string; bottom: string; sun: string; halo:
   dusk: { top: '#6E6BC9', bottom: '#F2B6A6', sun: '#FFD9A0', halo: '#FFE9C9', cloud: '#F9E3E8' },
 };
 
-/** Barn colors from the Farm's stage-2 barn. */
+/** Barn colors, copied from the Farm's stage-2 barn (`ui/art/regions.ts`). */
 const BARN = { wall: '#C9483B', board: '#B13D31', door: '#A9372C', loft: '#7A2F26', trim: '#F3EFE6', pane: '#F8E6B8' };
 /** One opaque outline for the whole icon: the scenes' translucent outline turns into a dark halo at icon size. */
 const LINE = '#5E2F26';
-/** Companion palettes (`ui/art/companions.ts`). */
-const COTTON = { fur: '#F6F1E7', light: '#ECD9C3', dark: '#5A4A40', accent: '#F2B8B5' };
-const TRUFFLE = { fur: '#F5B9BB', light: '#FBD7D7', dark: '#A65E66', accent: '#EE9AA2' };
+/** Cotton's and Truffle's own palettes, so the icon follows any change to them. */
+const COTTON = friendPalette('cotton');
+const TRUFFLE = friendPalette('truffle');
 /** Field plots in the board's color families (mint, butter, sage, apricot, sea glass), deepened so they read as crops. */
 const PLOTS = ['#9ED68A', '#F2D06A', '#BBD67C', '#F3B27E', '#86CDB8'];
 const SEAM = '#FBF8F1';
@@ -127,7 +133,7 @@ function fields(): string {
  * nothing important sits in them.
  */
 export function iconSvg(o: IconOptions = {}): string {
-  const style = o.style ?? 'day';
+  const style = o.style ?? ICON_STYLE;
   const sky = SKIES[style];
   const id = `pt-${style}`;
 
@@ -216,7 +222,7 @@ export function iconSvg(o: IconOptions = {}): string {
 
 /** The favicon: the red barn with its white ✕ door on a blue sky, which still reads at 16 px. */
 export function faviconSvg(): string {
-  const sky = SKIES.day;
+  const sky = SKIES[ICON_STYLE];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>PawTyk</title>
   <defs><linearGradient id="pt-fav-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.top}"/><stop offset="1" stop-color="${sky.bottom}"/></linearGradient></defs>

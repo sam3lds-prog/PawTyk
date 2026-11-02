@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { faviconSvg, iconSvg } from '../../scripts/iconArt';
+import { ICON_STYLE, faviconSvg, iconSvg } from '../../scripts/iconArt';
+import { FINGERPRINT_KEY, pngText, sha256 } from '../../scripts/make-icons';
 
 const ROOT = join(__dirname, '../..');
 const read = (f: string) => readFileSync(join(ROOT, f));
@@ -13,9 +14,12 @@ function pngInfo(buf: Buffer) {
 }
 
 describe('the PawTyk icon (D42)', () => {
-  it('the committed art is what scripts/iconArt.ts draws (the summer-day sky)', () => {
+  it('the committed art is what scripts/iconArt.ts draws, and the PNGs were rendered from it', () => {
+    expect(ICON_STYLE).toBe('day');
     expect(read('assets/icon.svg').toString()).toBe(iconSvg());
     expect(read('public/favicon.svg').toString()).toBe(faviconSvg());
+    // Each PNG records the SHA-256 of the SVG it came from, so a PNG left over from older art fails here.
+    for (const f of ['assets/icon-only.png', 'public/apple-touch-icon.png']) expect(pngText(read(f))[FINGERPRINT_KEY], f).toBe(sha256(iconSvg()));
   });
 
   it('the App Store icon is 1024 × 1024 with no alpha channel, and the touch icon is 180 × 180', () => {
