@@ -26,6 +26,7 @@ import { sfx } from '../../services/audio';
 import { track } from '../../services/analytics';
 import { miniBoard } from '../components/board';
 import { coinPill } from '../components/wallet';
+import { dismissLoopCoach, loopCoachMarkup, shouldShowLoopCoach } from '../components/loopCoach';
 import { actionOf, capitalize, esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { CanonicalRoute, Scope, ScreenDef } from '../router';
@@ -265,6 +266,8 @@ function mountHub(root: HTMLElement, scope: Scope): void {
         </div>
       </section>
 
+      ${shouldShowLoopCoach(save) ? loopCoachMarkup(save) : ''}
+
       ${otherSaved
         .map(
           (sv) => `<button class="card card--tap resume-other" data-act="resume-other" data-resume="${esc(modeKey(sv.mode))}">
@@ -297,7 +300,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
       </div>
 
       ${
-        !save.onboarding.seenPantryIntro && save.onboarding.tutorialDone
+        !save.onboarding.seenPantryIntro && save.onboarding.tutorialDone && !shouldShowLoopCoach(save)
           ? `<section class="card pantry-intro" data-pantry-intro aria-labelledby="pantry-title">
         <h2 id="pantry-title">New: extra lives and hints</h2>
         <p class="muted">Journey and Daily boards now give you ${CASUAL_HEARTS} hearts. They start fresh on every board.</p>
@@ -438,6 +441,9 @@ function mountHub(root: HTMLElement, scope: Scope): void {
     const a = actionOf(e);
     if (!a) return;
     switch (a.act) {
+      case 'loop-ok':
+        dismissLoopCoach(el, 'journey');
+        break;
       case 'pantry-ok':
         app.save.onboarding.seenPantryIntro = true;
         app.persist();

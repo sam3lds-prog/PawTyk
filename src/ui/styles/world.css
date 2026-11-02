@@ -1150,3 +1150,92 @@
   width: 36px;
   height: 36px;
 }
+
+/* ------------------------------------------------------------------ the loop, once (D39 PR B) */
+.loop-coach {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  background: var(--brand-tint);
+  border-color: var(--brand-soft);
+}
+.loop-coach__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+.loop-coach__head h2 {
+  margin: 0;
+  font-size: var(--t-md);
+  color: var(--brand-dark);
+}
+.loop-coach__head .icon-btn {
+  width: 36px;
+  height: 36px;
+  margin: -6px -6px -6px 0;
+}
+.loop-coach__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  counter-reset: loop;
+}
+.loop-coach__steps li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+/* A small arrow between the steps, drawn with a border so it needs no icon. */
+.loop-coach__steps li + li::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 19px;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid var(--accent, var(--brand));
+  border-right: 2px solid var(--accent, var(--brand));
+  transform: rotate(45deg);
+  opacity: 0.7;
+}
+.loop-coach__art {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--accent, var(--brand));
+  box-shadow: 0 0 0 2px var(--brand-soft);
+}
+.loop-coach__art .ico {
+  width: 22px;
+  height: 22px;
+}
+.loop-coach__art.portrait {
+  padding: 2px;
+}
+.loop-coach__art.portrait svg {
+  width: 100%;
+  height: 100%;
+}
+.loop-coach__label {
+  font-size: var(--t-xs);
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.loop-coach__line {
+  margin: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--brand-dark);
+}

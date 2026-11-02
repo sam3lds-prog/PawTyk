@@ -240,6 +240,8 @@ export interface SaveV2 {
     decorTipSeen: boolean;
     /** The one-time line after a first placement explaining the controls (tap ✕, double-tap places; Settings) has been shown (D38). */
     controlsTipSeen: boolean;
+    /** The one-time card explaining the loop (solve → the home grows → animals come home) has been dismissed (D39). */
+    loopTipSeen: boolean;
   };
   /**
    * Boards in progress, one slot per mode (D38): the Journey board, the Daily and the latest Zen board. Starting or
@@ -448,6 +450,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       sceneTapTipSeen: false,
       decorTipSeen: false,
       controlsTipSeen: false,
+      loopTipSeen: false,
     },
     sessions: emptySessions(),
     lastSession: null,
@@ -763,6 +766,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       sceneTapTipSeen: bool(ob.sceneTapTipSeen, false),
       decorTipSeen: bool(ob.decorTipSeen, false),
       controlsTipSeen: bool(ob.controlsTipSeen, false),
+      loopTipSeen: bool(ob.loopTipSeen, false),
     },
     sessions,
     lastSession: newestSession({ sessions }),
