@@ -1152,3 +1152,34 @@ expression and a portrait**, with hello, pat and food each counting once a day. 
 - Tests added: no replay on Back, gift timing, the honest goal, later visits, `offer()`, the Zen and replay first
   views, a named two-animal mistake, the screen-reader hearts, the shy beam timing, the Kākāpō.
 
+## 2026-11-01 · D41 — A world you can see being built from the first puzzle; a board that belongs to it
+Owner request (2026-11-01): (A) introduce sanctuary building immediately — the first puzzle already brings Cotton
+home, so make that a prominent, skippable arrival with a visible change in the Farm, then a clear goal for the next
+animal, so players understand within two levels that they are building a living world; (C) a more distinctive board —
+keep the logical grid, but consider a sanctuary-inspired frame, region treatment, selected-cell indicators, a
+progress display and animal styling, never change for its own sake, keep it readable. Two PRs, stacked on D40 (#22).
+
+### PR A — the first arrival, shown happening
+- **The first animal ever to come home** (`components/arrival.ts`, `game.ts::isFirstArrival`) — in practice the first
+  puzzle's Cotton — is shown, not reported: instead of a results sheet, a full-screen moment over the board. (1) The
+  Farm as it was: *Empty meadow · Long grass and a quiet gate.* (2) The change the puzzle made grows in and glows:
+  *Your puzzle grew it! · A fenced pasture, and a sheep wanders in.* (3) Cotton drops in, ringed on the ground, with
+  the arrival chime and pulse: *Cotton is home! · Your new sheep. Sleepy: Cotton says hello with a slow blink and a
+  drowsy smile.* (4) She says hello in her own way, and the goal rises in: *Next goal · Bring Truffle the piglet home
+  · 3 more puzzles, and Truffle moves in.* with *Play level 2* and *Visit the Farm*, and what the puzzle also earned in
+  small print (*+45 coins · +150 Paw Points · 2 badges*). About five seconds.
+- **Skippable**: *Skip* (or Escape) goes straight to the goal, chime included; the buttons work from the first moment.
+  Under reduced motion only the end shows: the scene as it is now, the news and the goal. On a short phone the scene
+  shrinks so the goal fits, and the goal scrolls into view when it appears.
+- The World's "New" marker for it is read (the player has just seen the news), so *Visit the Farm* opens the Farm
+  plainly: the *Tap Cotton to say hello* cue and the starter gift follow there, as before.
+- Every later arrival keeps the win sheet and *Meet* (D40); this is the first animal's moment only. Players with any
+  animal already at home never see it.
+- Tests: `test/unit/gameScreen.dom.test.ts` (the four steps in order, Skip, Visit, Play level 2, reduced motion, a later
+  arrival keeps the sheet); e2e: the first board ends in the arrival, the change grows in, Cotton settles in, the goal.
+- Review fixes: *Skip* stops the steps still to come (they ran on: the caption flipped back and Cotton dropped in again
+  behind the goal, and focus was pulled back at 4.2 s); under reduced motion the focus starts on *Play level 2* (it
+  was given to the already hidden *Skip*, so it stayed on the game behind); it is a real modal — the game behind is
+  inert and Tab stays inside, as in a sheet; Journey levels only — a Daily solved first keeps its own results
+  (streak, time, Share) with Cotton's *Meet* on them. Tests for each.
+

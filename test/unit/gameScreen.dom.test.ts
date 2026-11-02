@@ -849,6 +849,9 @@ describe('polish (D38 PR E)', () => {
   });
 
   it('a Medium or harder solve says so, and "What made it …?" opens the grader\'s own reason', () => {
+    // Cotton is already home (a fresh save's first animal gets its own arrival, D41, instead of this sheet).
+    app.save.world.growth.farm = 1;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
     start(8); // level 8 is measured Medium
     const s = app.active!.session;
     for (let r = 0; r < s.size; r++)
@@ -1079,5 +1082,118 @@ describe('how the board feels (D40 PR A)', () => {
       tap(r, c, 500);
     }
     expect(document.querySelector('[data-two-step-offer]')).toBeNull();
+  });
+});
+
+describe('the first arrival, shown happening (D41 PR A)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    app.settings.reducedMotion = 'system';
+  });
+  function solveBoard(): void {
+    const s = app.active!.session;
+    for (let r = 0; r < s.size; r++)
+      for (let c = 0; c < s.size; c++) {
+        const want = s.puzzle.solution[r][c];
+        if (want === EMPTY || s.givenMask[r][c] || s.cells[r][c] === want) continue;
+        toolBtn(want === CAT ? 'cat' : 'dog')?.click();
+        dblTap(r, c);
+        if (s.outcome === 'won') break;
+      }
+    vi.advanceTimersByTime(700);
+  }
+  const arrival = () => document.querySelector<HTMLElement>('.arrival');
+  const title = () => arrival()?.querySelector('[data-caption-title]')?.textContent;
+
+  it('the first puzzle: no results sheet, the Farm as it was, the change growing in, Cotton settling in, then the goal', () => {
+    start(1);
+    solveBoard();
+    expect(document.querySelector('.win-sheet')).toBeNull();
+    expect(arrival()).not.toBeNull();
+    expect(title()).toBe('Empty meadow');
+    // The new stage and the newcomer start hidden, then appear in turn.
+    expect(arrival()!.querySelector('.sp-stage[data-stage="1"]')?.classList.contains('is-waiting')).toBe(true);
+    expect(arrival()!.querySelector('[data-friend="cotton"]')?.classList.contains('is-waiting')).toBe(true);
+    vi.advanceTimersByTime(950);
+    expect(title()).toBe('Your puzzle grew it!');
+    expect(arrival()!.querySelector('.sp-stage[data-stage="1"]')?.classList.contains('is-waiting')).toBe(false);
+    vi.advanceTimersByTime(1200);
+    expect(title()).toBe('Cotton is home!');
+    expect(arrival()!.textContent).toMatch(/Your new sheep\. Sleepy/);
+    expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(true);
+    vi.advanceTimersByTime(2200);
+    const goal = arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!;
+    expect(goal.hidden).toBe(false);
+    expect(goal.textContent).toMatch(/Bring Truffle the piglet home/);
+    expect(goal.textContent).toMatch(/3 more puzzles, and Truffle moves in/);
+    expect(goal.querySelector('[data-act="play"]')?.textContent).toBe('Play level 2');
+    // The World's "New" marker is already read: the player has just seen the news.
+    expect(app.save.world.unseen.farm).toBeUndefined();
+    (goal.querySelector('[data-act="play"]') as HTMLButtonElement).click();
+    expect(arrival()).toBeNull();
+    expect(app.active?.mode).toMatchObject({ kind: 'level', level: 2 });
+  });
+
+  it('Skip goes straight to the goal and stops the steps still to come; Visit opens the Farm', () => {
+    start(1);
+    solveBoard();
+    vi.advanceTimersByTime(200);
+    (arrival()!.querySelector('[data-act="skip"]') as HTMLButtonElement).click();
+    expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
+    expect(title()).toBe('Cotton is home!');
+    expect(arrival()!.querySelector('.is-waiting')).toBeNull();
+    const play = arrival()!.querySelector<HTMLElement>('[data-act="play"]')!;
+    expect(document.activeElement).toBe(play);
+    // Nothing replays behind the goal: no grow-in, no drop-in, the caption stays.
+    vi.advanceTimersByTime(5000);
+    expect(title()).toBe('Cotton is home!');
+    expect(arrival()!.querySelector('.is-new, .is-arriving')).toBeNull();
+    expect(document.activeElement).toBe(play);
+    (arrival()!.querySelector('[data-act="visit"]') as HTMLButtonElement).click();
+    expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm' });
+  });
+
+  it('under reduced motion it is the end at once: the scene as it is now, the news and the goal', () => {
+    app.settings.reducedMotion = 'reduce';
+    start(1);
+    solveBoard();
+    expect(title()).toBe('Cotton is home!');
+    expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
+    expect(arrival()!.querySelector('.is-waiting')).toBeNull();
+    // Focus is inside, on the main button (Skip is hidden: there is nothing to skip).
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+  });
+
+  it('is a modal: the game behind it is inert and Tab stays inside', () => {
+    start(1);
+    solveBoard();
+    const screen = arrival()!.parentElement!;
+    const behind = [...screen.children].filter((n) => n !== arrival());
+    expect(behind.length).toBeGreaterThan(0);
+    expect(behind.every((n) => (n as HTMLElement).inert)).toBe(true);
+    (arrival()!.querySelector('[data-act="skip"]') as HTMLButtonElement).click();
+    const visit = arrival()!.querySelector<HTMLElement>('[data-act="visit"]')!;
+    visit.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(visit);
+  });
+
+  it('a Daily solved first keeps its own results, with Cotton to meet on them', () => {
+    startGame({ kind: 'daily', dateKey: '2026-10-31' });
+    solveBoard();
+    expect(arrival()).toBeNull();
+    expect(document.querySelector('.win-sheet')).not.toBeNull();
+  });
+
+  it('only the first animal ever: a later arrival keeps the win sheet', () => {
+    app.save.world.growth.farm = 3;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(4);
+    solveBoard();
+    expect(arrival()).toBeNull();
+    expect(document.querySelector('.win-sheet [data-hero="arrived"]')).not.toBeNull();
   });
 });
