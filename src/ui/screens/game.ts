@@ -66,7 +66,7 @@ export const SLOW_DOUBLE_MS = 900;
 
 /** The board frame's rim on each side and the room its nameplate takes above it (D41), in px; styles/board.css matches. */
 const FRAME_PAD = 9;
-const PLATE_ROOM = 12;
+const PLATE_ROOM = 15;
 
 /** In-memory ad cadence (resets each launch, which only makes ads rarer). */
 const cadence = { boardsSinceLast: 0, lastShownAt: null as number | null, shownToday: 0, day: '' };
@@ -156,8 +156,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     }
     return null;
   })();
+  // A replay grows nothing new, so its plate names the home only, and says so to a screen reader.
+  const plateSays = homeDef ? (grows ? `This board helps the ${homeDef.name}${plateGoal ? `. ${plateGoal.long}` : ''}.` : `A ${homeDef.name} board, solved before.`) : '';
   const plate = homeDef
-    ? `<span class="board-plate status-for" data-for="${home}" title="${esc(`This board helps the ${homeDef.name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${homeDef.name}${plateGoal ? `. ${plateGoal.long}` : ''}.`)}">${ICON.sprout}<span class="status-for__name">${esc(chipName(home!))}</span>${plateGoal ? `<span class="board-plate__goal">${esc(plateGoal.short)}</span>` : ''}</span>`
+    ? `<span class="board-plate status-for" data-for="${home}" title="${esc(grows ? `This board helps the ${homeDef.name}, whatever you build next.` : plateSays)}"><span class="board-plate__show" aria-hidden="true">${ICON.sprout}<span class="status-for__name">${esc(chipName(home!))}</span>${plateGoal ? `<span class="board-plate__goal">${esc(plateGoal.short)}</span>` : ''}</span><span class="sr-only">${esc(plateSays)}</span></span>`
     : `<span class="board-plate board-plate--cup" aria-hidden="true">${ICON.trophy}<span>Paw Cup</span></span>`;
 
   /** Animals home on this board: a pip per animal on a one-animal board, a face and a count per animal on two. */
@@ -1244,7 +1246,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   function onWin(): void {
     finished = true;
     s.pause();
-    board.clearSelection();
+    board.clearSelection(true);
     paint();
     // Every animal smiles or winks in a short staggered wave (≤1.5s total), faces only.
     const order: string[] = [];

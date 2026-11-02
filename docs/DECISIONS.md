@@ -1187,15 +1187,17 @@ progress display and animal styling, never change for its own sake, keep it read
 Each change answers a question the player has while playing; none is decoration alone, and the grid itself — its
 cells, colors, seams, marks and the animals' faces — is unchanged.
 - **Whose board is this?** (`game.ts`, `styles/board.css`): the board sits in a frame of the home it grows — a rim in
-  that home's color with a post at each corner — and a nameplate hangs over the top: the home and what this board
+  that home's color with a post at each corner — and a nameplate rides on the top rim: the home and what this board
   brings closer (*Farm · Truffle in 3*; *Farm · brings Truffle home* on the board that does; the next stage when every
   animal is home). It replaces the small *Farm* chip under the board, so the board carries the loop on every level.
-  A replay's plate names the home only; a Paw Cup board has a plain frame. The plate's label reads it in full
-  (*This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.*); long place names end in "…".
-- **Where am I?** (`Board.select`): the tile last touched, or reached by keyboard, is ringed in the home's color, and
-  its row and column are lifted a little (a faint light band under the animals and marks), like a selected cell in a
-  number puzzle. Overlays only, so nothing on a tile moves (D11); it clears when the board is solved; high contrast
-  keeps the ring and drops the bands.
+  A replay's plate names the home only; a Paw Cup board has a plain frame. A screen reader hears it in full
+  (*This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.*; a replay: *A Meadow Farm
+  board, solved before.*); long place names end in "…". The plate never covers a tile and lets taps through.
+- **Where am I?** (`Board.select`): the tile last touched, or reached by keyboard, gets four corner brackets in ink
+  (over a light halo, so they read on every color). Corners only, so the tile's own rings — a mistake, a correct
+  animal, the tutorial's glowing tile, the keyboard focus — still show along its edges. Ink, not the home's color: a
+  teal home's color reads as a hint. An overlay, so nothing on a tile moves (D11); it goes when the board is solved and
+  doesn't come back.
 - **What's left?** (`Board.setSettled`): a color whose animals are all home settles — its empty tiles soften toward the
   mat — so the eye goes to the colors still open. Animals stay as they are; high contrast softens less.
 - **How far along?**: *3 of 6 animals placed* became a pip per animal that shows the animal's face when it is home
@@ -1207,4 +1209,10 @@ cells, colors, seams, marks and the animals' faces — is unchanged.
   320×568 phone; in Large board mode the frame scrolls with the board.
 - Tests: `test/unit/gameScreen.dom.test.ts` (the frame and plate, the plate for an arrival board and a replay, pips
   and counts, settling colors, the selection with keyboard and on a solve); e2e: the frame, plate and pips on level 2.
+- Review fixes: the plate hung 5–6 px over the top row (on a 9×9 at 320 px about a fifth of a tile, and taps there
+  did nothing) — it is slimmer and sits on the rim, clear of the tiles, and lets taps through; the selection was a
+  full ring over the tile's edge, hiding its mistake, correct-animal and tutorial rings and the focus outline, and in
+  the Pet Garden's teal it looked like a hint — it is corner brackets in ink now; the row and column bands are gone,
+  so a paler tile means one thing only, a settled color; a tap on a solved board no longer brings the selection back;
+  a replay's plate no longer says the board helps its home; the plate's words reach VoiceOver as text.
 

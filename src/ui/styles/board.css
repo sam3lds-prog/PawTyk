@@ -399,11 +399,12 @@
 .board-frame {
   --frame: color-mix(in srgb, var(--accent) 18%, #ecdcbf);
   --frame-edge: color-mix(in srgb, var(--accent) 30%, #a7835a);
-  --sel: color-mix(in srgb, var(--accent) 50%, #283434);
+  /* The selection is ink, never the home's color: a teal or green home's color would read as a hint. */
+  --sel: var(--ink);
   position: relative;
   flex: none;
   padding: 9px; /* FRAME_PAD in game.ts */
-  margin-top: 12px; /* PLATE_ROOM: the nameplate hangs over the top rim */
+  margin-top: 15px; /* PLATE_ROOM: the nameplate rides on the top rim, clear of the tiles */
   border-radius: 26px;
   background: var(--frame);
   box-shadow:
@@ -440,18 +441,23 @@
   bottom: -3px;
   right: -3px;
 }
-/* The nameplate: the home, and what this board brings closer ("Meadow Farm · Truffle in 3"). */
+/* The nameplate: the home, and what this board brings closer ("Meadow Farm · Truffle in 3"). It sits on the top rim
+   and above it, never over the tiles (22px tall, from 15px above the frame to 7px into its 9px rim), and lets taps
+   through. */
 .board-frame .board-plate {
   position: absolute;
   z-index: 5;
-  top: -13px;
+  top: -15px;
   left: 50%;
   transform: translateX(-50%);
+  box-sizing: border-box;
+  height: 22px;
+  line-height: 18px;
+  pointer-events: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   max-width: calc(100% - 44px);
-  padding: 3px 11px 3px 8px;
+  padding: 0 10px 0 7px;
   border-radius: 999px;
   border: 2px solid var(--frame-edge);
   background: var(--surface);
@@ -460,6 +466,12 @@
   font-weight: 800;
   white-space: nowrap;
   box-shadow: 0 2px 6px -3px rgba(40, 52, 52, 0.35);
+}
+.board-plate__show {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 .board-frame .board-plate .ico {
   width: 14px;
@@ -479,7 +491,6 @@
 .board-frame--plain {
   --frame: #e9e4d8;
   --frame-edge: #b9b09c;
-  --sel: #283434;
 }
 :root[data-contrast='high'] .board-frame {
   --frame: var(--surface);
@@ -493,48 +504,42 @@
   display: none;
 }
 
-/* D41: where you are — the tile last touched (or reached by keyboard) is ringed in the home's color, and its row and
-   column are lifted a little, under the animals and marks. Overlays only: nothing on a tile moves (D11). */
-.board__band,
+/* D41: where you are — the tile last touched (or reached by keyboard) gets four corner brackets in ink over a light
+   halo. Corners only: a tile's own rings (a mistake, a correct animal, the tutorial's glowing tile, the keyboard focus)
+   still show along its edges. An overlay: nothing on a tile moves (D11). */
 .board__sel {
   position: absolute;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 140ms ease-out;
-}
-.board.has-sel .board__band,
-.board.has-sel .board__sel {
-  opacity: 1;
-}
-.board__band {
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.24);
-}
-.board__band--row {
-  left: 0;
-  right: 0;
-  top: calc(var(--sr, 0) * var(--cell));
-  height: var(--cell);
-}
-.board__band--col {
-  top: 0;
-  bottom: 0;
-  left: calc(var(--sc, 0) * var(--cell));
-  width: var(--cell);
-}
-.board__sel {
   z-index: 4;
   top: calc(var(--sr, 0) * var(--cell));
   left: calc(var(--sc, 0) * var(--cell));
   width: var(--cell);
   height: var(--cell);
-  border-radius: 9px;
-  box-shadow:
-    inset 0 0 0 2.5px var(--sel, var(--brand-dark)),
-    inset 0 0 0 4px rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
 }
-:root[data-contrast='high'] .board__band {
-  display: none;
+.board.has-sel .board__sel {
+  opacity: 1;
+}
+.board__sel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.board__sel path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.board__sel-halo {
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 5px;
+}
+.board__sel-ink {
+  stroke: var(--sel, var(--ink));
+  stroke-width: 2.5px;
 }
 
 /* D41: a color whose animals are all home settles — its empty tiles soften toward the mat — so the eye goes to the

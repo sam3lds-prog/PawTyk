@@ -50,14 +50,17 @@ export interface BoardOptions {
   speciesName?: (species: Species) => string;
   /** Still art of an animal, for the "tried here, wrong" mark on two-animal boards. */
   triedArt?: (species: Species) => string;
-  /** No selected-tile ring (boards that only show, like the rules' examples). */
-  noSelection?: boolean;
 }
 
 const SPECIES_NAME: Record<number, string> = { [CAT]: 'cat', [DOG]: 'dog' };
 
+/** The selection's corner brackets: an ink stroke over a light halo, so they read on every color. */
+const SEL_CORNERS = 'M3 28V11Q3 3 11 3H28M72 3H89Q97 3 97 11V28M97 72V89Q97 97 89 97H72M28 97H11Q3 97 3 89V72';
+const SEL_SVG = `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="board__sel-halo" d="${SEL_CORNERS}"/><path class="board__sel-ink" d="${SEL_CORNERS}"/></svg>`;
+
 export class Board {
   readonly el: HTMLElement;
+  private selectionDone = false;
   readonly n: number;
   private readonly cellEls: HTMLButtonElement[][];
   private readonly shown: Array<Array<string>>;
@@ -104,22 +107,24 @@ export class Board {
       this.cellEls.push(row);
     }
     this.el.appendChild(this.linesSvg());
-    // D41: the tile last touched (or reached by keyboard) and its row and column, as overlays: a ring on the tile and a
-    // faint lift on its lines, under the animals and marks, so a player always sees where they are and what that tile
-    // shares. Nothing on a tile moves (D11).
-    this.el.insertAdjacentHTML('afterbegin', '<span class="board__band board__band--row" aria-hidden="true"></span><span class="board__band board__band--col" aria-hidden="true"></span>');
-    this.el.insertAdjacentHTML('beforeend', '<span class="board__sel" aria-hidden="true"></span>');
+    // D41: the tile last touched (or reached by keyboard), as an overlay: four corner brackets in ink, so a player
+    // always sees where they are. Corners only, so a tile's own rings (a mistake, a correct animal, the tutorial's
+    // glowing tile, the keyboard focus) still show along its edges. Nothing on a tile moves (D11).
+    this.el.insertAdjacentHTML('beforeend', `<span class="board__sel" aria-hidden="true">${SEL_SVG}</span>`);
     this.bindInput();
   }
 
-  /** Marks a tile as the selected one (ring) with its row and column (faint bands). */
+  /** Marks a tile as the selected one (corner brackets). Not once the board is finished. */
   select(r: number, c: number): void {
+    if (this.selectionDone) return;
     this.el.style.setProperty('--sr', String(r));
     this.el.style.setProperty('--sc', String(c));
     this.el.classList.add('has-sel');
   }
 
-  clearSelection(): void {
+  /** Clears the selection; `forGood` when the board is finished (a tap or an arrow key then brings none back). */
+  clearSelection(forGood = false): void {
+    if (forGood) this.selectionDone = true;
     this.el.classList.remove('has-sel');
   }
 
@@ -412,7 +417,7 @@ export class Board {
     this.focusR = r;
     this.focusC = c;
     this.cellEls[r][c].tabIndex = 0;
-    if (!this.opts.noSelection) this.select(r, c);
+    this.select(r, c);
   }
 }
 

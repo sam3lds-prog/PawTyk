@@ -1208,7 +1208,9 @@ describe('a board that belongs to its home (D41 PR B)', () => {
     expect(document.querySelector('.board-frame > .board')).not.toBeNull();
     expect(plate()?.querySelector('.status-for__name')?.textContent).toBe('Farm');
     expect(plate()?.querySelector('.board-plate__goal')?.textContent).toBe('Truffle in 3');
-    expect(plate()?.getAttribute('aria-label')).toBe('This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.');
+    // A screen reader hears it in words (the shown text is hidden from it).
+    expect(plate()?.querySelector('.sr-only')?.textContent).toBe('This board helps the Meadow Farm. Truffle the piglet comes home in 3 more puzzles.');
+    expect(plate()?.querySelector('.board-plate__show')?.getAttribute('aria-hidden')).toBe('true');
     // The board that brings an animal says so.
     app.active = null;
     app.save.world.growth.farm = 3;
@@ -1223,6 +1225,9 @@ describe('a board that belongs to its home (D41 PR B)', () => {
     app.save.world.grown.L2 = 'farm';
     start(2);
     expect(plate()?.querySelector('.board-plate__goal')).toBeNull();
+    // A replay grows nothing new, and the plate doesn't claim it does.
+    expect(plate()?.querySelector('.sr-only')?.textContent).toBe('A Meadow Farm board, solved before.');
+    expect(plate()?.textContent).not.toMatch(/helps/);
   });
 
   it('a pip per animal fills as they come home; a two-animal board counts each kind', () => {
@@ -1260,7 +1265,7 @@ describe('a board that belongs to its home (D41 PR B)', () => {
       for (let cc = 0; cc < s.size; cc++) expect(cell(rr, cc).classList.contains('is-settled'), `${rr},${cc}`).toBe(s.puzzle.regions[rr][cc] === reg);
   });
 
-  it('the tile last touched is ringed with its row and column; keyboard moves it; a solved board lets it go', () => {
+  it('the tile last touched is marked; keyboard moves it; a solved board lets it go for good', () => {
     app.save.world.growth.farm = 1;
     app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
     start(5);
@@ -1271,13 +1276,18 @@ describe('a board that belongs to its home (D41 PR B)', () => {
     expect([b.style.getPropertyValue('--sr'), b.style.getPropertyValue('--sc')]).toEqual(['2', '3']);
     cell(2, 3).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     expect([b.style.getPropertyValue('--sr'), b.style.getPropertyValue('--sc')]).toEqual(['3', '3']);
-    // The ring and bands are overlays: they are not inside any tile, so nothing on a tile moves.
-    expect(b.querySelector('.cell .board__sel, .cell .board__band')).toBeNull();
+    // The brackets are an overlay: not inside any tile, so nothing on a tile moves.
+    expect(b.querySelector('.board__sel')).not.toBeNull();
+    expect(b.querySelector('.cell .board__sel')).toBeNull();
     // Solved: the ring goes, so the finished board is clean.
     const s = app.active!.session;
     for (let r = 0; r < s.size; r++)
       for (let c = 0; c < s.size; c++) if (s.puzzle.solution[r][c] === CAT && !s.givenMask[r][c] && s.cells[r][c] !== CAT) dblTap(r, c);
     expect(s.outcome).toBe('won');
+    expect(b.classList.contains('has-sel')).toBe(false);
+    // A tap or an arrow key on the finished board brings none back.
+    tap(0, 0);
+    cell(0, 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(b.classList.contains('has-sel')).toBe(false);
   });
 });
