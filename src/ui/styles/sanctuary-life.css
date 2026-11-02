@@ -338,6 +338,37 @@
   animation: none;
 }
 
+/* D39: a soft ring on the ground under the animal who just came home (components/newcomer.ts removes it). */
+.sanctuary__scene .sp-spotlight {
+  fill: rgba(255, 244, 196, 0.55);
+  stroke: rgba(235, 137, 120, 0.85);
+  stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 400ms ease;
+  animation: sp-spotlight 900ms ease-out both;
+}
+.sanctuary__scene .sp-spotlight.is-out {
+  opacity: 0;
+}
+@keyframes sp-spotlight {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+:root[data-motion='reduce'] .sanctuary__scene .sp-spotlight {
+  animation: none;
+}
+
 /* Reduced motion: the scene is still; a tap shows the heart in place instead of floating it. */
 :root[data-motion='reduce'] .sanctuary__scene .sanctuary__pet.is-love .sp-heart {
   opacity: 1;

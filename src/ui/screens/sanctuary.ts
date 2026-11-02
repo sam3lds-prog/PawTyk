@@ -36,6 +36,7 @@ import { actionOf, esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { Route, Scope, ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
+import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 
 export function shownDecor(): DecorId[] {
   return shownDecorIds(app.save);
@@ -156,10 +157,11 @@ export const sanctuaryScreen: ScreenDef = {
                 const a = animalInfo(id);
                 const has = home.includes(id);
                 const isNext = !has && id === nextId;
+                const fresh = has && welcome.includes(id);
                 const attr = isPetId(id) ? `data-pet="${id}"` : `data-friend-card="${id}"`;
-                const label = has ? `${a.name} the ${a.noun}, ${a.trait}` : isNext ? `${a.name} the ${a.noun}, coming home next` : `A ${a.noun}, arrives later`;
+                const label = has ? `${a.name} the ${a.noun}, ${fresh ? 'just came home, ' : ''}${a.trait}` : isNext ? `${a.name} the ${a.noun}, coming home next` : `A ${a.noun}, arrives later`;
                 const art = isPetId(id) ? portrait(id, 'idle', !has && !isNext) : friendPortrait(id as CompanionId, !has && !isNext);
-                return `<li><button class="resident ${isNext ? 'is-next' : ''}" ${attr} aria-label="${esc(label)}">${art}<span class="resident__name">${has || isNext ? esc(a.name) : 'Later'}</span></button></li>`;
+                return `<li><button class="resident ${isNext ? 'is-next' : ''}${fresh ? ' is-new' : ''}" ${attr} aria-label="${esc(label)}">${art}${fresh ? NEW_CHIP : ''}<span class="resident__name">${has || isNext ? esc(a.name) : 'Later'}</span></button></li>`;
               })
               .join('')}
           </ul>
@@ -286,7 +288,12 @@ export const sanctuaryScreen: ScreenDef = {
     // First visit after the first board: meet the newcomer, then pick a starter gift.
     const intro = () => offerStarterGift(scope, 'harmony', render);
     const arrivals = welcome.filter((w) => isHome(app.save, w));
-    if (arrivals.length) introduce(scope, arrivals, intro);
+    // The newcomer gets its moment in the light once the "came home" card is out of the way (D39).
+    if (arrivals.length)
+      introduce(scope, arrivals, () => {
+        spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), arrivals[0]);
+        intro();
+      });
     else intro();
   },
 };
