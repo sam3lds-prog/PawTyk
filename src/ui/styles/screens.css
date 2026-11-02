@@ -613,6 +613,78 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* D41: the animals home on this board — a pip per animal on a one-animal board (its face shows when it's home), a face
+   and a count per kind on a two-animal board. The label says it in words. */
+.progress-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.pip {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--canvas-deep);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.pip__face {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 160ms ease-out,
+    transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+.pip__face > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pip.is-on {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--gold);
+}
+.pip.is-on .pip__face {
+  opacity: 1;
+  transform: none;
+}
+.pcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink);
+}
+.pcount + .pcount {
+  margin-left: 6px;
+}
+.pcount__face {
+  width: 20px;
+  height: 20px;
+  display: grid;
+}
+.pcount__face > svg {
+  width: 100%;
+  height: 100%;
+}
+.pcount__of {
+  color: var(--muted-ink);
+}
+.pcount--solo {
+  display: none;
+}
+@media (max-width: 360px) {
+  .progress-track.is-many .pip {
+    display: none;
+  }
+  .progress-track.is-many .pcount--solo {
+    display: inline-flex;
+  }
+}
+
 /* Short phones hide the header chip; the size and difficulty move down beside the progress count. */
 .status-board {
   display: none;

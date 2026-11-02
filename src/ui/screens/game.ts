@@ -64,6 +64,10 @@ export const DOUBLE_TAP_MS = 380;
  */
 export const SLOW_DOUBLE_MS = 900;
 
+/** The board frame's rim on each side and the room its nameplate takes above it (D41), in px; styles/board.css matches. */
+const FRAME_PAD = 9;
+const PLATE_ROOM = 15;
+
 /** In-memory ad cadence (resets each launch, which only makes ads rarer). */
 const cadence = { boardsSinceLast: 0, lastShownAt: null as number | null, shownToday: 0, day: '' };
 
@@ -128,6 +132,45 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   const tickets = () => itemBalance(app.save, 'hint');
   const lives = () => itemBalance(app.save, 'life');
 
+  /**
+   * D41: the board sits in a frame of the home it grows — its color, a nameplate with the home and what this board
+   * brings closer (*Meadow Farm · Truffle in 3*). A Paw Cup board has a plain frame. A replay names the home only.
+   */
+  const home = mode.kind === 'cup' ? null : cast.sanctuary;
+  const homeDef = home ? sanctuaryDef(home) : null;
+  const grows = !!home && !alreadyGrown(app.save, modeKey(mode));
+  const plateGoal = ((): { short: string; long: string } | null => {
+    if (!home || !grows) return null;
+    const p = arrivalProgress(app.save, home);
+    if (p) {
+      const a = animalInfo(p.next.id as AnimalId);
+      // This board is the one that brings them: say so.
+      if (p.left <= 1) return { short: `brings ${a.name} home`, long: `Solving it brings ${a.name} the ${a.noun} home` };
+      return { short: `${a.name} in ${p.left}`, long: `${a.name} the ${a.noun} comes home in ${plural(p.left, 'more puzzle')}` };
+    }
+    const st = nextStage(app.save, home);
+    if (st) {
+      const left = st.need - st.have;
+      if (left <= 1) return { short: `brings ${st.stage.name.toLowerCase()}`, long: `Solving it brings the next stage, ${st.stage.name.toLowerCase()}` };
+      return { short: `${st.stage.name} in ${left}`, long: `${st.stage.name} in ${plural(left, 'more puzzle')}` };
+    }
+    return null;
+  })();
+  // A replay grows nothing new, so its plate names the home only, and says so to a screen reader.
+  const plateSays = homeDef ? (grows ? `This board helps the ${homeDef.name}${plateGoal ? `. ${plateGoal.long}` : ''}.` : `A ${homeDef.name} board, solved before.`) : '';
+  const plate = homeDef
+    ? `<span class="board-plate status-for" data-for="${home}" title="${esc(grows ? `This board helps the ${homeDef.name}, whatever you build next.` : plateSays)}"><span class="board-plate__show" aria-hidden="true">${ICON.sprout}<span class="status-for__name">${esc(chipName(home!))}</span>${plateGoal ? `<span class="board-plate__goal">${esc(plateGoal.short)}</span>` : ''}</span><span class="sr-only">${esc(plateSays)}</span></span>`
+    : `<span class="board-plate board-plate--cup" aria-hidden="true">${ICON.trophy}<span>Paw Cup</span></span>`;
+
+  /** Animals home on this board: a pip per animal on a one-animal board, a face and a count per animal on two. */
+  function progressMarkup(): string {
+    const one = (sp: Species, extra = '') =>
+      `<span class="pcount${extra}" aria-hidden="true"><span class="pcount__face">${animalSvg(animalOf(sp))}</span><b class="num" data-count="${sp}">0</b><span class="pcount__of">/${n}</span></span>`;
+    // A narrow phone shows a big one-animal board's count as a face and a number, like a two-animal board's.
+    if (solo) return Array.from({ length: n }, () => `<i class="pip" aria-hidden="true"><span class="pip__face">${animalSvg(animalOf(CAT))}</span></i>`).join('') + one(CAT, ' pcount--solo');
+    return one(CAT) + one(DOG);
+  }
+
   const el = h(`
     <div class="game${guided ? ' is-guided' : ''}" data-mode="${mode.kind}">
       <header class="game-top">
@@ -146,11 +189,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         <div class="board-foot" data-foot>
           <p class="coach" data-coach aria-live="polite"></p>
           <div class="game-status">
-            <span class="status-left"><span data-progress class="num"></span><span class="status-board" aria-hidden="true">${n}×${n} · ${tierName}</span>${
-              mode.kind === 'cup'
-                ? ''
-                : `<span class="status-for" data-for="${cast.sanctuary}" style="--accent:${sanctuaryDef(cast.sanctuary).accent}" title="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}, whatever you build next.`)}" aria-label="${esc(`This board helps the ${sanctuaryDef(cast.sanctuary).name}`)}">${ICON.sprout}<span class="status-for__name">${esc(chipName(cast.sanctuary))}</span></span>`
-            }</span>
+            <span class="status-left"><span data-progress class="progress-track${solo && n >= 7 ? ' is-many' : ''}" role="img">${progressMarkup()}</span><span class="status-board" aria-hidden="true">${n}×${n} · ${tierName}</span></span>
             ${rules.timer && settings.showTimer ? `<span class="game-timer num" data-timer aria-label="Time">${ICON.clock}<span>0:00</span></span>` : ''}
           </div>
         </div>
@@ -208,12 +247,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       triedArt: (sp) => animalSvg(animalOf(sp)),
     },
   );
-  stage.appendChild(board.el);
+  const frame = h(`<div class="board-frame${homeDef ? '' : ' board-frame--plain'}" data-frame style="--accent:${homeDef?.accent ?? 'var(--brand)'}">${plate}<i class="board-frame__post board-frame__post--tl"></i><i class="board-frame__post board-frame__post--tr"></i><i class="board-frame__post board-frame__post--bl"></i><i class="board-frame__post board-frame__post--br"></i></div>`);
+  frame.appendChild(board.el);
+  stage.appendChild(frame);
 
   const zone = qs(el, '[data-zone]');
   const foot = qs(el, '[data-foot]');
-  // The zone takes the spare height; the board takes what's left after its coach line, so the two stay together.
-  const refit = () => board.fitBox(stage, zone.clientWidth, zone.clientHeight - foot.offsetHeight - 10);
+  // The zone takes the spare height; the board takes what's left after its coach line, so the two stay together. The
+  // frame's rim and nameplate take their share first (D41).
+  const refit = () => board.fitBox(stage, zone.clientWidth - 2 * FRAME_PAD, zone.clientHeight - foot.offsetHeight - 10 - 2 * FRAME_PAD - PLATE_ROOM);
   scope.frame(refit);
   const ro = new ResizeObserver(() => refit());
   ro.observe(zone);
@@ -238,9 +280,28 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
 
   function paint(): void {
     board.render({ cells: s.cells, givenMask: s.givenMask, dead: showDots ? s.deadCells() : null, errors: errorView() });
-    // Short phones keep "3 of 7" and drop the words (the label carries them), so the status row stays one line (D38).
-    progressEl.innerHTML = `${s.placedCount()} of ${total} <span class="status-word">${total === 1 ? 'animal' : 'animals'} placed</span>`;
+    // D41: the animals home on this board, at a glance (a pip per animal, or a count per kind); the label says it in words.
     progressEl.setAttribute('aria-label', `${s.placedCount()} of ${total} ${total === 1 ? 'animal' : 'animals'} placed`);
+    const regionsNeed = solo ? 1 : 2;
+    const inRegion = new Map<number, number>();
+    let cats = 0;
+    let dogs = 0;
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++) {
+        const v = s.cells[r][c];
+        if (v !== CAT && v !== DOG) continue;
+        if (v === CAT) cats++;
+        else dogs++;
+        const reg = s.puzzle.regions[r][c];
+        inRegion.set(reg, (inRegion.get(reg) ?? 0) + 1);
+      }
+    if (solo) progressEl.querySelectorAll('.pip').forEach((p, i) => p.classList.toggle('is-on', i < cats));
+    const ca = progressEl.querySelector(`[data-count="${CAT}"]`);
+    const da = progressEl.querySelector(`[data-count="${DOG}"]`);
+    if (ca) ca.textContent = String(cats);
+    if (da) da.textContent = String(dogs);
+    // Colors whose animals are all home settle, so the eye goes to the open ones.
+    board.setSettled(new Set([...inRegion].filter(([, k]) => k >= regionsNeed).map(([reg]) => reg)));
     if (heartsEl) {
       heartsEl.dataset.max = String(s.maxHearts);
       heartsEl.innerHTML = Array.from({ length: s.maxHearts }, (_, i) => (i < s.hearts ? ICON.life : ICON.lifeOff)).join('');
@@ -1185,6 +1246,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   function onWin(): void {
     finished = true;
     s.pause();
+    board.clearSelection(true);
     paint();
     // Every animal smiles or winks in a short staggered wave (≤1.5s total), faces only.
     const order: string[] = [];

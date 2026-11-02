@@ -54,8 +54,13 @@ export interface BoardOptions {
 
 const SPECIES_NAME: Record<number, string> = { [CAT]: 'cat', [DOG]: 'dog' };
 
+/** The selection's corner brackets: an ink stroke over a light halo, so they read on every color. */
+const SEL_CORNERS = 'M3 28V11Q3 3 11 3H28M72 3H89Q97 3 97 11V28M97 72V89Q97 97 89 97H72M28 97H11Q3 97 3 89V72';
+const SEL_SVG = `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="board__sel-halo" d="${SEL_CORNERS}"/><path class="board__sel-ink" d="${SEL_CORNERS}"/></svg>`;
+
 export class Board {
   readonly el: HTMLElement;
+  private selectionDone = false;
   readonly n: number;
   private readonly cellEls: HTMLButtonElement[][];
   private readonly shown: Array<Array<string>>;
@@ -102,7 +107,39 @@ export class Board {
       this.cellEls.push(row);
     }
     this.el.appendChild(this.linesSvg());
+    // D41: the tile last touched (or reached by keyboard), as an overlay: four corner brackets in ink, so a player
+    // always sees where they are. Corners only, so a tile's own rings (a mistake, a correct animal, the tutorial's
+    // glowing tile, the keyboard focus) still show along its edges. Nothing on a tile moves (D11).
+    this.el.insertAdjacentHTML('beforeend', `<span class="board__sel" aria-hidden="true">${SEL_SVG}</span>`);
     this.bindInput();
+  }
+
+  /** Marks a tile as the selected one (corner brackets). Not once the board is finished. */
+  select(r: number, c: number): void {
+    if (this.selectionDone) return;
+    this.el.style.setProperty('--sr', String(r));
+    this.el.style.setProperty('--sc', String(c));
+    this.el.classList.add('has-sel');
+  }
+
+  /** Clears the selection; `forGood` when the board is finished (a tap or an arrow key then brings none back). */
+  clearSelection(forGood = false): void {
+    if (forGood) this.selectionDone = true;
+    this.el.classList.remove('has-sel');
+  }
+
+  get selected(): [number, number] | null {
+    if (!this.el.classList.contains('has-sel')) return null;
+    return [Number(this.el.style.getPropertyValue('--sr')), Number(this.el.style.getPropertyValue('--sc'))];
+  }
+
+  /**
+   * D41: colors whose animals are all home settle — their empty tiles soften toward the mat — so the eye goes to the
+   * colors still open. The animals themselves stay as they are.
+   */
+  setSettled(regions: ReadonlySet<number>): void {
+    for (let r = 0; r < this.n; r++)
+      for (let c = 0; c < this.n; c++) this.cellEls[r][c].classList.toggle('is-settled', regions.has(this.puzzle.regions[r][c]));
   }
 
   regionName(reg: number): string {
@@ -283,12 +320,8 @@ export class Board {
   }
 
   focusCell(r: number, c: number): void {
-    this.cellEls[this.focusR][this.focusC].tabIndex = -1;
-    this.focusR = r;
-    this.focusC = c;
-    const el = this.cellEls[r][c];
-    el.tabIndex = 0;
-    el.focus();
+    this.setRoving(r, c);
+    this.cellEls[r][c].focus();
   }
 
   private cellFromPoint(x: number, y: number): [number, number] | null {
@@ -384,6 +417,7 @@ export class Board {
     this.focusR = r;
     this.focusC = c;
     this.cellEls[r][c].tabIndex = 0;
+    this.select(r, c);
   }
 }
 
