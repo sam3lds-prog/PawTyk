@@ -117,23 +117,37 @@ export interface AsyncStore {
 export const KV_SEQ_KEY = 'pawtopia.kv.seq';
 
 /**
- * Native store (D38): synchronous reads and writes, like the rest of the game expects, backed by an async store.
+ * Set in the WebView's copy (only there) when that copy holds *every* one of the game's keys the store holds — written
+ * at the end of a hydration that refilled it (D43). Without it, a key missing from the WebView may have been evicted;
+ * with it (and a count not behind the store's), a missing key was deleted. An eviction takes the marker with it.
+ */
+export const KV_COMPLETE_KEY = 'pawtopia.kv.complete';
+
+/**
+ * Native store (D38, D43): synchronous reads and writes, like the rest of the game expects, backed by an async store.
  *  - `hydrate()` reads every key once, before the save is loaded, so reads never wait.
  *  - Writes go to memory first, to the WebView's localStorage (the mirror) at once, then to the store one after another
  *    (a write-behind queue keeps order). A write counter (`KV_SEQ_KEY`) goes with every write, on both sides.
- *  - At hydration the two sides are reconciled key by key, for the game's own keys only: a key only the mirror has is
- *    copied to the store (every player's save from before this build); a key only the store has stays (the WebView's
- *    storage was evicted — the case this adapter exists for); a key both have, with different values, takes the
- *    mirror's value unless the mirror's counter is *behind* the store's. The mirror is written first and the store
- *    after, so the mirror can be ahead (the app was killed before the queue drained) or level with a different value
- *    (a build from before this one, which never touches the store or the counter, played on), and in both cases it is
- *    the newer one; only an evicted or reset mirror is behind.
+ *  - At hydration the two sides are reconciled key by key, for the game's own keys only:
+ *    - a key only the mirror has is copied to the store (every player's save from before this build);
+ *    - a key both have, with different values, takes the mirror's value unless the mirror's counter is *behind* the
+ *      store's. The mirror is written first and the store after, so the mirror can be ahead (the app was killed before
+ *      the queue drained) or level with a different value (a build from before D38, which never touches the store or
+ *      the counter, played on), and in both cases it is the newer one; only an evicted or reset mirror is behind;
+ *    - a key only the store has stays (the WebView's storage was evicted — the case this adapter exists for), unless
+ *      the mirror is marked complete (`KV_COMPLETE_KEY`) and not behind: then the key was deleted and the app was
+ *      killed before the store heard (D43: an interrupted reset must not bring old progress back).
+ *  - Hydration then writes the reconciled keys back to the mirror and marks it complete, so after every launch the
+ *    mirror holds everything. If a write to the mirror ever fails (its quota), the mirror stops counting and loses its
+ *    marker for the rest of the session, so at the next launch the store, which had every write, wins.
  */
 export class NativeKV implements KV {
   private map = new Map<string, string>();
   private queue: Promise<unknown> = Promise.resolve();
   private failures = 0;
   private seq = 0;
+  /** A mirror write failed this session: the mirror may be missing a value, so it no longer counts. */
+  private mirrorBroken = false;
 
   constructor(
     private readonly store: AsyncStore,
@@ -142,7 +156,18 @@ export class NativeKV implements KV {
   ) {}
 
   private own(k: string): boolean {
-    return k !== KV_SEQ_KEY && this.ownPrefixes.some((p) => k.startsWith(p));
+    return k !== KV_SEQ_KEY && k !== KV_COMPLETE_KEY && this.ownPrefixes.some((p) => k.startsWith(p));
+  }
+
+  /** The mirror missed a write: from now on it is not trusted over the store (until the next hydration refills it). */
+  private breakMirror(): void {
+    this.mirrorBroken = true;
+    this.mirror.removeItem(KV_COMPLETE_KEY);
+    this.mirror.removeItem(KV_SEQ_KEY);
+  }
+
+  private mirrorSet(key: string, value: string): void {
+    if (!this.mirror.setItem(key, value)) this.breakMirror();
   }
 
   /** Loads the store into memory and reconciles it with the WebView's copy. Resolves even if the store fails. */
@@ -156,23 +181,42 @@ export class NativeKV implements KV {
       const storeSeq = Number(this.map.get(KV_SEQ_KEY) ?? 0) || 0;
       const mirrorSeq = Number(this.mirror.getItem(KV_SEQ_KEY) ?? 0) || 0;
       const mirrorWins = mirrorSeq >= storeSeq;
+      const mirrorComplete = this.mirror.getItem(KV_COMPLETE_KEY) === '1' && this.mirror.getItem(KV_SEQ_KEY) !== null;
       this.seq = Math.max(storeSeq, mirrorSeq);
-      let copied = false;
+      let changed = false;
+      const inMirror = new Set<string>();
       for (const k of this.mirror.keys()) {
         if (!this.own(k)) continue;
         const v = this.mirror.getItem(k);
         if (v === null) continue;
+        inMirror.add(k);
         const inStore = this.map.get(k);
         if (inStore === v || (inStore !== undefined && !mirrorWins)) continue;
         this.map.set(k, v);
         this.enqueue(() => this.store.set({ key: k, value: v }));
-        copied = true;
+        changed = true;
+      }
+      // Deleted in the mirror, still in the store: the app died before the store's remove ran.
+      if (mirrorWins && mirrorComplete) {
+        for (const k of [...this.map.keys()]) {
+          if (!this.own(k) || inMirror.has(k)) continue;
+          this.map.delete(k);
+          this.enqueue(() => this.store.remove({ key: k }));
+          changed = true;
+        }
+      }
+      // The mirror gets everything the store kept (after an eviction, or a key it never had), then is marked complete.
+      for (const [k, v] of this.map) {
+        if (this.own(k) && this.mirror.getItem(k) !== v) this.mirrorSet(k, v);
       }
       // Both sides leave hydration on the same count.
       const n = String(this.seq);
       this.map.set(KV_SEQ_KEY, n);
-      this.mirror.setItem(KV_SEQ_KEY, n);
-      if (copied || mirrorSeq !== storeSeq) this.enqueue(() => this.store.set({ key: KV_SEQ_KEY, value: n }));
+      if (!this.mirrorBroken) {
+        this.mirrorSet(KV_SEQ_KEY, n);
+        this.mirrorSet(KV_COMPLETE_KEY, '1');
+      }
+      if (changed || mirrorSeq !== storeSeq) this.enqueue(() => this.store.set({ key: KV_SEQ_KEY, value: n }));
     } catch {
       // The store is unusable: fall back to whatever the WebView holds, so the game still plays.
       for (const k of this.mirror.keys()) {
@@ -206,13 +250,13 @@ export class NativeKV implements KV {
   private bump(): void {
     const n = String(++this.seq);
     this.map.set(KV_SEQ_KEY, n);
-    this.mirror.setItem(KV_SEQ_KEY, n);
+    if (!this.mirrorBroken) this.mirrorSet(KV_SEQ_KEY, n);
     this.enqueue(() => this.store.set({ key: KV_SEQ_KEY, value: n }));
   }
 
   setItem(key: string, value: string): boolean {
     this.map.set(key, value);
-    this.mirror.setItem(key, value);
+    this.mirrorSet(key, value);
     this.enqueue(() => this.store.set({ key, value }));
     this.bump();
     return true;

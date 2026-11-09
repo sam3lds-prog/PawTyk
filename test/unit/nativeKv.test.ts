@@ -4,8 +4,27 @@
  * first run copies the WebView's own keys over; a broken store never loses the game.
  */
 import { describe, expect, it } from 'vitest';
-import { KV_SEQ_KEY, MemoryKV, NativeKV, type AsyncStore } from '../../src/services/kv';
-import { V2_KEY, defaultSave, loadSave, saveSave } from '../../src/services/storage';
+import { KV_COMPLETE_KEY, KV_SEQ_KEY, MemoryKV, NativeKV, type AsyncStore, type KV } from '../../src/services/kv';
+import { V2_KEY, defaultSave, loadSave, resetProgress, saveSave } from '../../src/services/storage';
+
+/** A WebView store that can fill up: while `full`, every write is refused (as localStorage does past its quota). */
+class FullAfter implements KV {
+  full = false;
+  constructor(private readonly inner: KV) {}
+  getItem(k: string) {
+    return this.inner.getItem(k);
+  }
+  setItem(k: string, v: string) {
+    if (this.full) return false;
+    return this.inner.setItem(k, v);
+  }
+  removeItem(k: string) {
+    this.inner.removeItem(k);
+  }
+  keys() {
+    return this.inner.keys();
+  }
+}
 
 /** A fake Preferences plugin: every call is really async, and can be made to fail. */
 class FakeStore implements AsyncStore {
@@ -151,6 +170,128 @@ describe('the native store', () => {
       const next = new NativeKV(store, webview);
       await next.hydrate();
       expect(next.getItem('pawtopia.save.v2')).toBe('v2');
+    });
+  });
+
+  describe('a deletion the app died before the store heard about (D43 release review: an interrupted delete came back)', () => {
+    /** A device after this build: both sides hold three keys and the same count, and the WebView is marked complete. */
+    async function settled(): Promise<{ store: FakeStore; webview: MemoryKV }> {
+      const store = new FakeStore();
+      const webview = new MemoryKV();
+      const kv = new NativeKV(store, webview);
+      await kv.hydrate();
+      kv.setItem('pawtopia.save.v2', 'v1');
+      kv.setItem('pawtopia.save.v2.bak', 'old-backup');
+      kv.setItem('cvd.progress.v1', '{"level":40}');
+      await kv.flush();
+      // The next launch marks the WebView complete.
+      const again = new NativeKV(store, webview);
+      await again.hydrate();
+      await again.flush();
+      expect(webview.getItem(KV_COMPLETE_KEY)).toBe('1');
+      return { store, webview };
+    }
+
+    /** Runs `fn` on a fresh launch whose store writes never land (the app is killed before the queue drains). */
+    async function killedBeforeDrain(store: FakeStore, webview: MemoryKV, fn: (kv: NativeKV) => void): Promise<void> {
+      const dying = new NativeKV(store, webview);
+      await dying.hydrate();
+      await dying.flush();
+      store.fail = true;
+      fn(dying);
+      await dying.flush();
+      store.fail = false;
+    }
+
+    it('a removed key stays removed after a relaunch', async () => {
+      const { store, webview } = await settled();
+      await killedBeforeDrain(store, webview, (kv) => kv.removeItem('pawtopia.save.v2.bak'));
+      expect(store.data.has('pawtopia.save.v2.bak')).toBe(true); // the store never heard
+      const next = new NativeKV(store, webview);
+      await next.hydrate();
+      expect(next.getItem('pawtopia.save.v2.bak')).toBeNull();
+      expect(next.keys()).not.toContain('pawtopia.save.v2.bak');
+      await next.flush();
+      expect(store.data.has('pawtopia.save.v2.bak')).toBe(false); // and now it has
+      expect(next.getItem('pawtopia.save.v2')).toBe('v1');
+    });
+
+    it('an interrupted Reset progress does not bring old progress back', async () => {
+      const store = new FakeStore();
+      const webview = new MemoryKV();
+      const first = new NativeKV(store, webview);
+      await first.hydrate();
+      const s = defaultSave(new Date('2026-11-01T12:00:00Z'));
+      s.journey.nextLevel = 40;
+      saveSave(s, first);
+      first.setItem('cvd.progress.v1', '{"level":40}');
+      await first.flush();
+      const relaunch = new NativeKV(store, webview);
+      await relaunch.hydrate();
+      await relaunch.flush();
+      await killedBeforeDrain(store, webview, (kv) => resetProgress(loadSave(kv).save, kv));
+      const next = new NativeKV(store, webview);
+      await next.hydrate();
+      await next.flush();
+      expect(loadSave(next).save.journey.nextLevel).toBe(1);
+      expect(next.getItem('cvd.progress.v1')).toBeNull();
+      expect(store.data.has('cvd.progress.v1')).toBe(false);
+      expect(JSON.parse(store.data.get(V2_KEY)!).journey.nextLevel).toBe(1);
+    });
+
+    it('an evicted WebView still keeps every key the store holds, through more than one launch', async () => {
+      const { store, webview } = await settled();
+      for (const k of webview.keys()) webview.removeItem(k); // iOS cleared the WebView's storage, marker and all
+      const next = new NativeKV(store, webview);
+      await next.hydrate();
+      expect(next.getItem('pawtopia.save.v2.bak')).toBe('old-backup');
+      expect(webview.getItem('pawtopia.save.v2.bak')).toBe('old-backup'); // refilled
+      next.setItem('pawtopia.save.v2', 'v2'); // only the save is rewritten this session
+      await next.flush();
+      const later = new NativeKV(store, webview);
+      await later.hydrate();
+      await later.flush();
+      expect(later.getItem('pawtopia.save.v2')).toBe('v2');
+      expect(later.getItem('pawtopia.save.v2.bak')).toBe('old-backup');
+      expect(later.getItem('cvd.progress.v1')).toBe('{"level":40}');
+      expect(store.data.get('cvd.progress.v1')).toBe('{"level":40}');
+    });
+
+    it('a WebView from D38–D42 (counted, never marked complete) missing a key does not delete it from the store', async () => {
+      const { store, webview } = await settled();
+      webview.removeItem(KV_COMPLETE_KEY);
+      webview.removeItem('cvd.progress.v1');
+      const next = new NativeKV(store, webview);
+      await next.hydrate();
+      await next.flush();
+      expect(next.getItem('cvd.progress.v1')).toBe('{"level":40}');
+      expect(store.data.has('cvd.progress.v1')).toBe(true);
+      expect(webview.getItem('cvd.progress.v1')).toBe('{"level":40}');
+      expect(webview.getItem(KV_COMPLETE_KEY)).toBe('1');
+    });
+
+    it('a WebView that refuses a write (full) stops counting, so the store, which got the write, wins next launch', async () => {
+      const { store, webview } = await settled();
+      const full = new FullAfter(webview);
+      const dying = new NativeKV(store, full);
+      await dying.hydrate();
+      full.full = true;
+      dying.setItem('pawtopia.save.v2', 'v2-newer');
+      dying.setItem('pawtopia.other', 'x');
+      dying.removeItem('pawtopia.save.v2.bak');
+      await dying.flush();
+      expect(webview.getItem('pawtopia.save.v2')).toBe('v1'); // the WebView kept the old value
+      expect(webview.getItem(KV_SEQ_KEY)).toBeNull();
+      expect(webview.getItem(KV_COMPLETE_KEY)).toBeNull();
+      full.full = false;
+      const next = new NativeKV(store, webview);
+      await next.hydrate();
+      await next.flush();
+      expect(next.getItem('pawtopia.save.v2')).toBe('v2-newer');
+      expect(next.getItem('pawtopia.other')).toBe('x');
+      expect(next.getItem('pawtopia.save.v2.bak')).toBeNull();
+      expect(webview.getItem('pawtopia.save.v2')).toBe('v2-newer'); // refilled and marked again
+      expect(webview.getItem(KV_COMPLETE_KEY)).toBe('1');
     });
   });
 
