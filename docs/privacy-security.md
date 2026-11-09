@@ -15,6 +15,13 @@ talk to the network, each off until it is configured *and* the player uses it:
 Nothing else: no analytics leave the device (`services/analytics.ts` keeps a 200-event in-memory ring buffer with no
 sink; identifier-looking keys are dropped), no email, no contacts, no location, no crash reporting.
 
+## The privacy policy (D43)
+
+The player-facing policy is `src/legal/privacyPolicy.ts`: shown in Settings → Privacy policy, and built into the hosted
+page by `npm run site`. It must stay in step with this file: a new service, or new data for an existing one, is added
+there before it ships, with a new `POLICY_UPDATED` date. A build only shows a service's features when that service is
+configured (`src/app/offers.ts`), so the policy describes optional features as "only if your version has them".
+
 ## Leaderboard rules (server-enforced)
 
 - **Opt-in, deletable.** Leaving deletes `players/{uid}` (with its awards), `scores/{uid}`, `reports/{uid}` and the

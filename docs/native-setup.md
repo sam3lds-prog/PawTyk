@@ -102,10 +102,29 @@ consumable transactions and grants any it missed (a crash between paying and sav
 
 Players are never signed in automatically: nothing reaches Firebase until a player opens League → Leaderboard and taps
 **Join**. Leaving (League → Leaderboard → Leave) deletes their documents and their anonymous account.
-Without the Firebase settings a release build says the leaderboard is coming; development builds and the tester
+Without the Firebase settings a release build has no Leaderboard tab at all (D43); development builds and the tester
 preview run the same server logic on the device (a table with only you on it).
 
-## 4. Tester builds
+## 4. Privacy policy, support page and contact (D43)
+
+App Store Connect needs a **privacy policy URL** and a **support URL**, and the app must show the policy too (it does:
+Settings → Privacy policy, the full text, offline).
+
+1. Make the public contact address and put it in `.env.local`: `VITE_CONTACT_EMAIL=…`.
+2. `npm run site` builds `site-dist/index.html`, `privacy.html` and `support.html` from the app's own policy text.
+3. Host them. The repo is set up for **Firebase Hosting** (free): `firebase login`, `firebase use <project>`, then
+   `npm run site:deploy`. The pages are at `https://<project>.web.app/privacy.html` and `…/support.html`.
+   Any static host works the same way.
+4. Put the privacy URL in `.env.local` too, `VITE_PRIVACY_URL=https://<project>.web.app/privacy.html`, so Settings links
+   to it, and in App Store Connect (App Privacy → Privacy Policy URL; the support URL goes on the version page).
+5. `npm run release:check` before archiving: it fails if either is missing and says which App Store privacy answers fit
+   the services this build has.
+
+When the policy text changes, update `POLICY_UPDATED` in `src/legal/privacyPolicy.ts` and redeploy the site.
+
+## 5. Tester builds
 
 `npm run artifact -- --qa` builds `artifact/pawtyk-qa.html`: a single-file web build with a **test store** (free,
 labeled gems), **test videos** and the Tester shortcuts in Settings. Test gems never count in a release build.
+Tester shortcuts → *See the App Store build* reloads it without the test store, test videos and test leaderboard, as a
+release build with no service settings looks (and as App Review sees it).

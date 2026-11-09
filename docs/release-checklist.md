@@ -250,6 +250,16 @@
 - [ ] App Store Connect accepts the 1024 px icon (no alpha); the listing's icon matches the app's
 - [ ] Safari → Share → Add to Home Screen uses the touch icon; a browser tab shows the little barn
 
+### D43 — release readiness
+- [ ] Install over a D42 build, play, then *Erase progress* and force-quit at once; relaunch: progress stays erased
+- [ ] Kill the app mid-level (swipe up) several times; every relaunch resumes the latest move
+- [ ] A release build with no service settings: the Shop has Decor, Food, Tricks only; nothing priced in gems or video
+      tokens; Challenges opens on Paw Cup with no Leaderboard tab; no *coming soon* anywhere
+- [ ] Settings → Privacy policy: the full text scrolls, links open in Safari; with `VITE_PRIVACY_URL` set, *Read it
+      online* opens the hosted page
+- [ ] `npm run release:check` passes on the machine that archives the build
+- [ ] The hosted pages (`npm run site:deploy`) open on a phone: privacy, support, home
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
@@ -270,6 +280,7 @@
       (4+, no Kids Category)
 - [ ] Privacy label matches docs/privacy-security.md for the services this build turns on
 - [ ] Screenshots from the real build (Home, a board with faces, Sanctuary, Residents, Paw Cup practice)
-- [ ] Support URL and privacy policy URL
+- [ ] Support URL and privacy policy URL: the hosted `support.html` and `privacy.html` (`npm run site:deploy`); the same
+      privacy URL in `VITE_PRIVACY_URL`
 - [ ] Review notes: Paw Cup is offline practice; the leaderboard is opt-in (anonymous, nickname only, leave = delete);
       gems buy cosmetic decorations only; reward videos only when the player chooses one

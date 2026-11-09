@@ -1279,3 +1279,61 @@ the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
   new SVGs beside old PNGs, and nothing tied a PNG to its SVG; `--style` overwrote the shipped icon and broke the check;
   the cat draft's commit carries a 650 KB PNG of art that never shipped, so this PR is best merged with *Squash and
   merge* to keep it out of `main`'s history.
+
+## 2026-11-09 · D43 — Release readiness: safe deletes, a privacy policy, nothing unfinished on show, CI
+
+From an outside release-readiness review of `main` (D41) and the open D42 PRs. Built on PR #27 (the license), so it
+lands after #25 → #26 → #27.
+
+### Native saves: an interrupted delete stays deleted
+- **The risk** (the review, `services/kv.ts`): `NativeKV.removeItem` removes the key from the WebView's copy at once and
+  queues the remove for the native store. Killed before the queue drains, the next launch found the key in the store
+  only, and kept it — the rule for an *evicted* WebView. So an interrupted **Erase progress** could bring back the old
+  v1 save and the backups (reproduced by the new test on the old code).
+- **The fix**: every hydration now writes the reconciled keys back to the WebView's copy and marks it complete
+  (`pawtopia.kv.complete`, kept only there). A key the store holds but a complete WebView — whose count isn't behind
+  the store's — lacks was deleted, so it is removed from the store. An eviction takes the marker with everything
+  else, so the store still wins there. A WebView copy from D38–D42 (counted, never marked) keeps the old rule once,
+  then is refilled and marked.
+- **A full WebView** (quota): a refused write drops the WebView's count and marker for the rest of the session, so the
+  next launch trusts the store, which got the write; that launch refills and re-marks the WebView.
+- Tests (`test/unit/nativeKv.test.ts`): an interrupted remove; an interrupted *Erase progress* with a real save;
+  eviction across two launches keeps every key; a D38–D42 WebView missing a key; a full WebView.
+
+### Nothing unfinished on show (`app/offers.ts`)
+- Apple's review asks for complete functionality and no placeholders. A release build with no RevenueCat key, no
+  AdMob and no Firebase used to say *coming soon* in the Shop (a Gems tab of unpriced packs, premium decor and tricks
+  for gems), *which this version doesn't show yet* for video tokens, *The leaderboard is coming* on the first tab of
+  Challenges, a *Preview* division table, and *Coming soon* in Settings.
+- Now each part shows only when its service is there: no Gems tab or gem prices without the App Store; nothing priced
+  in video tokens without reward videos; no Leaderboard tab without Firebase (Challenges opens on the Paw Cup). What
+  the player owns always shows, and gems or tokens they still hold can be spent. The wallet shows only the
+  currencies on offer.
+- With leagues off, the Paw Cup shows no division table or tier ladder; the Paw Cup and Daily copy say what is there
+  today (*Your Paw Cup scores stay on this device. Beat your own best each week.*), never *when leagues open*.
+- Each service turns its part back on by itself once its settings are present; nothing else changes.
+- **Tester page**: Settings → Tester shortcuts → *See the App Store build* reloads with the test store, test videos and
+  the on-device leaderboard off (`QA_RELEASE_VIEW_KEY`), so the tester shows exactly what App Review will see.
+- Tests: `test/unit/releaseBuild.dom.test.ts` mounts the Shop, Challenges and Settings with `TEST_BUILD` off (every
+  service as in a keyless release build) and scans them for placeholder words; three new browser checks.
+
+### A privacy policy, in the app and on the web
+- One text, `src/legal/privacyPolicy.ts`, written from `docs/privacy-security.md`: what stays on the device, each
+  optional service and exactly what it gets (only if that version has it, only when the player uses it), children,
+  choices (access, correction, deletion, within 30 days), security, changes, contact. Publisher: Aeonix Ventures LLC.
+- **In the app**: Settings → *Privacy policy* shows the whole text, offline. When `VITE_PRIVACY_URL` is set, a *Read it
+  online* link follows.
+- **On the web**: `npm run site` builds `site-dist/` (privacy, support, a small home page) from the same text;
+  `npm run site:deploy` puts it on Firebase Hosting (`firebase.json` → `hosting`, free tier; `<project>.web.app`).
+  Any static host works too.
+- **Contact address**: Sam will create a dedicated address (owner decision, 2026-11-09) rather than publish a personal
+  one. It goes in `VITE_CONTACT_EMAIL`; `npm run site` refuses to build without it, and until it's set the in-app
+  policy points to the App Store page for contact details.
+
+### Release check and CI
+- `npm run release:check`: fails without a contact address or a hosted policy URL, with the tester flag on, or with
+  emulators on; lists which optional services the build has, and the App Store privacy answer that goes with them
+  (*Data Not Collected* when none are on).
+- `.github/workflows/ci.yml` runs on every PR and push to `main`: unit tests, type check and build, `gen:check`,
+  `pack:check`, `places:check`, `icons:check`, and the browser tests against the dev server (Playwright installed in
+  the job only). Results stay in the Actions tab.
