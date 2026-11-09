@@ -14,6 +14,7 @@ import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
 import { iap } from '../../services/iap';
+import { currencyOffered } from '../../app/offers';
 import { trickBadge } from '../art/tricks';
 import { performTrick } from './trickPlay';
 import { residentFigure } from '../art/sanctuary';
@@ -57,9 +58,15 @@ function chipClass(id: TrickId): string {
   return `trick-chip ${ownsTrick(app.save, id) ? '' : 'is-locked'} trick-chip--${t.tier}`;
 }
 
+/** Owned and free tricks always; the others only when their currency can be had in this build (D43). */
+function trickOffered(id: TrickId): boolean {
+  const cur = trickCurrency(TRICK_BY_ID[id]);
+  return !cur || ownsTrick(app.save, id) || currencyOffered(app.save, cur);
+}
+
 /** The trick (or emote) buttons, in catalog order: free, then video, then premium. */
 export function trickChips(kind: TrickKind = 'trick'): string {
-  return TRICKS.filter((t) => t.kind === kind).map((t) => `<li><button class="${chipClass(t.id)}" data-trick="${t.id}" aria-label="${esc(chipLabel(t.id))}">${chipInner(t.id)}</button></li>`).join('');
+  return TRICKS.filter((t) => t.kind === kind && trickOffered(t.id)).map((t) => `<li><button class="${chipClass(t.id)}" data-trick="${t.id}" aria-label="${esc(chipLabel(t.id))}">${chipInner(t.id)}</button></li>`).join('');
 }
 
 /** Updates the chips in place (after a purchase), so focus and scroll stay where they are. */
@@ -244,7 +251,7 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
     else if (cur === 'gem')
       actions = short
         ? `<button class="btn btn--block" disabled aria-label="${esc(`Costs ${t.price} gems`)}">${ICON.gem}<span class="num">${t.price}</span></button>
-           <p class="muted">You have ${plural(have, 'gem')}. ${iap.available ? 'Gem packs are in the Shop.' : 'Gem packs are coming soon.'}</p>
+           <p class="muted">You have ${plural(have, 'gem')}.${iap.available ? ' Gem packs are in the Shop.' : ''}</p>
            ${iap.available ? `<button class="btn btn--secondary btn--block" data-act="gems">${ICON.gem}See gem packs</button>` : ''}`
         : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${ICON.gem}<span class="num">${t.price}</span></button>`;
     return `

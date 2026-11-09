@@ -808,6 +808,23 @@ try {
   check('erasing progress keeps unrelated storage', other === 'keep me');
   check('erasing progress resets the journey', (await page.evaluate(() => window.__pt.app.save.journey.nextLevel)) === 1);
 
+  // D43: the App Store build (the tester page's switch): nothing unfinished shows, and Settings has the privacy policy.
+  await page.evaluate(() => localStorage.setItem('pawtyk.qa.releaseView', '1'));
+  await reload();
+  await page.evaluate(() => window.__pt.go({ screen: 'shop' }));
+  const relShop = await page.$$eval('.seg__btn', (b) => b.map((x) => x.dataset.tab));
+  const relShopText = await page.textContent('.shop');
+  check('App Store build: the Shop has no Gems tab and nothing "coming soon" (D43)', JSON.stringify(relShop) === '["decor","food","tricks"]' && !/coming soon|video token/i.test(relShopText ?? ''), JSON.stringify(relShop));
+  await page.evaluate(() => window.__pt.go({ screen: 'challenges' }));
+  const relTabs = await page.$$eval('.league .segmented [data-tab]', (b) => b.map((x) => x.dataset.tab));
+  check('App Store build: Challenges has no Leaderboard tab and previews no leagues (D43)', JSON.stringify(relTabs) === '["week","daily"]' && !(await page.$('.division, .tiers')), JSON.stringify(relTabs));
+  await page.evaluate(() => window.__pt.go({ screen: 'journey' }));
+  await page.evaluate(() => document.querySelector('[data-act="settings"]')?.click());
+  await page.click('[data-act="privacy"]');
+  const policyHeads = await page.$$eval('.policy-sheet .policy h3', (h) => h.length);
+  check('App Store build: Settings opens the full privacy policy (D43)', policyHeads === 8 && !(await page.$('.sheet [data-act="leaderboard"]')), String(policyHeads));
+  await page.evaluate(() => localStorage.removeItem('pawtyk.qa.releaseView'));
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
   check('suite ran to completion', false, String(e).slice(0, 300));
