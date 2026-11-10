@@ -29,6 +29,7 @@ import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
+import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { HOME_SCENERY } from '../art/homeScenery';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -84,8 +85,11 @@ export const regionScreen: ScreenDef = {
     const tray = mountTrickTray(scope, trayHost, () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), {
       returnFocus: tricksBtn,
       onToggle: (open) => tricksBtn()?.setAttribute('aria-expanded', String(open)),
-      // A trick gets its close-up (D44 PR F).
-      onPlayed: (fig, trick) => closeups.play(fig, trick),
+      // A trick gets its close-up (D44 PR F); the tour, if it's running, ends first.
+      onPlayed: (fig, trick) => {
+        tour.stop();
+        closeups.play(fig, trick);
+      },
     });
     let life: SceneLife | null = null;
     let acts: ActivityRunner | null = null;
@@ -103,8 +107,9 @@ export const regionScreen: ScreenDef = {
         acts?.setLive(!on && !document.hidden);
       },
       closeTray: () => {
-        // A parade takes the camera: a trick's close-up ends first.
+        // A parade takes the camera: a trick's close-up or the tour ends first.
         closeups.cancel();
+        tour.stop();
         if (tray.isOpen) tray.close();
       },
       reducedMotion: () => app.reducedMotion,
@@ -119,6 +124,24 @@ export const regionScreen: ScreenDef = {
         acts?.setLive(!on && !document.hidden);
       },
       react: (fig, action) => life?.play(figureId(fig as unknown as HTMLElement), action),
+    });
+    // The guided tour (D44 PR H): the landmark, every animal, the party spot, and back.
+    const landmarkLine = () => (isPlaceId(id) ? '' : (HOME_SCENERY[id as keyof typeof HOME_SCENERY]?.landmark.line ?? ''));
+    const tour = sceneTour(scope, {
+      el,
+      camera,
+      reducedMotion: () => app.reducedMotion,
+      pause: (on) => {
+        life?.setLive(!on && !document.hidden);
+        acts?.setLive(!on && !document.hidden);
+      },
+      greet: (fig) => life?.play(figureId(fig as unknown as HTMLElement), 'greet'),
+      openLandmark: (lm) => openLandmark(scope, lm, el.querySelector('[data-chat]'), landmarkLine()),
+      onStart: () => {
+        parades.skip();
+        closeups.cancel();
+        if (tray.isOpen) tray.close();
+      },
     });
     scope.onDispose(() => {
       life?.dispose();
@@ -194,9 +217,10 @@ export const regionScreen: ScreenDef = {
     }
 
     function render(): void {
-      // A re-render (a decoration toggled) draws a new scene: a parade or a close-up on the old one ends first.
+      // A re-render (a decoration toggled) draws a new scene: a parade, a close-up or the tour on the old one ends first.
       parades.skip();
       closeups.cancel();
+      tour.stop();
       const save = app.save;
       const open = isOpen(save, id);
       const stage = stageOf(save, id);
@@ -214,6 +238,7 @@ export const regionScreen: ScreenDef = {
         <p class="muted region__place">${ICON.pin}${esc(def.place)}</p>
         <figure class="sanctuary__scene card is-live ${open ? '' : 'is-locked'}">
           <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: isEvening() }, `rg-${id}`)}</svg>
+          ${tourButtonMarkup(open && welcomed.length > 0)}
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
@@ -337,6 +362,7 @@ export const regionScreen: ScreenDef = {
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
       if (parades.onClick(t)) return;
+      if (tour.onClick(t)) return;
       if (t.closest('[data-act="tricks"]')) {
         if (tray.isOpen) tray.close();
         else tray.openFor(undefined, true);
@@ -364,8 +390,7 @@ export const regionScreen: ScreenDef = {
       // The home's landmark (D44 PR G): the barn's doors open, a critter peeks out.
       const lm = t.closest('.sanctuary__scene [data-landmark]');
       if (lm) {
-        const line = isPlaceId(id) ? '' : (HOME_SCENERY[id as keyof typeof HOME_SCENERY]?.landmark.line ?? '');
-        openLandmark(scope, lm, el.querySelector('[data-chat]'), line);
+        openLandmark(scope, lm, el.querySelector('[data-chat]'), landmarkLine());
         return;
       }
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;

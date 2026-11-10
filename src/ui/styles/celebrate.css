@@ -432,3 +432,69 @@
 :root[data-motion='reduce'] .sanctuary__scene .is-sway .sp-grass {
   animation: none !important;
 }
+
+/* ------------------------------------------------------------------ the guided tour (D44 PR H) */
+.scene-tour {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 252, 244, 0.88);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px -2px rgba(40, 52, 52, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.scene-tour[hidden] {
+  display: none;
+}
+.scene-tour:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.sanctuary__scene.is-touring::after {
+  opacity: 0.7;
+}
+.tour-caption {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 6;
+  max-width: calc(100% - 110px);
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(40, 52, 52, 0.62);
+  color: #fffaf0;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease;
+}
+.tour-caption.is-in {
+  opacity: 1;
+  transform: none;
+}
+.sanctuary__scene .sp-party.is-tour-lit .sp-bulb-halo {
+  opacity: 0.5;
+}
+.sanctuary__scene.is-parading .scene-tour {
+  display: none;
+}
