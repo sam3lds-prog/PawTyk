@@ -293,3 +293,174 @@ describe('on the Farm screen', () => {
     expect(document.querySelector('.is-touring, .is-closeup, .tour-caption')).toBeNull();
   });
 });
+
+/**
+ * D46 PR A: a celebration the screen starts by itself (the Welcome Parade after Meet, a new stage's dance) waits for a
+ * lead-in. Whatever the player starts in that window wins: the celebration never starts by itself afterwards and is
+ * offered under the scene instead; leaving during the lead-in owes it to the next visit.
+ */
+describe('pending moments', () => {
+  it('any claim before it begins misses it, saying who took the scene; it then never begins', () => {
+    const d = createSceneDirector(() => {});
+    const missed: unknown[] = [];
+    const p = d.pending('parade', (by) => missed.push(by));
+    expect(p.waiting).toBe(true);
+    expect(d.waiting).toBe(1);
+    d.claim('walk');
+    expect(missed).toEqual(['walk']);
+    expect(p.waiting).toBe(false);
+    expect(p.begin()).toBe(false);
+    // Missed once, however many claims come after.
+    d.claim('tour');
+    expect(missed).toEqual(['walk']);
+  });
+
+  it('cancelAll (a re-render, leaving) misses it with no one to blame; begin() takes it out of the waiting set', () => {
+    const d = createSceneDirector(() => {});
+    const missed: unknown[] = [];
+    d.pending('parade', (by) => missed.push(by));
+    d.cancelAll();
+    expect(missed).toEqual([null]);
+    const p2 = d.pending('parade', (by) => missed.push(by));
+    expect(p2.begin()).toBe(true);
+    // Its own claim, once begun, misses nothing.
+    d.claim('parade');
+    expect(missed).toEqual([null]);
+    expect(d.waiting).toBe(0);
+  });
+
+  it('drop() gives it up quietly', () => {
+    const d = createSceneDirector(() => {});
+    const missed = vi.fn();
+    const p = d.pending('parade', missed);
+    p.drop();
+    d.claim('tour');
+    expect(missed).not.toHaveBeenCalled();
+    expect(p.begin()).toBe(false);
+  });
+});
+
+describe('a welcome on the Farm screen, and what the player does first (D46 PR A)', () => {
+  const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
+  let router: Router;
+  beforeEach(async () => {
+    localStorage.clear();
+    app.replaceSave(defaultSave(new Date(2026, 9, 31, 12)));
+    Object.assign(app.save.onboarding, { tutorialDone: true, seenRules: true, soloRulesSeen: true, seenLoopCoach: true, starterDecorChosen: true, sceneTapTipSeen: true, decorTipSeen: true });
+    app.save.world.growth.farm = 12;
+    for (const id of ['cotton', 'truffle']) app.save.inventory.companions[id] = { unlockedAt: '2026-10-31T11:00:00.000Z' };
+    app.save.settings.celebrations = 'full';
+    const { regionScreen } = await import('../../src/ui/screens/region');
+    document.body.innerHTML = '<div id="app"></div>';
+    router = new Router(document.getElementById('app')!);
+    const reg = {} as Record<CanonicalRoute['screen'], ScreenDef>;
+    for (const k of ['journey', 'pets', 'challenges', 'shop', 'world', 'gallery', 'welcome', 'profile', 'game', 'sanctuary'] as const) reg[k] = blank;
+    router.register({ ...reg, region: regionScreen });
+    app.router = router;
+  });
+  const scene = () => document.querySelector<HTMLElement>('.sanctuary__scene')!;
+  const offered = () => {
+    const b = document.querySelector<HTMLElement>('[data-act="parade-replay"]');
+    return b && !b.hidden ? b.textContent!.trim() : null;
+  };
+  const parading = () => scene().classList.contains('is-parading');
+  /** Past the lead-in (600 ms) and the longest wait for the toys (1.5 s). */
+  const pastLeadIn = () => vi.advanceTimersByTimeAsync(2600);
+
+  it('left alone, the parade plays straight from Meet, then the next goal (as before)', async () => {
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await pastLeadIn();
+    expect(parading()).toBe(true);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(parading()).toBe(false);
+    expect(offered()).toBe('Replay the parade');
+    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+  });
+
+  it('the Tour tapped during the lead-in keeps going; the parade never cuts in, and is offered instead', async () => {
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(200);
+    scene().querySelector<HTMLElement>('[data-act="tour"]')!.click();
+    expect(scene().classList.contains('is-touring')).toBe(true);
+    await pastLeadIn();
+    // The bug: the pending parade used to claim the camera here and stop the tour.
+    expect(scene().classList.contains('is-touring')).toBe(true);
+    expect(parading()).toBe(false);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    // The next goal waits until the scene is free (it never lands mid-tour).
+    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    scene().querySelector<HTMLElement>('[data-act="tour-stop"]')!.click();
+    await vi.advanceTimersByTimeAsync(600);
+    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    // The offered welcome plays in full when the player asks for it, and is a replay after that.
+    document.querySelector<HTMLElement>('[data-act="parade-replay"]')!.click();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(parading()).toBe(true);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(offered()).toBe('Replay the parade');
+  });
+
+  it('a trick played during the lead-in keeps its close-up; the parade is offered', async () => {
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(150);
+    scene().querySelector('.sanctuary__pet')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.querySelector<HTMLElement>('.trick-chip[data-trick="wave"]')!.click();
+    expect(scene().classList.contains('is-closeup')).toBe(true);
+    await vi.advanceTimersByTimeAsync(700);
+    expect(parading()).toBe(false);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(parading()).toBe(false);
+  });
+
+  it('leaving during the lead-in plays nothing later; the next visit offers the welcome (and never plays it by itself)', async () => {
+    const { missedWelcome } = await import('../../src/ui/components/parade');
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(300);
+    router.go({ screen: 'journey' });
+    await pastLeadIn();
+    expect(document.querySelector('.is-parading, .parade-skip')).toBeNull();
+    expect(missedWelcome('farm')).toBe('cotton');
+    // Straight back (the route was settled, so this is a plain visit).
+    router.go({ screen: 'region', id: 'farm' });
+    await pastLeadIn();
+    expect(parading()).toBe(false);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    document.querySelector<HTMLElement>('[data-act="parade-replay"]')!.click();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(parading()).toBe(true);
+    // Seen: nothing is owed any more.
+    expect(missedWelcome('farm')).toBeUndefined();
+    router.go({ screen: 'journey' });
+  });
+
+  it('the app hidden during the lead-in: it doesn’t play unseen, and is offered on return', async () => {
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(200);
+    hide(true);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await pastLeadIn();
+    hide(false);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(parading()).toBe(false);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    router.go({ screen: 'journey' });
+  });
+
+  it('rapid re-entry while the first visit was still in its lead-in leaves one scene and no stray parade', async () => {
+    for (let i = 0; i < 4; i++) {
+      router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+      await vi.advanceTimersByTimeAsync(120);
+      router.go({ screen: 'journey' });
+      await vi.advanceTimersByTimeAsync(40);
+    }
+    router.go({ screen: 'region', id: 'farm' });
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(document.querySelectorAll('.sanctuary__scene').length).toBe(1);
+    expect(parading()).toBe(false);
+    expect(document.querySelectorAll('.parade-skip').length).toBe(0);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    router.go({ screen: 'journey' });
+  });
+});

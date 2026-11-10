@@ -1613,3 +1613,34 @@ close-up paused the scene, ended the close-up, and the close-up's ending un-paus
 **Not done here** (they need a device or a studio): before/after recordings on real iPhones, loudness checked by ear on
 real speakers, and a professionally recorded track. `music.useRecordedTrack(id, url)` is the hook for the last: a
 recording replaces a cue's synthesized score and keeps its beat clock.
+
+## 2026-11-10 · D46 — final polish and QA
+
+A scoped pass after an outside review of D45 ("no further species expansion or major new feature"): transitions (A),
+the 3D layer's lifecycle (B), visual and audio acceptance (C) and release validation (D). The acceptance test it set:
+the player can start, stop, skip, replay and switch between every farm interaction without getting stuck, unexpectedly
+changing screens, losing a reward, hearing overlapping music or seeing the wrong animal animation.
+
+### PR A — what the player chose wins over what the game was about to start
+The review's race: the director (D45 PR A) coordinated moments that had started, but the Farm screen started the
+Welcome Parade after a lead-in (600 ms, then up to 1.5 s waiting for the 3D toys). A Walk tapped in that window opened
+the walk; the parade then claimed the camera and closed it. The same for the Tour and a trick's close-up, on every
+home and the Pet Garden.
+
+- **Pending moments** (`sceneDirector.pending(kind, missed)`): a celebration the screen starts by itself is pending
+  from the moment it is scheduled. Any `claim()` before it `begin()`s (the player started a walk, the tour or a trick)
+  or a `cancelAll()` (a re-render, leaving) misses it: it never starts by itself after that. A pending moment holds
+  nothing and owns nothing.
+- **Missed is not lost** (`parade.scheduleParade`): a missed celebration is offered under the scene: *Watch Cotton’s
+  welcome* (or *Celebrate the new stage*), which plays it in full and then becomes the usual Replay. Hidden app during
+  the lead-in: offered on return, not played unseen. Left during the lead-in: the next visit to that home offers it
+  (kept for the session; a welcome grants nothing, so nothing is lost if the app closes).
+- **What follows waits for a free scene**: the next goal and the Farm's starter gift come once nothing owns the camera
+  (the walk closed, the tour or the trick over), so the gift's sheet never lands on top of a walk.
+- Used by both kinds of screen: every home (the welcome and a new stage's group dance) and the Pet Garden.
+- Tests: the director's pending rules; the Farm screen with the real tour, close-ups and parades (Tour during the
+  lead-in: fails on the old wiring at "still touring"); trick during the lead-in; leaving and coming back; the app
+  hidden; rapid re-entry. Browser (320 × 568): Walk, Tour and leaving during the lead-in, rapid re-entry, and the
+  **acceptance matrix**: every farm interaction (parade replay, trick, tour, walk, the barn) started straight after
+  every other, then ended as a player ends it; after each of the 20 pairs the scene is at rest (no owner, no hold,
+  nothing pending, nobody mid-trick, no tune, one canvas, the toys back, still on the Farm) and the save is unchanged.
