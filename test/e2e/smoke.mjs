@@ -421,6 +421,30 @@ try {
     !!aligned && aligned.whole < 2 && aligned.close < 2 && aligned.zoomed > 1.9 && aligned.back === '0 0 360 300',
     JSON.stringify(aligned),
   );
+  // D44 PR D: a group dance plays on every toy at once, on the music's beat clock, and a skip stops them all.
+  const danced = await page.evaluate(async () => {
+    const { planDance, startDance } = await import('/src/ui/components/dance.ts');
+    const { playCue } = await import('/src/services/music.ts');
+    const svg = document.querySelector('.sanctuary__scene svg');
+    const st = window.__stage3d;
+    const key = (d) => d.fig.dataset.pet ?? `friend:${d.fig.dataset.friend}`;
+    const pb = playCue('bounce', { silent: true });
+    const plan = planDance(svg, { bpm: pb.score.bpm, beats: pb.score.beats });
+    const h = startDance(svg, plan, pb, { reducedMotion: false });
+    await new Promise((r) => setTimeout(r, 700));
+    const during = plan.map((d) => st?.actor(key(d))?.performing(performance.now()) ?? null);
+    h.stop();
+    pb.stop(0);
+    await new Promise((r) => setTimeout(r, 300));
+    const after = plan.map((d) => st?.actor(key(d))?.performing(performance.now()) ?? null);
+    const busy = plan.filter((d) => d.fig.dataset.trick).length;
+    return { n: plan.length, during, after, busy };
+  });
+  check(
+    'a group dance plays on every toy at once, and a skip stops them all (D44)',
+    danced.n >= 1 && danced.during.every((p) => p?.startsWith('dance:')) && danced.after.every((p) => !p) && danced.busy === 0,
+    JSON.stringify(danced),
+  );
   await page.waitForTimeout(3000);
   await page.evaluate(() => {
     window.__seen = new Set();

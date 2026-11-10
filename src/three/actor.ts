@@ -80,6 +80,11 @@ export class Actor {
     return clip.ms;
   }
 
+  /** Ends a trick, emote or dance early (it was skipped, or the screen moved on): it fades back to rest (D44 PR D). */
+  endPerform(now: number): void {
+    for (const l of this.layers) if (l.kind === 'perform' && !l.id.startsWith('act:')) l.fadeFrom ??= now;
+  }
+
   /** Ends a ride early (the activity was stopped). */
   endRide(now: number): void {
     for (const l of this.layers) if (l.id.startsWith('act:')) l.fadeFrom ??= now;

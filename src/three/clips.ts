@@ -11,6 +11,7 @@
 import type { BodyKind } from './species';
 import type { Expr } from './face';
 import { arc, bump, easeInOut, easeOut, easeOutBack, hold, seg, wiggle, type PoseDelta } from './pose';
+import { danceClip } from './dance';
 
 export interface ClipCtx {
   body: BodyKind;
@@ -743,9 +744,9 @@ export function activityClip(decor: string): Clip | null {
   return ACTIVITY_CLIPS[decor] ?? null;
 }
 
-/** A trick's or an emote's clip (they share the catalog's ids; D33/D34). */
+/** A trick's or an emote's clip (they share the catalog's ids; D33/D34), or a group dance's (D44 PR D). */
 export function performClip(id: string): Clip | null {
-  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? null;
+  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? (id.startsWith('dance:') ? danceClip(id) : null);
 }
 
 /** An everyday move's clip (the ambient director's action names). */
