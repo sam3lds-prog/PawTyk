@@ -1,0 +1,295 @@
+// @vitest-environment happy-dom
+/**
+ * D45 PR A: the scene director. One moment owns the camera at a time (a parade, a trick's close-up, the tour, the 3D
+ * walk); pausing the scene's ambient life is a set of holds, so one moment ending never switches life back on under
+ * another; and leaving ends everything together.
+ */
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createSceneDirector } from '../../src/ui/components/sceneDirector';
+import { sceneCloseUps } from '../../src/ui/components/closeup';
+import { sceneParades } from '../../src/ui/components/parade';
+import { sceneTour, TOUR_GLIDE_MS, TOUR_HOLD_MS, tourButtonMarkup } from '../../src/ui/components/tour';
+import { viewAt, type SceneCamera, type View } from '../../src/ui/components/camera';
+import { TRICK_BY_ID } from '../../src/meta/catalogs/tricks';
+import { app } from '../../src/app/app';
+import { Router, Scope, type CanonicalRoute, type ScreenDef } from '../../src/ui/router';
+import { defaultSave } from '../../src/services/storage';
+
+const lifeCalls = vi.hoisted(() => [] as boolean[]);
+vi.mock('../../src/ui/components/sceneLife', async (orig) => {
+  const m = await orig<typeof import('../../src/ui/components/sceneLife')>();
+  return {
+    ...m,
+    startSceneLife: (...a: Parameters<typeof m.startSceneLife>) => {
+      const life = m.startSceneLife(...a);
+      return { ...life, setLive: (on: boolean) => (lifeCalls.push(on), life.setLive(on)) };
+    },
+  };
+});
+
+const FULL: View = { x: 0, y: 0, w: 360, h: 300 };
+const hide = (on: boolean) => Object.defineProperty(document, 'hidden', { configurable: true, get: () => on });
+
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  hide(false);
+});
+
+describe('the director', () => {
+  it('ambient life runs only while nobody holds it: one hold ending leaves the others in place', () => {
+    const apply = vi.fn();
+    const d = createSceneDirector(apply);
+    d.hold('closeup', true);
+    expect(apply).toHaveBeenLastCalledWith(false);
+    d.hold('tour', true);
+    d.hold('closeup', false);
+    // The tour still holds the scene.
+    expect(d.paused).toBe(true);
+    expect(apply).toHaveBeenLastCalledWith(false);
+    d.hold('tour', false);
+    expect(d.paused).toBe(false);
+    expect(apply).toHaveBeenLastCalledWith(true);
+  });
+
+  it('holds are not counted: on twice then off once is off, and off without on does nothing', () => {
+    const apply = vi.fn();
+    const d = createSceneDirector(apply);
+    d.hold('parade', false);
+    expect(apply).not.toHaveBeenCalled();
+    d.hold('parade', true);
+    d.hold('parade', true);
+    d.hold('parade', false);
+    expect(d.paused).toBe(false);
+    expect(apply.mock.calls.map((c) => c[0])).toEqual([false, true]);
+  });
+
+  it('nothing runs while the app is hidden, whatever the holds; refresh applies it again on return', () => {
+    const apply = vi.fn();
+    const d = createSceneDirector(apply);
+    hide(true);
+    d.refresh();
+    expect(apply).toHaveBeenLastCalledWith(false);
+    d.hold('tour', true);
+    hide(false);
+    d.refresh();
+    expect(apply).toHaveBeenLastCalledWith(false);
+    d.hold('tour', false);
+    expect(apply).toHaveBeenLastCalledWith(true);
+  });
+
+  it('claiming the camera ends every other moment, never the claimant; cancelAll ends them all', () => {
+    const d = createSceneDirector(() => {});
+    const on = { parade: true, closeup: true, tour: true, walk: true };
+    for (const k of ['parade', 'closeup', 'tour', 'walk'] as const) d.register(k, { cancel: () => (on[k] = false), active: () => on[k] });
+    d.claim('tour');
+    expect(on).toEqual({ parade: false, closeup: false, tour: true, walk: false });
+    expect(d.owner).toBe('tour');
+    d.cancelAll();
+    expect(d.owner).toBeNull();
+  });
+});
+
+/** The real close-ups, tour and parades, wired through a director the way the sanctuary screens wire them. */
+function stage() {
+  document.body.innerHTML = `<div id="root"><figure class="sanctuary__scene is-live"><svg viewBox="0 0 360 300" data-vb="0 0 360 300">
+    <g class="sp-landmark" data-landmark="barn" data-name="the barn"><rect x="266" y="140" width="40" height="42"/></g>
+    <g class="sanctuary__pet" data-friend="cotton" data-gx="80" data-gy="230" data-gh="40"></g>
+    <g class="sanctuary__pet" data-friend="truffle" data-gx="170" data-gy="240" data-gh="34"></g>
+    <g class="sp-party"><circle cx="200" cy="150" r="4"/></g>
+  </svg>${tourButtonMarkup(true)}</figure></div>`;
+  for (const g of document.querySelectorAll('.sp-landmark, .sp-party'))
+    (g as unknown as { getBBox: () => DOMRect }).getBBox = () => ({ x: 190, y: 140, width: 40, height: 40 }) as DOMRect;
+  const el = document.getElementById('root')!;
+  const svg = el.querySelector('svg')!;
+  const log: string[] = [];
+  const camera = {
+    full: FULL,
+    viewOf: (e: Element, zoom: number) => viewAt(FULL, Number((e as SVGGElement).dataset.gx ?? 210), Number((e as SVGGElement).dataset.gy ?? 160), zoom),
+    moveTo: vi.fn(async () => (log.push('move'), true)),
+    focus: vi.fn(async () => true),
+    reset: vi.fn(async () => (log.push('reset'), true)),
+    setOffset: vi.fn(),
+    clearOffset: vi.fn(),
+  } as unknown as SceneCamera;
+  const live: boolean[] = [];
+  const director = createSceneDirector((on) => live.push(on));
+  const scope = new Scope();
+  const closeups = sceneCloseUps({ host: () => el.querySelector<HTMLElement>('.sanctuary__scene'), svg: () => svg, camera, reducedMotion: () => false, pause: (on) => director.hold('closeup', on) });
+  const tour = sceneTour(scope, { el, camera, reducedMotion: () => false, pause: (on) => director.hold('tour', on), greet: () => {}, openLandmark: () => {}, onStart: () => director.claim('tour') });
+  const parades = sceneParades(scope, { el, camera, pause: (on) => director.hold('parade', on), closeTray: () => director.claim('parade'), reducedMotion: () => true });
+  director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
+  director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
+  director.register('tour', { cancel: () => tour.stop(), active: () => tour.active });
+  const fig = (id: string) => svg.querySelector<SVGGElement>(`[data-friend="${id}"]`)!;
+  const trick = (id: string) => {
+    director.claim('closeup');
+    closeups.play(fig(id), 'wave');
+  };
+  return { el, director, closeups, tour, parades, live, log, trick, scope, isLive: () => live[live.length - 1] };
+}
+
+describe('moments handing over to each other', () => {
+  it('trick, then the tour, then Stop: the scene stays quiet through the tour and comes back to life after', () => {
+    const s = stage();
+    s.trick('truffle');
+    expect(s.director.owner).toBe('closeup');
+    expect(s.isLive()).toBe(false);
+    // The tour starts mid close-up: the close-up ends, and its ending does not wake the scene under the tour.
+    expect(s.tour.start()).toBe(true);
+    expect(s.closeups.active).toBe(false);
+    expect(s.director.owner).toBe('tour');
+    expect(s.isLive()).toBe(false);
+    expect(s.live).not.toContain(true);
+    // The close-up's own end time passes: still the tour's scene.
+    vi.advanceTimersByTime(TRICK_BY_ID.wave.ms + 50);
+    expect(s.isLive()).toBe(false);
+    expect(s.director.paused).toBe(true);
+    s.tour.stop();
+    expect(s.director.owner).toBeNull();
+    expect(s.director.paused).toBe(false);
+    expect(s.isLive()).toBe(true);
+    expect(s.el.querySelector('.is-touring, .is-closeup, .tour-caption, .tour-stop')).toBeNull();
+  });
+
+  it('a trick during the tour ends the tour; the scene wakes only when the trick is over', () => {
+    const s = stage();
+    s.tour.start();
+    vi.advanceTimersByTime(TOUR_GLIDE_MS + 200);
+    s.trick('cotton');
+    expect(s.tour.active).toBe(false);
+    expect(s.director.owner).toBe('closeup');
+    expect(s.isLive()).toBe(false);
+    // None of the tour's later stops arrive.
+    vi.advanceTimersByTime(TRICK_BY_ID.wave.ms - 100);
+    expect(s.el.querySelector('.tour-caption')).toBeNull();
+    expect(s.isLive()).toBe(false);
+    vi.advanceTimersByTime(200);
+    expect(s.director.owner).toBeNull();
+    expect(s.isLive()).toBe(true);
+  });
+
+  it('a parade takes the scene from the tour, and the tour takes it from a parade, with no wake-up in between', async () => {
+    const s = stage();
+    s.tour.start();
+    const played = s.parades.play();
+    expect(s.tour.active).toBe(false);
+    expect(s.director.paused).toBe(true);
+    await vi.advanceTimersByTimeAsync(60000);
+    await played;
+    expect(s.director.paused).toBe(false);
+    expect(s.isLive()).toBe(true);
+
+    const again = s.parades.play();
+    await vi.advanceTimersByTimeAsync(100);
+    const before = s.live.length;
+    s.tour.start();
+    await vi.advanceTimersByTimeAsync(0);
+    await again;
+    // The parade ended under the tour: nothing woke.
+    expect(s.live.slice(before)).not.toContain(true);
+    expect(s.director.owner).toBe('tour');
+    s.tour.stop();
+    expect(s.isLive()).toBe(true);
+  });
+
+  it('a parade replayed before it ends keeps the scene held for the new one', async () => {
+    const s = stage();
+    const first = s.parades.play();
+    await vi.advanceTimersByTimeAsync(100);
+    const second = s.parades.play();
+    await first;
+    await vi.advanceTimersByTimeAsync(0);
+    // The first one's ending did not let go of the second one's hold.
+    expect(s.director.paused).toBe(s.parades.active);
+    await vi.advanceTimersByTimeAsync(60000);
+    await second;
+    expect(s.director.paused).toBe(false);
+  });
+
+  it('rapid switching leaves nothing behind: one owner at a time, and a live scene at the end', () => {
+    const s = stage();
+    for (let i = 0; i < 6; i++) {
+      s.trick(i % 2 ? 'cotton' : 'truffle');
+      expect(s.director.owner).toBe('closeup');
+      s.tour.start();
+      expect(s.director.owner).toBe('tour');
+      vi.advanceTimersByTime(137 * (i + 1));
+      expect(s.isLive()).toBe(false);
+    }
+    vi.advanceTimersByTime((TOUR_GLIDE_MS + TOUR_HOLD_MS) * 5);
+    expect(s.director.owner).toBeNull();
+    expect(s.director.paused).toBe(false);
+    expect(s.isLive()).toBe(true);
+    expect(s.el.querySelector('.is-touring, .is-closeup, .tour-caption, .tour-stop')).toBeNull();
+  });
+
+  it('leaving the app ends the moment and nothing runs unseen; coming back, the scene is live again', () => {
+    const s = stage();
+    s.tour.start();
+    hide(true);
+    document.dispatchEvent(new Event('visibilitychange'));
+    s.director.refresh();
+    expect(s.director.owner).toBeNull();
+    expect(s.isLive()).toBe(false);
+    hide(false);
+    s.director.refresh();
+    expect(s.isLive()).toBe(true);
+  });
+
+  it('leaving the screen ends everything together', () => {
+    const s = stage();
+    s.trick('truffle');
+    s.director.cancelAll();
+    s.scope.dispose();
+    expect(s.director.owner).toBeNull();
+    expect(s.director.paused).toBe(false);
+    const n = s.log.length;
+    vi.advanceTimersByTime(30000);
+    // No camera move arrives late.
+    expect(s.log.length).toBe(n);
+  });
+});
+
+describe('on the Farm screen', () => {
+  const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
+  beforeEach(() => {
+    localStorage.clear();
+    lifeCalls.length = 0;
+    app.replaceSave(defaultSave(new Date(2026, 9, 31, 12)));
+    Object.assign(app.save.onboarding, { tutorialDone: true, seenRules: true, soloRulesSeen: true, starterDecorChosen: true, sceneTapTipSeen: true, decorTipSeen: true });
+    app.save.world.growth.farm = 12;
+    for (const id of ['cotton', 'truffle']) app.save.inventory.companions[id] = { unlockedAt: '2026-10-31T11:00:00.000Z' };
+  });
+
+  it('a trick, then the tour, then Stop: ambient life is off for the whole tour and back on after', async () => {
+    const { regionScreen } = await import('../../src/ui/screens/region');
+    document.body.innerHTML = '<div id="app"></div>';
+    const router = new Router(document.getElementById('app')!);
+    const reg = {} as Record<CanonicalRoute['screen'], ScreenDef>;
+    for (const k of ['journey', 'pets', 'challenges', 'shop', 'world', 'gallery', 'welcome', 'profile', 'game', 'sanctuary'] as const) reg[k] = blank;
+    router.register({ ...reg, region: regionScreen });
+    app.router = router;
+    router.go({ screen: 'region', id: 'farm' });
+    vi.advanceTimersByTime(3000);
+    const scene = document.querySelector<HTMLElement>('.sanctuary__scene')!;
+    scene.querySelector('.sanctuary__pet')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.querySelector<HTMLElement>('.trick-chip[data-trick="wave"]')!.click();
+    expect(scene.classList.contains('is-closeup')).toBe(true);
+    expect(lifeCalls[lifeCalls.length - 1]).toBe(false);
+    const from = lifeCalls.length;
+    scene.querySelector<HTMLElement>('[data-act="tour"]')!.click();
+    expect(scene.classList.contains('is-touring')).toBe(true);
+    expect(scene.classList.contains('is-closeup')).toBe(false);
+    vi.advanceTimersByTime(TOUR_GLIDE_MS + TOUR_HOLD_MS);
+    // The bug this fixes: the close-up ending used to switch life back on under the tour.
+    expect(lifeCalls.slice(from)).not.toContain(true);
+    scene.querySelector<HTMLElement>('[data-act="tour-stop"]')!.click();
+    expect(scene.classList.contains('is-touring')).toBe(false);
+    expect(lifeCalls[lifeCalls.length - 1]).toBe(true);
+    // Leaving the screen: nothing left running.
+    router.go({ screen: 'journey' });
+    vi.advanceTimersByTime(30000);
+    expect(document.querySelector('.is-touring, .is-closeup, .tour-caption')).toBeNull();
+  });
+});

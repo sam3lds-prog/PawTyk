@@ -31,6 +31,7 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
+import { createSceneDirector } from '../components/sceneDirector';
 import { sceneCloseUps } from '../components/closeup';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -93,7 +94,10 @@ export const sanctuaryScreen: ScreenDef = {
       returnFocus: tricksBtn,
       onToggle: (open) => tricksBtn()?.setAttribute('aria-expanded', String(open)),
       // A trick gets its close-up (D44 PR F).
-      onPlayed: (fig, trick) => closeups.play(fig, trick),
+      onPlayed: (fig, trick) => {
+        director.claim('closeup');
+        closeups.play(fig, trick);
+      },
     });
 
     // ---------------------------------------------------------------- ambient life (D24)
@@ -103,16 +107,18 @@ export const sanctuaryScreen: ScreenDef = {
     const s3d = createScene3D();
     // The scene camera (D44 PR C) and the Welcome Parade (D44 PR E), as on the Farm.
     const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
+    // The scene director (D45 PR A): one owner of the camera, and holds (not switches) on ambient life.
+    const director = createSceneDirector((live) => {
+      life?.setLive(live);
+      acts?.setLive(live);
+    });
     const parades = sceneParades(scope, {
       el,
       camera,
-      pause: (on) => {
-        life?.setLive(!on && !document.hidden);
-        acts?.setLive(!on && !document.hidden);
-      },
+      pause: (on) => director.hold('parade', on),
       closeTray: () => {
         // A parade takes the camera: a trick's close-up ends first.
-        closeups.cancel();
+        director.claim('parade');
         if (tray.isOpen) tray.close();
       },
       reducedMotion: () => app.reducedMotion,
@@ -122,13 +128,14 @@ export const sanctuaryScreen: ScreenDef = {
       svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
       camera,
       reducedMotion: () => app.reducedMotion,
-      pause: (on) => {
-        life?.setLive(!on && !document.hidden);
-        acts?.setLive(!on && !document.hidden);
-      },
+      pause: (on) => director.hold('closeup', on),
       react: (fig, action) => life?.play(figureId(fig as unknown as HTMLElement), action),
     });
+    director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
+    director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
     scope.onDispose(() => {
+      // Leaving ends every scene moment together, then the camera, the toys and the life go.
+      director.cancelAll();
       life?.dispose();
       acts?.dispose();
       camera.dispose();
@@ -136,8 +143,7 @@ export const sanctuaryScreen: ScreenDef = {
     });
     scope.on(document, 'visibilitychange', () => {
       if (document.hidden) closeups.cancel();
-      life?.setLive(!document.hidden && !parades.active);
-      acts?.setLive(!document.hidden && !parades.active);
+      director.refresh();
       s3d.setLive(!document.hidden);
     });
 
@@ -178,8 +184,7 @@ export const sanctuaryScreen: ScreenDef = {
 
     function render(): void {
       // A re-render draws a new scene: a parade or a close-up on the old one ends first.
-      parades.skip();
-      closeups.cancel();
+      director.cancelAll();
       const save = app.save;
       const pets = unlockedPets(save);
       const ownedDecor = DECOR.filter((d) => decorHome(d) === 'harmony' && owns(save, d.id));
