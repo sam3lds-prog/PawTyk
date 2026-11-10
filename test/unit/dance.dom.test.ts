@@ -51,6 +51,24 @@ describe('dance clips', () => {
     expect(at(sway, 6).headPitch!).toBeGreaterThan(at(sway, 6.5).headPitch ?? 0);
   });
 
+  it('hand-overs settle the short way: a twirler never spins its turns back, nor a newcomer its hello spin', () => {
+    const totalTurn = (role: DanceRole, style: DanceSpec['style'], from: number, to: number) => {
+      const clip = danceClip(danceId(spec(role, style)))!;
+      let sum = 0;
+      let prev = clip.frame(from / 16, ctx()).pose.yaw ?? 0;
+      for (let b = from; b <= to; b += 0.01) {
+        const y = clip.frame(b / 16, ctx()).pose.yaw ?? 0;
+        sum += Math.abs(wrap(y - prev));
+        prev = y;
+      }
+      return sum;
+    };
+    // Into the finish (beat 14) and out of the intro (beat 4): well under half a turn of movement, not five turns.
+    expect(totalTurn('guest', 'twirl', 13.6, 14.3)).toBeLessThan(Math.PI / 2);
+    expect(totalTurn('group', 'twirl', 13.6, 14.3)).toBeLessThan(Math.PI / 2);
+    expect(totalTurn('newcomer', 'sway', 3.6, 4.1)).toBeLessThan(Math.PI / 2);
+  });
+
   it('a newcomer leaps for joy and has landed by the second beat; a guest turns toward it', () => {
     const c = danceClip(danceId(spec('newcomer')))!;
     expect(c.frame(0.6 / 16, ctx()).pose.py!).toBeGreaterThan(0.8);

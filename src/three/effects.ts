@@ -679,7 +679,12 @@ defineEffect('perform:dance:newcomer', (c) => {
   const pop = confetti(c, [at, at + 0.04], (o) => c.actor.toy.headTop(o), 20, finishConfetti(at));
   const fan = starFan(c, at);
   return {
-    update: (now) => pop.update(now) || fan.update(now),
+    // Both every frame: the stars must hide until the finish and fly after it, whatever the confetti is doing.
+    update: (now) => {
+      const a = pop.update(now);
+      const b = fan.update(now);
+      return a || b;
+    },
     dispose() {
       pop.dispose();
       fan.dispose();

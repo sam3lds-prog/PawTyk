@@ -90,6 +90,18 @@ function scale(d: PoseDelta, w: number): PoseDelta {
   return out as PoseDelta;
 }
 
+const TURNS = ['yaw', 'pitch', 'roll'] as const;
+const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+/**
+ * Like `scale`, for a part that is handing over: whole turns already made (a twirl's, a spin's) are dropped first, so
+ * the hand-over settles the short way instead of spinning every turn back (D44 PR D review).
+ */
+function settle(d: PoseDelta, w: number): PoseDelta {
+  const out = scale(d, 1) as Record<string, number>;
+  for (const k of TURNS) if (out[k] !== undefined) out[k] = wrapAngle(out[k]);
+  return scale(out as PoseDelta, w);
+}
+
 /** One dance step at beat b (b counts from the start of the dance part), at full strength. */
 function step(style: DanceStyle, b: number, lift: number, amp: number): { pose: PoseDelta; face: Expr } {
   const s1 = Math.sin(Math.PI * b); // one sway every two beats
@@ -312,7 +324,7 @@ export function danceClip(id: string): Clip | null {
       if (b < n) {
         const f = intro(d.role, b, n, side, lift);
         // The intro hands over to the dance smoothly.
-        return { pose: scale(f.pose, 1 - seg(b, n - 0.3, n)), face: f.face };
+        return { pose: settle(f.pose, 1 - seg(b, n - 0.3, n)), face: f.face };
       }
       // Dance, getting a little bigger in the two beats before the finish.
       const db = b - n;
@@ -322,7 +334,7 @@ export function danceClip(id: string): Clip | null {
       // The pose snaps in around the finish beat, holds, and lets go over the last beat.
       const pw = b < F - 0.15 ? 0 : Math.min(1, easeOutBack(seg(b, F - 0.15, F + 0.25), 1.4), 1 - easeInOut(seg(b, end - 0.9, end - 0.05)));
       const fp = finishPose(d.variant, b - F, side, lift);
-      const pose = sum(scale(st.pose, dw), scale(fp.pose, Math.max(0, pw)));
+      const pose = sum(settle(st.pose, dw), settle(fp.pose, Math.max(0, pw)));
       return { pose, face: pw > 0.4 ? fp.face : st.face };
     },
   };
