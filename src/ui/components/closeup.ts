@@ -107,10 +107,39 @@ export function sceneCloseUps(o: CloseUpHost): SceneCloseUps {
     o.host()?.classList.toggle('is-closeup', on);
     o.pause(on);
   };
+  // The performer's own light (D45 PR D): near the scene's edge the camera can't centre it (it never shows past the
+  // edge), so a pool of light on the ground says whose moment it is, wherever it stands in the frame.
+  let light: SVGElement | null = null;
+  const spot = (fig: SVGGElement | null) => {
+    light?.remove();
+    light = null;
+    const svg = o.svg();
+    if (!fig || !svg) return;
+    const x = Number(fig.dataset.gx);
+    const y = Number(fig.dataset.gy);
+    const h = Number(fig.dataset.gh) || 34;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!svg.querySelector('#sp-closeup-light'))
+      svg.insertAdjacentHTML(
+        'afterbegin',
+        `<defs><radialGradient id="sp-closeup-light"><stop offset="0" stop-color="#fff6cf" stop-opacity="0.9"/><stop offset="0.6" stop-color="#ffe08a" stop-opacity="0.45"/><stop offset="1" stop-color="#ffe08a" stop-opacity="0"/></radialGradient></defs>`,
+      );
+    const e = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    e.setAttribute('class', 'sp-closeup-light');
+    e.setAttribute('cx', String(x));
+    e.setAttribute('cy', String(y + 0.5));
+    e.setAttribute('rx', (h * 0.95).toFixed(1));
+    e.setAttribute('ry', (h * 0.26).toFixed(1));
+    e.setAttribute('fill', 'url(#sp-closeup-light)');
+    e.setAttribute('aria-hidden', 'true');
+    fig.parentNode?.insertBefore(e, fig.parentNode.querySelector('.sanctuary__pet') ?? fig);
+    light = e;
+  };
   const finish = (ms: number) => {
     clear();
     if (!active) return;
     active = null;
+    spot(null);
     quiet(false);
     o.camera.clearOffset();
     void o.camera.reset(ms);
@@ -128,6 +157,7 @@ export function sceneCloseUps(o: CloseUpHost): SceneCloseUps {
       const cam = o.camera;
       active = { fig };
       quiet(true);
+      spot(fig);
       if (shot.party) {
         // Party time: everyone nearby is in the shot, and joins in with a dance.
         const friends = nearbyFigures(svg, fig).slice(0, 3);

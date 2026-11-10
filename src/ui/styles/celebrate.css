@@ -436,6 +436,49 @@
     opacity: 1;
   }
 }
+/* A trick's close-up: the performer's own pool of light (D45 PR D). */
+.sanctuary__scene .sp-closeup-light {
+  opacity: 0;
+  animation: sp-dance-light 320ms ease-out 1 both;
+  pointer-events: none;
+}
+:root[data-motion='reduce'] .sanctuary__scene .sp-closeup-light {
+  animation: none !important;
+  opacity: 1;
+}
+/* The stage (D45 PR D): one warm wash under the whole group; every light comes up for the final pose. */
+.sanctuary__scene .sp-dance-stage {
+  opacity: 0;
+  animation: sp-dance-stage 800ms ease-out 1 both;
+  pointer-events: none;
+}
+@keyframes sp-dance-stage {
+  to {
+    opacity: 0.8;
+  }
+}
+.sanctuary__scene .sp-dance-stage.is-finale,
+.sanctuary__scene .sp-dance-light.is-finale {
+  animation: sp-dance-finale 700ms ease-out 1 both;
+}
+@keyframes sp-dance-finale {
+  0% {
+    opacity: 0.8;
+  }
+  30% {
+    opacity: 1;
+    filter: brightness(1.35);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1.1);
+  }
+}
+:root[data-motion='reduce'] .sanctuary__scene .sp-dance-stage,
+:root[data-motion='reduce'] .sanctuary__scene .sp-dance-light {
+  animation: none !important;
+  opacity: 0.9;
+}
 
 :root[data-motion='reduce'] .sanctuary__scene.is-parading .sp-bulb,
 :root[data-motion='reduce'] .sanctuary__scene .is-sway .sp-grass {

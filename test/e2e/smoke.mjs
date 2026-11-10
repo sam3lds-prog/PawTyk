@@ -1047,37 +1047,77 @@ try {
   check('App Store build: Settings opens the full privacy policy (D43)', policyHeads === 8 && !(await page.$('.sheet [data-act="leaderboard"]')), String(policyHeads));
   await page.evaluate(() => localStorage.removeItem('pawtyk.qa.releaseView'));
 
-  // D44 PR B: the music. Every cue renders in a real browser, never clips, and is loud enough to hear; Settings has
-  // a Music switch, on.
+  // D44 PR B / D45 PR D: the music. Every cue renders in a real browser through the music channel's own chain, never
+  // clips, and can be heard; and **as a phone plays it** (everything under ~300 Hz gone) the loudest moment of every
+  // trick tune sits within a few dB of the others, the signature cues likewise, and the ambient tune well under both.
   const levels = await page.evaluate(async () => {
     const m = await import('/src/services/music.ts');
     const sc = await import('/src/audio/scores.ts');
-    const out = [];
-    for (const id of Object.keys(sc.SCORES)) {
-      const s = sc.SCORES[id];
-      const ctx = new OfflineAudioContext(1, Math.ceil(22050 * (sc.cueMs(s) / 1000 + 1.2)), 22050);
-      const g = ctx.createGain();
-      g.gain.value = m.MUSIC_GAIN;
-      g.connect(ctx.destination);
-      m.renderScore(ctx, g, s, 0.01);
+    const SR = 44100;
+    const measure = async (s, phone) => {
+      const ctx = new OfflineAudioContext(1, Math.ceil(SR * (sc.cueMs(s) / 1000 + 1.2)), SR);
+      let dest = ctx.destination;
+      if (phone) {
+        const h1 = ctx.createBiquadFilter();
+        h1.type = 'highpass';
+        h1.frequency.value = 320;
+        const h2 = ctx.createBiquadFilter();
+        h2.type = 'highpass';
+        h2.frequency.value = 320;
+        h1.connect(h2).connect(ctx.destination);
+        dest = h1;
+      }
+      m.renderScore(ctx, m.musicChain(ctx, dest), s, 0.01);
       const d = (await ctx.startRendering()).getChannelData(0);
+      const n = Math.ceil((SR * sc.cueMs(s)) / 1000);
+      const win = Math.floor(SR * 0.4);
       let peak = 0;
       let sum = 0;
-      const n = Math.ceil((22050 * sc.cueMs(s)) / 1000);
+      let acc = 0;
+      let best = 0;
       for (let i = 0; i < d.length; i++) {
         peak = Math.max(peak, Math.abs(d[i]));
         if (i < n) sum += d[i] * d[i];
+        acc += d[i] * d[i];
+        if (i >= win) acc -= d[i - win] * d[i - win];
+        best = Math.max(best, acc / win);
       }
-      out.push({ id, peak, rms: Math.sqrt(sum / n) });
+      return { peak, rms: Math.sqrt(sum / n), loud: 20 * Math.log10(Math.sqrt(best)) };
+    };
+    const out = [];
+    for (const id of Object.keys(sc.SCORES)) {
+      const full = await measure(sc.SCORES[id], false);
+      const phone = await measure(sc.SCORES[id], true);
+      out.push({ id, peak: full.peak, rms: full.rms, phone: phone.loud, low: full.loud - phone.loud });
     }
-    return out;
+    // The arranged forms too: every home's parade, and the busiest rhythm under the busiest trick tune.
+    const arranged = [];
+    for (const h of sc.THEME_HOMES) arranged.push({ id: `bounce@${h}`, ...(await measure(sc.themeVariation(sc.SCORES.bounce, h), false)) });
+    for (const f of sc.RHYTHM_FEELS) arranged.push({ id: `party+${f}`, ...(await measure(sc.withRhythm(sc.SCORES['trick:party'], f), false)) });
+    return { out, arranged };
   });
-  const badLevels = levels.filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
-  check(`every music cue renders, never clips and can be heard (${levels.length} cues, D44)`, levels.length === 22 && badLevels.length === 0, JSON.stringify(badLevels));
+  const badLevels = [...levels.out, ...levels.arranged].filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
+  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 23 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
+  const span = (ls) => Math.max(...ls.map((l) => l.phone)) - Math.min(...ls.map((l) => l.phone));
+  const trickLv = levels.out.filter((l) => l.id.startsWith('trick:') && l.id !== 'trick:party');
+  const bigLv = levels.out.filter((l) => ['triumph', 'welcome', 'bounce', 'jig', 'trick:party'].includes(l.id));
+  const meadowLv = levels.out.find((l) => l.id === 'meadow');
+  const avg = (ls) => ls.reduce((a, l) => a + l.phone, 0) / ls.length;
+  check(
+    'on a phone speaker the trick tunes sit within 3 dB of each other, the signature cues within 2.5 dB, and the ambient tune 3–8 dB under the tricks (D45)',
+    span(trickLv) < 3 && span(bigLv) < 2.5 && avg(trickLv) - meadowLv.phone > 3 && avg(trickLv) - meadowLv.phone < 8 && avg(bigLv) > avg(trickLv),
+    JSON.stringify({ tricks: span(trickLv).toFixed(1), big: span(bigLv).toFixed(1), meadow: (avg(trickLv) - meadowLv.phone).toFixed(1) }),
+  );
+  // Nothing relies on bass a phone can't play: no cue loses more than 5 dB of its loudest moment to the speaker.
+  const bassy = levels.out.filter((l) => l.low > 5);
+  check('no cue leans on bass a phone speaker cannot play (D45)', bassy.length === 0, JSON.stringify(bassy.map((l) => [l.id, l.low.toFixed(1)])));
   await page.evaluate(() => window.__pt.go({ screen: 'journey' }));
   await page.evaluate(() => document.querySelector('[data-act="settings"]')?.click());
   const musicSwitch = await page.$('.sheet [data-switch="music"]');
   check('Settings has a Music switch, on by default (D44)', !!musicSwitch && (await musicSwitch.getAttribute('aria-checked')) === 'true');
+  const homeMusic = await page.$('.sheet [data-switch="ambientMusic"]');
+  const celebrations = await page.$$eval('.sheet [data-choice="celebrations"]', (bs) => bs.map((b) => `${b.dataset.value}:${b.getAttribute('aria-pressed')}`).join(' '));
+  check('Settings has Home music (off until chosen) and Celebrations (Smart) (D45)', !!homeMusic && (await homeMusic.getAttribute('aria-checked')) === 'false' && celebrations === 'smart:true full:false short:false', celebrations);
   await page.keyboard.press('Escape');
 
   // ---------------------------------------------------------------- D44 QA: the regression list

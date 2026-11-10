@@ -12,7 +12,8 @@
  */
 
 import { playCue, type Playback } from '../../services/music';
-import { scoreFor, type CueId } from '../../audio/scores';
+import { rhythmFor, scoreFor, type CueId } from '../../audio/scores';
+import { animalInfo, isAnimalId } from '../../meta/animals';
 import { planDance, startDance, type DanceHandle, type Dancer } from './dance';
 import { clampView, scenePoint, viewAt, type SceneCamera, type View } from './camera';
 
@@ -28,6 +29,8 @@ export interface ParadeOptions {
   reducedMotion: boolean;
   /** The tune whose beats everyone follows (default: Barnyard Bounce, or the Jig for a group celebration). */
   cue?: CueId;
+  /** The home it plays in (D45 PR D): each home's band plays the theme its own way. */
+  home?: string;
   /** Told as each part starts (tests and the screen follow along). */
   onPart?: (part: 'intro' | 'dance' | 'finish' | 'end') => void;
 }
@@ -59,6 +62,27 @@ export function groupView(full: View, dancers: Dancer[]): View {
   return zoom <= 1.02 ? full : clampView(full, viewAt(full, (x0 + x1) / 2, (y0 + y1) / 2, zoom));
 }
 
+/** The final pose's zoom: wide enough for the whole group, the lights above them and the confetti. */
+const HERO_MAX_ZOOM = 1.22;
+
+/**
+ * The hero shot for the final pose (D45 PR D): wider than the dance's framing, with the dancers in the lower part of
+ * the picture so the party lights and the confetti have the sky above them.
+ */
+export function heroView(full: View, dancers: Dancer[]): View {
+  const pts = dancers.map((d) => scenePoint(d.fig)).filter((p): p is NonNullable<typeof p> => !!p);
+  if (!pts.length) return full;
+  const x0 = Math.min(...pts.map((p) => p.x - p.h));
+  const x1 = Math.max(...pts.map((p) => p.x + p.h));
+  const top = Math.min(...pts.map((p) => p.y - p.h * 2.6));
+  const bottom = Math.max(...pts.map((p) => p.y + p.h * 0.6));
+  const zoom = Math.min(HERO_MAX_ZOOM, full.w / Math.max(1, x1 - x0), full.h / Math.max(1, bottom - top));
+  if (zoom <= 1.04) return full;
+  // The ground line two thirds of the way down.
+  const ground = Math.max(...pts.map((p) => p.y));
+  return clampView(full, viewAt(full, (x0 + x1) / 2, ground - (full.h / zoom) * 0.17, zoom));
+}
+
 export function startParade(o: ParadeOptions): ParadeHandle {
   const cue: CueId = o.cue ?? (o.newcomer ? 'bounce' : 'jig');
   const score = scoreFor(cue);
@@ -69,6 +93,7 @@ export function startParade(o: ParadeOptions): ParadeHandle {
   let dance: DanceHandle | null = null;
   let skipBtn: HTMLButtonElement | null = null;
   let startTimer: ReturnType<typeof setTimeout> | null = null;
+  let punchTimer: ReturnType<typeof setTimeout> | null = null;
   const dancers = score ? planDance(o.svg, { bpm: score.bpm, beats: score.beats, newcomer: o.newcomer }) : [];
   const lead = o.newcomer ? dancers.find((d) => d.spec.role === 'newcomer') : undefined;
 
@@ -76,6 +101,7 @@ export function startParade(o: ParadeOptions): ParadeHandle {
     if (over) return;
     over = true;
     if (startTimer !== null) clearTimeout(startTimer);
+    if (punchTimer !== null) clearTimeout(punchTimer);
     dance?.stop();
     if (how === 'skipped') pb?.stop(220);
     o.camera?.clearOffset();
@@ -106,7 +132,9 @@ export function startParade(o: ParadeOptions): ParadeHandle {
   const cam = o.reducedMotion ? null : o.camera;
   const go = () => {
     if (over) return;
-    pb = playCue(cue);
+    // The theme in this home's voicing, and (D45 PR D) the newcomer's own rhythm under its entrance.
+    const lead_ = o.newcomer && isAnimalId(o.newcomer) ? rhythmFor(animalInfo(o.newcomer).animal) : undefined;
+    pb = playCue(cue, { home: o.home, rhythm: lead_, rhythmSpan: score.sections?.intro ?? [0, Math.min(4, score.beats)] });
     if (!pb) {
       end('ended');
       return;
@@ -119,6 +147,12 @@ export function startParade(o: ParadeOptions): ParadeHandle {
           return;
         }
         if (part === 'dance' && cam && o.newcomer) void cam.moveTo(groupView(cam.full, dancers), 800);
+        // The final pose: out to the hero shot, with a small push as the poses land (D45 PR D).
+        if (part === 'finish' && cam) {
+          void cam.moveTo(heroView(cam.full, dancers), 420);
+          cam.setOffset?.(0, 0, 1.035);
+          punchTimer = setTimeout(() => cam.clearOffset?.(), 180);
+        }
         o.onPart?.(part);
       },
     });
@@ -147,6 +181,8 @@ export interface SceneParadeHost {
   camera: SceneCamera | null;
   /** The scene's ambient life and activities (paused while a parade plays). */
   pause(on: boolean): void;
+  /** The home's id (D45 PR D): its own voicing of the theme. */
+  home?: string;
   /** Closes the trick tray, if open. */
   closeTray(): void;
   reducedMotion: () => boolean;
@@ -199,7 +235,7 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const b0 = btn();
       if (b0) b0.hidden = true;
       // The short welcome (D45 PR B): the same parade to the shorter Barnyard Jig. Replay plays the full one.
-      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined });
+      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined, home: host.home });
       current = p;
       await p.done;
       // Replayed before it ended: the newer parade owns the scene's pause now, so this one leaves it be (D45 PR A).

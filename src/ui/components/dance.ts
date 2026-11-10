@@ -118,6 +118,27 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
 
   const partClasses = (d: Dancer) => [`is-dance-${d.spec.style}`, 'is-dance-enter', 'is-dance-invite', ...[0, 1, 2, 3].map((n) => `is-dance-pose-${n}`)];
 
+  // The stage (D45 PR D): one wide wash of warm light on the ground under the whole group, so the dancers share a
+  // floor instead of standing in separate puddles. It brightens for the final pose.
+  const stageAt = dancers.map((d) => ({ x: Number(d.fig.dataset.gx), y: Number(d.fig.dataset.gy), h: Number(d.fig.dataset.gh) || 30 })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (stageAt.length > 1) {
+    const x0 = Math.min(...stageAt.map((p) => p.x - p.h * 0.9));
+    const x1 = Math.max(...stageAt.map((p) => p.x + p.h * 0.9));
+    const y0 = Math.min(...stageAt.map((p) => p.y));
+    const y1 = Math.max(...stageAt.map((p) => p.y));
+    const floor = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    floor.setAttribute('class', 'sp-dance-stage');
+    floor.setAttribute('cx', ((x0 + x1) / 2).toFixed(1));
+    floor.setAttribute('cy', ((y0 + y1) / 2 + 2).toFixed(1));
+    floor.setAttribute('rx', ((x1 - x0) / 2 + 8).toFixed(1));
+    floor.setAttribute('ry', Math.max(9, (y1 - y0) / 2 + 9).toFixed(1));
+    floor.setAttribute('fill', 'url(#sp-dance-stage)');
+    floor.setAttribute('aria-hidden', 'true');
+    // Under everyone: before whichever dancer comes first in the drawing.
+    const firstFig = dancers.map((d) => d.fig).find((f) => f.parentNode);
+    firstFig?.parentNode?.insertBefore(floor, firstFig.parentNode.querySelector('.sanctuary__pet') ?? firstFig);
+    overlays.push(floor);
+  }
   // The dance floor (D44 PR G): a soft pool of light on the ground under each dancer, for the dance's length.
   for (const d of dancers) {
     const x = Number(d.fig.dataset.gx);
@@ -138,7 +159,7 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
   if (dancers.length && !svg.querySelector('#sp-dance-light'))
     svg.insertAdjacentHTML(
       'afterbegin',
-      `<defs><radialGradient id="sp-dance-light"><stop offset="0" stop-color="#fff4c2" stop-opacity="0.85"/><stop offset="0.6" stop-color="#ffe08a" stop-opacity="0.35"/><stop offset="1" stop-color="#ffe08a" stop-opacity="0"/></radialGradient></defs>`,
+      `<defs><radialGradient id="sp-dance-stage"><stop offset="0" stop-color="#fff6cf" stop-opacity="0.8"/><stop offset="0.65" stop-color="#ffe08a" stop-opacity="0.42"/><stop offset="1" stop-color="#ffd978" stop-opacity="0"/></radialGradient><radialGradient id="sp-dance-light"><stop offset="0" stop-color="#fff4c2" stop-opacity="0.85"/><stop offset="0.6" stop-color="#ffe08a" stop-opacity="0.35"/><stop offset="1" stop-color="#ffe08a" stop-opacity="0"/></radialGradient></defs>`,
     );
 
   for (const d of dancers) {
@@ -176,6 +197,8 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
   } else if (sec.intro > 0) at(sec.intro, () => o.onPart?.('dance'));
   at(sec.finish, () => {
     o.onPart?.('finish');
+    // The lights come up for the final pose.
+    for (const n of overlays) n.classList.add('is-finale');
     if (!in3d()) overlays.push(...confettiOverlay(svg, dancers, o.reducedMotion));
   });
   at(sec.end, () => finish(true));

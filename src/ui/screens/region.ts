@@ -28,6 +28,7 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
+import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
 import { homeState } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
@@ -110,6 +111,7 @@ export const regionScreen: ScreenDef = {
     });
     const parades = sceneParades(scope, {
       el,
+      home: id,
       camera,
       pause: (on) => director.hold('parade', on),
       closeTray: () => {
@@ -147,7 +149,12 @@ export const regionScreen: ScreenDef = {
     let walking: WalkHandle | null = null;
     director.register('walk', { cancel: () => walking?.close(), active: () => !!walking });
     if (import.meta.env.DEV) (window as unknown as { __director?: unknown }).__director = director;
+    // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
+    if (app.settings.ambientMusic && isOpen(app.save, id)) scope.timeout(() => scope.alive && startAmbient(id), 1800);
     scope.onDispose(() => {
+      stopAmbient();
+      // A trick's tune or the parade's goes with the scene it belongs to (D45: camera, audio and animation end together).
+      stopMusic(200);
       // Leaving ends every scene moment together, then the camera, the toys and the life go.
       director.cancelAll();
       life?.dispose();

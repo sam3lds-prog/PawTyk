@@ -32,7 +32,7 @@
 import { sfx, type Sfx, type SfxOptions } from './audio';
 import { haptic, type HapticKind } from './haptics';
 import { musicEnabled, playCue } from './music';
-import type { CueId } from '../audio/scores';
+import type { CueId, RhythmFeel } from '../audio/scores';
 
 export type FeelEvent =
   | 'mark'
@@ -76,10 +76,10 @@ export const FEEL: Record<FeelEvent, { sound: Sfx | null; haptic: HapticKind | n
 };
 
 /** Plays an event's sound (or, with Music on, its music cue) and haptic, each only if its switch is on. */
-export function feel(event: FeelEvent, o?: SfxOptions & { cue?: CueId }): void {
+export function feel(event: FeelEvent, o?: SfxOptions & { cue?: CueId; rhythm?: RhythmFeel }): void {
   const f = FEEL[event];
   const cue = o?.cue ?? f.cue;
-  if (cue && musicEnabled() && playCue(cue)) {
+  if (cue && musicEnabled() && playCue(cue, { rhythm: o?.rhythm })) {
     /* the cue replaces the sound effect */
   } else if (f.sound) sfx(f.sound, o);
   if (f.haptic) haptic(f.haptic);
