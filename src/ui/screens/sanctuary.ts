@@ -29,6 +29,8 @@ import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLif
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
+import { SceneCamera } from '../components/camera';
+import { sceneParades } from '../components/parade';
 import { trickBadge } from '../art/tricks';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
@@ -95,14 +97,27 @@ export const sanctuaryScreen: ScreenDef = {
     let acts: ActivityRunner | null = null;
     // 3D toys over the drawn scene (D34); kept across re-renders.
     const s3d = createScene3D();
+    // The scene camera (D44 PR C) and the Welcome Parade (D44 PR E), as on the Farm.
+    const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
+    const parades = sceneParades(scope, {
+      el,
+      camera,
+      pause: (on) => {
+        life?.setLive(!on && !document.hidden);
+        acts?.setLive(!on && !document.hidden);
+      },
+      closeTray: () => tray.isOpen && tray.close(),
+      reducedMotion: () => app.reducedMotion,
+    });
     scope.onDispose(() => {
       life?.dispose();
       acts?.dispose();
+      camera.dispose();
       s3d.dispose();
     });
     scope.on(document, 'visibilitychange', () => {
-      life?.setLive(!document.hidden);
-      acts?.setLive(!document.hidden);
+      life?.setLive(!document.hidden && !parades.active);
+      acts?.setLive(!document.hidden && !parades.active);
       s3d.setLive(!document.hidden);
     });
 
@@ -119,6 +134,7 @@ export const sanctuaryScreen: ScreenDef = {
       if (slot) slot.innerHTML = sceneCueMarkup(cue, cued?.dataset.name);
       ringCued(cued);
       s3d.attach(el.querySelector<HTMLElement>('.sanctuary__scene'), svg);
+      camera.attach(el.querySelector<HTMLElement>('.sanctuary__scene'), svg);
       const btn = tricksBtn();
       if (btn) btn.hidden = !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
@@ -141,6 +157,8 @@ export const sanctuaryScreen: ScreenDef = {
     }
 
     function render(): void {
+      // A re-render draws a new scene: a parade on the old one ends first.
+      parades.skip();
       const save = app.save;
       const pets = unlockedPets(save);
       const ownedDecor = DECOR.filter((d) => decorHome(d) === 'harmony' && owns(save, d.id));
@@ -159,6 +177,7 @@ export const sanctuaryScreen: ScreenDef = {
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
+          ${parades.replayMarkup()}
           <button class="scene-tricks" data-act="tricks" aria-controls="${trayHost.id}" aria-expanded="${tray.isOpen}" hidden>${trickBadge('sparkle')}Tricks</button>
         </div>
         <div data-cue-slot></div>
@@ -235,6 +254,7 @@ export const sanctuaryScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      if (parades.onClick(t)) return;
       // A tap on someone in the garden: a small happy reaction (a heart; face only under reduced motion).
       if (t.closest('[data-act="tricks"]')) {
         if (tray.isOpen) tray.close();
@@ -317,12 +337,20 @@ export const sanctuaryScreen: ScreenDef = {
       introduce(scope, arrivals, () => {
         spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), arrivals[0]);
         if (!met) return intro();
-        scope.timeout(() => {
-          life?.cheer();
-          goalShown = true;
-          showNextGoal(el, 'harmony', true);
-          scope.timeout(intro, 900);
-        }, app.reducedMotion ? 0 : 1200);
+        // Straight from a win's Meet: the Welcome Parade (D44 PR E), then the next goal and the starter gift.
+        const who = arrivals[0];
+        scope.timeout(
+          () =>
+            void Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]).then(async () => {
+              if (!scope.alive) return;
+              await parades.play(who);
+              if (!scope.alive) return;
+              goalShown = true;
+              showNextGoal(el, 'harmony', true);
+              scope.timeout(intro, 900);
+            }),
+          app.reducedMotion ? 200 : 500,
+        );
       });
     else intro();
     if (met) app.router.settle({ screen: 'sanctuary' });

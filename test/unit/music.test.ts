@@ -17,7 +17,7 @@ const KNOWN = new Set(['bass', 'pluck', 'marimba', 'bell', 'brass', 'whistle', '
 
 describe('the scores', () => {
   it('are well-formed: known instruments, notes inside the cue (with a little ring), real pitches and loudness', () => {
-    expect(all.length).toBe(3 + TRICKS.length);
+    expect(all.length).toBe(4 + TRICKS.length);
     for (const s of all) {
       expect(s.bpm).toBeGreaterThan(40);
       expect(s.bpm).toBeLessThan(260);
@@ -77,6 +77,17 @@ describe('the scores', () => {
     expect(hasMotif(SCORES.triumph)).toBe(true);
     expect(hasMotif(SCORES.welcome)).toBe(true);
     expect(hasMotif(SCORES.bounce)).toBe(true);
+    expect(hasMotif(SCORES.jig)).toBe(true);
+  });
+
+  it('the group celebration jig is short, at the parade tempo, and lands its finish where a group dance poses', () => {
+    const j = SCORES.jig;
+    expect(j.bpm).toBe(SCORES.bounce.bpm);
+    expect(cueMs(j)).toBeGreaterThanOrEqual(3000);
+    expect(cueMs(j)).toBeLessThanOrEqual(4200);
+    // A group dance strikes its pose on its last two beats (three/dance.ts): the jig's finish is there too.
+    expect(j.sections!.finish).toEqual([j.beats - 2, j.beats]);
+    expect(Math.max(...j.accents)).toBe(j.beats - 2);
   });
 
   it('every trick and emote has its own tune, as long as the trick itself (within 1%)', () => {

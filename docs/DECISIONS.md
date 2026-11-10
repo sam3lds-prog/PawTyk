@@ -1416,3 +1416,25 @@ Owner decisions, asked up front (2026-11-09):
 - **Stopping**: a skip or leaving the screen puts every dancer back at once: classes come off, and in 3D the clip
   fades (`Actor.endPerform`) and its props go. Nothing loops forever.
 - **Reduced motion**: nobody moves; every dancer shows its happy face for the dance's length, confetti still.
+
+### PR E — three levels of celebration
+- **Level 1, the win sparkle** (every win, ~1.1 s, `components/celebrate.ts`): a band of light sweeps the board as its
+  faces smile, a ring and eight stars burst over it, to Tiny Triumph. The results rise at 650 ms (was 500) while it
+  plays; nothing waits on it. Reduced motion: a warm glow and still stars.
+- **Level 2, the new-animal spotlight** (a win that brings an animal home, ~3.3 s, then the results): the screen dims,
+  a beam falls on the newcomer's portrait as it pops up, sparkles turn, Welcome Home plays. A tap, Escape/Enter or
+  Continue goes on at once; leaving the app skips it. The very first arrival keeps its own scene (D41). The results
+  don't play the arrival sound again.
+- **Level 3, the Welcome Parade** (Meet, on the Farm, every region and the Pet Garden; `components/parade.ts`): the
+  camera glides in on the newcomer (1.9×), then Barnyard Bounce and the newcomer's leap start together; at the dance
+  the camera pulls out to frame the whole group (≤1.45×), and at the end it gives the whole scene back. Then the next
+  goal (D40) and, after the first board, the starter gift.
+- **A new stage with no newcomer**: the whole home dances together to **Barnyard Jig** (new cue: 8 beats, 132 BPM,
+  the motif rising into a finish on beat 6), no camera move.
+- **Skip / Replay**: a Skip button on the scene (and Escape) ends it at once: everyone back at rest, music fades,
+  camera back. Afterwards **Replay the parade** (or **Dance again**) sits under the scene. While it plays, taps on the
+  scene and the Tricks button wait. Leaving the app or re-rendering the scene ends it.
+- **Nothing is paid twice**: none of the three levels grants anything (the solve's rewards are counted before them),
+  so skips and replays change nothing; a test replays the parade and compares the save.
+- **Reduced motion**: the camera stays put; every dancer shows its happy face for the dance's length; still confetti.
+- The Pet Garden gets the scene camera too (it had none), for its parade.
