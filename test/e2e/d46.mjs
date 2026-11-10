@@ -111,7 +111,8 @@ export async function d46Checks({ browser, URL, check, errors }) {
   );
   // The offered welcome plays when asked, in full, and becomes a replay.
   await tapAt(qa, '[data-act="parade-replay"]');
-  await qa.waitForTimeout(700);
+  // It may wait (briefly) for the toys being rebuilt after the walk (D46 PR B), then glides in before the tune starts.
+  await qa.waitForFunction(async () => !!(await import('/src/services/music.ts')).nowPlaying(), null, { timeout: 4000, polling: 100 }).then((h) => h.dispose(), () => {});
   const watching = await sceneState(qa);
   await tapAt(qa, '.parade-skip');
   await qa.waitForTimeout(900);
