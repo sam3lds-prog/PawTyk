@@ -1,5 +1,5 @@
 /**
- * Original pet face rigs (Pawtopia artwork, drawn for this project; no third-party assets).
+ * Original pet face rigs (PawTyk artwork, drawn for this project; no third-party assets).
  *
  * Every pet is one 64×64 SVG with fixed layers:
  *   head-static  ears, head, markings, muzzle, nose, whiskers   — NEVER transformed or animated

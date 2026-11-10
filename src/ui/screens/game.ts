@@ -1751,7 +1751,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
 
   async function shareResult(seconds: number): Promise<void> {
     const what = mode.kind === 'daily' ? `Daily ${mode.dateKey}` : modeTitle(mode);
-    const text = `Pawtopia ${what}: solved in ${fmtClock(seconds)}${s.mistakes === 0 ? ' with no mistakes' : ''}.`;
+    const text = `PawTyk ${what}: solved in ${fmtClock(seconds)}${s.mistakes === 0 ? ' with no mistakes' : ''}.`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {

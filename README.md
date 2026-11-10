@@ -1,8 +1,8 @@
-# Pawtopia
+# PawTyk
 
 *A clever little puzzle with a whole lot of heart.*
 
-Pawtopia is a cozy, portrait-first logic puzzle for iPhone. For the first 20 levels every row, column and color region
+PawTyk is a cozy, portrait-first logic puzzle for iPhone. For the first 20 levels every row, column and color region
 needs exactly **one animal**, and animals never touch, not even at a corner. From level 21 each line holds **two
 animals**, one of each kind, never side by side. Every board has one answer you can reach by logic alone. Tap a tile
 to mark it ✕; double-tap to place the animal. A wrong guess costs a heart and stays marked in red.
@@ -15,10 +15,11 @@ a giant panda in a bamboo forest, a fennec fox in the desert, a clownfish off th
 Animals come home one at a time, and the board shows the one you're bringing home. The animals on the board are alive
 in the smallest way: they blink, glance, smile and frown, but only their faces move.
 
-![Pawtopia screens](docs/screenshots/pawtopia-screens.png)
+![PawTyk: the welcome, the Journey, a board, the World and the Farm](docs/screenshots/pawtyk-screens.png)
 
-Built with Vite + TypeScript (no UI framework) and shipped to iOS with Capacitor. It grew out of Cats vs Dogs v1; the
-puzzle engine, its tests and every v1 board are preserved, and v1 saves migrate automatically.
+Built with Vite + TypeScript (no UI framework) and shipped to iOS with Capacitor. It grew out of Cats vs Dogs v1 (and
+was called Pawtopia while it was being built); the puzzle engine, its tests and every v1 board are preserved, and v1
+saves migrate automatically.
 
 ## What's in the game
 
@@ -60,7 +61,7 @@ npx cap sync             # copies dist/ into the native shell
 npx cap open ios         # opens Xcode
 ```
 
-The bundle id stays `com.sam3lds.catsvsdogs` so Pawtopia ships as an update to the existing app (see
+The bundle id stays `com.sam3lds.catsvsdogs` so PawTyk ships as an update to the existing app (see
 `docs/DECISIONS.md` D9). Before TestFlight, work through `docs/release-checklist.md`.
 
 ## Project layout
@@ -86,4 +87,4 @@ docs/              roadmap, decisions, architecture, design system, assets, priv
   No made-up players, ever.
 - No account, no sign-in, no analytics sent. Everything stays on the device.
 
-See `docs/PAWTOPIA_ROADMAP.md` for status and the steps that need you (Apple, StoreKit, Firebase).
+See `docs/ROADMAP.md` for status and the steps that need you (Apple, StoreKit, Firebase).

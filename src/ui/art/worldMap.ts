@@ -19,7 +19,7 @@ export function projectLonLat(lon: number, lat: number): [number, number] {
   return [WORLD_PROJECTION.tx + WORLD_PROJECTION.scale * x, WORLD_PROJECTION.ty - WORLD_PROJECTION.scale * y];
 }
 
-/** Harmony Isle, Pawtopia's own island (fictional), drawn where its pin sits in the Pacific. */
+/** Harmony Isle, PawTyk's own island (fictional), drawn where its pin sits in the Pacific. */
 function harmonyIsle(lon: number, lat: number): string {
   const [x, y] = projectLonLat(lon, lat);
   return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><path d="M-17 4 C-16 -6 -6 -9 2 -8 C11 -9 18 -3 16 4 C12 10 -10 11 -17 4 Z" fill="var(--map-land)" stroke="var(--map-coast)" stroke-width="1.2"/><circle cx="-6" cy="-2" r="3.2" fill="#a6cf9f"/><circle cx="4" cy="-3" r="3.8" fill="#93c08e"/></g>`;

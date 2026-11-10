@@ -115,7 +115,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       ${purchaseState}
       <div class="rows-title">Your data</div>
       <div class="rows">
-        <div class="row"><span class="row__label">Saved on this device<small>Pawtopia plays fully offline. ${app.save.leaderboard.joined ? 'Only the leaderboard uses the internet.' : 'No account, no sign-in.'}</small></span></div>
+        <div class="row"><span class="row__label">Saved on this device<small>PawTyk plays fully offline. ${app.save.leaderboard.joined ? 'Only the leaderboard uses the internet.' : 'No account, no sign-in.'}</small></span></div>
         <button class="row" data-act="leaderboard"><span class="row__label">Leaderboard<small>${
           leaderboard.mode === 'off'
             ? 'Not open yet. When it is, joining is your choice.'
@@ -144,7 +144,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
           : ''
       }
       ${featureFlags.devGallery ? `<div class="rows-title">Developer</div><div class="rows"><button class="row" data-act="gallery"><span class="row__label">Expression gallery<small>Development builds only</small></span></button></div>` : ''}
-      <p class="muted settings-foot">Pawtopia ${esc(__APP_VERSION__)} · original art and sounds · fonts: Fredoka and Nunito Sans (SIL Open Font License)</p>`,
+      <p class="muted settings-foot">PawTyk ${esc(__APP_VERSION__)} · original art and sounds · fonts: Fredoka and Nunito Sans (SIL Open Font License)</p>`,
   });
 
   sh.scope.on(sh.el, 'click', async (e) => {

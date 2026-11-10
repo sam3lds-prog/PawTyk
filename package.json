@@ -1,8 +1,8 @@
 {
-  "name": "pawtopia",
+  "name": "pawtyk",
   "version": "0.2.0",
   "private": true,
-  "description": "Pawtopia — a cozy logic puzzle. One animal in every row, column and color (two from level 21); sanctuaries that grow with every puzzle you solve.",
+  "description": "PawTyk — a cozy logic puzzle. One animal in every row, column and color (two from level 21); sanctuaries that grow with every puzzle you solve.",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -20,8 +20,8 @@
     "e2e": "node test/e2e/smoke.mjs",
     "artifact": "node scripts/make-artifact.mjs",
     "fb:build": "node scripts/build-functions.mjs",
-    "fb:test": "firebase emulators:exec --only firestore --project demo-pawtopia \"FIREBASE_RULES_TEST=1 vitest run test/firebase\"",
-    "fb:emulators": "npm run fb:build && firebase emulators:start --project demo-pawtopia",
+    "fb:test": "firebase emulators:exec --only firestore --project demo-pawtyk \"FIREBASE_RULES_TEST=1 vitest run test/firebase\"",
+    "fb:emulators": "npm run fb:build && firebase emulators:start --project demo-pawtyk",
     "fb:deploy": "npm run fb:build && firebase deploy --only functions,firestore"
   },
   "devDependencies": {

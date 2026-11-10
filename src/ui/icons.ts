@@ -1,5 +1,5 @@
 /**
- * Original UI icon set (24×24, 2px round strokes, currentColor). Drawn for Pawtopia; no third-party icons.
+ * Original UI icon set (24×24, 2px round strokes, currentColor). Drawn for PawTyk; no third-party icons.
  * Decorative by default (aria-hidden); controls carry their own accessible labels.
  */
 

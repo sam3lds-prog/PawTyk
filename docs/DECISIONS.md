@@ -1,4 +1,6 @@
-# Pawtopia — Decision log
+# PawTyk — Decision log
+
+The game was called Pawtopia until D42; entries before it keep the name they were written with.
 
 Short, dated records of choices that shape the code. Newest last.
 
@@ -56,6 +58,7 @@ The display name becomes **Pawtopia** (`capacitor.config.ts` `appName`, page tit
 `com.sam3lds.catsvsdogs`: changing it would make Pawtopia a different App Store app, so existing players would not
 receive it as an update and their on-device save (which the v2 migration carries forward) would be stranded.
 The App Store listing name is set in App Store Connect and can say Pawtopia without touching the bundle id.
+(D42 renames it again, to PawTyk, the same way.)
 
 ## 2026-10-25 · D10 — Screens own a lifecycle scope; the board is the hero
 `ui/router.ts` mounts one screen at a time with a `Scope` that owns its timers, listeners, sheets and async
@@ -1216,3 +1219,35 @@ cells, colors, seams, marks and the animals' faces — is unchanged.
   so a paler tile means one thing only, a settled color; a tap on a solved board no longer brings the selection back;
   a replay's plate no longer says the board helps its home; the plate's words reach VoiceOver as text.
 
+## 2026-11-01 · D42 — The game is called PawTyk; a new app icon
+Owner request (2026-11-01): change the game's name to PawTyk (the repository is now `sam3lds-prog/PawTyk`) and update
+the icon to something fun and catchy. Two PRs on `main` @ `982c1a5`.
+
+### PR A — the name
+- **Everything a player, the App Store or a browser shows says PawTyk**: `capacitor.config.ts` `appName`, the page
+  title (*PawTyk*, *World · PawTyk*), the Journey and welcome wordmarks, *How PawTyk works*, *Welcome to PawTyk* (v1
+  players: *Cats vs Dogs has grown into PawTyk*), Settings, the Shop's thank-you, the Daily's share text, the tester
+  page's title and file (`artifact/pawtyk-qa.html`), `package.json`, the functions package, the emulator project
+  (`demo-pawtyk`), and the docs that describe the game as it is now. The roadmap moved to `docs/ROADMAP.md`.
+- **Kept, on purpose** (as D9 kept the bundle id): the bundle id `com.sam3lds.catsvsdogs`; every save key
+  (`pawtopia.save.v2`, `pawtopia.sessions.v1`, the backups, `pawtopia.kv.seq`, `pawtopia.lb.device`) and the reset's
+  `pawtopia.*` / `cvd.*` scope, or existing saves would be stranded; the seed text of generated places and chapter
+  names (`pawtopia-places-v1`, `pawtopia-chapters-v1`), or every generated place and chapter a save holds would change
+  (the places fixture would fail); the App Store product ids (`pawtopia.gems.*`, `pawtopia.removeads`), which players
+  never see and which can't be renamed once they exist in App Store Connect. A comment at each says why.
+- **Leaderboard names**: nobody can pose as the game under its new name or its old one: *PawTyk* and *Pawtopia* are
+  refused inside a word (*PawTyk Team*, *P4wTyk*) or written as the words themselves (*Paw Tyk*, *Paw-Tyk*), but not
+  where ordinary words only run together (*Pawty Kat*, *Paw Tyke*), which the spaces-removed rule for strong words
+  would have caught. The rule lives in the shared code, so the server enforces it after the next `fb:deploy`.
+- **Safari's Add to Home Screen** is labelled *PawTyk* from any tab (`apple-mobile-web-app-title`; it used the page
+  title, *World · PawTyk*). On iOS, `appName` reaches the home screen only when `cap add ios` creates the project; an
+  older project's *Display Name* is set in Xcode (`docs/native-setup.md` §0).
+- No player-facing *Pawtopia is now PawTyk* note: the Pawtopia name never reached the App Store (the listing is still
+  Cats vs Dogs), so the only rename players see is v1's, which the welcome sheet already explains.
+- Tests: `test/unit/name.test.ts` (no *Pawtopia* left in `src/`, `index.html`, `capacitor.config.ts` or the tester
+  page's script; the app name, title and home-screen title; the bundle id, save keys and product ids unchanged; the
+  generated chapter names pinned, as the places fixture pins places); the leaderboard name test covers both names and
+  the ordinary names that must stay allowed.
+- Review fixes (independent agent): the name rule refused innocent names like *Pawty Kat*; Safari's home-screen label
+  followed the tab; the name scan missed the tester page's script; the seeds were checked as source text rather than by
+  what they produce; the Xcode *Display Name* step belonged with the rename.

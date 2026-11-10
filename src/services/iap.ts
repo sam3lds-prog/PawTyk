@@ -54,7 +54,7 @@ export const PRODUCT_CATALOG: Array<Omit<ProductInfo, 'price'>> = [
   { id: 'gems_60', title: 'Pouch of Gems', description: '60 gems for premium decorations.' },
   { id: 'gems_160', title: 'Satchel of Gems', description: '160 gems for premium decorations.' },
   { id: 'gems_420', title: 'Chest of Gems', description: '420 gems for premium decorations.' },
-  { id: 'remove_ads', title: 'Remove interruptions', description: 'For players from the first version who already own it. Pawtopia shows no forced ads.' },
+  { id: 'remove_ads', title: 'Remove interruptions', description: 'For players from the first version who already own it. PawTyk shows no forced ads.' },
 ];
 
 const productIdOf = (storeId: string): ProductId | null =>

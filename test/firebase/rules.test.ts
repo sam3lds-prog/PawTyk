@@ -12,7 +12,7 @@ let env: RulesTestEnvironment;
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'demo-pawtopia',
+    projectId: 'demo-pawtyk',
     firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
   });
 });

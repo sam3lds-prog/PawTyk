@@ -4,7 +4,7 @@
  *
  *   npx tsx scripts/build-world-map.ts
  *
- * Projection: Natural Earth I, fitted to a 1000×520 box, Antarctica trimmed (nothing lives there in Pawtopia), coordinates
+ * Projection: Natural Earth I, fitted to a 1000×520 box, Antarctica trimmed (nothing lives there in PawTyk), coordinates
  * rounded to whole units and tiny islands dropped, which keeps the path small. `project()` is exported in the data file
  * as plain numbers (scale, translate) so pins can be placed with the same projection at runtime without d3.
  */

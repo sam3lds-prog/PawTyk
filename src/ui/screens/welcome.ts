@@ -21,7 +21,7 @@ export function needsWelcome(): boolean {
 
 export const welcomeScreen: ScreenDef = {
   tab: null,
-  title: 'Pawtopia',
+  title: 'PawTyk',
   mount(root, scope) {
     track('onboarding_step', { step: 'welcome' });
     // The animal on the very first board (the Farm's sheep for a fresh save), so the splash shows what comes next.
@@ -36,7 +36,7 @@ export const welcomeScreen: ScreenDef = {
           </div>
         </div>
         <div class="welcome__copy">
-          <h1 class="wordmark wordmark--lg" data-autofocus>Pawtopia</h1>
+          <h1 class="wordmark wordmark--lg" data-autofocus>PawTyk</h1>
           <p class="welcome__story">Meadow Farm is waiting for its first friend. Solve a little logic puzzle and ${esc(a.name)} the ${esc(a.noun)} moves in. More animals follow, home by home.</p>
         </div>
         <div class="welcome__actions">

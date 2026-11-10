@@ -1,4 +1,4 @@
-# Pawtopia — Release checklist (TestFlight → App Store)
+# PawTyk — Release checklist (TestFlight → App Store)
 
 ## Build health
 - [ ] `npm test` (222+), `npm run gen:check`, `npm run pack:check`, `npm run build` all green
@@ -20,7 +20,7 @@
 - [ ] Background/terminate mid-board → resume offers the same board; Paw Cup attempt stays open
 - [ ] Airplane mode: everything works
 - [ ] Haptics feel right; sound off/on; silent switch respected
-- [ ] Upgrade test: install v1 build, play to level ~14, install Pawtopia over it → progress, coins, pets carried over once
+- [ ] Upgrade test: install v1 build, play to level ~14, install PawTyk over it → progress, coins, pets carried over once
 
 ### D36 (Journey / World / controls review) — not yet checked on a device
 - [ ] (D37) Tap ✕ / double-tap on a real finger: the double-tap window (380 ms) feels right; no marks while panning a
@@ -116,7 +116,7 @@
 - [ ] Pet Garden arrival: the ring shows after *Welcome home* closes the card, not behind it
 
 ### D39 PR B — the loop, once
-- [ ] Fresh install → guided first board → *Meet Cotton* → back to Journey: the *How Pawtopia works* card, with the
+- [ ] Fresh install → guided first board → *Meet Cotton* → back to Journey: the *How PawTyk works* card, with the
       Farm and Truffle named, under the hero; *Play level 2* still on the first screen at 320×568
 - [ ] *Got it* → it never returns (Journey or World); the pantry card appears next time instead
 - [ ] VoiceOver reads the three steps as one sentence
@@ -237,6 +237,13 @@
 - [ ] Large board mode: the frame scrolls with the board; nothing is cut off at the top
 - [ ] A long place name: the plate ends in "…" inside the frame; VoiceOver reads the full sentence
 
+### D42 PR A — the name
+- [ ] Install over a build from before D42: the Journey, every saved board, the world's places and the coins are all
+      still there; the home screen label reads *PawTyk* (on an older Xcode project, after setting *Display Name*)
+- [ ] The Journey and welcome wordmarks, *How PawTyk works*, Settings' footer and the Daily's Share text say PawTyk
+- [ ] A v1 (Cats vs Dogs) save: the welcome sheet reads *Cats vs Dogs has grown into PawTyk*
+- [ ] Leaderboard (when configured, after `fb:deploy`): the name *PawTyk Team* is refused
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
@@ -253,7 +260,8 @@
 - [ ] A blocked name is refused; a report from three test accounts renames the target
 
 ## App Store Connect
-- [ ] Name "Pawtopia" (bundle id unchanged), subtitle, keywords, age rating (4+, no Kids Category)
+- [ ] Name "PawTyk" (bundle id unchanged; check the name is free in App Store Connect), subtitle, keywords, age rating
+      (4+, no Kids Category)
 - [ ] Privacy label matches docs/privacy-security.md for the services this build turns on
 - [ ] Screenshots from the real build (Home, a board with faces, Sanctuary, Residents, Paw Cup practice)
 - [ ] Support URL and privacy policy URL

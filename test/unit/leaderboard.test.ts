@@ -156,13 +156,19 @@ describe('nicknames', () => {
     expect(cleanNickname('www.site.com')).toMatchObject({ ok: false });
     expect(cleanNickname('12345')).toMatchObject({ ok: false, problem: 'characters' });
     expect(cleanNickname('Pawtopia Team')).toMatchObject({ ok: false, problem: 'words' });
+    expect(cleanNickname('PawTyk Team')).toMatchObject({ ok: false, problem: 'words' });
+    // The game's names, written any way, are refused; ordinary words that only run together into them are not.
+    for (const bad of ['Paw-Tyk', 'Paw.Tyk', 'PawTykFan', 'Paw Topia', 'pawtopia_mod'])
+      expect(cleanNickname(bad), bad).toMatchObject({ ok: false, problem: 'words' });
+    for (const ok of ['Pawty Kat', 'Pawty Kitten', 'Pawty Koala', 'Paw Tyke', 'Snowpaw Tyke', 'Redpaw Tykes'])
+      expect(cleanNickname(ok), ok).toMatchObject({ ok: true });
     expect(cleanNickname('Sh1t Head')).toMatchObject({ ok: false, problem: 'words' });
     expect(cleanNickname(42)).toMatchObject({ ok: false });
     // Ordinary names that merely contain a short blocked word are fine…
     for (const ok of ['Peacock Fan', 'Hancock', 'Sussex Sam', 'Skillful Cat', 'Dickens', 'Grape Ape', 'Nazir', 'Classy Otter', 'Titania'])
       expect(cleanNickname(ok), ok).toMatchObject({ ok: true });
     // …but the word itself, spaced-out strong words and staff impersonation are not.
-    for (const bad of ['Big Dick', 'Kill Bill', 'F u c k', 'Admin Bob', 'Pawtopia Mod', 'Sexy Cat', 'Kills Cats'])
+    for (const bad of ['Big Dick', 'Kill Bill', 'F u c k', 'Admin Bob', 'Pawtopia Mod', 'Paw Tyk Mod', 'P4wTyk', 'Sexy Cat', 'Kills Cats'])
       expect(cleanNickname(bad), bad).toMatchObject({ ok: false, problem: 'words' });
   });
 
