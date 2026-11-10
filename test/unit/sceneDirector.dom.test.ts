@@ -448,6 +448,23 @@ describe('a welcome on the Farm screen, and what the player does first (D46 PR A
     router.go({ screen: 'journey' });
   });
 
+  it('an owed welcome waits for a new stage’s dance on the same visit, then is offered (review: they shared one button)', async () => {
+    const { missedWelcome } = await import('../../src/ui/components/parade');
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(200);
+    router.go({ screen: 'journey' });
+    expect(missedWelcome('farm')).toBe('cotton');
+    // Back, straight to a stage that just appeared: the group dance plays first, the welcome is offered after it.
+    router.go({ screen: 'region', id: 'farm', fresh: 2 });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(offered()).toBeNull();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(parading()).toBe(true);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    router.go({ screen: 'journey' });
+  });
+
   it('rapid re-entry while the first visit was still in its lead-in leaves one scene and no stray parade', async () => {
     for (let i = 0; i < 4; i++) {
       router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
@@ -476,7 +493,11 @@ describe('a parade and the toys of the renderer there is now (D46 PR B)', () => 
     expect(s.parades.active).toBe(true);
     expect(s.director.owner).toBe('parade');
     expect(s.director.paused).toBe(true);
+    // Tour and Walk step aside while it waits (review: they showed but their taps were swallowed).
+    expect(s.el.querySelector('.sanctuary__scene.is-starting')).not.toBeNull();
     toys(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.el.querySelector('.sanctuary__scene.is-starting')).toBeNull();
     await vi.advanceTimersByTimeAsync(10);
     expect(s.el.querySelector('.is-parading')).not.toBeNull();
     s.parades.skip();
@@ -492,7 +513,7 @@ describe('a parade and the toys of the renderer there is now (D46 PR B)', () => 
     s.parades.skip();
   });
 
-  it('a tour (or Skip) during the wait cancels it: no parade starts later, and the scene isn’t left held', async () => {
+  it('anything else taking the scene during the wait (or Skip, or leaving) cancels it: no parade later, nothing held', async () => {
     const s = stage({ toysReady: () => new Promise<boolean>(() => {}) });
     const played = s.parades.play();
     await vi.advanceTimersByTimeAsync(200);

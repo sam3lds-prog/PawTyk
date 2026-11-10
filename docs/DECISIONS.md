@@ -1654,11 +1654,14 @@ home and the Pet Garden.
   (`off`, `loading`, `drawing`, `suspended`, `lost`, `failed`, `disposed`). A late load for a renderer that has gone
   (suspended, disposed, re-targeted meanwhile) is dropped by an epoch.
 - **Parades wait for the toys** (briefly): `sceneParades` takes `toysReady` and waits for it, at most 1.2 s, after
-  taking the scene and before its first beat. Meanwhile it owns the scene (taps wait, ambient life is held); Skip, a
-  tour, a trick or leaving cancels the wait and nothing starts later.
+  taking the scene and before its first beat (Replay, a parade the player starts). Meanwhile it owns the scene (taps
+  wait, ambient life is held, the Tour and Walk buttons step aside); leaving the screen or the app cancels the wait and
+  nothing starts later. A parade the screen scheduled has waited inside its lead-in already, so it doesn't wait again
+  (review: a second wait sat outside the pending moment, and leaving then lost the welcome).
 - **Lost contexts.** The stage reports `webglcontextlost` / `webglcontextrestored` (`onContext`). Lost: `ready` says
   false at once and the drawn animals show. Back: true again. Not back within 3 s: the renderer is disposed and rebuilt
-  with a new context (at most twice per scene; then that scene stays drawn). A renderer that can't be made at all
+  with a new context (never while the app is in the background: once it's back; at most twice in a row, and a rebuilt
+  renderer that keeps drawing for 30 s earns that back; after two failed in a row that scene stays drawn). A renderer that can't be made at all
   (the constructor throws) leaves the drawn scene and isn't retried on that scene. three.js failing to load (offline,
   first launch) is retried on the next scene.
 - **The walk's own context**: asks for it back (`preventDefault`), stops drawing and lets go of held keys; a note

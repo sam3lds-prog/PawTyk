@@ -549,7 +549,8 @@
 .sanctuary__scene .sp-party.is-tour-lit .sp-bulb-halo {
   opacity: 0.5;
 }
-.sanctuary__scene.is-parading .scene-tour {
+.sanctuary__scene.is-parading .scene-tour,
+.sanctuary__scene.is-starting .scene-tour {
   display: none;
 }
 
@@ -579,6 +580,7 @@
   display: none;
 }
 .sanctuary__scene.is-parading .scene-walk,
+.sanctuary__scene.is-starting .scene-walk,
 .sanctuary__scene.is-touring .scene-walk {
   display: none;
 }

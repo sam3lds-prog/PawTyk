@@ -57,7 +57,7 @@ vi.mock('../../src/three/stage', () => ({
 HTMLCanvasElement.prototype.getContext = (() => ({ getExtension: () => null })) as unknown as HTMLCanvasElement['getContext'];
 
 import { app } from '../../src/app/app';
-import { createScene3D, LOST_REBUILD_MS, MAX_REBUILDS, scene3dStats, type Scene3D } from '../../src/ui/components/scene3d';
+import { createScene3D, LOST_REBUILD_MS, MAX_REBUILDS, scene3dStats, STEADY_MS, type Scene3D } from '../../src/ui/components/scene3d';
 
 /** Settles pending microtasks and the dynamic import. */
 const flush = async () => {
@@ -193,6 +193,46 @@ describe('the scene’s 3D layer, renderer by renderer (D46 PR B)', () => {
     s3d.attach(fig, svg);
     await flush();
     expect(made.list.length).toBe(MAX_REBUILDS + 1);
+  });
+
+  it('review: lost while the app is away, it rebuilds only once the app is back; 3D turned off meanwhile → ready false', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const hide = (on: boolean) => Object.defineProperty(document, 'hidden', { configurable: true, get: () => on });
+    s3d = createScene3D();
+    const { fig, svg } = scene();
+    s3d.attach(fig, svg);
+    await flush();
+    hide(true);
+    made.list[0].lose();
+    vi.advanceTimersByTime(LOST_REBUILD_MS * 3);
+    expect(made.list[0].disposed).toBe(false);
+    expect(s3d.state).toBe('lost');
+    // Back, and 3D was turned off while away: no new renderer, and ready says so (it used to stay pending).
+    app.save.settings.toys3d = false;
+    hide(false);
+    document.dispatchEvent(new Event('visibilitychange'));
+    vi.advanceTimersByTime(600);
+    await flush();
+    expect(made.list.length).toBe(1);
+    expect(await peek(s3d.ready)).toEqual({ settled: true, value: false });
+  });
+
+  it('review: a rebuilt renderer that keeps drawing earns the rebuild budget back', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    s3d = createScene3D();
+    const { fig, svg } = scene();
+    s3d.attach(fig, svg);
+    await flush();
+    for (let round = 0; round < 3; round++) {
+      for (let i = 0; i < MAX_REBUILDS; i++) {
+        made.list[made.list.length - 1].lose();
+        vi.advanceTimersByTime(LOST_REBUILD_MS);
+        await flush();
+      }
+      expect(s3d.state).toBe('drawing');
+      vi.advanceTimersByTime(STEADY_MS);
+    }
+    expect(made.list.length).toBe(1 + 3 * MAX_REBUILDS);
   });
 
   it('a context that comes back in time is kept (no rebuild)', async () => {
