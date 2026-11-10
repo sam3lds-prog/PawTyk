@@ -1438,3 +1438,16 @@ Owner decisions, asked up front (2026-11-09):
   so skips and replays change nothing; a test replays the parade and compares the save.
 - **Reduced motion**: the camera stays put; every dancer shows its happy face for the dance's length; still confetti.
 - The Pet Garden gets the scene camera too (it had none), for its parade.
+
+### PR F — trick close-ups
+- `components/closeup.ts` (`sceneCloseUps`): selecting an animal moves nothing; a trick brings the camera in over
+  0.4 s, holds for the trick's own 2–4 s, and gives the whole scene back over 0.5 s. The tray tells the screen when a
+  trick starts (`onPlayed`), on the Farm, every region and the Pet Garden.
+- **A shot per kind of trick**: Happy dance in close with a small bump on every beat of its tune; Giggle right in on
+  the face (2.5×, framed high); Backflip in, then pulls out and up as it leaps; Sleepy a slow push-in for the length
+  of the doze; Rainbow wide and high; Party time frames the animal and up to three neighbours, who join in with a
+  Happy dance. Everything else: a 2× close-up.
+- **The scene quiets**: a soft vignette (`.is-closeup`), and nobody else starts a stroll or an idle meanwhile; the
+  nearest two animals look over and say hello a third of the way through.
+- A new trick replaces the close-up; a parade, a re-render or leaving the app ends it with the scene back at once.
+- **Reduced motion**: no close-ups (the trick plays in the whole scene, as before).

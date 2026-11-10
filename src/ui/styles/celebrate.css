@@ -335,3 +335,19 @@
 .scene-replay[hidden] {
   display: none;
 }
+
+/* ------------------------------------------------------------------ trick close-ups (D44 PR F): the scene quiets */
+.sanctuary__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 75% 70% at 50% 52%, rgba(28, 38, 30, 0) 55%, rgba(28, 38, 30, 0.26) 100%);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.sanctuary__scene.is-closeup::after {
+  opacity: 1;
+}

@@ -97,6 +97,8 @@ export interface TrickTrayOptions {
   returnFocus?: () => HTMLElement | null;
   /** Told when the tray opens or closes (to keep a toggle button's aria-expanded right). */
   onToggle?: (open: boolean) => void;
+  /** Told when a trick starts on a figure (the scene camera's close-up, D44 PR F). */
+  onPlayed?: (fig: SVGGElement, id: TrickId) => void;
 }
 
 /**
@@ -197,6 +199,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     if (s && fig && performTrick(s, fig, id, app.reducedMotion)) {
       feel('trick', { cue: `trick:${id}` });
       track('trick_played', { trick: id });
+      opts.onPlayed?.(fig, id);
       if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!`;
     } else if (fig) {
       const msg = fig.classList.contains('is-away') ? `${name} is busy right now. Ask again in a moment.` : `${name} is still finishing a trick.`;
