@@ -53,7 +53,8 @@ async function tapCell(r, c) {
 
 /** Double-taps a tile: places the picked animal (D37). */
 async function dblTap(r, c) {
-  await page.dblclick(`.cell[data-r="${r}"][data-c="${c}"]`, { delay: 10 });
+  // A human pace (D44): presses closer than TAP_BOUNCE_MS (50 ms) are one touch reported twice and never place.
+  await page.dblclick(`.cell[data-r="${r}"][data-c="${c}"]`, { delay: 70 });
 }
 
 /** Presses the animal tool for a species (every board has one under the place scheme; two-animal boards under the others). */
@@ -147,7 +148,7 @@ try {
   const g = await page.$('.cell.is-guide');
   const box0 = await g.boundingBox();
   const placesBefore = await page.evaluate(() => window.__pt.app.active.session.events.filter((e) => e.type === 'place').length);
-  await g.dblclick({ delay: 10 });
+  await g.dblclick({ delay: 70 }); // a human pace (D44's bounce guard)
   await page.waitForTimeout(60);
   check('a double tap places the animal with exactly one place event', (await page.evaluate(() => window.__pt.app.active.session.events.filter((e) => e.type === 'place').length)) === placesBefore + 1);
   check('the first board is Easy, so tiles no sheep can reach get a dot', (await page.textContent('.chip--board'))?.includes('Easy') && (await page.$$('.board .cell__dot')).length > 0);
@@ -237,8 +238,8 @@ try {
   const givens = await page.evaluate(() => window.__pt.app.active.session.puzzle.givens.length);
   check('the resumed board keeps its placements', placedCount === givens + 1, `${placedCount} vs ${givens + 1}`);
 
-  // Five hearts on casual boards; a wrong animal is a fading ghost with a strike, then a red mistake mark that stays
-  check('Journey boards show five hearts', (await page.$$('[data-hearts] .ico')).length === 5);
+  // Three hearts on casual boards (D44); a wrong animal is a fading ghost with a strike, then a red mistake mark that stays
+  check('Journey boards show three hearts (D44)', (await page.$$('[data-hearts] .ico')).length === 3);
   check('a Medium board shows no dots: marking is up to the player', (await page.textContent('.chip--board'))?.includes('Medium') && (await page.$$('.board .cell__dot')).length === 0);
   const wrongCell = await emptyTile();
   await dblTap(wrongCell[0], wrongCell[1]);
@@ -247,12 +248,12 @@ try {
     return { hearts: s.hearts, cell: s.cells[r][c], errs: s.errorsAt(r, c).length };
   }, wrongCell);
   const wrongSel = `.cell[data-r="${wrongCell[0]}"][data-c="${wrongCell[1]}"]`;
-  check('a wrong double tap costs one heart and leaves a mistake on the tile', afterWrong.hearts === 4 && afterWrong.cell === 0 && afterWrong.errs === 1, JSON.stringify(afterWrong));
+  check('a wrong double tap costs one heart and leaves a mistake on the tile', afterWrong.hearts === 2 && afterWrong.cell === 0 && afterWrong.errs === 1, JSON.stringify(afterWrong));
   check('the mistake shows a fading ghost with a strike', !!(await page.$(`${wrongSel} .cell__strike`)));
   await page.waitForTimeout(800);
   check('the ghost and strike fade; a red mistake mark stays', !(await page.$('.cell__strike')) && !(await page.$('.cell__ghost')) && !!(await page.$(`${wrongSel} .cell__err`)));
   await dblTap(wrongCell[0], wrongCell[1]);
-  check('the same wrong guess again costs nothing', (await page.evaluate(() => window.__pt.app.active.session.hearts)) === 4 && /already tried/.test((await page.textContent('[data-coach]')) ?? ''));
+  check('the same wrong guess again costs nothing', (await page.evaluate(() => window.__pt.app.active.session.hearts)) === 2 && /already tried/.test((await page.textContent('[data-coach]')) ?? ''));
   await page.waitForTimeout(450);
   // The board says which sanctuary it is for.
   check('the board header names the sanctuary the board helps', (await page.textContent('[data-for]'))?.includes('Farm'));

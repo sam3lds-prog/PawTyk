@@ -1337,3 +1337,27 @@ lands after #25 → #26 → #27.
 - `.github/workflows/ci.yml` runs on every PR and push to `main`: unit tests, type check and build, `gen:check`,
   `pack:check`, `places:check`, `icons:check`, and the browser tests against the dev server (Playwright installed in
   the job only). Results stay in the Actions tab.
+
+## 2026-11-09 · D44 — Farm, celebrations and animation upgrade
+
+From the *PawTyk — Farm, Celebrations & Animation Upgrade Plan* Sam shared, read against `main` @ `c15b7d7`.
+Owner decisions, asked up front (2026-11-09):
+- **Scope**: everything in the plan, including the guided tour and a walkable 3D Farm.
+- **Music**: original tunes composed in code, played by the game's own synthesizer; any cue can be swapped for a
+  recorded track later.
+- **Welcome Parade**: plays for every new animal when the player taps *Meet*; skippable and replayable.
+- **Scenery**: the upgrade goes on all five hand-drawn homes (Farm, Outback, Savanna, Arctic, Rainforest).
+
+### PR A — three hearts
+- Journey and Daily boards start with **3 hearts** (was 5 since D21; the original game had 3). Paw Cup stays 3; Zen
+  has none; the guided first puzzle still costs nothing.
+- **A board in progress keeps its allowance**: `Session.restore` builds the board with the larger of the rule and the
+  snapshot's `maxHearts`, so a five-heart board saved before this build finishes with five. A board from a build with
+  no allowance in its snapshot (the original three) is unchanged.
+- **The leaderboard server** replays Journey and Daily logs with five hearts allowed (`CASUAL_HEARTS_BEFORE_D44`): a
+  board started before the update still counts, and every log that fits three fits five.
+- Extra lives and reward videos already cap at the board's allowance (`Session.addHeart`), so with three they give
+  back up to three.
+- **No unfair mistake from a bounce**: two presses on one tile closer than 50 ms (`TAP_BOUNCE_MS`) are one touch
+  reported twice, so the second is dropped. A human double tap is never that fast (the browser tests now double-tap
+  at a human pace). A double-fired wrong guess already cost nothing (D37).

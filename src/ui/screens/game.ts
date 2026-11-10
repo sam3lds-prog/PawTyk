@@ -59,6 +59,11 @@ const MISS_MS = 700;
 /** Two taps on the same tile within this long are a double tap (place the animal). */
 export const DOUBLE_TAP_MS = 380;
 /**
+ * D44: with three hearts, a bounce must never place an animal. Two presses on one tile closer than this are one touch
+ * reported twice (a finger can't lift and land again this fast), so the second is dropped.
+ */
+export const TAP_BOUNCE_MS = 50;
+/**
  * A second tap on the same ✕ that comes after the double-tap window but within this, and so only clears the ✕, was
  * most likely a double tap that came a little slowly (D40): after two of them, two-step tap is offered, once.
  */
@@ -494,6 +499,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       return null;
     }
     const now = performance.now();
+    if (lastTap && lastTap.r === r && lastTap.c === c && now - lastTap.t < TAP_BOUNCE_MS) return null;
     // A second tap on the same tile, quickly: place the animal. The first tap's ✕ is taken back with a logged undo,
     // so one Undo afterwards empties the tile (and the server's replay sees exactly the same moves).
     if (lastTap && lastTap.r === r && lastTap.c === c && now - lastTap.t < DOUBLE_TAP_MS) {

@@ -26,8 +26,14 @@ export function dailyFor(dateKey: string, nextLevel: number): ModeRef {
 
 export type ModeKind = ModeRef['kind'];
 
-/** Mistakes allowed on a casual board (Journey, Daily) before it ends. Hearts never carry over between boards. */
-export const CASUAL_HEARTS = 5;
+/**
+ * Mistakes allowed on a casual board (Journey, Daily) before it ends. Hearts never carry over between boards.
+ * D44 PR A (2026-11-09): three, down from five. A board started under five keeps five until it ends (`Session.restore`),
+ * and the leaderboard server still accepts a casual log that fits five (`CASUAL_HEARTS_BEFORE_D44`).
+ */
+export const CASUAL_HEARTS = 3;
+/** The casual allowance before D44. Boards saved under it finish under it; the server's replay tolerates it. */
+export const CASUAL_HEARTS_BEFORE_D44 = 5;
 /** Paw Cup keeps its published competitive rule: three wrong placements end an attempt. */
 export const CUP_HEARTS = 3;
 

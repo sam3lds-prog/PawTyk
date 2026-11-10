@@ -126,6 +126,24 @@ describe('tap marks, double-tap places (D37)', () => {
     expect(s.cells[r][c]).toBe(EMPTY);
   });
 
+  it('D44: three hearts on a new Journey board, and a touch reported twice (a bounce) never places an animal', () => {
+    start(5);
+    const s = app.active!.session;
+    expect(s.maxHearts).toBe(3);
+    expect(document.querySelector<HTMLElement>('[data-hearts]')?.dataset.max).toBe('3');
+    const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    tap(r, c);
+    tap(r, c, 8); // the same touch again, 8 ms later
+    expect(s.cells[r][c]).toBe(MARK);
+    expect(placeEvents()).toHaveLength(0);
+    expect(s.hearts).toBe(3);
+    // A real double tap, a moment later, still places (here a wrong one, which costs its heart as usual).
+    tap(r, c);
+    tap(r, c, 120);
+    expect(placeEvents()).toHaveLength(1);
+    expect(s.hearts).toBe(2);
+  });
+
   it('a wrong double tap costs one heart and leaves a red mistake mark; trying it again costs nothing', () => {
     start(5);
     const s = app.active!.session;
