@@ -12,7 +12,7 @@ import { isPlaceId } from '../../meta/catalogs/places';
 import type { FriendId } from '../art/companions';
 import { decorOf, type DecorId } from '../../meta/catalogs/decor';
 import { sanctuaryDef, type RegionId } from '../../meta/catalogs/sanctuaries';
-import { isShown, owns, setShown, shownDecorIds } from '../../meta/sanctuary';
+import { isShown, owns, setShown } from '../../meta/sanctuary';
 import { activeSanctuary, arrivalProgress, isComplete, isOpen, markSeen, nextStage, regionChat, setActive, stageOf } from '../../meta/world';
 import { animalInfo, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
 import { animalPortrait } from '../art/animals';
@@ -29,6 +29,7 @@ import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
 import { celebrationLength } from '../../meta/celebration';
+import { homeState } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
@@ -41,7 +42,7 @@ import { dismissSceneCue, sceneCue, sceneCueMarkup, type SceneCue } from '../com
 import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { Route, ScreenDef } from '../router';
-import { friendPortrait, isEvening, offerStarterGift, showFriendSheet } from './sanctuary';
+import { friendPortrait, offerStarterGift, showFriendSheet } from './sanctuary';
 import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
@@ -225,10 +226,12 @@ export const regionScreen: ScreenDef = {
       director.cancelAll();
       const save = app.save;
       const open = isOpen(save, id);
+      // The home as it is now (D45 PR C): the same description the Farm's 3D walk is built from.
+      const state = homeState(save, id);
       const stage = stageOf(save, id);
-      const welcomed = friendsHere.filter((c) => isHome(save, c.id)).map((c) => c.id);
+      const welcomed = friendsHere.filter((c) => state.residents.includes(c.id)).map((c) => c.id);
       const nextId = nextArrivalIn(save, id)?.id;
-      const decor = shownDecorIds(save, id);
+      const decor = state.decor;
       const ownedDecor = decorOf(id).filter((d) => owns(save, d.id));
       const chat = open ? regionChat(save, id) : null;
       el.innerHTML = `
@@ -239,7 +242,7 @@ export const regionScreen: ScreenDef = {
         </header>
         <p class="muted region__place">${ICON.pin}${esc(def.place)}</p>
         <figure class="sanctuary__scene card is-live ${open ? '' : 'is-locked'}">
-          <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: isEvening() }, `rg-${id}`)}</svg>
+          <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: state.evening }, `rg-${id}`)}</svg>
           ${tourButtonMarkup(open && welcomed.length > 0)}
           ${id === 'farm' ? walkButtonMarkup(open && stage >= 1 && canWalk()) : ''}
         </figure>
@@ -370,13 +373,15 @@ export const regionScreen: ScreenDef = {
       if (t.closest('[data-act="walk"]')) {
         director.claim('walk');
         if (tray.isOpen) tray.close();
-        s3d.setLive(false);
+        // One 3D renderer at a time (D45 PR C): the scene's own lets go of its WebGL context while the walk draws.
+        s3d.suspend();
         director.hold('walk', true);
         const w = showFarmWalk(scope, { returnFocus: () => el.querySelector<HTMLElement>('[data-act="walk"]') });
         walking = w;
         void w.done.then(() => {
           if (walking === w) walking = null;
           if (!scope.alive) return;
+          s3d.resume();
           s3d.setLive(!document.hidden);
           director.hold('walk', false);
         });

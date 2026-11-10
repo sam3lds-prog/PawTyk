@@ -14,6 +14,15 @@ export interface Scene3D {
   setLive(on: boolean): void;
   /** Frames the same part of the scene the camera shows (D44 PR C). Kept for a stage that is still loading. */
   setView(v: { x: number; y: number; w: number; h: number } | null): void;
+  /**
+   * Lets go of the WebGL context while something else draws in 3D over the scene (the Farm walk, D45 PR C): two
+   * renderers at once is what a small phone can't afford. The drawn animals show meanwhile. `resume` builds the toys
+   * again on the scene that is attached then.
+   */
+  suspend(): void;
+  resume(): void;
+  /** Whether a WebGL stage exists right now (tests and QA). */
+  readonly drawing: boolean;
   dispose(): void;
 }
 
@@ -54,12 +63,13 @@ export function createScene3D(): Scene3D {
   let view: { x: number; y: number; w: number; h: number } | null = null;
   let disposed = false;
   let started = false;
+  let suspended = false;
   let settle: (ok: boolean) => void = () => {};
   const ready = new Promise<boolean>((r) => (settle = r));
   if (!wants3D()) settle(false);
 
   const start = () => {
-    if (started || disposed || !wants3D()) return;
+    if (started || disposed || suspended || !wants3D()) return;
     started = true;
     loading ??= import('../../three/stage');
     loading
@@ -67,7 +77,8 @@ export function createScene3D(): Scene3D {
         if (disposed) return settle(false);
         // The scene changed while three.js loaded (to one that stays drawn): make no stage (no WebGL context) until a
         // scene that wants toys attaches again (review of D39 PR E).
-        if (!target) {
+        // (Or the scene was suspended meanwhile: the stage is made on resume.)
+        if (!target || suspended) {
           started = false;
           return;
         }
@@ -112,6 +123,22 @@ export function createScene3D(): Scene3D {
     setView(v) {
       view = v;
       stage?.setView(v);
+    },
+    suspend() {
+      suspended = true;
+      if (!stage) return;
+      liveStages.splice(liveStages.indexOf(stage), 1);
+      stage.dispose();
+      stage = null;
+      started = false;
+    },
+    resume() {
+      if (!suspended) return;
+      suspended = false;
+      if (target && !stage) start();
+    },
+    get drawing() {
+      return !!stage;
     },
     dispose() {
       disposed = true;

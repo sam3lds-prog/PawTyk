@@ -40,6 +40,68 @@ export const PLACES = {
   party: { x: 3, z: -8 },
 };
 
+/**
+ * Where the Farm's decorations stand when the player has them out (D45 PR C): the same five as the drawn Farm. Each
+ * is solid (a circle's `r`, or a box's half sizes).
+ */
+export type FarmDecor = 'scarecrow' | 'wheelbarrow' | 'trough' | 'tireswing' | 'tractor';
+export const DECOR_PLACES: Record<FarmDecor, { x: number; z: number; rot: number; r?: number; hw?: number; hd?: number }> = {
+  scarecrow: { x: -6.2, z: -9.5, rot: 0.5, r: 0.45 },
+  wheelbarrow: { x: 8.6, z: 10.2, rot: -0.7, r: 0.95 },
+  trough: { x: 11.5, z: 2.6, rot: 0.25, hw: 1.3, hd: 0.55 },
+  tireswing: { x: -8.5, z: 16.5, rot: 0, r: 0.6 },
+  tractor: { x: -2.2, z: -12.5, rot: 0.9, hw: 1.5, hd: 1.0 },
+};
+export const isFarmDecor = (id: string): id is FarmDecor => id in DECOR_PLACES;
+
+/**
+ * The Farm's destinations (D45 PR C): places with a name, somewhere to stand and look, and a small discovery when the
+ * player first arrives. `at` is the place itself, `stand` where a "Go to" takes the player, `range` how close counts
+ * as there.
+ */
+export type LandmarkId = 'barn' | 'pond' | 'orchard' | 'pasture';
+export interface Landmark {
+  id: LandmarkId;
+  name: string;
+  /** What happens there, said once on arrival. */
+  discovery: string;
+  /** Built from this stage. */
+  stage: 1 | 2 | 3 | 4;
+  at: { x: number; z: number };
+  stand: { x: number; z: number };
+  range: number;
+}
+export const LANDMARKS: Landmark[] = [
+  { id: 'pasture', name: 'the pasture', discovery: 'Butterflies rise from the clover.', stage: 1, at: { x: 0, z: 2 }, stand: { x: -0.5, z: 6 }, range: 5.5 },
+  { id: 'barn', name: 'the barn', discovery: 'The doors swing open, and a chick peeks out.', stage: 2, at: { x: 9.1, z: -6.8 }, stand: { x: 8.8, z: 1.2 }, range: 9.5 },
+  { id: 'pond', name: 'the pond', discovery: 'The ducks splash hello.', stage: 3, at: { x: PLACES.pond.x, z: PLACES.pond.z }, stand: { x: -11, z: 13.4 }, range: PLACES.pond.r + 3.4 },
+  { id: 'orchard', name: 'the orchard', discovery: 'An apple drops, and the birds fly up.', stage: 4, at: { x: -17.5, z: -16 }, stand: { x: -13, z: -9.5 }, range: 8.5 },
+];
+export const landmarksAt = (stage: number): Landmark[] => LANDMARKS.filter((l) => stage >= l.stage);
+
+/** The destination the player is at (the nearest within its range), if any. The pasture gives way to anything closer. */
+export function landmarkNear(x: number, z: number, stage: number): Landmark | null {
+  let best: Landmark | null = null;
+  let bestD = Infinity;
+  for (const l of landmarksAt(stage)) {
+    const d = Math.hypot(x - l.at.x, z - l.at.z);
+    if (d > l.range) continue;
+    // Relative closeness, so the wide pasture doesn't swallow the pond's bank.
+    const k = d / l.range;
+    if (k < bestD) {
+      best = l;
+      bestD = k;
+    }
+  }
+  return best;
+}
+
+/** A point on the mini-map: 0–1 each way, x to the right, the gate at the bottom. */
+export const mapPoint = (x: number, z: number): { u: number; v: number } => ({
+  u: Math.max(0, Math.min(1, (x + BOUNDS) / (2 * BOUNDS))),
+  v: Math.max(0, Math.min(1, (z + BOUNDS) / (2 * BOUNDS))),
+});
+
 /** How far the player can wander from the middle (beyond it the hills rise). */
 export const BOUNDS = 30;
 /** Eye height. */
@@ -57,7 +119,7 @@ export interface Obstacle {
 }
 
 /** The solid things on the Farm at a stage: the player walks round them, never through. */
-export function obstaclesAt(stage: number): Obstacle[] {
+export function obstaclesAt(stage: number, decor: readonly string[] = []): Obstacle[] {
   const f = new Set(featuresAt(stage));
   const out: Obstacle[] = [];
   if (f.has('barn')) out.push({ x: PLACES.barn.x, z: PLACES.barn.z, hw: PLACES.barn.w / 2 + 0.4, hd: PLACES.barn.d / 2 + 0.4, rot: PLACES.barn.rot });
@@ -67,6 +129,12 @@ export function obstaclesAt(stage: number): Obstacle[] {
   if (f.has('bales')) out.push({ x: PLACES.bales.x, z: PLACES.bales.z, hw: 1.9, hd: 1.4 });
   if (f.has('orchard')) for (const [x, z] of PLACES.orchard) out.push({ x, z, r: 0.8 });
   if (f.has('windmill')) out.push({ x: PLACES.windmill.x, z: PLACES.windmill.z, r: 1.6 });
+  // The player's decorations are solid too.
+  for (const id of decor) {
+    if (!isFarmDecor(id)) continue;
+    const p = DECOR_PLACES[id];
+    out.push(p.r !== undefined ? { x: p.x, z: p.z, r: p.r } : { x: p.x, z: p.z, hw: p.hw, hd: p.hd, rot: p.rot });
+  }
   return out;
 }
 
@@ -163,6 +231,89 @@ export function stepWalker(w: Walker, dt: number, obstacles: Obstacle[]): boolea
   w.x = s.x;
   w.z = s.z;
   return true;
+}
+
+/** Whether a point is free to stand on (inside the bounds, outside every obstacle and its margin). */
+export function isFree(x: number, z: number, obstacles: Obstacle[], margin = 0.5): boolean {
+  const s = settle(x, z, obstacles, margin);
+  return Math.abs(s.x - x) < 1e-6 && Math.abs(s.z - z) < 1e-6;
+}
+
+/** Whether the straight line between two points is free all the way (sampled every 0.4 m). */
+export function clearLine(a: { x: number; z: number }, b: { x: number; z: number }, obstacles: Obstacle[], margin = 0.5): boolean {
+  const d = Math.hypot(b.x - a.x, b.z - a.z);
+  const n = Math.max(1, Math.ceil(d / 0.4));
+  for (let i = 1; i < n; i++) if (!isFree(a.x + ((b.x - a.x) * i) / n, a.z + ((b.z - a.z) * i) / n, obstacles, margin)) return false;
+  return true;
+}
+
+/**
+ * A way from `from` to `to` round the obstacles (D45 PR C): the points to walk through in order, ending at `to`
+ * (settled out of any obstacle). A straight line when nothing is in the way; otherwise the shortest way over a 1 m
+ * grid, with the corners it doesn't need taken out. Never empty.
+ */
+export function route(from: { x: number; z: number }, to: { x: number; z: number }, obstacles: Obstacle[]): Array<{ x: number; z: number }> {
+  const goal = settle(to.x, to.z, obstacles, 0.55);
+  if (clearLine(from, goal, obstacles)) return [goal];
+  const N = 2 * BOUNDS + 1;
+  const cell = (x: number, z: number) => (Math.round(z) + BOUNDS) * N + (Math.round(x) + BOUNDS);
+  const free = (i: number) => isFree((i % N) - BOUNDS, Math.floor(i / N) - BOUNDS, obstacles);
+  const clampCell = (v: number) => Math.max(-BOUNDS, Math.min(BOUNDS, Math.round(v)));
+  const start = cell(clampCell(from.x), clampCell(from.z));
+  const end = cell(clampCell(goal.x), clampCell(goal.z));
+  // Breadth-first over the grid with diagonal steps costing more (a small Dijkstra: the grid is 61 × 61).
+  const dist = new Float32Array(N * N).fill(Infinity);
+  const prev = new Int32Array(N * N).fill(-1);
+  const open: number[] = [start];
+  dist[start] = 0;
+  const steps = [
+    [1, 0, 1],
+    [-1, 0, 1],
+    [0, 1, 1],
+    [0, -1, 1],
+    [1, 1, 1.414],
+    [1, -1, 1.414],
+    [-1, 1, 1.414],
+    [-1, -1, 1.414],
+  ];
+  while (open.length) {
+    let bi = 0;
+    for (let i = 1; i < open.length; i++) if (dist[open[i]] < dist[open[bi]]) bi = i;
+    const cur = open.splice(bi, 1)[0];
+    if (cur === end) break;
+    const cx = cur % N;
+    const cz = Math.floor(cur / N);
+    for (const [dx, dz, c] of steps) {
+      const nx = cx + dx;
+      const nz = cz + dz;
+      if (nx < 0 || nz < 0 || nx >= N || nz >= N) continue;
+      const ni = nz * N + nx;
+      // The start and end cells count as free (the player may be standing right against something).
+      if (ni !== end && !free(ni)) continue;
+      const nd = dist[cur] + c;
+      if (nd < dist[ni]) {
+        if (dist[ni] === Infinity) open.push(ni);
+        dist[ni] = nd;
+        prev[ni] = cur;
+      }
+    }
+  }
+  if (prev[end] === -1) return [goal];
+  const pts: Array<{ x: number; z: number }> = [];
+  for (let i = end; i !== -1 && i !== start; i = prev[i]) pts.unshift({ x: (i % N) - BOUNDS, z: Math.floor(i / N) - BOUNDS });
+  pts[pts.length - 1] = goal;
+  // Take out every corner that can be walked past in a straight line.
+  const out: Array<{ x: number; z: number }> = [];
+  let at = from;
+  let i = 0;
+  while (i < pts.length) {
+    let j = pts.length - 1;
+    while (j > i && !clearLine(at, pts[j], obstacles)) j--;
+    out.push(pts[j]);
+    at = pts[j];
+    i = j + 1;
+  }
+  return out;
 }
 
 /** Moves the walker by a step forward (or back, negative) along its yaw, settled. */

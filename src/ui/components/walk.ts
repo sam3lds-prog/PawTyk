@@ -4,18 +4,22 @@
  * that can draw WebGL); without them the button isn't offered and the drawn Farm is the Farm.
  *
  * Getting round: drag to look, tap the ground to walk there, tap an animal to go and say hello; the arrow buttons
- * (hold to keep going) and the keyboard's arrows or WASD do the same. Close (or Escape, or Back) returns to the Farm,
- * focus back on the Walk button. Leaving the app pauses it; closing releases the WebGL context.
+ * (hold to keep going) and the keyboard's arrows or WASD do the same. Overview (or Escape, or Back) returns to the
+ * drawn Farm, focus back on the Walk button. Leaving the app pauses it; closing releases the WebGL context.
+ *
+ * D45 PR C: it shows the same Farm as the drawn one (`meta/homeState.ts`: stage, residents, the decorations the player
+ * has out, evening light). A small map shows where the barn, pond, orchard and pasture are and which way the player
+ * faces; "Go to" buttons walk there; arriving somewhere names it and plays its small discovery (the barn's doors open
+ * and a chick looks out, the ducks splash, an apple drops and birds fly up, butterflies rise). Nothing is granted.
  */
 
 import { app } from '../../app/app';
-import { isHome, type AnimalId } from '../../meta/animals';
-import { sanctuaryDef } from '../../meta/catalogs/sanctuaries';
-import { stageOf } from '../../meta/world';
+import { homeState } from '../../meta/homeState';
+import { DECOR_PLACES, LANDMARKS, PLACES, landmarksAt, mapPoint, type LandmarkId } from '../../three/walkMath';
 import { feel } from '../../services/feel';
 import { cameraQuality } from './camera';
 import { wants3D } from './scene3d';
-import { h } from '../dom';
+import { esc, h } from '../dom';
 import { ICON } from '../icons';
 import type { Scope } from '../router';
 import { animalName } from './activities';
@@ -44,15 +48,17 @@ if (import.meta.env.DEV && typeof window !== 'undefined') Object.defineProperty(
 /** Opens the walk over the screen. Resolves when it closes. */
 export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElement | null } = {}): WalkHandle {
   const scope = parent.child();
-  const def = sanctuaryDef('farm');
-  const residents = def.arrivals.map((a) => a.id as string).filter((id) => isHome(app.save, id as AnimalId));
+  // The same Farm the drawn scene shows: its stage, who is home, the decorations out, the time of day.
+  const farm = homeState(app.save, 'farm');
+  const places = landmarksAt(farm.stage);
   const el = h(`
     <div class="walk" role="dialog" aria-modal="true" aria-label="Walking round the Farm">
       <div class="walk__view" data-walk-view><p class="walk__loading">Opening the Farm…</p></div>
       <header class="walk__top">
+        <button class="walk__back" data-act="walk-close" aria-label="Return to the Farm overview">${ICON.back}<span>Overview</span></button>
         <h2 class="walk__title">Meadow Farm</h2>
-        <button class="icon-btn walk__close" data-act="walk-close" aria-label="Close">${ICON.close}</button>
       </header>
+      <p class="walk__place" data-walk-place hidden></p>
       <p class="walk__hint" data-walk-hint>Drag to look around · Tap the ground to walk · Tap a friend to say hello</p>
       <div class="walk__pad" aria-label="Move">
         <button class="walk__btn walk__btn--left" data-move="0,1" aria-label="Turn left">${arrow(180)}</button>
@@ -60,6 +66,14 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
         <button class="walk__btn walk__btn--down" data-move="-1,0" aria-label="Walk back">${arrow(90)}</button>
         <button class="walk__btn walk__btn--right" data-move="0,-1" aria-label="Turn right">${arrow(0)}</button>
       </div>
+      <div class="walk__map" aria-hidden="true" data-walk-map>${mapMarkup(farm.stage, farm.decor)}</div>
+      ${
+        places.length
+          ? `<nav class="walk__goto" aria-label="Go to">
+        ${places.map((l) => `<button class="walk__chip" data-goto="${l.id}" aria-label="Go to ${l.name}">${cap(l.name.replace(/^the /, ''))}</button>`).join('')}
+      </nav>`
+          : ''
+      }
       <p class="sr-only" role="status" aria-live="polite" data-walk-status></p>
     </div>`);
   document.body.appendChild(el);
@@ -87,6 +101,30 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     resolve();
   });
 
+  // The map's "you are here" arrow, and the place the player is at.
+  const me = el.querySelector<SVGGElement>('[data-map-me]');
+  const moved = (x: number, z: number, yaw: number) => {
+    const p = mapPoint(x, z);
+    me?.setAttribute('transform', `translate(${(p.u * 100).toFixed(1)} ${(p.v * 100).toFixed(1)}) rotate(${((-yaw * 180) / Math.PI).toFixed(0)})`);
+  };
+  const placeEl = el.querySelector<HTMLElement>('[data-walk-place]')!;
+  const arrived = (id: LandmarkId | null, first: boolean) => {
+    for (const m of el.querySelectorAll<SVGElement>('[data-map-place]')) m.classList.toggle('is-here', m.dataset.mapPlace === id);
+    for (const c of el.querySelectorAll<HTMLElement>('[data-goto]')) c.setAttribute('aria-current', String(c.dataset.goto === id));
+    const l = LANDMARKS.find((x) => x.id === id);
+    if (!l) {
+      placeEl.hidden = true;
+      return;
+    }
+    el.querySelector('[data-walk-hint]')?.classList.add('is-gone');
+    const found = walk ? walk.found.size : 1;
+    placeEl.hidden = false;
+    placeEl.innerHTML = `<b>${esc(cap(l.name))}</b>${first ? `<span>${esc(l.discovery)}</span><small>${found} of ${places.length} places found</small>` : ''}`;
+    // Said once for a screen reader; coming back to a place just names it.
+    status.textContent = first ? `${cap(l.name)}. ${l.discovery} ${found} of ${places.length} places found.` : cap(l.name);
+    if (first) feel('tap');
+  };
+
   const fail = () => {
     view.innerHTML = `<p class="walk__loading">3D isn’t available on this device right now. The Farm is still here to visit.</p>`;
   };
@@ -96,18 +134,18 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
       if (!scope.alive) return;
       try {
         walk = new m.FarmWalk({
-          residents,
-          stage: stageOf(app.save, 'farm'),
-          evening: (() => {
-            const hr = new Date().getHours();
-            return hr >= 19 || hr < 6;
-          })(),
+          residents: farm.residents,
+          stage: farm.stage,
+          decor: farm.decor,
+          evening: farm.evening,
           reducedMotion: () => app.reducedMotion,
           quality: cameraQuality(),
           onHello: (id) => {
             status.textContent = `${animalName(id)} says hello!`;
             feel('hello');
           },
+          onMove: moved,
+          onPlace: arrived,
         });
       } catch {
         fail();
@@ -122,6 +160,7 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
       scope.onDispose(() => ro?.disconnect());
       walk.setLive(!document.hidden);
       walk.renderNow();
+      moved(walk.walker.x, walk.walker.z, walk.walker.yaw);
       bindInput(walk);
     })
     .catch(fail);
@@ -194,7 +233,13 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
   }
 
   scope.on(el, 'click', (e) => {
-    if ((e.target as HTMLElement).closest('[data-act="walk-close"]')) close();
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-act="walk-close"]')) close();
+    const go = t.closest<HTMLElement>('[data-goto]');
+    if (go && walk) {
+      walk.goTo(go.dataset.goto as LandmarkId);
+      el.querySelector('[data-walk-hint]')?.classList.add('is-gone');
+    }
   });
   scope.on(document, 'keydown', (e) => {
     const ke = e as KeyboardEvent;
@@ -228,6 +273,49 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
   scope.on(window, 'blur', () => walk?.hold(0, 0));
 
   return { close, done };
+}
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** The mini-map: the Farm from above (the gate at the bottom), with what is built and what the player has out. */
+function mapMarkup(stage: number, decor: readonly string[]): string {
+  const pt = (x: number, z: number) => {
+    const p = mapPoint(x, z);
+    return [p.u * 100, p.v * 100] as const;
+  };
+  const has = (id: LandmarkId) => stage >= (LANDMARKS.find((l) => l.id === id)?.stage ?? 9);
+  const k = 100 / 60;
+  const [px0, pz0] = pt(PLACES.pasture.x0, PLACES.pasture.z0);
+  const [bx, bz] = pt(PLACES.barn.x, PLACES.barn.z);
+  const [wx, wz] = pt(PLACES.pond.x, PLACES.pond.z);
+  const parts: string[] = [
+    `<rect x="1" y="1" width="98" height="98" rx="14" class="walk-map__ground"/>`,
+    `<rect data-map-place="pasture" class="walk-map__pasture" x="${px0.toFixed(1)}" y="${pz0.toFixed(1)}" width="${((PLACES.pasture.x1 - PLACES.pasture.x0) * k).toFixed(1)}" height="${((PLACES.pasture.z1 - PLACES.pasture.z0) * k).toFixed(1)}" rx="3"/>`,
+  ];
+  if (has('barn'))
+    parts.push(
+      `<rect data-map-place="barn" class="walk-map__barn" x="${(bx - (PLACES.barn.w * k) / 2).toFixed(1)}" y="${(bz - (PLACES.barn.d * k) / 2).toFixed(1)}" width="${(PLACES.barn.w * k).toFixed(1)}" height="${(PLACES.barn.d * k).toFixed(1)}" rx="2" transform="rotate(${((-PLACES.barn.rot * 180) / Math.PI).toFixed(0)} ${bx.toFixed(1)} ${bz.toFixed(1)})"/>`,
+    );
+  if (has('pond')) parts.push(`<circle data-map-place="pond" class="walk-map__pond" cx="${wx.toFixed(1)}" cy="${wz.toFixed(1)}" r="${(PLACES.pond.r * k).toFixed(1)}"/>`);
+  if (has('orchard'))
+    parts.push(
+      `<g data-map-place="orchard" class="walk-map__orchard">${PLACES.orchard
+        .map(([x, z]) => {
+          const [u, v] = pt(x, z);
+          return `<circle cx="${u.toFixed(1)}" cy="${v.toFixed(1)}" r="3.4"/>`;
+        })
+        .join('')}</g>`,
+    );
+  for (const id of decor) {
+    const d = (DECOR_PLACES as Record<string, { x: number; z: number } | undefined>)[id];
+    if (!d) continue;
+    const [u, v] = pt(d.x, d.z);
+    parts.push(`<rect class="walk-map__decor" data-map-decor="${id}" x="${(u - 1.8).toFixed(1)}" y="${(v - 1.8).toFixed(1)}" width="3.6" height="3.6" rx="1"/>`);
+  }
+  const [gx, gz] = pt(PLACES.start.x, PLACES.start.z + 4);
+  parts.push(`<path class="walk-map__gate" d="M${(gx - 5).toFixed(1)} ${gz.toFixed(1)}h10"/>`);
+  parts.push(`<g data-map-me class="walk-map__me"><path d="M0 -6.5 4.6 4.6 0 2.2 -4.6 4.6Z"/></g>`);
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%">${parts.join('')}</svg>`;
 }
 
 function arrow(rot: number): string {

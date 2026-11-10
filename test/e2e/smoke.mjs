@@ -528,13 +528,29 @@ try {
   const w1 = await page.evaluate(() => ({ z: window.__walk?.walker.z ?? 0, drawn: window.__walk?.drawn ?? 0 }));
   const vb = await page.$('.walk__view');
   const vbb = await vb?.boundingBox();
-  if (vbb) await page.mouse.click(vbb.x + vbb.width * 0.5, vbb.y + vbb.height * 0.82);
+  if (vbb) await page.mouse.click(vbb.x + vbb.width * 0.5, vbb.y + vbb.height * 0.62);
   await page.waitForTimeout(400);
   const w2 = await page.evaluate(() => ({ target: !!window.__walk?.walker.target || (window.__walk?.walker.z ?? 0) < 0 }));
   check(
     'the Walk button opens the 3D Farm with its animals; it draws, the arrows walk and a tap sets off (D44)',
     !!w0 && w0.animals >= 1 && w0.drawn > 0 && w1.z < w0.z - 0.3 && w1.drawn > w0.drawn && w2.target,
     JSON.stringify({ w0, w1, w2 }),
+  );
+  // D45 PR C: the walk shows the same Farm (the decorations that are out), the scene's own 3D layer has let go of its
+  // WebGL context meanwhile (one canvas), and there is a map, "Go to" buttons and a way back by name.
+  const walk45 = await page.evaluate(() => ({
+    canvases: document.querySelectorAll('canvas').length,
+    decor: [...(window.__walk?.decor ?? [])].sort(),
+    drawn: [...document.querySelectorAll('.sanctuary__scene [data-decor]')].map((g) => g.dataset.decor).sort(),
+    mapDecor: [...document.querySelectorAll('.walk__map [data-map-decor]')].map((g) => g.dataset.mapDecor).sort(),
+    me: !!document.querySelector('.walk__map [data-map-me]')?.getAttribute('transform'),
+    chips: document.querySelectorAll('.walk [data-goto]').length,
+    back: document.querySelector('.walk__back')?.textContent?.trim() ?? '',
+  }));
+  check(
+    'the 3D Farm has the decorations the drawn Farm has, a map, Go-to buttons and Overview; only one WebGL canvas is alive (D45)',
+    walk45.canvases === 1 && walk45.decor.length >= 1 && walk45.decor.join() === walk45.drawn.join() && walk45.mapDecor.join() === walk45.decor.join() && walk45.me && walk45.chips >= 1 && walk45.back === 'Overview',
+    JSON.stringify(walk45),
   );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
@@ -1256,6 +1272,39 @@ try {
   await qa.waitForTimeout(200);
   const after = await qa.evaluate(() => !!document.getElementById('app')?.inert);
   check('the 3D walk is modal: focus stays inside, the screen underneath is inert until it closes (D44)', modal.inside && modal.inert && !after, JSON.stringify({ modal, after }));
+  // D45 PR C: destinations. "Go to" the pond: the player arrives, the place is named with its discovery, the map marks
+  // it; coming back to it later only names it; Overview returns to the drawn Farm, whose 3D toys come back.
+  await qaHome({ reduced: true });
+  await qa.evaluate(() => document.querySelector('[data-act="walk"]')?.click());
+  await qa.waitForSelector('.walk canvas.walk__canvas', { timeout: 15000 }).catch(() => {});
+  await qa.waitForTimeout(400);
+  const fit = await qa.evaluate(() => {
+    const r = (q) => document.querySelector(q).getBoundingClientRect();
+    const map = r('.walk__map');
+    const pad = r('.walk__pad');
+    const go = r('.walk__goto');
+    return { apart: map.right < pad.left, above: go.bottom <= Math.min(map.top, pad.top) + 1, overflow: document.documentElement.scrollWidth - window.innerWidth, chips: document.querySelectorAll('[data-goto]').length };
+  });
+  const place = async () => qa.evaluate(() => ({ where: window.__walk?.where ?? null, found: window.__walk?.found.size ?? 0, text: document.querySelector('[data-walk-place]')?.textContent ?? '', shown: !document.querySelector('[data-walk-place]')?.hidden, here: document.querySelector('.walk__map .is-here')?.dataset.mapPlace ?? null, current: document.querySelector('[data-goto][aria-current="true"]')?.dataset.goto ?? null, said: document.querySelector('[data-walk-status]')?.textContent ?? '' }));
+  await qa.evaluate(() => document.querySelector('[data-goto="pond"]').click());
+  await qa.waitForTimeout(700);
+  const atPond = await place();
+  await qa.evaluate(() => document.querySelector('[data-goto="barn"]').click());
+  await qa.waitForTimeout(700);
+  const atBarn = await place();
+  await qa.evaluate(() => document.querySelector('[data-goto="pond"]').click());
+  await qa.waitForTimeout(700);
+  const again = await place();
+  check('a small iPhone: the walk’s map, Go-to row and arrow pad sit apart, nothing overflows (D45)', fit.apart && fit.above && fit.overflow <= 0 && fit.chips === 4, JSON.stringify(fit));
+  check(
+    'Go to the pond: the player arrives, the place is named with its discovery, the map marks it; a second visit just names it (D45)',
+    atPond.where === 'pond' && atPond.shown && /The pond.*ducks splash.*1 of 4/.test(atPond.text) && atPond.here === 'pond' && atPond.current === 'pond' && /ducks/.test(atPond.said) && atBarn.where === 'barn' && atBarn.found === 2 && again.where === 'pond' && again.text === 'The pond' && again.found === 2,
+    JSON.stringify({ atPond, atBarn, again }),
+  );
+  await qa.click('.walk__back');
+  await qa.waitForTimeout(1500);
+  const overview = await qa.evaluate(() => ({ walk: !!document.querySelector('.walk'), canvases: document.querySelectorAll('canvas').length, toys: !!document.querySelector('.sanctuary__scene.has-3d'), focus: document.activeElement?.dataset?.act ?? '' }));
+  check('Overview returns to the drawn Farm: the walk is gone, the scene’s 3D toys are back, focus on Walk (D45)', !overview.walk && overview.canvases === 1 && overview.toys && overview.focus === 'walk', JSON.stringify(overview));
   await qa.close();
 
   check('no page errors', errors.length === 0, errors.join(' | '));
