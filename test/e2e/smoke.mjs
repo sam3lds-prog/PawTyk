@@ -192,7 +192,8 @@ try {
   await page.waitForSelector('.region');
   // D45 PR B: Cotton's first visit gets the Welcome Parade (skippable), with no second "came home" announcement.
   const firstToast = await page.evaluate(() => document.querySelector('.toast')?.textContent ?? '');
-  const firstParade = await page.waitForSelector('.sanctuary__scene.is-parading', { timeout: 6000 }).then(() => true, () => false);
+  // (The scene is marked as parading while the camera glides in; Cotton's dance starts as the glide lands.)
+  const firstParade = await page.waitForSelector('.sanctuary__scene.is-parading [data-friend="cotton"][data-trick^="dance:newcomer:"]', { timeout: 8000, state: 'attached' }).then(() => true, () => false);
   const firstLead = await page.evaluate(() => document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.dataset.trick ?? '');
   check('the first visit from the arrival plays Cotton’s Welcome Parade, and does not announce her twice (D45)', firstParade && /^dance:newcomer:/.test(firstLead) && !/came home/.test(firstToast), JSON.stringify({ firstParade, firstLead, firstToast }));
   await page.click('.sanctuary__scene .parade-skip');
