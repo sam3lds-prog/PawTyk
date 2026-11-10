@@ -222,6 +222,40 @@ describe('the ambient tune', () => {
     expect(ambientPlaying()).toBeNull();
   });
 
+  it('started while a cue plays (the Home music during the parade), it comes up when the cue is over (D45 review)', () => {
+    const pb = playCue('bounce')!;
+    startAmbient('farm');
+    expect(ambientPlaying()?.ducked).toBe(true);
+    vi.advanceTimersByTime(pb.durationMs - 500);
+    expect(ambientPlaying()?.ducked).toBe(true);
+    vi.advanceTimersByTime(1500);
+    expect(ambientPlaying()?.ducked).toBe(false);
+  });
+
+  it('a cue ducks it and it comes back after; a skipped cue gives it back at once; cue after cue keeps it down', () => {
+    startAmbient('farm');
+    expect(ambientPlaying()?.ducked).toBe(false);
+    const wave = playCue('trick:wave')!;
+    expect(ambientPlaying()?.ducked).toBe(true);
+    vi.advanceTimersByTime(wave.durationMs + 600);
+    expect(ambientPlaying()?.ducked).toBe(false);
+    // Skipped: back up straight away.
+    playCue('bounce');
+    expect(ambientPlaying()?.ducked).toBe(true);
+    vi.advanceTimersByTime(1000);
+    stopMusic(0);
+    vi.advanceTimersByTime(10);
+    expect(ambientPlaying()?.ducked).toBe(false);
+    // One cue straight after another: down until the second is over.
+    const a = playCue('trick:hop')!;
+    vi.advanceTimersByTime(a.durationMs - 200);
+    const b = playCue('trick:bow')!;
+    vi.advanceTimersByTime(800);
+    expect(ambientPlaying()?.ducked).toBe(true);
+    vi.advanceTimersByTime(b.durationMs + 200);
+    expect(ambientPlaying()?.ducked).toBe(false);
+  });
+
   it('a cue plays over it without ending it; music off, leaving the app or stopping it ends it', () => {
     startAmbient('arctic');
     expect(ambientPlaying()?.title).toBe('Meadow Morning (arctic)');

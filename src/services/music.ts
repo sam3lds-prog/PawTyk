@@ -96,6 +96,8 @@ export function stopMusic(fadeMs = 150): void {
   current?.stop(fadeMs);
   current = null;
   for (const hush of [...ringing]) hush(fadeMs);
+  // A cue ended early (skipped): the ambient tune needn't wait for its scheduled end.
+  if (ambient?.ducked) restoreWhenQuiet(ambient);
 }
 
 /** The cue playing now, if any. */
@@ -131,8 +133,6 @@ export function playCue(id: CueId, opts: CueOptions = {}): Playback | null {
   const score = arrange(id, opts);
   if (!score) return null;
   stopMusic(80);
-  // An ambient tune steps back while a cue plays.
-  duckAmbient(cueMs(score) + 500);
   const a = enabled && !opts.silent ? audioContext() : null;
   const lead = 0.04;
   const startMs = perfNow() + lead * 1000;
@@ -236,6 +236,8 @@ export function playCue(id: CueId, opts: CueOptions = {}): Playback | null {
     durationMs + lead * 1000,
   );
   current = pb;
+  // An ambient tune steps back while a cue plays, and comes up again when it's over.
+  duckAmbient();
   return pb;
 }
 
@@ -271,6 +273,8 @@ interface Ambient {
   sources: AudioScheduledSourceNode[];
   timer: ReturnType<typeof setTimeout> | null;
   duckTimer: ReturnType<typeof setTimeout> | null;
+  /** Stepped back under a cue (also tracked without audio, for tests). */
+  ducked: boolean;
 }
 let ambient: Ambient | null = null;
 
@@ -282,7 +286,7 @@ export function startAmbient(home?: string): boolean {
   stopAmbient(200);
   const score = arrange('meadow', { home });
   if (!enabled || !score || (typeof document !== 'undefined' && document.hidden)) return false;
-  const am: Ambient = { home, score, plays: 0, out: null, ctx: null, sources: [], timer: null, duckTimer: null };
+  const am: Ambient = { home, score, plays: 0, out: null, ctx: null, sources: [], timer: null, duckTimer: null, ducked: false };
   ambient = am;
   const a = audioContext();
   if (a) {
@@ -298,15 +302,15 @@ export function startAmbient(home?: string): boolean {
   const play = () => {
     if (ambient !== am) return;
     am.plays++;
+    // Started (or started again) while a cue is playing: in under it, and up when the cue is over (D45 PR D review:
+    // started during the parade, it used to stay stepped back for its whole first play).
+    const under = !!current && !current.stopped;
+    setLevel(am, under ? AMBIENT_LEVEL * AMBIENT_DUCK : AMBIENT_LEVEL, 1.2);
+    if (under) restoreWhenQuiet(am);
     if (am.out && am.ctx) {
       try {
-        const now = am.ctx.currentTime;
-        const level = current && !current.stopped ? AMBIENT_LEVEL * AMBIENT_DUCK : AMBIENT_LEVEL;
-        am.out.gain.cancelScheduledValues(now);
-        am.out.gain.setValueAtTime(Math.max(0.0001, am.out.gain.value), now);
-        am.out.gain.linearRampToValueAtTime(level, now + 1.2);
         am.sources = [];
-        renderScore(am.ctx, am.out, score, now + 0.1, am.sources);
+        renderScore(am.ctx, am.out, score, am.ctx.currentTime + 0.1, am.sources);
       } catch {
         /* audio gone: the visit goes on in silence */
       }
@@ -350,31 +354,46 @@ export function stopAmbient(fadeMs = 600): void {
 }
 
 /** The ambient tune playing now (its home, and how many times it has played this visit), if any. */
-export function ambientPlaying(): { home: string | undefined; plays: number; title: string } | null {
-  return ambient ? { home: ambient.home, plays: ambient.plays, title: ambient.score.title } : null;
+export function ambientPlaying(): { home: string | undefined; plays: number; title: string; ducked: boolean } | null {
+  return ambient ? { home: ambient.home, plays: ambient.plays, title: ambient.score.title, ducked: ambient.ducked } : null;
 }
 
-/** Steps the ambient tune back for `ms` (a cue is playing over it), then brings it up again. */
-function duckAmbient(ms: number): void {
-  const am = ambient;
-  if (!am) return;
+/** Ramps the ambient tune to `level` over `over` seconds. */
+function setLevel(am: Ambient, level: number, over: number): void {
+  am.ducked = level < AMBIENT_LEVEL;
+  if (!am.out || !am.ctx) return;
+  try {
+    const now = am.ctx.currentTime;
+    am.out.gain.cancelScheduledValues(now);
+    am.out.gain.setValueAtTime(Math.max(0.0001, am.out.gain.value), now);
+    am.out.gain.linearRampToValueAtTime(level, now + over);
+  } catch {
+    /* audio gone */
+  }
+}
+
+/**
+ * Brings the ambient tune back up once no cue is playing: when the cue playing now is due to end (its ring included),
+ * or at once if there is none. If another cue has started by then, it waits for that one in turn.
+ */
+function restoreWhenQuiet(am: Ambient): void {
   if (am.duckTimer) clearTimeout(am.duckTimer);
-  const to = (level: number, over: number) => {
-    if (!am.out || !am.ctx) return;
-    try {
-      const now = am.ctx.currentTime;
-      am.out.gain.cancelScheduledValues(now);
-      am.out.gain.setValueAtTime(Math.max(0.0001, am.out.gain.value), now);
-      am.out.gain.linearRampToValueAtTime(level, now + over);
-    } catch {
-      /* audio gone */
-    }
-  };
-  to(AMBIENT_LEVEL * AMBIENT_DUCK, 0.15);
+  const cue = current && !current.stopped ? current : null;
+  const wait = cue ? Math.max(0, cue.startMs + cue.durationMs - perfNow()) + 400 : 0;
   am.duckTimer = setTimeout(() => {
     am.duckTimer = null;
-    if (ambient === am) to(AMBIENT_LEVEL, 0.8);
-  }, ms);
+    if (ambient !== am) return;
+    if (current && !current.stopped) restoreWhenQuiet(am);
+    else setLevel(am, AMBIENT_LEVEL, 0.8);
+  }, wait);
+}
+
+/** Steps the ambient tune back while the cue now playing plays, then brings it up again. */
+function duckAmbient(): void {
+  const am = ambient;
+  if (!am) return;
+  setLevel(am, AMBIENT_LEVEL * AMBIENT_DUCK, 0.15);
+  restoreWhenQuiet(am);
 }
 
 // Leaving the app: the music fades out at once and doesn't come back by itself.
