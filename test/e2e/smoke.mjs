@@ -1179,6 +1179,42 @@ try {
   await qa.keyboard.press('Escape');
   await qa.evaluate(async () => (await import('/src/ui/components/camera.ts')).setCameraQuality('high'));
   check('the lite tier walks at 1× pixels on a small screen, and the walk pauses in the background (D44)', !!lite && lite.tier === 'lite' && Math.abs(lite.ratio - 1) < 0.05 && lite.pad && d1 === d0 && d2 > d1, JSON.stringify({ lite, d0, d1, d2 }));
+  // Every home's critter is wholly hidden until its landmark opens, and shows when it does.
+  const peeks = await qa.evaluate(async () => {
+    const { regionScene } = await import('/src/ui/art/regions.ts');
+    const out = {};
+    for (const h of ['farm', 'outback', 'savanna', 'arctic', 'amazon']) {
+      const d = document.createElement('div');
+      d.innerHTML = `<figure class="sanctuary__scene"><svg viewBox="0 0 360 300">${regionScene(h, { stage: 4, companions: [], decor: [] }, `pk-${h}`)}</svg></figure>`;
+      document.body.appendChild(d);
+      const cb = d.querySelector(`#pk-${h}-lm`).firstElementChild.getBBox();
+      const box = () => {
+        const p = d.querySelector('.sp-peek');
+        const b = p.getBBox();
+        const t = getComputedStyle(p).transform;
+        const m = new DOMMatrix(t === 'none' ? undefined : t);
+        return { l: b.x + m.e, r: b.x + b.width + m.e, t: b.y + m.f, b: b.y + b.height + m.f };
+      };
+      const area = (a) => Math.max(0, Math.min(a.r, cb.x + cb.width) - Math.max(a.l, cb.x)) * Math.max(0, Math.min(a.b, cb.y + cb.height) - Math.max(a.t, cb.y));
+      const closed = area(box());
+      d.querySelector('[data-landmark]').classList.add('is-open');
+      await new Promise((r) => setTimeout(r, 1100));
+      out[h] = [Math.round(closed), Math.round(area(box()))];
+      d.remove();
+    }
+    return out;
+  });
+  check('every home’s critter is hidden until its landmark opens, then peeks out (D44)', Object.values(peeks).every(([c, o]) => c === 0 && o > 50), JSON.stringify(peeks));
+  // The walk is modal: Tab stays inside it.
+  await qaHome();
+  await qa.evaluate(() => document.querySelector('[data-act="walk"]')?.click());
+  await qa.waitForSelector('.walk canvas.walk__canvas', { timeout: 15000 }).catch(() => {});
+  for (let i = 0; i < 7; i++) await qa.keyboard.press('Tab');
+  const modal = await qa.evaluate(() => ({ inside: !!document.activeElement?.closest('.walk'), inert: !!document.getElementById('app')?.inert }));
+  await qa.keyboard.press('Escape');
+  await qa.waitForTimeout(200);
+  const after = await qa.evaluate(() => !!document.getElementById('app')?.inert);
+  check('the 3D walk is modal: focus stays inside, the screen underneath is inert until it closes (D44)', modal.inside && modal.inert && !after, JSON.stringify({ modal, after }));
   await qa.close();
 
   check('no page errors', errors.length === 0, errors.join(' | '));
