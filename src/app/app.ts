@@ -7,6 +7,7 @@ import { loadSave, saveSave, savedSession, setSavedSession, type SaveV2, type Se
 import { entitlementCounts } from '../services/iap';
 import { setHapticsEnabled } from '../services/haptics';
 import { setSoundEnabled } from '../services/audio';
+import { setMusicEnabled } from '../services/music';
 import type { Router } from '../ui/router';
 import { modeKey, type ModeRef } from '../game/modes';
 import type { Session } from '../game/session';
@@ -139,6 +140,7 @@ class App {
     root.dataset.hand = s.leftHanded ? 'left' : 'right';
     setHapticsEnabled(s.haptics);
     setSoundEnabled(s.sound);
+    setMusicEnabled(s.music);
   }
 
   /**

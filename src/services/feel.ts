@@ -23,55 +23,67 @@
  * | tool     | none                                   | the lightest tick      |
  * | undo     | none                                   | the lightest tick      |
  * | lost     | none (the last miss already sounded)   | gentle warning         |
+ *
+ * D44 PR B: with Music on, three moments play a music cue instead of their sound effect (never both): a solve plays
+ * *Tiny Triumph*, an arrival *Welcome Home*, a trick its own tune (`feel('trick', { cue: 'trick:<id>' })`). With Music
+ * off they keep their sound effects. The haptic is the same either way.
  */
 
-import { sfx, type Sfx, type SfxOptions } from './audio';
-import { haptic, type HapticKind } from './haptics';
+import { sfx, type Sfx, type SfxOptions } from "./audio";
+import { haptic, type HapticKind } from "./haptics";
+import { musicEnabled, playCue } from "./music";
+import type { CueId } from "../audio/scores";
 
 export type FeelEvent =
-  | 'mark'
-  | 'unmark'
-  | 'drag'
-  | 'place'
-  | 'line'
-  | 'lines'
-  | 'miss'
-  | 'solved'
-  | 'arrival'
-  | 'hello'
-  | 'treat'
-  | 'coin'
-  | 'buy'
-  | 'tap'
-  | 'trick'
-  | 'tool'
-  | 'undo'
-  | 'lost';
+  | "mark"
+  | "unmark"
+  | "drag"
+  | "place"
+  | "line"
+  | "lines"
+  | "miss"
+  | "solved"
+  | "arrival"
+  | "hello"
+  | "treat"
+  | "coin"
+  | "buy"
+  | "tap"
+  | "trick"
+  | "tool"
+  | "undo"
+  | "lost";
 
-export const FEEL: Record<FeelEvent, { sound: Sfx | null; haptic: HapticKind | null }> = {
-  mark: { sound: 'tick', haptic: 'light' },
-  unmark: { sound: 'untick', haptic: null },
-  drag: { sound: null, haptic: 'select' },
-  place: { sound: 'pop', haptic: 'medium' },
-  line: { sound: 'line', haptic: 'medium' },
-  lines: { sound: 'lines', haptic: 'medium' },
-  miss: { sound: 'miss', haptic: 'warning' },
-  solved: { sound: 'solved', haptic: 'success' },
-  arrival: { sound: 'arrival', haptic: 'pulse' },
-  hello: { sound: 'hello', haptic: 'light' },
-  treat: { sound: 'treat', haptic: 'light' },
-  coin: { sound: 'coin', haptic: 'light' },
-  buy: { sound: 'coin', haptic: 'success' },
-  tap: { sound: 'tap', haptic: 'select' },
-  trick: { sound: 'pop', haptic: 'light' },
-  tool: { sound: null, haptic: 'select' },
-  undo: { sound: null, haptic: 'select' },
-  lost: { sound: null, haptic: 'warning' },
+export const FEEL: Record<
+  FeelEvent,
+  { sound: Sfx | null; haptic: HapticKind | null; cue?: CueId }
+> = {
+  mark: { sound: "tick", haptic: "light" },
+  unmark: { sound: "untick", haptic: null },
+  drag: { sound: null, haptic: "select" },
+  place: { sound: "pop", haptic: "medium" },
+  line: { sound: "line", haptic: "medium" },
+  lines: { sound: "lines", haptic: "medium" },
+  miss: { sound: "miss", haptic: "warning" },
+  solved: { sound: "solved", haptic: "success", cue: "triumph" },
+  arrival: { sound: "arrival", haptic: "pulse", cue: "welcome" },
+  hello: { sound: "hello", haptic: "light" },
+  treat: { sound: "treat", haptic: "light" },
+  coin: { sound: "coin", haptic: "light" },
+  buy: { sound: "coin", haptic: "success" },
+  tap: { sound: "tap", haptic: "select" },
+  trick: { sound: "pop", haptic: "light" },
+  tool: { sound: null, haptic: "select" },
+  undo: { sound: null, haptic: "select" },
+  lost: { sound: null, haptic: "warning" },
 };
 
-/** Plays an event's sound and haptic (each only if its switch is on). */
-export function feel(event: FeelEvent, o?: SfxOptions): void {
+/** Plays an event's sound (or, with Music on, its music cue) and haptic, each only if its switch is on. */
+export function feel(event: FeelEvent, o?: SfxOptions & { cue?: CueId }): void {
   const f = FEEL[event];
-  if (f.sound) sfx(f.sound, o);
+  const cue = o?.cue ?? f.cue;
+  if (cue && musicEnabled() && playCue(cue)) {
+    /* the cue replaces the sound effect */
+  } else if (f.sound) sfx(f.sound, o);
   if (f.haptic) haptic(f.haptic);
 }

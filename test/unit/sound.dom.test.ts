@@ -77,8 +77,9 @@ describe('the feel table (D40)', () => {
     expect(VIBRATE.medium as number).toBeGreaterThan(VIBRATE.light as number);
     expect(FEEL.line).toEqual({ sound: 'line', haptic: 'medium' });
     expect(FEEL.miss).toEqual({ sound: 'miss', haptic: 'warning' });
-    expect(FEEL.solved).toEqual({ sound: 'solved', haptic: 'success' });
-    expect(FEEL.arrival).toEqual({ sound: 'arrival', haptic: 'pulse' });
+    // D44 PR B: with Music on, a solve and an arrival play a music cue instead of their sound.
+    expect(FEEL.solved).toEqual({ sound: 'solved', haptic: 'success', cue: 'triumph' });
+    expect(FEEL.arrival).toEqual({ sound: 'arrival', haptic: 'pulse', cue: 'welcome' });
     expect(FEEL.hello).toEqual({ sound: 'hello', haptic: 'light' });
     // The arrival chime and its pulse belong to a new animal alone.
     for (const [e, f] of Object.entries(FEEL)) {

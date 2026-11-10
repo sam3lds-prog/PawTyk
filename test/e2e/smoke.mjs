@@ -826,6 +826,39 @@ try {
   check('App Store build: Settings opens the full privacy policy (D43)', policyHeads === 8 && !(await page.$('.sheet [data-act="leaderboard"]')), String(policyHeads));
   await page.evaluate(() => localStorage.removeItem('pawtyk.qa.releaseView'));
 
+  // D44 PR B: the music. Every cue renders in a real browser, never clips, and is loud enough to hear; Settings has
+  // a Music switch, on.
+  const levels = await page.evaluate(async () => {
+    const m = await import('/src/services/music.ts');
+    const sc = await import('/src/audio/scores.ts');
+    const out = [];
+    for (const id of Object.keys(sc.SCORES)) {
+      const s = sc.SCORES[id];
+      const ctx = new OfflineAudioContext(1, Math.ceil(22050 * (sc.cueMs(s) / 1000 + 1.2)), 22050);
+      const g = ctx.createGain();
+      g.gain.value = m.MUSIC_GAIN;
+      g.connect(ctx.destination);
+      m.renderScore(ctx, g, s, 0.01);
+      const d = (await ctx.startRendering()).getChannelData(0);
+      let peak = 0;
+      let sum = 0;
+      const n = Math.ceil((22050 * sc.cueMs(s)) / 1000);
+      for (let i = 0; i < d.length; i++) {
+        peak = Math.max(peak, Math.abs(d[i]));
+        if (i < n) sum += d[i] * d[i];
+      }
+      out.push({ id, peak, rms: Math.sqrt(sum / n) });
+    }
+    return out;
+  });
+  const badLevels = levels.filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
+  check(`every music cue renders, never clips and can be heard (${levels.length} cues, D44)`, levels.length === 21 && badLevels.length === 0, JSON.stringify(badLevels));
+  await page.evaluate(() => window.__pt.go({ screen: 'journey' }));
+  await page.evaluate(() => document.querySelector('[data-act="settings"]')?.click());
+  const musicSwitch = await page.$('.sheet [data-switch="music"]');
+  check('Settings has a Music switch, on by default (D44)', !!musicSwitch && (await musicSwitch.getAttribute('aria-checked')) === 'true');
+  await page.keyboard.press('Escape');
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
   check('suite ran to completion', false, String(e).slice(0, 300));

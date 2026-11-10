@@ -62,7 +62,13 @@ export interface Settings {
   autoMark: boolean;
   haptics: boolean;
   sound: boolean;
+  /** Music cues (D44 PR B): the win sting, Welcome Home, Barnyard Bounce and the trick tunes. On unless switched off. */
   music: boolean;
+  /**
+   * The player has set Music themselves (D44 PR B). Before D44 the `music` switch existed with nothing behind it (off
+   * in every save), so until a player chooses, music is on.
+   */
+  musicChosen?: boolean;
   reducedMotion: ReducedMotionPref;
   highContrast: boolean;
   regionPatterns: boolean;
@@ -349,7 +355,7 @@ export function defaultSettings(): Settings {
     autoMark: true,
     haptics: true,
     sound: true,
-    music: false,
+    music: true,
     reducedMotion: 'system',
     highContrast: false,
     regionPatterns: false,
@@ -503,7 +509,8 @@ function normSettings(x: unknown): Settings {
     autoMark: bool(x.autoMark, d.autoMark),
     haptics: bool(x.haptics, d.haptics),
     sound: bool(x.sound, d.sound),
-    music: bool(x.music, d.music),
+    music: x.musicChosen === true ? bool(x.music, d.music) : d.music,
+    ...(x.musicChosen === true ? { musicChosen: true } : {}),
     reducedMotion: oneOf(x.reducedMotion, ['system', 'reduce', 'full'] as const, d.reducedMotion),
     highContrast: bool(x.highContrast, d.highContrast),
     regionPatterns: bool(x.regionPatterns, d.regionPatterns),
