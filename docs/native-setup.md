@@ -26,6 +26,13 @@ Set your Team in Xcode, keep the bundle id `com.sam3lds.catsvsdogs` (D9), and ru
 `npx cap add ios` creates it; `cap sync` doesn't change it. On a project made earlier, set *Display Name* to PawTyk in
 Xcode (target → General).
 
+**App icon** (D42): in Xcode, open `App/Assets.xcassets` → `AppIcon`, set it to *Single Size*, and drop in
+`assets/icon-only.png` (1024 × 1024, no transparency, as the App Store requires; iOS rounds the corners). Or run
+`npx @capacitor/assets generate --ios`, which reads the same file. To change the art, edit `scripts/iconArt.ts` and run
+`npm run icons`. To look at another sky first, `npm run icons -- --style golden` (or `dusk`) renders a preview to
+`artifact/icon-golden.png` and leaves the shipped files alone; to ship it, set `ICON_STYLE` in `scripts/iconArt.ts`
+and run `npm run icons`.
+
 Progress is kept in the app's own storage on a device (`@capacitor/preferences` → UserDefaults, D38 PR F), not only
 in the WebView's localStorage, so iOS can't evict it and it rides along in device backups. `npx cap sync ios` adds
 the plugin; nothing else to configure. The first launch of this build copies an existing player's save over.

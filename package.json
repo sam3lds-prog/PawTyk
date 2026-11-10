@@ -19,6 +19,8 @@
     "places:check": "tsx scripts/places-fixture.ts",
     "e2e": "node test/e2e/smoke.mjs",
     "artifact": "node scripts/make-artifact.mjs",
+    "icons": "tsx scripts/make-icons.ts",
+    "icons:check": "tsx scripts/make-icons.ts --check",
     "fb:build": "node scripts/build-functions.mjs",
     "fb:test": "firebase emulators:exec --only firestore --project demo-pawtyk \"FIREBASE_RULES_TEST=1 vitest run test/firebase\"",
     "fb:emulators": "npm run fb:build && firebase emulators:start --project demo-pawtyk",

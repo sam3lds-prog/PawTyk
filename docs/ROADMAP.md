@@ -133,5 +133,5 @@ walks between anchor points; capybara, otter, axolotl and owl (need art); season
    `.env.local`, then `npm --prefix functions install && npm run fb:deploy`, then `npm run fb:test` once (this
    environment couldn't download the emulator, so the rules tests haven't run yet). App Check needs a native App
    Attest plugin first and stays off until then (`docs/native-setup.md` §3).
-5. **App Store Connect**: rename the listing to PawTyk (bundle id stays), new screenshots (World map, a regional
+5. **App Store Connect**: rename the listing to PawTyk (bundle id stays; the 1024 px icon is `assets/icon-only.png`), new screenshots (World map, a regional
    sanctuary, the Leaderboard), and the privacy label for the services you turn on (`docs/privacy-security.md`).
