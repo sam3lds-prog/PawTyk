@@ -10,17 +10,8 @@
  *    cue plays the recording at the score's tempo (its beat clock still follows the score).
  */
 
-import { audioContext } from "./audio";
-import {
-  beatSec,
-  cueMs,
-  hz,
-  scoreFor,
-  type CueId,
-  type Instrument,
-  type Note,
-  type Score,
-} from "../audio/scores";
+import { audioContext } from './audio';
+import { beatSec, cueMs, hz, scoreFor, type CueId, type Instrument, type Note, type Score } from '../audio/scores';
 
 /** The music channel's level: under the sound effects, so a tap or a pop always reads through. */
 export const MUSIC_GAIN = 0.34;
@@ -79,17 +70,13 @@ export function nowPlaying(): Playback | null {
   return current && !current.stopped ? current : null;
 }
 
-const perfNow = () =>
-  typeof performance !== "undefined" ? performance.now() : Date.now();
+const perfNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 /**
  * Plays a cue and returns its clock. With music off (or no audio), the clock runs silently, so a dance that follows it
  * keeps the same timing. Unknown cues return null.
  */
-export function playCue(
-  id: CueId,
-  opts: { silent?: boolean } = {},
-): Playback | null {
+export function playCue(id: CueId, opts: { silent?: boolean } = {}): Playback | null {
   const score = scoreFor(id);
   if (!score) return null;
   stopMusic(80);
@@ -182,10 +169,7 @@ export function playCue(
 }
 
 /** Replaces a cue's synthesized score with a recorded track (an audio file at the score's tempo). */
-export async function useRecordedTrack(
-  id: CueId,
-  url: string,
-): Promise<boolean> {
+export async function useRecordedTrack(id: CueId, url: string): Promise<boolean> {
   const a = audioContext();
   if (!a) return false;
   try {
@@ -199,8 +183,8 @@ export async function useRecordedTrack(
 }
 
 // Leaving the app: the music fades out at once and doesn't come back by itself.
-if (typeof document !== "undefined") {
-  document.addEventListener("visibilitychange", () => {
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopMusic(100);
   });
 }
@@ -211,13 +195,7 @@ if (typeof document !== "undefined") {
  * Schedules a whole score on `ctx` into `out`, starting at `t0` (seconds on the context's clock). Works on an
  * OfflineAudioContext too (the music check renders every cue to measure it).
  */
-export function renderScore(
-  ctx: BaseAudioContext,
-  out: AudioNode,
-  score: Score,
-  t0: number,
-  sources: AudioScheduledSourceNode[] = [],
-): void {
+export function renderScore(ctx: BaseAudioContext, out: AudioNode, score: Score, t0: number, sources: AudioScheduledSourceNode[] = []): void {
   const spb = beatSec(score);
   if (score.level && score.level !== 1) {
     const trim = ctx.createGain();
@@ -234,22 +212,14 @@ export function renderScore(
   }
 }
 
-function play(
-  ctx: BaseAudioContext,
-  out: AudioNode,
-  inst: Instrument,
-  n: Note,
-  at: number,
-  dur: number,
-  src: AudioScheduledSourceNode[],
-): void {
+function play(ctx: BaseAudioContext, out: AudioNode, inst: Instrument, n: Note, at: number, dur: number, src: AudioScheduledSourceNode[]): void {
   const v = n.v;
   switch (inst) {
-    case "bass":
+    case 'bass':
       for (const p of n.p) {
         voice(ctx, out, src, at, {
           f: hz(p),
-          type: "triangle",
+          type: 'triangle',
           dur: Math.min(dur, 0.9),
           gain: 0.32 * v,
           attack: 0.008,
@@ -258,7 +228,7 @@ function play(
         });
         voice(ctx, out, src, at, {
           f: hz(p) / 2,
-          type: "sine",
+          type: 'sine',
           dur: Math.min(dur, 0.9),
           gain: 0.18 * v,
           attack: 0.01,
@@ -266,11 +236,11 @@ function play(
         });
       }
       break;
-    case "pluck":
+    case 'pluck':
       n.p.forEach((p, i) =>
         voice(ctx, out, src, at + i * 0.012, {
           f: hz(p),
-          type: "sawtooth",
+          type: 'sawtooth',
           dur: Math.min(dur, 0.6),
           gain: (0.07 * v) / Math.sqrt(n.p.length),
           attack: 0.004,
@@ -280,11 +250,11 @@ function play(
         }),
       );
       break;
-    case "marimba":
+    case 'marimba':
       for (const p of n.p) {
         voice(ctx, out, src, at, {
           f: hz(p),
-          type: "sine",
+          type: 'sine',
           dur: Math.min(dur + 0.15, 0.7),
           gain: 0.2 * v,
           attack: 0.003,
@@ -292,7 +262,7 @@ function play(
         });
         voice(ctx, out, src, at, {
           f: hz(p) * 4,
-          type: "sine",
+          type: 'sine',
           dur: 0.06,
           gain: 0.035 * v,
           attack: 0.002,
@@ -300,12 +270,12 @@ function play(
         });
       }
       break;
-    case "bell":
+    case 'bell':
       for (const p of n.p) {
         const f = hz(p);
         voice(ctx, out, src, at, {
           f,
-          type: "sine",
+          type: 'sine',
           dur: dur + 0.3,
           gain: 0.12 * v,
           attack: 0.01,
@@ -313,7 +283,7 @@ function play(
         });
         voice(ctx, out, src, at, {
           f: f * 2.01,
-          type: "sine",
+          type: 'sine',
           dur: (dur + 0.3) * 0.6,
           gain: 0.035 * v,
           attack: 0.01,
@@ -321,13 +291,13 @@ function play(
         });
       }
       break;
-    case "brass":
+    case 'brass':
       for (const p of n.p) {
         const f = hz(p);
         const g = (0.075 * v) / Math.sqrt(n.p.length);
         voice(ctx, out, src, at, {
           f,
-          type: "sawtooth",
+          type: 'sawtooth',
           dur,
           gain: g,
           attack: 0.035,
@@ -338,7 +308,7 @@ function play(
         });
         voice(ctx, out, src, at, {
           f: f * 1.004,
-          type: "sawtooth",
+          type: 'sawtooth',
           dur,
           gain: g * 0.6,
           attack: 0.04,
@@ -347,11 +317,11 @@ function play(
         });
       }
       break;
-    case "whistle":
+    case 'whistle':
       for (const p of n.p)
         voice(ctx, out, src, at, {
           f: hz(p),
-          type: "sine",
+          type: 'sine',
           dur,
           gain: 0.09 * v,
           attack: 0.05,
@@ -359,11 +329,11 @@ function play(
           vibrato: 0.006,
         });
       break;
-    case "pad":
+    case 'pad':
       for (const p of n.p) {
         voice(ctx, out, src, at, {
           f: hz(p),
-          type: "triangle",
+          type: 'triangle',
           dur,
           gain: (0.06 * v) / Math.sqrt(n.p.length),
           attack: Math.min(0.25, dur / 3),
@@ -372,13 +342,13 @@ function play(
         });
       }
       break;
-    case "swoop": {
+    case 'swoop': {
       const from = hz(n.p[0] ?? 72);
       const to = hz(n.to ?? (n.p[0] ?? 72) + 7);
       voice(ctx, out, src, at, {
         f: from,
         fTo: to,
-        type: "sine",
+        type: 'sine',
         dur,
         gain: 0.14 * v,
         attack: 0.01,
@@ -387,7 +357,7 @@ function play(
       voice(ctx, out, src, at, {
         f: from * 2,
         fTo: to * 2,
-        type: "triangle",
+        type: 'triangle',
         dur,
         gain: 0.03 * v,
         attack: 0.01,
@@ -395,7 +365,7 @@ function play(
       });
       break;
     }
-    case "clap":
+    case 'clap':
       for (let i = 0; i < 3; i++)
         noise(ctx, out, src, at + i * 0.011, {
           dur: i < 2 ? 0.02 : 0.13,
@@ -404,11 +374,11 @@ function play(
           q: 0.9,
         });
       break;
-    case "stomp":
+    case 'stomp':
       voice(ctx, out, src, at, {
         f: 120,
         fTo: 44,
-        type: "sine",
+        type: 'sine',
         dur: 0.2,
         gain: 0.55 * v,
         attack: 0.002,
@@ -421,14 +391,14 @@ function play(
         q: 0.7,
       });
       break;
-    case "shaker":
+    case 'shaker':
       noise(ctx, out, src, at, { dur: 0.05, gain: 0.08 * v, high: 6000 });
       break;
-    case "block":
+    case 'block':
       voice(ctx, out, src, at, {
         f: 1150,
         fTo: 920,
-        type: "sine",
+        type: 'sine',
         dur: 0.05,
         gain: 0.16 * v,
         attack: 0.001,
@@ -436,14 +406,14 @@ function play(
       });
       voice(ctx, out, src, at, {
         f: 2600,
-        type: "triangle",
+        type: 'triangle',
         dur: 0.02,
         gain: 0.04 * v,
         attack: 0.001,
         decay: true,
       });
       break;
-    case "cymbal":
+    case 'cymbal':
       noise(ctx, out, src, at, {
         dur: Math.max(0.6, dur),
         gain: 0.06 * v,
@@ -470,13 +440,7 @@ interface VoiceOpts {
   vibrato?: number;
 }
 
-function voice(
-  ctx: BaseAudioContext,
-  out: AudioNode,
-  src: AudioScheduledSourceNode[],
-  at: number,
-  o: VoiceOpts,
-): void {
+function voice(ctx: BaseAudioContext, out: AudioNode, src: AudioScheduledSourceNode[], at: number, o: VoiceOpts): void {
   const osc = ctx.createOscillator();
   const env = ctx.createGain();
   osc.type = o.type;
@@ -485,13 +449,9 @@ function voice(
   let node: AudioNode = osc;
   if (o.cutoff) {
     const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
+    lp.type = 'lowpass';
     lp.frequency.setValueAtTime(Math.min(16000, o.cutoff), at);
-    if (o.cutoffTo)
-      lp.frequency.exponentialRampToValueAtTime(
-        Math.min(16000, o.cutoffTo),
-        at + Math.min(o.dur, 0.25),
-      );
+    if (o.cutoffTo) lp.frequency.exponentialRampToValueAtTime(Math.min(16000, o.cutoffTo), at + Math.min(o.dur, 0.25));
     osc.connect(lp);
     node = lp;
   }
@@ -556,11 +516,11 @@ function noise(
   s.buffer = noiseBuffer(ctx);
   const f = ctx.createBiquadFilter();
   if (o.band) {
-    f.type = "bandpass";
+    f.type = 'bandpass';
     f.frequency.value = o.band;
     f.Q.value = o.q ?? 1;
   } else {
-    f.type = "highpass";
+    f.type = 'highpass';
     f.frequency.value = o.high ?? 5000;
   }
   const env = ctx.createGain();
