@@ -17,6 +17,8 @@ import { companionFigure, figureTop, kitSpeciesOf, type CompanionMood, type Frie
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
 import { LANDSCAPE_ART, LANDSCAPE_SPOTS, type NewBiome } from './landscapes';
 import { HOME_SCENERY, eveningLights, sunlight } from './homeScenery';
+import { botanyDefs, butterfliesAt, flowerFor, meadow, memoMeadow, stripMeadow, tuft as botanyTuft } from './botany';
+import { seedOf } from '../../art/botany';
 
 export type RegionDecorId = Extract<
   DecorId,
@@ -401,16 +403,16 @@ export interface RegionArt {
   evening: Array<[number, number]>;
 }
 
-const tuft = (x: number, y: number, c: string) =>
-  `<g stroke="${c}" stroke-width="1.5" stroke-linecap="round"><path d="M${x} ${y} l-6 -7 M${x} ${y} l-2 -9 M${x} ${y} l2.5 -9 M${x} ${y} l6.5 -6"/></g>`;
+/** A clump of grass in the scene's grass colour (D47 PR 1: organic blades, swaying from the root). */
+const tuft = (x: number, y: number, c: string) => botanyTuft(x, y, c);
 
 const pea = (x: number, y: number) =>
   `<g><path d="M${x} ${y} C${x - 1} ${y - 4} ${x - 1} ${y - 6} ${x - 2} ${y - 8}" stroke="#6f8a4e" stroke-width="1.4" fill="none"/>
    <path d="M${x - 2} ${y - 8} c-6 -1 -9 2 -9 5 c4 0 7 -2 9 -5z" fill="#d8342c"/><path d="M${x - 2} ${y - 8} c6 -1 9 2 9 5 c-4 0 -7 -2 -9 -5z" fill="#d8342c"/>
    <path d="M${x - 2} ${y - 8} c-1 -4 0 -7 2 -9 c1 3 0 6 -2 9z" fill="#e2483e"/><circle cx="${x - 2}" cy="${y - 8}" r="1.8" fill="#1e1a18"/></g>`;
 
-const wildflower = (x: number, y: number, c: string) =>
-  `<g><path d="M${x} ${y} v-7" stroke="#8aa25a" stroke-width="1.1"/><circle cx="${x}" cy="${y - 8}" r="2.4" fill="${c}"/><circle cx="${x}" cy="${y - 8}" r="0.8" fill="#fff6d8"/></g>`;
+/** A wildflower of the scene's colour, drawn as the real flower it stands for (D47 PR 1). */
+const wildflower = (x: number, y: number, c: string) => flowerFor(x, y, c);
 
 const cotton = (x: number, y: number) =>
   `<g><path d="M${x} ${y} C${x - 1} ${y - 6} ${x + 1} ${y - 10} ${x} ${y - 14}" stroke="#8aa57a" stroke-width="1" fill="none"/><circle cx="${x}" cy="${y - 15}" r="3.2" fill="#fff"/><circle cx="${x + 1}" cy="${y - 16}" r="1.6" fill="#f4f8fb"/></g>`;
@@ -423,13 +425,8 @@ const heliconia = (x: number, y: number) =>
 const birdFlock = (pts: Array<[number, number]>, c = '#5b4a3a') =>
   `<g class="sp-birds">${pts.map(([x, y]) => `<path d="M${x - 5} ${y} q2.5 -3 5 0 q2.5 -3 5 0" stroke="${c}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
 
-const butterflies = (pts: Array<[number, number]>) =>
-  `<g class="sp-birds">${pts
-    .map(
-      ([x, y]) =>
-        `<g><ellipse cx="${x - 2.6}" cy="${y}" rx="3" ry="4" fill="#4fa3e0" transform="rotate(-20 ${x - 2.6} ${y})"/><ellipse cx="${x + 2.6}" cy="${y}" rx="3" ry="4" fill="#4fa3e0" transform="rotate(20 ${x + 2.6} ${y})"/><path d="M${x} ${y - 3} v6" stroke="#2f2a27" stroke-width="1"/></g>`,
-    )
-    .join('')}</g>`;
+/** Butterflies (D47 PR 1: blues, with fore- and hindwings, veins and a border). */
+const butterflies = (pts: Array<[number, number]>) => butterfliesAt(pts, '#4fa3e0');
 
 const ARCTIC_STARS: Array<[number, number, number]> = [
   [30, 22, 2.4],
@@ -440,9 +437,6 @@ const ARCTIC_STARS: Array<[number, number, number]> = [
   [330, 20, 2.4],
   [120, 52, 1.4],
 ];
-
-const daisy = (x: number, y: number) =>
-  `<g><path d="M${x} ${y} v-6" stroke="#7fa85a" stroke-width="1"/><g fill="#fff">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="${x}" cy="${y - 8.6}" rx="1.1" ry="2" transform="rotate(${a} ${x} ${y - 7})"/>`).join('')}</g><circle cx="${x}" cy="${y - 7}" r="1.2" fill="#f6c84e"/></g>`;
 
 const sunflower = (x: number, y: number, h = 30) =>
   `<g><path d="M${x} ${y} V${y - h}" stroke="#6f9a4a" stroke-width="1.8"/><path d="M${x} ${y - h * 0.4} c-6 -3 -9 -1 -10 2 c4 1 7 0 10 -2z M${x} ${y - h * 0.6} c6 -3 9 -1 10 2 c-4 1 -7 0 -10 -2z" fill="#7fb35d"/>
@@ -462,6 +456,50 @@ const FARM_FENCE = (() => {
     <path d="M98 ${y(98) - 24} V${y(98)} M144 ${y(144) - 24} V${y(144)}" stroke="#b98a5e" stroke-width="2.6" stroke-linecap="round"/></g>`;
 })();
 
+/** The path from the gate to the barn, for keeping the meadow off it. */
+const FARM_PATH: Array<[number, number]> = [
+  [143, 300],
+  [165, 281],
+  [190, 263],
+  [214, 248],
+  [238, 233],
+  [260, 216],
+  [276, 199],
+  [287, 186],
+];
+
+/**
+ * The Farm's meadow (D47 PR 1): grass clumps, clover, and drifts of buttercups, daisies, dandelions and a little
+ * lavender, thick in places and thin in others, kept off the path and clear of where the animals stand and the
+ * buildings go. The same meadow every time (seeded by the home, not the scene's id).
+ */
+const FARM_MEADOW = (id: string) =>
+  memoMeadow(`farm:${id}`, () => meadow(id, {
+    top: (x) => 128 + Math.sin(x / 40) * 2,
+    seed: seedOf('farm-meadow'),
+    density: 0.62,
+    avoid: [
+      ...Object.values(SPOTS).map((p) => [p.x, p.y - 4, 20] as [number, number, number]),
+      [160, 196, 18],
+      [184, 262, 30],
+      [126, 292, 14],
+      [108, 214, 24],
+      [214, 180, 26],
+      [62, 272, 58, 18],
+      [286, 160, 56, 30],
+    ],
+    clear: (x, y) => FARM_PATH.some(([px, py], i) => i > 0 && distToSeg(x, y, FARM_PATH[i - 1], [px, py]) < 9 + (y - 186) * 0.05),
+    flowers: { buttercup: 1.1, daisy: 1.2, dandelion: 0.5, clock: 0.25, lavender: 0.3, seedgrass: 0.7 },
+    swaying: 12,
+  }).svg);
+
+function distToSeg(x: number, y: number, [ax, ay]: [number, number], [bx, by]: [number, number]): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(x - ax - t * dx, y - ay - t * dy);
+}
+
 const REGION_ART: Record<BaseRegionId, RegionArt> = {
   farm: {
     sky: (id) => `
@@ -480,25 +518,7 @@ const REGION_ART: Record<BaseRegionId, RegionArt> = {
       <path d="M0 132 C90 124 200 130 280 126 C320 124 345 128 360 126 V300 H0Z" fill="url(#${id}-grass)"/>
       <g stroke="#c0e39a" stroke-width="10" opacity="0.32" fill="none"><path d="M0 196 C120 188 240 194 360 186"/><path d="M0 252 C120 244 250 250 360 242"/></g>
       <path d="M128 300 C150 274 188 254 220 236 C246 222 270 204 282 186 L292 186 C284 208 262 228 236 244 C204 262 170 280 158 300Z" fill="#e6cfa2" opacity="0.85"/>
-      ${[
-        [24, 250],
-        [96, 284],
-        [214, 296],
-        [340, 222],
-        [300, 296],
-        [170, 206],
-      ]
-        .map(([x, y]) => tuft(x, y, '#76ab55'))
-        .join('')}
-      ${[
-        [44, 268],
-        [62, 290],
-        [232, 284],
-        [348, 290],
-        [196, 214],
-      ]
-        .map(([x, y]) => daisy(x, y))
-        .join('')}`,
+      ${botanyDefs(id)}${FARM_MEADOW(id)}`,
     stages: {
       1: [
         { base: 187, svg: FARM_FENCE },
@@ -1168,5 +1188,6 @@ export function regionScene(region: RegionId, st: RegionSceneState, id = 'region
 
 /** The scene for a sanctuary's world-map card: its land at the stage reached, with no figures. */
 export function regionThumb(region: RegionId, stage: number, id: string): string {
-  return regionScene(region, { stage, companions: [], decor: [] }, id);
+  // Without the meadow: a card is small, the lawn's colour says enough, and the map draws many at once.
+  return stripMeadow(regionScene(region, { stage, companions: [], decor: [] }, id));
 }

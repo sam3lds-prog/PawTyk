@@ -653,3 +653,74 @@
   width: 16px;
   height: 16px;
 }
+
+/* D47 PR 1: butterflies. When a breath of wind plays the meadow their wings open and close once or twice (each on its
+   own beat); when the ambient director flutters them they take off, loop out on a curving path, beating fast, and
+   settle on their flower again. Nothing loops on its own. */
+.sanctuary__scene .sp-bf .bf-wl,
+.sanctuary__scene .sp-bf .bf-wr {
+  transform-box: fill-box;
+}
+.sanctuary__scene .sp-bf .bf-wl {
+  transform-origin: 100% 50%;
+}
+.sanctuary__scene .sp-bf .bf-wr {
+  transform-origin: 0% 50%;
+}
+.sanctuary__scene.is-live .is-sway .sp-bf .bf-wl,
+.sanctuary__scene.is-live .is-sway .sp-bf .bf-wr {
+  animation: bf-rest 1600ms ease-in-out calc(var(--bfd, 0s) / 10);
+}
+@keyframes bf-rest {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: scaleX(0.3);
+  }
+  50% {
+    transform: scaleX(0.95);
+  }
+  70% {
+    transform: scaleX(0.35);
+  }
+}
+.sanctuary__scene.is-live .is-flutter .sp-bf {
+  animation: bf-flight 1800ms ease-in-out;
+}
+.sanctuary__scene.is-live .is-flutter .sp-bf .bf-wl,
+.sanctuary__scene.is-live .is-flutter .sp-bf .bf-wr {
+  animation: bf-beat 150ms ease-in-out 12 alternate;
+}
+@keyframes bf-flight {
+  10% {
+    transform: translate(-2px, -7px);
+  }
+  28% {
+    transform: translate(7px, -15px);
+  }
+  46% {
+    transform: translate(17px, -11px);
+  }
+  62% {
+    /* a glide */
+    transform: translate(15px, -4px);
+  }
+  80% {
+    transform: translate(5px, -7px);
+  }
+  92% {
+    transform: translate(1px, -2px);
+  }
+}
+@keyframes bf-beat {
+  to {
+    transform: scaleX(0.25);
+  }
+}
+:root[data-motion='reduce'] .sanctuary__scene .sp-bf,
+:root[data-motion='reduce'] .sanctuary__scene .sp-bf .bf-wl,
+:root[data-motion='reduce'] .sanctuary__scene .sp-bf .bf-wr {
+  animation: none !important;
+}

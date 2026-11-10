@@ -192,7 +192,8 @@ export function startSceneLife(svg: Element, seedKey: string): SceneLife {
   // Decorations and stage features: each lively group is one actor (its own part is what moves).
   const parts: Array<[string, AmbientAction]> = [];
   let n = 0;
-  for (const g of svg.querySelectorAll('[data-decor], .sp-stage')) {
+  // A meadow (D47) is one part too: its nearest clumps sway together, its butterflies flutter.
+  for (const g of svg.querySelectorAll('[data-decor], .sp-stage, .sp-meadow')) {
     const actions = PART_ACTIONS.filter(([sel]) => g.querySelector(sel)).map(([, a]) => a);
     if (!actions.length) continue;
     const id = (g as HTMLElement).dataset.decor ? `decor:${(g as HTMLElement).dataset.decor}` : `stage:${n++}`;

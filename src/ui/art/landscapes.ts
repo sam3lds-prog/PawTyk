@@ -9,6 +9,8 @@
  * `.sp-balloon`), played only by `AmbientDirector`.
  */
 
+import { botanyDefs, butterfliesAt, fineDetail, flowerFor, meadow as botanyMeadow, memoMeadow, tallGrassClump, tuft as botanyTuft } from './botany';
+import { seedOf } from '../../art/botany';
 import type { Feature, RegionArt, Spot } from './regions';
 import { OUT, SHADOW } from './sceneKit';
 
@@ -41,28 +43,20 @@ function scatter(items: Array<[number, number, string]>, band = 14): Feature[] {
   return [...bands.values()].map((b) => ({ base: b.base, svg: b.svg.join('') }));
 }
 
-const tuft = (x: number, y: number, c: string) =>
-  `<g stroke="${c}" stroke-width="1.5" stroke-linecap="round"><path d="M${x} ${y} l-6 -7 M${x} ${y} l-2 -9 M${x} ${y} l2.5 -9 M${x} ${y} l6.5 -6"/></g>`;
+/** A clump of grass in the landscape's grass colour (D47 PR 1: organic blades, swaying from the root). */
+const tuft = (x: number, y: number, c: string) => botanyTuft(x, y, c);
 
-const wildflower = (x: number, y: number, c: string) =>
-  `<g><path d="M${x} ${y} v-7" stroke="#8aa25a" stroke-width="1.1"/><circle cx="${x}" cy="${y - 8}" r="2.4" fill="${c}"/><circle cx="${x}" cy="${y - 8}" r="0.8" fill="#fff6d8"/></g>`;
+/** A wildflower of the landscape's colour, drawn as the real flower it stands for (D47 PR 1). */
+const wildflower = (x: number, y: number, c: string) => flowerFor(x, y, c);
 
-/** A five-petal bloom on a short stem. */
-const bloom = (x: number, y: number, c: string, r = 1.6, stem = 6) =>
-  `<g><path d="M${x} ${y} v-${stem}" stroke="#7fa85a" stroke-width="1"/><g fill="${c}">${[0, 72, 144, 216, 288]
-    .map((a) => `<circle cx="${n(x + Math.cos(rad(a - 90)) * r * 1.1)}" cy="${n(y - stem - 1.6 + Math.sin(rad(a - 90)) * r * 1.1)}" r="${r}"/>`)
-    .join('')}</g><circle cx="${x}" cy="${y - stem - 1.6}" r="${n(r * 0.7)}" fill="#f6d27a"/></g>`;
+/** A bloom of the landscape's colour, at about its old size (D47 PR 1). */
+const bloom = (x: number, y: number, c: string, r = 1.6, _stem = 6) => flowerFor(x, y, c, 0.55 * (r / 1.6) + 0.15);
 
 const birdFlock = (pts: Array<[number, number]>, c = '#5b4a3a') =>
   `<g class="sp-birds">${pts.map(([x, y]) => `<path d="M${x - 5} ${y} q2.5 -3 5 0 q2.5 -3 5 0" stroke="${c}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`).join('')}</g>`;
 
-const butterflies = (pts: Array<[number, number]>, c = '#f2a65a') =>
-  `<g class="sp-birds">${pts
-    .map(
-      ([x, y]) =>
-        `<g><ellipse cx="${x - 2.6}" cy="${y}" rx="3" ry="4" fill="${c}" transform="rotate(-20 ${x - 2.6} ${y})"/><ellipse cx="${x + 2.6}" cy="${y}" rx="3" ry="4" fill="${c}" transform="rotate(20 ${x + 2.6} ${y})"/><path d="M${x} ${y - 3} v6" stroke="#2f2a27" stroke-width="1"/></g>`,
-    )
-    .join('')}</g>`;
+/** Butterflies of the kind the landscape's colour stands for (D47 PR 1). */
+const butterflies = (pts: Array<[number, number]>, c = '#f2a65a') => butterfliesAt(pts, c);
 
 /** White ripple strokes on water ([x, y, width] each). */
 const ripples = (lines: Array<[number, number, number]>, c = '#fff', o = 0.8) =>
@@ -1276,23 +1270,35 @@ const cloud = (x: number, y: number, s: number) =>
   `<g fill="#fff"><ellipse cx="${x}" cy="${y + 8 * s}" rx="${n(34 * s)}" ry="${n(8 * s)}"/><circle cx="${n(x - 16 * s)}" cy="${n(y + 2 * s)}" r="${n(11 * s)}"/><circle cx="${n(x + 2 * s)}" cy="${n(y - 6 * s)}" r="${n(15 * s)}"/><circle cx="${n(x + 20 * s)}" cy="${n(y + 2 * s)}" r="${n(11 * s)}"/></g><ellipse cx="${x}" cy="${n(y + 12 * s)}" rx="${n(30 * s)}" ry="${n(3 * s)}" fill="#e3eef4" opacity="0.8"/>`;
 
 /** A clump of tall prairie grass, some blades carrying seed heads. */
-const tallGrass = (x: number, y: number, h: number, c = '#a2b45e', c2 = '#c9c27a') =>
-  `<g stroke-linecap="round" fill="none">${[-6, -3, 0, 3, 6, 8]
-    .map((d, i) => {
-      const ex = n(x + d * 1.6 + (i % 2 ? 3 : -2));
-      const ey = n(y - h * (0.8 + (i % 3) * 0.12));
-      const blade = `<path d="M${n(x + d * 0.6)} ${y} Q${n(x + d * 0.9)} ${n(y - h * 0.6)} ${ex} ${ey}" stroke="${i % 2 ? c : c2}" stroke-width="1.4"/>`;
-      return i % 3 === 1 ? `${blade}<ellipse cx="${ex}" cy="${n(ey - 2.4)}" rx="1.3" ry="3" fill="#d9c27a" stroke="none" transform="rotate(${d * 2} ${ex} ${n(ey - 2.4)})"/>` : blade;
-    })
-    .join('')}</g>`;
+/** Tall grass with seed heads (D47 PR 1: curving blades and nodding seed heads). */
+const tallGrass = (x: number, y: number, h: number, c = '#a2b45e', _c2 = '#c9c27a') => tallGrassClump(x, y, h, c);
 
-/** A patch of meadow flowers: little dots of color around (x, y). */
+/** A patch of meadow flowers around (x, y): real flowers of the patch's colours, growing in a little drift (D47 PR 1). */
 const meadow = (x: number, y: number, w: number, colors: readonly string[], k = 11) =>
-  `<g>${Array.from({ length: k }, (_, i) => {
+  `<g>${Array.from({ length: Math.ceil(k * 0.6) }, (_, i) => {
     const px = n(x + (((i * 37) % 17) / 16 - 0.5) * w);
-    const py = n(y - ((i * 23) % 7) * 1.3);
-    return `<path d="M${px} ${py} v3.6" stroke="#8aa25a" stroke-width="0.8"/><circle cx="${px}" cy="${py}" r="2.1" fill="${colors[i % colors.length]}"/>`;
+    const py = n(y + 3 - ((i * 23) % 7) * 1.3);
+    return flowerFor(px, py, colors[i % colors.length], 0.55);
   }).join('')}</g>`;
+
+/** The grassland's meadow (D47 PR 1): clumps, clover and drifts of flowers, clear of its animals' spots and its pond. */
+const GRASSLAND_MEADOW = (id: string) =>
+  memoMeadow(`grassland:${id}`, () => botanyMeadow(id, {
+    top: (x) => 156 + Math.sin(x / 50) * 3,
+    seed: seedOf('grassland-meadow'),
+    density: 0.44,
+    avoid: [
+      [92, 252, 22],
+      [244, 258, 22],
+      [168, 284, 20],
+      [306, 276, 20],
+      [166, 204, 60, 18],
+      [64, 190, 24, 10],
+      [290, 160, 34, 8],
+    ],
+    flowers: { buttercup: 0.8, daisy: 0.8, lavender: 0.6, dandelion: 0.5, clock: 0.3, seedgrass: 1.4 },
+    swaying: 10,
+  }).svg);
 
 const GRASSLAND: RegionArt = {
   sky: (id) => `
@@ -1308,6 +1314,7 @@ const GRASSLAND: RegionArt = {
     <path d="M0 150 C70 138 140 140 200 150 C250 142 300 128 360 136 V176 H0Z" fill="#c8d898"/>
     <path d="M200 150 C250 142 300 128 360 136 V146 C320 140 270 146 230 154 Z" fill="#d9e2a6"/>
     <path d="M0 158 C80 150 180 160 260 154 C300 150 330 154 360 152 V300 H0Z" fill="url(#${id}-grass)"/>
+    ${botanyDefs(id)}${GRASSLAND_MEADOW(id)}
     <g stroke="#e3d891" stroke-width="12" opacity="0.5" fill="none"><path d="M0 196 C120 186 240 194 360 184"/><path d="M0 248 C120 238 250 246 360 236"/></g>
     <g stroke="#bccd84" stroke-width="8" opacity="0.4" fill="none"><path d="M0 222 C120 214 240 220 360 212"/><path d="M0 284 C120 276 250 282 360 274"/></g>
     <g stroke="#b9c477" stroke-width="1" fill="none" opacity="0.7" stroke-linecap="round">${[
@@ -1322,7 +1329,7 @@ const GRASSLAND: RegionArt = {
     ]
       .map(([x, y]) => `<path d="M${x} ${y} q3 -5 8 -6 M${x + 6} ${y + 1} q3 -5 8 -6 M${x + 12} ${y} q3 -5 8 -6"/>`)
       .join('')}</g>
-    ${tallGrass(8, 300, 40)}${tallGrass(22, 298, 32)}${tallGrass(36, 300, 24)}${tallGrass(352, 300, 38)}${tallGrass(338, 298, 28)}${tallGrass(346, 232, 24)}${tallGrass(132, 172, 16)}${tallGrass(204, 168, 14)}${tallGrass(124, 236, 22)}${tallGrass(60, 186, 18)}${tallGrass(230, 214, 18)}
+    ${fineDetail(`${tallGrass(8, 300, 40)}${tallGrass(22, 298, 32)}${tallGrass(36, 300, 24)}${tallGrass(352, 300, 38)}${tallGrass(338, 298, 28)}${tallGrass(346, 232, 24)}${tallGrass(132, 172, 16)}${tallGrass(204, 168, 14)}${tallGrass(124, 236, 22)}${tallGrass(60, 186, 18)}${tallGrass(230, 214, 18)}
     ${[
       [60, 176, '#b49ae0'],
       [240, 172, '#f6d27a'],
@@ -1332,7 +1339,7 @@ const GRASSLAND: RegionArt = {
       [280, 186, '#b49ae0'],
     ]
       .map(([x, y, c]) => wildflower(x as number, y as number, c as string))
-      .join('')}`,
+      .join('')}`)}`,
   stages: {
     1: [
       {
