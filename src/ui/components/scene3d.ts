@@ -12,6 +12,8 @@ export interface Scene3D {
   /** Settles true once the toys are showing, false if they won't (no WebGL, setting off, load failed). */
   readonly ready: Promise<boolean>;
   setLive(on: boolean): void;
+  /** Frames the same part of the scene the camera shows (D44 PR C). Kept for a stage that is still loading. */
+  setView(v: { x: number; y: number; w: number; h: number } | null): void;
   dispose(): void;
 }
 
@@ -49,6 +51,7 @@ export function createScene3D(): Scene3D {
   let stage: SceneStage | null = null;
   let target: [HTMLElement, SVGSVGElement] | null = null;
   let live = !document.hidden;
+  let view: { x: number; y: number; w: number; h: number } | null = null;
   let disposed = false;
   let started = false;
   let settle: (ok: boolean) => void = () => {};
@@ -73,6 +76,7 @@ export function createScene3D(): Scene3D {
         stage.setLive(live);
         if (target) {
           stage.attach(...target);
+          stage.setView(view);
           settle(true);
         }
       })
@@ -104,6 +108,10 @@ export function createScene3D(): Scene3D {
     setLive(on) {
       live = on;
       stage?.setLive(on);
+    },
+    setView(v) {
+      view = v;
+      stage?.setView(v);
     },
     dispose() {
       disposed = true;

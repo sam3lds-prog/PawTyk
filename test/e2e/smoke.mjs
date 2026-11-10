@@ -387,6 +387,40 @@ try {
   check('the animals say hello when you arrive', greeted);
   await page.waitForSelector('.sanctuary__scene.has-3d > canvas.scene3d', { timeout: 15000 }).catch(() => {});
   check('the Farm animals appear as 3D toys over the drawn scene', await page.evaluate(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d') && getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity === '0'));
+  // D44 PR C: the camera moves the drawing and the toys together. A figure's ground point, drawn (through the SVG) and
+  // in 3D (through the stage's camera), lands on the same screen pixel at the whole scene and in a 2× close-up.
+  const aligned = await page.evaluate(() => {
+    const st = window.__stage3d;
+    const cam = window.__cam;
+    const svg = document.querySelector('.sanctuary__scene svg');
+    const fig = svg.querySelector('.sanctuary__pet[data-gx]');
+    if (!st || !cam || !fig) return null;
+    const key = fig.dataset.pet ?? `friend:${fig.dataset.friend}`;
+    const gx = Number(fig.dataset.gx);
+    const gy = Number(fig.dataset.gy);
+    const off = () => {
+      const z = (gy - 150) * 0.35;
+      const k = (900 - z) / 900;
+      const v = st.actor(key).toy.root.position.clone().set((gx - 180) * k, (150 - gy) * k, z).project(st.camera);
+      const r = st.canvas.getBoundingClientRect();
+      const pt = svg.createSVGPoint();
+      pt.x = gx;
+      pt.y = gy;
+      const sp = pt.matrixTransform(svg.getScreenCTM());
+      return Math.hypot(r.left + ((v.x + 1) / 2) * r.width - sp.x, r.top + ((1 - v.y) / 2) * r.height - sp.y);
+    };
+    const whole = off();
+    cam.cut(cam.viewOf(fig, 2));
+    const close = off();
+    const zoomed = cam.zoom;
+    cam.cut(cam.full);
+    return { whole, close, zoomed, back: svg.getAttribute('viewBox') };
+  });
+  check(
+    'the camera keeps every toy on its drawn spot, at the whole scene and in a 2× close-up (D44)',
+    !!aligned && aligned.whole < 2 && aligned.close < 2 && aligned.zoomed > 1.9 && aligned.back === '0 0 360 300',
+    JSON.stringify(aligned),
+  );
   await page.waitForTimeout(3000);
   await page.evaluate(() => {
     window.__seen = new Set();

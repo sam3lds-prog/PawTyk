@@ -1382,3 +1382,19 @@ Owner decisions, asked up front (2026-11-09):
 - Leaving the app fades the music out. On iOS 17+ the audio session is *ambient*: PawTyk follows the silent switch and
   mixes with other audio.
 - **Recorded tracks later**: `useRecordedTrack(id, url)` swaps a cue's score for an audio file at the same tempo.
+
+### PR C — the scene camera
+- `ui/components/camera.ts` (`SceneCamera`) pans and zooms a sanctuary scene: the drawing and its 3D toys together.
+  A **view** is a rectangle in scene units, always the scene's shape and inside it (up to 2.6× close).
+- **One rectangle, two layers**: a view sets the SVG's `viewBox` (vector-sharp at any zoom) and the 3D stage frames
+  the same rectangle with `camera.setViewOffset`, drawing at once so the toys never lag a frame. The browser tests
+  check a figure's ground point lands on the same pixel in both, at the whole scene and at 2× (under 2 px).
+- Code that read the viewBox as the scene's size now reads the whole frame, kept on the SVG as `data-vb` (the stage,
+  tricks). A ride's toy follows its drawn rider through the view (`sceneBox`). Taps map through the SVG's own
+  transform, so they keep working at any zoom; a name tag (placed in page pixels) goes when the camera moves.
+- **Depth**: groups marked `data-depth` (below 1 farther, above 1 nearer) move and zoom less or more than the scene,
+  for parallax. PR G marks each home's layers.
+- **Quality tiers**: high (every frame of a glide is sharp, with depth) until a glide falls behind (~35 fps); then lite
+  for the session (a glide is one GPU transform of the drawing and the 3D canvas, sharp when it lands; depth flat).
+- **Reduced motion**: a glide is a cut; offsets (a dance's beat sway) are ignored.
+- Every sanctuary screen has a camera (`region.ts`); it is disposed with the screen and gives the whole scene back.

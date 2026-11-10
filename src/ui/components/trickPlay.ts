@@ -27,7 +27,8 @@ export function performTrick(svg: SVGSVGElement, fig: SVGGElement, id: TrickId, 
     /* not rendered */
   }
   hearts.forEach((h) => (h.style.display = ''));
-  const width = svg.viewBox?.baseVal?.width || Infinity;
+  // The scene's whole width, even while the camera shows a part of it (D44 PR C keeps it as `data-vb`).
+  const width = Number((svg.getAttribute('data-vb') ?? '').split(/\s+/)[2]) || svg.viewBox?.baseVal?.width || Infinity;
   // With 3D toys (D34) the stage draws the emote and props itself, following the animal; the drawn overlay is for
   // the drawn animals.
   const in3d = !!svg.closest('.has-3d');

@@ -97,6 +97,8 @@ export class SceneStage {
   private frozen: number | null = null;
   /** The WebGL context is gone (the OS took it back); the drawn animals show until it returns. */
   private lost = false;
+  /** The scene camera's view (D44 PR C): the part of the scene the drawing shows, in scene units. Null: all of it. */
+  private view: { x: number; y: number; w: number; h: number } | null = null;
   readonly canvas: HTMLCanvasElement;
 
   constructor(private readonly o: StageOptions) {
@@ -153,13 +155,15 @@ export class SceneStage {
       this.visible?.observe(figure);
     }
     this.svg = svg;
-    const vb = svg.viewBox?.baseVal;
+    // The scene's whole frame: the scene camera keeps it as `data-vb` while it shows a part (D44 PR C).
+    const kept = (svg.getAttribute('data-vb') ?? '').split(/\s+/).map(Number);
+    const vb = kept.length === 4 && kept[2] > 0 ? { width: kept[2], height: kept[3] } : svg.viewBox?.baseVal;
     if (vb?.width && vb.height && (vb.width !== this.vw || vb.height !== this.vh)) {
       this.vw = vb.width;
       this.vh = vb.height;
       this.camera.fov = (2 * Math.atan(this.vh / 2 / D) * 180) / Math.PI;
       this.camera.aspect = this.vw / this.vh;
-      this.camera.updateProjectionMatrix();
+      this.applyView();
     }
     this.observer.disconnect();
     this.observer.observe(svg, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'data-trick'] });
@@ -180,6 +184,23 @@ export class SceneStage {
   setLive(on: boolean): void {
     this.live = on;
     this.kick();
+  }
+
+  /**
+   * Frames part of the scene, the same rectangle the drawing shows (D44 PR C), and draws it at once so the toys never
+   * lag the drawing by a frame.
+   */
+  setView(v: { x: number; y: number; w: number; h: number } | null): void {
+    this.view = v;
+    this.applyView();
+    this.renderNow();
+  }
+
+  private applyView(): void {
+    const v = this.view;
+    if (v && this.vw && this.vh) this.camera.setViewOffset(this.vw, this.vh, v.x, v.y, v.w, v.h);
+    else this.camera.clearViewOffset();
+    this.camera.updateProjectionMatrix();
   }
 
   /** Who is riding a decoration now, and which (tests). */
@@ -261,9 +282,11 @@ export class SceneStage {
     const fr = this.svg!.getBoundingClientRect();
     if (!fr.width) return null;
     const r = el.getBoundingClientRect();
-    const kx = this.vw / fr.width;
-    const ky = this.vh / fr.height;
-    return { x: (r.left - fr.left) * kx, y: (r.top - fr.top) * ky, w: r.width * kx, h: r.height * ky };
+    // The drawing may show only part of the scene (the camera's view): map through it.
+    const v = this.view ?? { x: 0, y: 0, w: this.vw, h: this.vh };
+    const kx = v.w / fr.width;
+    const ky = v.h / fr.height;
+    return { x: v.x + (r.left - fr.left) * kx, y: v.y + (r.top - fr.top) * ky, w: r.width * kx, h: r.height * ky };
   }
 
   // ---------------------------------------------------------------- decoration rides (D32): the toy goes along

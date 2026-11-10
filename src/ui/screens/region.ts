@@ -25,6 +25,7 @@ import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLif
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
+import { SceneCamera } from '../components/camera';
 import { trickBadge } from '../art/tricks';
 import { toast } from '../components/sheet';
 import { dismissSceneCue, sceneCue, sceneCueMarkup, type SceneCue } from '../components/sceneCues';
@@ -83,9 +84,13 @@ export const regionScreen: ScreenDef = {
     let acts: ActivityRunner | null = null;
     // 3D toys over the drawn scene (D34); kept across re-renders.
     const s3d = createScene3D();
+    // The scene camera (D44 PR C): close-ups, the parade's glide, the guided tour. The drawing and the toys move together.
+    const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
+    if (import.meta.env.DEV) (window as unknown as { __cam?: SceneCamera }).__cam = camera;
     scope.onDispose(() => {
       life?.dispose();
       acts?.dispose();
+      camera.dispose();
       s3d.dispose();
     });
     scope.on(document, 'visibilitychange', () => {
@@ -226,6 +231,7 @@ export const regionScreen: ScreenDef = {
       if (slot) slot.innerHTML = sceneCueMarkup(cue, cued?.dataset.name);
       ringCued(cued);
       s3d.attach(open ? el.querySelector<HTMLElement>('.sanctuary__scene') : null, svg);
+      camera.attach(el.querySelector<HTMLElement>('.sanctuary__scene'), svg);
       const btn = tricksBtn();
       if (btn) btn.hidden = !open || !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
