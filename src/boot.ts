@@ -66,3 +66,6 @@ if (import.meta.env.DEV) {
 }
 
 router.reset({ screen: needsWelcome() ? 'welcome' : 'journey' });
+
+// Tester builds (D46 PR C): the frame-rate counter comes back if it was left on.
+if (import.meta.env.DEV || import.meta.env.VITE_QA === '1') void import('./ui/components/deviceChecks').then((m) => m.restoreDeviceChecks());

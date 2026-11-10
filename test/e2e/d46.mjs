@@ -339,6 +339,123 @@ export async function d46Checks({ browser, URL, check, errors }) {
     JSON.stringify({ wNote, wBack, wDraws, wGone, wHome }),
   );
 
+  // ---------------------------------------------------------------- D46 PR C: visual acceptance
+  // Every frame of a Welcome Parade on the smallest iPhone, toys and drawn: every animal stays wholly inside the
+  // picture and clear of the Skip button (the dance's framing used to cut the Farm's sheep and horse in half, and Skip
+  // sat on the horse's legs at the finish).
+  const watchParade = async (toys3d) => {
+    await qa.evaluate((toys3d) => {
+      const a = window.__pt.app;
+      a.save.settings.toys3d = toys3d;
+      a.applySettings();
+      a.persist();
+    }, toys3d);
+    await openFarm(qa, { welcome: true, toys3d });
+    await waitFor(qa, '.sanctuary__scene.is-parading', 8000);
+    return qa.evaluate(
+      () =>
+        new Promise((done) => {
+          const scene = document.querySelector('.sanctuary__scene');
+          const bad = new Map();
+          let frames = 0;
+          const inside = (r, o, pad) => r.left >= o.left - pad && r.right <= o.right + pad && r.top >= o.top - pad && r.bottom <= o.bottom + pad;
+          const meet = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          let lastZoom = 0;
+          const look = () => {
+            if (!scene.classList.contains('is-parading')) return done({ frames, bad: [...bad.entries()] });
+            // The dance and the finish, once the camera has settled: the intro is a close-up on the newcomer by design,
+            // and a frame mid-glide is between two framings.
+            const zoom = window.__cam?.zoom ?? 1;
+            const steady = Math.abs(zoom - lastZoom) < 0.002 && zoom <= 1.46;
+            lastZoom = zoom;
+            if (!steady) return requestAnimationFrame(look);
+            frames++;
+            const box = scene.getBoundingClientRect();
+            const skip = scene.querySelector('.parade-skip')?.getBoundingClientRect();
+            for (const f of scene.querySelectorAll('.sanctuary__pet')) {
+              // The animal (the toy stands where its drawn twin stands), less a tenth each side for its shadow.
+              const o = f.getBoundingClientRect();
+              const r = { left: o.left + o.width * 0.1, right: o.right - o.width * 0.1, top: o.top + o.height * 0.1, bottom: o.bottom - o.height * 0.1, width: o.width };
+              const who = f.dataset.friend ?? f.dataset.pet ?? '?';
+              if (!r.width) continue;
+              if (!inside(r, box, 2)) bad.set(who, `out@${zoom.toFixed(2)}`);
+              if (skip && meet(r, skip)) bad.set(who, `skip@${zoom.toFixed(2)}`);
+            }
+            requestAnimationFrame(look);
+          };
+          look();
+        }),
+    );
+  };
+  const p3d = await watchParade(true);
+  const pDrawn = await watchParade(false);
+  await qa.evaluate(() => {
+    window.__pt.app.save.settings.toys3d = true;
+    window.__pt.app.applySettings();
+  });
+  check(
+    'a small iPhone: through a whole Welcome Parade (3D and drawn) every animal stays in the picture and clear of Skip (D46)',
+    p3d.frames > 10 && pDrawn.frames > 10 && p3d.bad.length === 0 && pDrawn.bad.length === 0,
+    JSON.stringify({ p3d: { frames: p3d.frames, bad: p3d.bad.slice(0, 4) }, drawn: { frames: pDrawn.frames, bad: pDrawn.bad.slice(0, 4) } }),
+  );
+  // The walk's Go-to buttons on a 320-wide phone: one row, below the scene's middle, clear of the map and the pad.
+  await openFarm(qa);
+  await qa.waitForTimeout(1500);
+  await tapAt(qa, '.sanctuary__scene [data-act="walk"]');
+  await waitFor(qa, '.walk canvas.walk__canvas');
+  await qa.waitForTimeout(400);
+  const chips = await qa.evaluate(() => {
+    const cs = [...document.querySelectorAll('.walk [data-goto]')].map((c) => c.getBoundingClientRect());
+    const tops = new Set(cs.map((r) => Math.round(r.top)));
+    const map = document.querySelector('.walk__map').getBoundingClientRect();
+    return { n: cs.length, rows: tops.size, minH: Math.min(...cs.map((r) => r.height)), lowHalf: cs.every((r) => r.top > window.innerHeight / 2), aboveMap: cs.every((r) => r.bottom <= map.top) };
+  });
+  await tapAt(qa, '.walk [data-act="walk-close"]');
+  await qa.waitForTimeout(600);
+  check('a 320-wide phone: the walk’s Go-to buttons fit one row (44 pt tall), in the lower half, above the map (D46)', chips.n === 4 && chips.rows === 1 && chips.minH >= 44 && chips.lowHalf && chips.aboveMap, JSON.stringify(chips));
+
+  // The tester's device checks (D46 PR C): Settings → Performance check plays the Farm by itself and reports each
+  // step; the frame-rate counter shows; Listen to every tune lists them all and plays one.
+  await qa.evaluate(() => window.__pt.go({ screen: 'journey' }));
+  await waitFor(qa, '[data-act="settings"]');
+  await tapAt(qa, '[data-act="settings"]');
+  await waitFor(qa, '[data-qa="perf"]');
+  await qa.evaluate(() => document.querySelector('[data-qa="perf"]').scrollIntoView());
+  await tapAt(qa, '[data-qa="perf"]');
+  const ranReport = await waitFor(qa, '.qa-report', 120000);
+  const report = await qa.evaluate(() => ({
+    rows: [...document.querySelectorAll('.qa-table tbody tr')].map((r) => r.querySelector('th').textContent),
+    text: document.querySelector('.qa-text')?.textContent ?? '',
+    bar: !!document.querySelector('.qa-run'),
+  }));
+  await qa.keyboard.press('Escape');
+  await qa.waitForTimeout(400);
+  const afterCheck = await sceneState(qa);
+  check(
+    'the tester’s Performance check plays the Farm by itself (rest, tour, three walks, a parade) and reports every step (D46)',
+    ranReport && report.rows.join('|') === 'The Farm at rest|The tour|Walk 1|Walk 2|Walk 3|A Welcome Parade|The Farm at rest again' && /3D renderers alive at the end: 1\b/.test(report.text) && !report.bar && atRest(afterCheck),
+    JSON.stringify({ ranReport, report: { ...report, text: report.text.slice(0, 600) }, afterCheck }),
+  );
+  await qa.evaluate(() => window.__pt.go({ screen: 'journey' }));
+  await waitFor(qa, '[data-act="settings"]');
+  await tapAt(qa, '[data-act="settings"]');
+  await waitFor(qa, '[data-qa="fps"]');
+  await qa.evaluate(() => document.querySelector('[data-qa="fps"]').click());
+  await qa.waitForTimeout(1300);
+  const fps = await qa.evaluate(() => document.querySelector('.qa-fps')?.textContent ?? '');
+  await qa.evaluate(() => document.querySelector('[data-qa="fps"]').click());
+  const fpsOff = await qa.evaluate(() => !document.querySelector('.qa-fps'));
+  await qa.evaluate(() => document.querySelector('[data-qa="listen"]').click());
+  await waitFor(qa, '.qa-listen [data-listen]');
+  const listen = await qa.evaluate(async () => {
+    document.querySelector('.qa-listen [data-listen="0"]').click();
+    const playing = (await import('/src/services/music.ts')).nowPlaying()?.id ?? null;
+    return { rows: document.querySelectorAll('.qa-listen [data-listen]').length, playing };
+  });
+  await qa.keyboard.press('Escape');
+  await qa.keyboard.press('Escape');
+  check('the frame-rate counter counts and turns off; Listen to every tune lists every tune and plays one (D46)', /^\d+ fps · p95 \d+ ms/.test(fps) && fpsOff && listen.rows >= 29 && listen.playing === 'triumph', JSON.stringify({ fps, fpsOff, listen }));
+
   await qa.close();
 }
 

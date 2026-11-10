@@ -301,10 +301,12 @@
 .sanctuary__scene.is-parading {
   cursor: default;
 }
+/* D46 PR C: top right, in the sky. At the bottom right it sat on whoever stands in the scene's front corner (the
+   Farm's horse, in every parade's finish); the Tour and Walk buttons up here are hidden while a parade or tour plays. */
 .parade-skip {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: 10px;
   z-index: 6;
   min-height: 36px;
   padding: 0 16px;
@@ -784,6 +786,16 @@ body.has-walk {
   font-size: var(--t-sm);
   box-shadow: 0 3px 10px -3px rgba(40, 52, 52, 0.35);
 }
+/* D46 PR C: on a 320-wide phone the four Go-to buttons wrapped into two rows over the middle of the view. Tighter, they
+   fit one row; still 44 px tall. */
+@media (max-width: 359px) {
+  .walk__goto {
+    gap: 6px;
+  }
+  .walk__chip {
+    padding: 6px 11px;
+  }
+}
 .walk__chip[aria-current='true'] {
   background: var(--brand);
   color: #fff;
@@ -853,4 +865,85 @@ body.has-walk {
 .walk__btn--right {
   grid-column: 3;
   grid-row: 2;
+}
+
+/* ------------------------------------------------------------------ device checks for testers (D46 PR C) */
+.qa-fps {
+  position: fixed;
+  left: max(6px, env(safe-area-inset-left, 0px));
+  top: max(6px, env(safe-area-inset-top, 0px));
+  z-index: 200;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(40, 52, 52, 0.78);
+  color: #fffaf0;
+  font: 700 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+.qa-fps[data-state='fine'] {
+  background: rgba(150, 110, 20, 0.85);
+}
+.qa-fps[data-state='slow'] {
+  background: rgba(170, 40, 40, 0.88);
+}
+.qa-run {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 24px);
+  padding: 8px 8px 8px 14px;
+  border-radius: 999px;
+  background: rgba(40, 52, 52, 0.9);
+  color: #fffaf0;
+  font-weight: 700;
+  font-size: var(--t-sm);
+}
+.qa-run button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fffaf0;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+.qa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+.qa-table th,
+.qa-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.qa-table .num {
+  text-align: right;
+}
+.qa-table [data-verdict='smooth'] {
+  color: var(--brand);
+  font-weight: 800;
+}
+.qa-table [data-verdict='slow'] {
+  color: var(--error);
+  font-weight: 800;
+}
+.qa-text {
+  white-space: pre-wrap;
+  font-size: 12px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.04));
+  padding: 10px;
+  border-radius: 12px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.qa-listen .row.is-playing .row__label {
+  color: var(--brand);
 }

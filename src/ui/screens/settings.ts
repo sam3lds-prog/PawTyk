@@ -22,6 +22,7 @@ import { leaderboardOffered } from '../../app/offers';
 import { CONTACT_EMAIL, PRIVACY_URL } from '../../config/legal';
 import { POLICY_UPDATED_TEXT, policyHtml } from '../../legal/privacyPolicy';
 import { animalSvg } from '../art/animals';
+import { fpsCounterOn, setFpsCounter, showListeningCheck, startFarmCheck } from '../components/deviceChecks';
 import { ICON } from '../icons';
 
 type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'music' | 'ambientMusic' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
@@ -169,6 +170,12 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="finish"><span class="row__label">Finish every open home<small>Everyone comes home everywhere open; the next new place opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="empty"><span class="row__label">Empty extra lives and hints<small>See "no hints left" and the loss sheet without extra lives</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="fill"><span class="row__label">Fill extra lives and hints to 10<small>Earning more turns into coins</small></span>${ICON.chevron}</button>
+      </div>
+      <div class="rows-title">Device checks</div>
+      <div class="rows">
+        ${opts.inGame ? '' : `<button class="row" data-qa="perf"><span class="row__label">Performance check<small>About a minute on the Farm, played by itself: frame rate, slow frames, slowdown. Copy the results.</small></span>${ICON.chevron}</button>`}
+        <button class="row" role="switch" aria-checked="${fpsCounterOn()}" data-qa="fps"><span class="row__label">Frame rate counter<small>A small counter in the corner while you play (this device only)</small></span><span class="switch" aria-checked="${fpsCounterOn()}" aria-hidden="true"></span></button>
+        <button class="row" data-qa="listen"><span class="row__label">Listen to every tune<small>Each cue, the parade in every home, every trick tune: on the phone’s own speaker</small></span>${ICON.chevron}</button>
       </div>`
           : ''
       }
@@ -196,6 +203,17 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         app.persist();
         // Reload so the normal startup catch-up hands out the skipped levels' gifts and points, once.
         location.reload();
+      } else if (what === 'perf') {
+        // The check runs on its own (it outlives this sheet and the screen under it).
+        sh.close();
+        startFarmCheck();
+      } else if (what === 'fps') {
+        const on = !fpsCounterOn();
+        setFpsCounter(on);
+        qa.setAttribute('aria-checked', String(on));
+        qa.querySelector('.switch')?.setAttribute('aria-checked', String(on));
+      } else if (what === 'listen') {
+        showListeningCheck(sh.scope);
       } else if (what === 'finish') {
         const came = finishOpenHomes(app.save);
         app.persist();

@@ -1679,3 +1679,53 @@ home and the Pet Garden.
   toys back each time, one renderer alive after GC, heap steady); a celebration started the moment the walk closes
   dances in 3D from its first beat; the scene's context lost and restored, lost and rebuilt; the walk's context lost
   and restored, lost for good (and Overview still works).
+
+### PR C — visual and audio acceptance
+The review asked for real-device recordings and listening; this session has no iPhone, so the pass was done in Chrome
+at iPhone sizes (320 × 568 and 390 × 844, 2×, toys and drawn), frame by frame, and on the scores themselves. Only what
+could be seen or measured to be wrong was changed; everything a device has to judge is now one tap away for testers.
+
+**Found and fixed**
+- **The dance and the finish cut the Farm's edge animals in half.** Framing the group (D44) and the hero shot (D45) came
+  to 1.07–1.14× for the Farm, whose animals stand right across the scene: the sheep at the left and the horse at the
+  right were half out of the picture for the whole dance and the final pose, at every size, toys or drawn. The frame
+  now allows a whole figure's height each side (they sway and hop), and a group shot under 1.2× (a hero shot under
+  1.1×) is the whole scene: a move nobody notices isn't worth cropping anyone. A clustered group (a new place with
+  three animals) still gets its closer framing.
+- **Skip sat on the horse.** The parade's Skip (and the tour's Stop) was in the bottom-right corner, where the Farm's
+  front animal stands: at the finish it covered the horse's legs. Both are now top right, in the sky; the Tour and Walk
+  buttons there are hidden while either plays.
+- **A spin sounded like a solved puzzle.** Twirl and Twirl opened with C–E–G–C in sixteenths, note for note Tiny
+  Triumph (the solve's signature). It now opens with a turn round G landing on C, then the same turn a step up over
+  D minor: same band, rhythm and length, so its loudness and the trick's timing are unchanged.
+- **The walk's Go-to buttons wrapped into two rows** over the middle of the view on a 320-wide phone. Tighter there,
+  they fit one row (still 44 pt tall).
+
+**Checked and left as they are**
+- The newcomer's close-up at the start of the parade, the trick close-up (performer centred in its own light), the
+  tour's stops and captions, the drawn Farm against the 3D walk from the gate (the same barn, fence, hay, mud and
+  animals, where the drawing puts them; the sunflowers and windmill are there, to the left, as in the drawing).
+- A wider walk camera on portrait phones was tried (the view is a 32–38° slot) and dropped: it shows the whole barn
+  but makes the animals small. A matter of taste for the device review, not a defect.
+- Barnyard Bounce's hook: it states its phrase and answers it with the same shape a step higher, then climbs to the
+  top: the repetition that makes a tune stick. Every trick tune opens its own way (no two alike).
+- Cue lengths: tricks 1.3–3.4 s, the parade 7.3 s (8.6 s with its glide in), the short parade 3.6 s.
+
+**For the device review (tester builds, Settings → Tester shortcuts → Device checks)**
+- **Performance check**: about a minute on the Farm, played by itself: the scene at rest, the tour, three walks (to the
+  pond, the barn and the orchard, then Overview), a Welcome Parade, the scene at rest again. Per step: median fps,
+  95th-percentile frame time, the share of frames over 33 ms, the walk's quality tier; then the third walk against the
+  first (under 85%: a slowdown that builds up), the 3D renderers alive (1 expected) and JS memory where the browser
+  reports it (iOS doesn't: Xcode's memory gauge is the place). *Copy results* puts it all on the clipboard.
+- **Frame rate counter**: fps and p95 in the corner while playing (green, amber, red), this device only.
+- **Listen to every tune**: the five big moments, the parade in each home's voicing, the 18 trick tunes: one tap each,
+  or all in a row, on the phone's own speaker.
+- None of it is in a release build. The Performance check isn't offered from a board's own Settings (it would leave
+  the board); its parade is led by a Farm animal who is home.
+
+Tests: unit (the Farm's real layout frames as the whole scene for the dance and the finish; no trick tune opens with a
+signature cue's notes in its rhythm, fails on the old Spin; no two trick tunes open alike; the theme's hook returns;
+the frame summary, verdicts, report text and listening list). Browser (320 × 568): every steady frame of a whole
+Welcome Parade, toys and drawn, keeps every animal in the picture and clear of Skip (fails on the old framing); the
+walk's Go-to row is one row; the Performance check runs through all seven steps from Settings and reports one renderer
+alive; the counter and the listening list work.
