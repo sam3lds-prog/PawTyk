@@ -1496,3 +1496,18 @@ Owner decisions, asked up front (2026-11-09):
 - It draws only while showing (paused when the app is hidden); Close, Escape or leaving the screen release the WebGL
   context and give focus back to the Walk button. **Reduced motion**: taps and arrow presses move in steps (and 45°
   turns) instead of gliding, the windmill rests, the animals just smile.
+
+### QA — the regression list
+Checked in the browser tests on a small iPhone (320 × 568), on top of each PR's own tests:
+- **Framing**: the Farm frames with no horizontal overflow; the Tour and Walk buttons sit inside the scene, apart; the
+  parade's Skip stays inside the scene; the walk's arrow pad stays on screen.
+- **Nothing pays twice**: replaying the parade and running the tour leave coins, inventory and bonds untouched; no
+  celebration grants anything (rewards are counted at the solve, before any of them).
+- **Nobody stuck**: after skips, stops and replays no figure keeps a `data-trick` or a dance class.
+- **Background**: leaving the app ends a parade and its music; the walk stops drawing and resumes on return.
+- **3D off**: the drawn animals dance the parade, the tour runs with the camera, the barn opens; no Walk button and no
+  WebGL context.
+- **Reduced motion**: the parade is a still celebration (happy faces, still confetti, no camera move) and a trick gets
+  no close-up.
+- **Tiers**: in the lite tier the walk draws at 1× pixels.
+- CI: unit tests, build, generator (1000 boards), level packs, places, icons and the browser tests all green.

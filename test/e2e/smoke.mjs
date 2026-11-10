@@ -1039,6 +1039,148 @@ try {
   check('Settings has a Music switch, on by default (D44)', !!musicSwitch && (await musicSwitch.getAttribute('aria-checked')) === 'true');
   await page.keyboard.press('Escape');
 
+  // ---------------------------------------------------------------- D44 QA: the regression list
+  // A small iPhone (320 × 568): everything frames, nothing overflows, every moment ends cleanly, with 3D on and off,
+  // under reduced motion, in the lite tier, and when the app goes to the background.
+  const qa = await browser.newPage({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, hasTouch: true });
+  qa.on('pageerror', (e) => errors.push(`[qa] ${e}`));
+  await qa.goto(URL);
+  await qa.waitForFunction(() => window.__pt);
+  const qaHome = async (opts = {}) => {
+    await qa.evaluate(async (o) => {
+      const a = window.__pt.app;
+      const tools = await import('/src/app/qaTools.ts');
+      Object.assign(a.save.onboarding, { tutorialDone: true, seenRules: true, seenLoopCoach: true, sceneTapTipSeen: true, decorTipSeen: true, starterDecorChosen: true, soloRulesSeen: true, pairRulesSeen: true });
+      if ((a.save.journey.nextLevel ?? 1) < 40) tools.skipToLevel(a.save, 40);
+      tools.finishOpenHomes(a.save);
+      a.save.settings.toys3d = o.toys3d ?? true;
+      a.save.settings.reducedMotion = o.reduced ? 'reduce' : 'full';
+      a.applySettings();
+      a.persist();
+      window.__pt.go({ screen: 'region', id: 'farm', ...(o.welcome ? { welcome: ['cotton'] } : {}) });
+    }, opts);
+    await qa.waitForSelector('.region .sanctuary__scene svg');
+    await qa.waitForTimeout(opts.toys3d === false ? 500 : 2500);
+    for (let i = 0; i < 3; i++)
+      if (await qa.$('.overlay')) {
+        await qa.keyboard.press('Escape');
+        await qa.waitForTimeout(250);
+      }
+  };
+  const hidden = (on) =>
+    qa.evaluate((h) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, on);
+
+  await qaHome();
+  const frame = await qa.evaluate(() => {
+    const sc = document.querySelector('.sanctuary__scene').getBoundingClientRect();
+    const inside = (el) => {
+      const r = el?.getBoundingClientRect();
+      return !!r && r.left >= sc.left - 0.5 && r.right <= sc.right + 0.5 && r.top >= sc.top - 0.5 && r.bottom <= sc.bottom + 0.5;
+    };
+    const tour = document.querySelector('[data-act="tour"]');
+    const walk = document.querySelector('[data-act="walk"]');
+    const a = tour?.getBoundingClientRect();
+    const b = walk?.getBoundingClientRect();
+    const apart = !a || !b || a.left >= b.right || b.left >= a.right;
+    return { overflow: document.documentElement.scrollWidth - window.innerWidth, tour: inside(tour), walk: !walk || walk.hidden || inside(walk), apart };
+  });
+  check('a small iPhone: the Farm frames, its Tour and Walk buttons sit inside the scene, apart, and nothing overflows (D44)', frame.overflow <= 0 && frame.tour && frame.walk && frame.apart, JSON.stringify(frame));
+
+  // The parade on a small screen; leaving the app ends it and its music.
+  await qaHome({ welcome: true });
+  await qa.waitForSelector('.sanctuary__scene.is-parading', { timeout: 8000 }).catch(() => {});
+  const p320 = await qa.evaluate(() => {
+    const sc = document.querySelector('.sanctuary__scene').getBoundingClientRect();
+    const sk = document.querySelector('.parade-skip')?.getBoundingClientRect();
+    return { skip: !!sk && sk.right <= sc.right && sk.bottom <= sc.bottom, overflow: document.documentElement.scrollWidth - window.innerWidth };
+  });
+  await qa.waitForTimeout(1200);
+  await hidden(true);
+  await qa.waitForTimeout(400);
+  const bg = await qa.evaluate(async () => {
+    const { nowPlaying } = await import('/src/services/music.ts');
+    return { dancing: document.querySelectorAll('[data-trick^="dance:"]').length, parading: !!document.querySelector('.is-parading'), music: !!nowPlaying() };
+  });
+  await hidden(false);
+  check('the parade frames on a small screen, and leaving the app ends it: nobody mid-dance, no music (D44)', p320.skip && p320.overflow <= 0 && bg.dancing === 0 && !bg.parading && !bg.music, JSON.stringify({ p320, bg }));
+
+  // No reward twice: replaying the parade and the tour changes nothing in the save.
+  await qa.waitForTimeout(500);
+  const save0 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, bonds: window.__pt.app.save.bonds ?? null }));
+  await qa.evaluate(() => document.querySelector('[data-act="parade-replay"]')?.click());
+  await qa.waitForTimeout(1500);
+  await qa.evaluate(() => document.querySelector('.parade-skip')?.click());
+  await qa.waitForTimeout(400);
+  await qa.evaluate(() => document.querySelector('[data-act="tour"]')?.click());
+  await qa.waitForTimeout(1500);
+  await qa.evaluate(() => document.querySelector('[data-act="tour-stop"]')?.click());
+  await qa.waitForTimeout(600);
+  const save1 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, bonds: window.__pt.app.save.bonds ?? null }));
+  const stuck = await qa.evaluate(() => document.querySelectorAll('.sanctuary__scene [data-trick], .sanctuary__scene .is-dancing').length);
+  check('replaying the parade and the tour pays nothing twice, and nobody is left mid-trick (D44)', save0 === save1 && stuck === 0, `${stuck} stuck`);
+
+  // 3D off: the drawn animals dance, tour and open the barn; no Walk button, no WebGL.
+  await qaHome({ toys3d: false, welcome: true });
+  await qa.waitForSelector('.sanctuary__scene.is-parading', { timeout: 8000 }).catch(() => {});
+  await qa.waitForTimeout(900);
+  const off = await qa.evaluate(() => ({
+    canvas: document.querySelectorAll('canvas').length,
+    drawn: document.querySelectorAll('.sanctuary__scene .sanctuary__pet[class*="is-dance-"]').length,
+    walk: !!document.querySelector('[data-act="walk"]:not([hidden])'),
+  }));
+  await qa.evaluate(() => document.querySelector('.parade-skip')?.click());
+  await qa.waitForTimeout(300);
+  await qa.evaluate(() => document.querySelector('[data-act="tour"]')?.click());
+  await qa.waitForTimeout(1300);
+  const offTour = await qa.evaluate(() => ({ caption: document.querySelector('.tour-caption')?.textContent ?? '', vb: document.querySelector('.sanctuary__scene svg').getAttribute('viewBox') }));
+  await qa.evaluate(() => document.querySelector('[data-act="tour-stop"]')?.click());
+  await qa.waitForTimeout(600);
+  check('with 3D off the drawn animals dance, the tour runs, and no Walk button is offered (D44)', off.canvas === 0 && off.drawn >= 1 && !off.walk && offTour.caption === 'The barn' && offTour.vb !== '0 0 360 300', JSON.stringify({ off, offTour }));
+
+  // Reduced motion: still presentations: the parade's dancers just smile (no moving classes), no close-up on a trick.
+  await qaHome({ reduced: true, welcome: true });
+  await qa.waitForSelector('.sanctuary__scene.is-parading', { timeout: 8000 }).catch(() => {});
+  await qa.waitForTimeout(600);
+  const still = await qa.evaluate(() => ({
+    still: document.querySelectorAll('.sanctuary__pet.is-dance-still').length,
+    moving: document.querySelectorAll('.sanctuary__pet[class*="is-trick-dance"]').length,
+    vb: document.querySelector('.sanctuary__scene svg').getAttribute('viewBox'),
+  }));
+  await qa.evaluate(() => document.querySelector('.parade-skip')?.click());
+  await qa.waitForTimeout(300);
+  await qa.evaluate(() => document.querySelector('.sanctuary__scene .sanctuary__pet').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await qa.waitForSelector('.trick-chip[data-trick="wave"]', { timeout: 3000 }).catch(() => {});
+  await qa.evaluate(() => document.querySelector('.trick-chip[data-trick="wave"]')?.click());
+  await qa.waitForTimeout(600);
+  const stillTrick = await qa.evaluate(() => ({ zoom: window.__cam?.zoom ?? 1, on: !!document.querySelector('.sanctuary__scene [data-trick="wave"]') }));
+  check('reduced motion: the parade is a still celebration and a trick gets no close-up (D44)', still.still >= 1 && still.moving === 0 && still.vb === '0 0 360 300' && stillTrick.on && stillTrick.zoom === 1, JSON.stringify({ still, stillTrick }));
+
+  // The lite tier: the 3D walk draws at 1× and pauses in the background.
+  await qaHome();
+  await qa.evaluate(async () => (await import('/src/ui/components/camera.ts')).setCameraQuality('lite'));
+  await qa.evaluate(() => document.querySelector('[data-act="walk"]')?.click());
+  await qa.waitForSelector('.walk canvas.walk__canvas', { timeout: 15000 }).catch(() => {});
+  await qa.waitForTimeout(700);
+  const lite = await qa.evaluate(() => {
+    const w = window.__walk;
+    const c = document.querySelector('.walk__canvas');
+    return w ? { tier: w.tier, ratio: c.width / c.clientWidth, pad: document.querySelector('.walk__pad').getBoundingClientRect().right <= window.innerWidth } : null;
+  });
+  await hidden(true);
+  const d0 = await qa.evaluate(() => window.__walk?.drawn ?? -1);
+  await qa.waitForTimeout(600);
+  const d1 = await qa.evaluate(() => window.__walk?.drawn ?? -1);
+  await hidden(false);
+  await qa.waitForTimeout(400);
+  const d2 = await qa.evaluate(() => window.__walk?.drawn ?? -1);
+  await qa.keyboard.press('Escape');
+  await qa.evaluate(async () => (await import('/src/ui/components/camera.ts')).setCameraQuality('high'));
+  check('the lite tier walks at 1× pixels on a small screen, and the walk pauses in the background (D44)', !!lite && lite.tier === 'lite' && Math.abs(lite.ratio - 1) < 0.05 && lite.pad && d1 === d0 && d2 > d1, JSON.stringify({ lite, d0, d1, d2 }));
+  await qa.close();
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
   check('suite ran to completion', false, String(e).slice(0, 300));
