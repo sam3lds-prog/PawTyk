@@ -22,7 +22,8 @@ export function featuresAt(stage: number): FarmFeature[] {
 /** Where things stand. */
 export const PLACES = {
   start: { x: 0, z: 20, yaw: 0 },
-  barn: { x: 11, z: -12, w: 9, d: 11 },
+  /** `rot`: its turn about the vertical (three.js `rotation.y`), the same for the model and its collider. */
+  barn: { x: 11, z: -12, w: 9, d: 11, rot: -0.35 },
   pond: { x: -12, z: 6, r: 4.6 },
   henhouse: { x: -11, z: -5, w: 3, d: 3 },
   hay: { x: 3, z: 3.5, r: 0.9 },
@@ -51,13 +52,15 @@ export interface Obstacle {
   r?: number;
   hw?: number;
   hd?: number;
+  /** A box's turn about the vertical (as three.js `rotation.y`). */
+  rot?: number;
 }
 
 /** The solid things on the Farm at a stage: the player walks round them, never through. */
 export function obstaclesAt(stage: number): Obstacle[] {
   const f = new Set(featuresAt(stage));
   const out: Obstacle[] = [];
-  if (f.has('barn')) out.push({ x: PLACES.barn.x, z: PLACES.barn.z, hw: PLACES.barn.w / 2 + 0.4, hd: PLACES.barn.d / 2 + 0.4 });
+  if (f.has('barn')) out.push({ x: PLACES.barn.x, z: PLACES.barn.z, hw: PLACES.barn.w / 2 + 0.4, hd: PLACES.barn.d / 2 + 0.4, rot: PLACES.barn.rot });
   if (f.has('pond')) out.push({ x: PLACES.pond.x, z: PLACES.pond.z, r: PLACES.pond.r + 0.3 });
   if (f.has('henhouse')) out.push({ x: PLACES.henhouse.x, z: PLACES.henhouse.z, hw: 1.9, hd: 1.9 });
   if (f.has('hay')) out.push({ x: PLACES.hay.x, z: PLACES.hay.z, r: PLACES.hay.r + 0.3 });
@@ -85,14 +88,20 @@ export function settle(x: number, z: number, obstacles: Obstacle[], margin = 0.3
     } else if (o.hw !== undefined && o.hd !== undefined) {
       const hw = o.hw + margin;
       const hd = o.hd + margin;
-      const dx = x - o.x;
-      const dz = z - o.z;
-      if (Math.abs(dx) < hw && Math.abs(dz) < hd) {
-        // Out by the nearest side.
-        const px = hw - Math.abs(dx);
-        const pz = hd - Math.abs(dz);
-        if (px < pz) x = o.x + Math.sign(dx || 1) * hw;
-        else z = o.z + Math.sign(dz || 1) * hd;
+      // Into the box's own frame (undoing its turn), out by the nearest side, and back (D44 PR I review).
+      const c = Math.cos(o.rot ?? 0);
+      const sn = Math.sin(o.rot ?? 0);
+      const wx = x - o.x;
+      const wz = z - o.z;
+      let lx = wx * c - wz * sn;
+      let lz = wx * sn + wz * c;
+      if (Math.abs(lx) < hw && Math.abs(lz) < hd) {
+        const px = hw - Math.abs(lx);
+        const pz = hd - Math.abs(lz);
+        if (px < pz) lx = Math.sign(lx || 1) * hw;
+        else lz = Math.sign(lz || 1) * hd;
+        x = o.x + lx * c + lz * sn;
+        z = o.z - lx * sn + lz * c;
       }
     }
   }

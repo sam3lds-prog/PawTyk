@@ -278,7 +278,7 @@ export class FarmWalk {
     const white = this.mat('#f3efe6');
     const barn = new THREE.Group();
     barn.position.set(x, 0, z);
-    barn.rotation.y = -0.35;
+    barn.rotation.y = PLACES.barn.rot;
     this.scene.add(barn);
     this.add(this.geo(new THREE.BoxGeometry(w, h, d)), red, 0, h / 2, 0, barn);
     // The roof: a prism over the long side, white-trimmed.
