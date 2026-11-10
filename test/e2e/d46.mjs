@@ -446,6 +446,106 @@ export async function d46Checks({ browser, URL, check, errors }) {
   await qa.close();
 }
 
+/**
+ * D46 PR D: a force-close (the app swiped away, or killed by iOS) never runs pagehide. Crashing the page's renderer is
+ * the closest a browser gets: nothing of the page runs after it. The same browser profile is reopened after each.
+ */
+export async function forceCloseChecks({ browser, URL, check, errors }) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const open = async () => {
+    const p = await ctx.newPage();
+    p.on('pageerror', (e) => errors.push(`[d46 kill] ${e}`));
+    await p.goto(URL);
+    await p.waitForFunction(() => window.__pt).then((h) => h.dispose());
+    return p;
+  };
+  const kill = async (p) => {
+    const cdp = await ctx.newCDPSession(p);
+    const crashed = p.waitForEvent('crash', { timeout: 5000 }).catch(() => null);
+    // No answer comes back from a renderer that's gone: don't wait for one.
+    void cdp.send('Page.crash').catch(() => {});
+    await crashed;
+    await Promise.race([p.close().catch(() => {}), new Promise((r) => setTimeout(r, 2000))]);
+  };
+  const rewards = (p) => p.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, growth: window.__pt.app.save.world.growth, aff: window.__pt.app.save.sanctuary.affection, next: window.__pt.app.save.journey.nextLevel }));
+
+  // Mid-board: two animals placed and a ✕, then killed. Reopened: Resume, with exactly those moves.
+  let p = await open();
+  await p.evaluate(async () => {
+    const a = window.__pt.app;
+    const tools = await import('/src/app/qaTools.ts');
+    Object.assign(a.save.onboarding, { tutorialDone: true, seenRules: true, seenLoopCoach: true, sceneTapTipSeen: true, decorTipSeen: true, starterDecorChosen: true, soloRulesSeen: true, pairRulesSeen: true });
+    tools.skipToLevel(a.save, 12);
+    a.persist();
+    window.__pt.start({ kind: 'level', level: 12 });
+  });
+  await waitFor(p, '.board .cell');
+  await p.waitForTimeout(400);
+  const moves = await p.evaluate(() => {
+    const sol = window.__pt.app.active.session.puzzle.solution;
+    const cells = [];
+    for (let r = 0; r < sol.length && cells.length < 3; r++)
+      for (let c = 0; c < sol.length && cells.length < 3; c++) {
+        const done = window.__pt.app.active.session.cells[r][c];
+        if (sol[r][c] && !done && cells.filter((x) => x.place).length < 2) cells.push({ r, c, place: true });
+        else if (!sol[r][c] && !done && !cells.some((x) => !x.place)) cells.push({ r, c, place: false });
+      }
+    return cells;
+  });
+  for (const m of moves) {
+    if (m.place) await p.dblclick(`.cell[data-r="${m.r}"][data-c="${m.c}"]`, { delay: 70 });
+    else await p.click(`.cell[data-r="${m.r}"][data-c="${m.c}"]`);
+    await p.waitForTimeout(250);
+  }
+  const before = await p.evaluate(() => JSON.stringify(window.__pt.app.active.session.cells));
+  await kill(p);
+  p = await open();
+  await waitFor(p, '[data-act="continue"]');
+  const resumeLabel = await p.textContent('[data-act="continue"]');
+  await p.click('[data-act="continue"]');
+  await waitFor(p, '.board .cell');
+  await p.waitForTimeout(300);
+  const after = await p.evaluate(() => JSON.stringify(window.__pt.app.active?.session.cells ?? null));
+  check('force-closed mid-board (two animals and a ✕): reopened, Resume brings back exactly those moves (D46)', moves.length === 3 && /Resume/i.test(resumeLabel ?? '') && after === before, JSON.stringify({ moves, resumeLabel, same: after === before }));
+
+  // Killed during a Welcome Parade, and during the walk: the save is whole and pays nothing twice; the Farm opens.
+  await p.evaluate(async () => {
+    const a = window.__pt.app;
+    const tools = await import('/src/app/qaTools.ts');
+    tools.skipToLevel(a.save, 40);
+    tools.finishOpenHomes(a.save);
+    a.save.settings.toys3d = true;
+    a.save.settings.celebrations = 'full';
+    a.applySettings();
+    a.persist();
+  });
+  // One ordinary relaunch first: the startup catch-up hands out the skipped levels' gifts (as the tester shortcut does).
+  await p.reload();
+  await p.waitForFunction(() => window.__pt).then((h) => h.dispose());
+  await p.waitForTimeout(500);
+  const r0 = await rewards(p);
+  await p.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm', welcome: ['cotton'] }));
+  await waitFor(p, '.sanctuary__scene.is-parading', 8000);
+  await p.waitForTimeout(1500);
+  await kill(p);
+  p = await open();
+  const r1 = await rewards(p);
+  await p.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
+  await waitFor(p, '.region .sanctuary__scene svg');
+  await p.waitForTimeout(2200);
+  await tapAt(p, '.sanctuary__scene [data-act="walk"]');
+  await waitFor(p, '.walk canvas.walk__canvas');
+  await p.waitForTimeout(600);
+  await kill(p);
+  p = await open();
+  const r2 = await rewards(p);
+  await p.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
+  const farm = await waitFor(p, '.region .sanctuary__scene.has-3d', 10000);
+  const parading = await p.evaluate(() => !!document.querySelector('.is-parading, .walk'));
+  check('force-closed during a parade and during the walk: the save is whole, nothing paid twice, the Farm opens plainly with its toys (D46)', r1 === r0 && r2 === r0 && farm && !parading, JSON.stringify({ same1: r1 === r0, same2: r2 === r0, farm, parading }));
+  await ctx.close();
+}
+
 // Run alone: `node test/e2e/d46.mjs`.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { chromium } = await import('playwright');
@@ -459,7 +559,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!cond) failed++;
   };
   try {
-    await d46Checks({ browser, URL, check, errors });
+    if (process.env.D46_ONLY !== 'kill') await d46Checks({ browser, URL, check, errors });
+    await forceCloseChecks({ browser, URL, check, errors });
     check('no page errors', errors.length === 0, errors.join(' | '));
   } catch (e) {
     check('suite ran to completion', false, String(e).slice(0, 400));

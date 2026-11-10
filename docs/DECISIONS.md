@@ -1725,3 +1725,19 @@ the frame summary, verdicts, report text and listening list). Browser (320 × 56
 Welcome Parade, toys and drawn, keeps every animal in the picture and clear of Skip (fails on the old framing); the
 walk's Go-to row is one row; the Performance check runs through all seven steps from Settings and reports one renderer
 alive; the counter and the listening list work.
+
+### PR D — release validation
+- **The App Store bundle, checked** (`npm run release:bundle`; also the last step of `release:check`, and in CI): builds
+  what a release gets (the tester flag off, whatever `.env.local` says) and fails if it contains any tester code (the
+  tester shortcuts, the device checks, the dev hooks for the director, the 3D layer and the walk), if the in-app privacy
+  policy is missing, if the 1024 px icon has an alpha channel (App Store Connect rejects it) or isn't 1024 × 1024, if
+  the home-screen icon isn't linked, or if the name or bundle id changed. Checked both ways: today's release build
+  passes; a tester build fails on five markers.
+- **Force-close** (browser tests): iOS kills an app without `pagehide`, so the tests crash the page's renderer (nothing
+  of the page runs after) and reopen in the same profile. Mid-board (two animals and a ✕): Resume brings back exactly
+  those moves. During a parade, then during the walk: the save is whole (coins, inventory, growth, friendship, level
+  unchanged) and the Farm opens plainly with its toys.
+- **The TestFlight smoke test**: `docs/release-checklist.md` → D46: the review's acceptance test as steps on a phone,
+  the performance and sound checks with the tester's device checks, and the App Store items.
+- Not done here (needs Sam): the TestFlight build itself and running that list on iPhones; App Store Connect (name,
+  privacy URL, screenshots); the trademark search.

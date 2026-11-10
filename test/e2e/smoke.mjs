@@ -8,7 +8,7 @@
 // in-progress boards resume, decor is charged exactly once, reset keeps unrelated data, faces are facial-only.
 
 import { createRequire } from 'node:module';
-import { d46Checks } from './d46.mjs';
+import { d46Checks, forceCloseChecks } from './d46.mjs';
 
 let chromium;
 try {
@@ -1373,6 +1373,7 @@ try {
 
   // D46: transitions between farm interactions, and the 3D layer's lifecycle.
   await d46Checks({ browser, URL, check, errors });
+  await forceCloseChecks({ browser, URL, check, errors });
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
