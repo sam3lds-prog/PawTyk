@@ -1720,7 +1720,8 @@ could be seen or measured to be wrong was changed; everything a device has to ju
 - **Frame rate counter**: fps and p95 in the corner while playing (green, amber, red), this device only.
 - **Listen to every tune**: the five big moments, the parade in each home's voicing, the 18 trick tunes: one tap each,
   or all in a row, on the phone's own speaker.
-- None of it is in a release build.
+- None of it is in a release build. The Performance check isn't offered from a board's own Settings (it would leave
+  the board); its parade is led by a Farm animal who is home.
 
 Tests: unit (the Farm's real layout frames as the whole scene for the dance and the finish; no trick tune opens with a
 signature cue's notes in its rhythm, fails on the old Spin; no two trick tunes open alike; the theme's hook returns;

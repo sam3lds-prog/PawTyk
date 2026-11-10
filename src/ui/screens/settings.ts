@@ -173,7 +173,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       </div>
       <div class="rows-title">Device checks</div>
       <div class="rows">
-        <button class="row" data-qa="perf"><span class="row__label">Performance check<small>About a minute on the Farm, played by itself: frame rate, slow frames, slowdown. Copy the results.</small></span>${ICON.chevron}</button>
+        ${opts.inGame ? '' : `<button class="row" data-qa="perf"><span class="row__label">Performance check<small>About a minute on the Farm, played by itself: frame rate, slow frames, slowdown. Copy the results.</small></span>${ICON.chevron}</button>`}
         <button class="row" role="switch" aria-checked="${fpsCounterOn()}" data-qa="fps"><span class="row__label">Frame rate counter<small>A small counter in the corner while you play (this device only)</small></span><span class="switch" aria-checked="${fpsCounterOn()}" aria-hidden="true"></span></button>
         <button class="row" data-qa="listen"><span class="row__label">Listen to every tune<small>Each cue, the parade in every home, every trick tune: on the phone’s own speaker</small></span>${ICON.chevron}</button>
       </div>`
