@@ -138,11 +138,15 @@ export function sceneTour(scope: { on(t: EventTarget, type: string, fn: (e: Even
       const s = svg();
       const f = fig();
       if (running || !s || !f || document.hidden) return false;
+      // Pause first: an animal off on a decoration comes home, so the tour visits it too (D44 PR H review).
+      host.pause(true);
       const stops = tourStops(s);
-      if (!stops.length) return false;
+      if (!stops.length) {
+        host.pause(false);
+        return false;
+      }
       host.onStart?.();
       running = true;
-      host.pause(true);
       f.classList.add('is-touring');
       const btn = f.querySelector<HTMLElement>('[data-act="tour"]');
       if (btn) btn.hidden = true;
