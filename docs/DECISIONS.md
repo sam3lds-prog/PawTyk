@@ -1739,9 +1739,30 @@ alive; the counter and the listening list work.
   passes; a tester build fails on five markers.
 - **Force-close** (browser tests): iOS kills an app without `pagehide`, so the tests crash the page's renderer (nothing
   of the page runs after) and reopen in the same profile. Mid-board (two animals and a ✕): Resume brings back exactly
-  those moves. During a parade, then during the walk: the save is whole (coins, inventory, growth, friendship, level
-  unchanged) and the Farm opens plainly with its toys.
+  those moves. The instant a board's solve is recorded: its coins and the next level are there once (not lost, not
+  paid again) and the solved board isn't offered to resume. During a parade, then during the walk: the save is
+  unchanged and the Farm opens plainly with its toys.
 - **The TestFlight smoke test**: `docs/release-checklist.md` → D46: the review's acceptance test as steps on a phone,
   the performance and sound checks with the tester's device checks, and the App Store items.
 - Not done here (needs Sam): the TestFlight build itself and running that list on iPhones; App Store Connect (name,
   privacy URL, screenshots); the trademark search.
+
+### Review (independent agent, on the whole stack)
+No P0 or P1. Eight P2s, all fixed before merge in the PR they belong to (each next PR took them in with a merge commit):
+- **A**: an owed welcome and a new stage's dance on the same visit shared the one button under the scene (one
+  overwrote the other); the welcome is now offered once the dance is done. The wait for a free scene (before the next
+  goal and the starter gift) added a scope disposer every 250 ms of a long walk; it keeps one timer now.
+- **B**: a scheduled parade waited for the toys a second time inside `play()`, outside the pending moment, so leaving
+  then lost the welcome, and Tour and Walk showed but didn't answer; a scheduled parade doesn't wait twice now, and
+  while a parade waits the two buttons step aside. A rebuild with 3D turned off meanwhile left `ready` pending; it
+  settles false. Rebuilds no longer happen while the app is in the background, and a rebuilt renderer that keeps
+  drawing for 30 s earns the rebuild budget back.
+- **C**: the Performance check's parade could be led by a non-Farm animal; and it isn't offered from a board's own
+  Settings.
+- **D**: the bundle check now also looks for the camera and welcome dev hooks. The force-close test "nothing paid
+  twice" could never fail (parades and the walk grant nothing); the kill right after a solve is the one that can.
+- Confirmed by the reviewer: `three/release.ts` is safe with another renderer live (each renderer re-uploads the
+  shared texture on its next frame); holds are always released; `after` runs once; the release bundle carries no
+  tester code, and a tester build does.
+- CI: three D46 browser checks failed on PR B's first run because a tap on the walk's Overview didn't settle within the
+  test's 3 s on CI's software WebGL; taps are now hit-tested first and given 10 s.

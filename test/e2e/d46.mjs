@@ -520,6 +520,32 @@ export async function forceCloseChecks({ browser, URL, check, errors }) {
   const after = await p.evaluate(() => JSON.stringify(window.__pt.app.active?.session.cells ?? null));
   check('force-closed mid-board (two animals and a ✕): reopened, Resume brings back exactly those moves (D46)', moves.length === 3 && /Resume/i.test(resumeLabel ?? '') && after === before, JSON.stringify({ moves, resumeLabel, same: after === before }));
 
+  // Killed the moment a board is solved: reopened, the win's coins and the level are there
+  // once: not lost, not paid again, and the solved board isn't offered to resume.
+  const solved = await p.evaluate(() => {
+    const sol = window.__pt.app.active.session.puzzle.solution;
+    const todo = [];
+    for (let r = 0; r < sol.length; r++) for (let c = 0; c < sol.length; c++) if (sol[r][c] && window.__pt.app.active.session.cells[r][c] !== sol[r][c]) todo.push([r, c]);
+    return todo;
+  });
+  for (const [r, c] of solved) {
+    await p.dblclick(`.cell[data-r="${r}"][data-c="${c}"]`, { delay: 70 });
+    await p.waitForTimeout(120);
+  }
+  // The instant the solve is recorded (an ordinary win's Next, or an arrival's Meet, may not even be drawn yet).
+  const won = await p.waitForFunction(() => window.__pt.app.save.journey.nextLevel === 13, null, { timeout: 8000, polling: 'raf' }).then((h) => (h.dispose(), true), () => false);
+  const atWin = await p.evaluate(() => ({ coins: window.__pt.app.coins(), next: window.__pt.app.save.journey.nextLevel, paid: window.__pt.app.save.inventory.ledger.filter((e) => e.source === 'journey').length }));
+  await kill(p);
+  p = await open();
+  await p.waitForTimeout(600);
+  const reopened = await p.evaluate(() => ({ coins: window.__pt.app.coins(), next: window.__pt.app.save.journey.nextLevel, paid: window.__pt.app.save.inventory.ledger.filter((e) => e.source === 'journey').length }));
+  const resumeAfterWin = await p.evaluate(() => document.querySelector('[data-act="continue"]')?.textContent ?? '');
+  check(
+    'force-closed the moment a board is solved: reopened, its coins and the next level are there once, and it isn’t offered to resume (D46)',
+    won && atWin.next === 13 && JSON.stringify(reopened) === JSON.stringify(atWin) && !/Resume/i.test(resumeAfterWin),
+    JSON.stringify({ won, atWin, reopened, resumeAfterWin }),
+  );
+
   // Killed during a Welcome Parade, and during the walk: the save is whole and pays nothing twice; the Farm opens.
   await p.evaluate(async () => {
     const a = window.__pt.app;
@@ -554,7 +580,7 @@ export async function forceCloseChecks({ browser, URL, check, errors }) {
   await p.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
   const farm = await waitFor(p, '.region .sanctuary__scene.has-3d', 10000);
   const parading = await p.evaluate(() => !!document.querySelector('.is-parading, .walk'));
-  check('force-closed during a parade and during the walk: the save is whole, nothing paid twice, the Farm opens plainly with its toys (D46)', r1 === r0 && r2 === r0 && farm && !parading, JSON.stringify({ same1: r1 === r0, same2: r2 === r0, farm, parading }));
+  check('force-closed during a parade and during the walk: the save is unchanged, and the Farm opens plainly with its toys (D46)', r1 === r0 && r2 === r0 && farm && !parading, JSON.stringify({ same1: r1 === r0, same2: r2 === r0, farm, parading }));
   await ctx.close();
 }
 

@@ -15,7 +15,7 @@ describe('the release bundle check (D46 PR D)', () => {
   });
 
   it('fails on each kind of tester code', () => {
-    const samples = ['"Tester shortcuts"', 'Skip to level 41', 'title:"Performance check"', 'className="qa-fps"', '"Listen to every tune"', 'window.__pt={app}', 'window.__director=d', 'window.__s3d=s', 'defineProperty(window,"__walk",{})'];
+    const samples = ['"Tester shortcuts"', 'Skip to level 41', 'title:"Performance check"', 'className="qa-fps"', '"Listen to every tune"', 'window.__pt={app}', 'window.__director=d', 'window.__s3d=s', 'defineProperty(window,"__walk",{})', 'window.__cam=c', 'window.__welcome=w'];
     for (const s of samples) expect(checkBundle({ 'index.html': html, 'assets/boot.js': app + s }).length, s).toBe(1);
     expect(TESTER_MARKERS.length).toBeGreaterThanOrEqual(samples.length - 1);
   });
