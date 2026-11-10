@@ -41,8 +41,20 @@ async function openFarm(qa, o = {}) {
  * then this returns false). Playwright's own actionability checks, with a short timeout.
  */
 async function tapAt(qa, selector) {
+  // Where a finger would land: nothing there, hidden, or under something else (an overlay, an inert screen) → that tap
+  // doesn't reach it, at once. Otherwise a real click, with room for a slow software-rendered frame (CI).
+  const reachable = await qa.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el || el.hidden) return false;
+    el.scrollIntoView({ block: 'nearest' });
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!hit && (hit === el || el.contains(hit));
+  }, selector);
+  if (!reachable) return false;
   try {
-    await qa.click(selector, { timeout: 3000, noWaitAfter: true });
+    await qa.click(selector, { timeout: 10000, noWaitAfter: true });
     return true;
   } catch {
     return false;

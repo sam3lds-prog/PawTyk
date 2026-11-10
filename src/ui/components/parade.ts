@@ -342,8 +342,15 @@ export function scheduleParade(
     if (played) return o.after?.(true);
     // Once nothing owns the camera: a walk closed, a tour or a trick over. Checked from the next tick on: the moment
     // that missed it claims the scene before it starts running.
-    const whenFree = () => (!scope.alive ? undefined : director.owner === null ? o.after?.(false) : scope.timeout(whenFree, 250));
-    scope.timeout(whenFree, 250);
+    // One timer at a time (review: scope.timeout would add a disposer every 250 ms of a long walk).
+    let t: ReturnType<typeof setTimeout> | undefined;
+    scope.onDispose(() => clearTimeout(t));
+    const whenFree = () => {
+      if (!scope.alive) return;
+      if (director.owner === null) o.after?.(false);
+      else t = setTimeout(whenFree, 250);
+    };
+    t = setTimeout(whenFree, 250);
   };
   const onMissed = (by: MissedBy | 'hidden') => {
     missed = by;

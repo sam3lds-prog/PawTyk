@@ -370,12 +370,16 @@ export const regionScreen: ScreenDef = {
           },
         });
       } else scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
-    } else if (groupDance)
-      // The new stage pops in first, then everyone dances (unless the player has started something: D46 PR A).
-      welcome = scheduleParade(scope, director, parades, { delay: app.reducedMotion ? 400 : 1100, waitFor: toysReady });
-    // A welcome the player missed by leaving during its lead-in (D46 PR A): offered here now, never played by itself.
+    }
+    // A welcome the player missed by leaving during its lead-in (D46 PR A): offered here, never played by itself. On a
+    // visit that also dances for a new stage, offered once that dance is done (the button under the scene is one slot,
+    // and the welcome is the one still owed).
     const owed = !welcoming ? missedWelcome(id) : undefined;
-    if (owed && isHome(app.save, owed as AnimalId)) parades.offer(owed);
+    const offerOwed = () => owed && isHome(app.save, owed as AnimalId) && parades.offer(owed);
+    if (!newcomers.length && groupDance)
+      // The new stage pops in first, then everyone dances (unless the player has started something: D46 PR A).
+      welcome = scheduleParade(scope, director, parades, { delay: app.reducedMotion ? 400 : 1100, waitFor: toysReady, after: offerOwed });
+    else offerOwed();
     if (import.meta.env.DEV) (window as unknown as { __welcome?: unknown }).__welcome = welcome;
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
