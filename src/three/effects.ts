@@ -11,6 +11,7 @@ import { glyph } from '../ui/art/tricks';
 import type { Actor } from './actor';
 import { easeOutBack } from './clips';
 import { bump, clamp01, easeInOut, hold, seg } from './pose';
+import { danceSections, parseDanceId } from './dance';
 import type { ToyKit } from './toy';
 
 export interface Effect {
@@ -28,6 +29,8 @@ export interface FxCtx {
   u: number;
   /** Reduced motion: shown in place, nothing travels. */
   still: boolean;
+  /** The trick, emote or dance being performed (a dance's id carries its beats; D44 PR D). */
+  id?: string;
 }
 
 export type EffectFactory = (c: FxCtx) => Effect | null;
@@ -69,11 +72,13 @@ export class Effects {
   perform(id: string, actor: Actor, now: number, ms: number, still: boolean): void {
     this.clearFor(actor, 'perform');
     if (isTrickId(id)) this.live.push({ e: emoteBubble({ fx: this, actor, start: now, ms, u: unit(actor), still }, TRICK_BY_ID[id].emote, still), actor, kind: 'perform' });
-    if (!still) this.run(`perform:${id}`, 'perform', actor, now, ms, still);
+    // A group dance's props are its role's (D44 PR D): the finish's confetti and stars.
+    const key = id.startsWith('dance:') ? `perform:dance:${parseDanceId(id)?.role ?? 'group'}` : `perform:${id}`;
+    if (!still) this.run(key, 'perform', actor, now, ms, still, id);
   }
 
-  private run(key: string, kind: Live['kind'], actor: Actor, now: number, ms: number, still: boolean): void {
-    const e = registry.get(key)?.({ fx: this, actor, start: now, ms, u: unit(actor), still });
+  private run(key: string, kind: Live['kind'], actor: Actor, now: number, ms: number, still: boolean, id?: string): void {
+    const e = registry.get(key)?.({ fx: this, actor, start: now, ms, u: unit(actor), still, id });
     if (e) this.live.push({ e, actor, kind });
   }
 
@@ -609,7 +614,7 @@ defineEffect('perform:surprised', (c) => {
 });
 
 /** Confetti: little paper squares that burst up, tumble and fall. */
-function confetti(c: FxCtx, bursts: number[], where: (out: THREE.Vector3) => THREE.Vector3, n = 22): Effect {
+function confetti(c: FxCtx, bursts: number[], where: (out: THREE.Vector3) => THREE.Vector3, n = 22, opt: { size?: number; fadeFrom?: number } = {}): Effect {
   const cols = ['#E8707A', '#F2C230', '#6FB07C', '#5B9BC4', '#9B7FD0', '#F6A23A'];
   const geo = c.fx.shape('confetti', () => new THREE.PlaneGeometry(1, 0.6));
   const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.6, transparent: true });
@@ -643,12 +648,12 @@ function confetti(c: FxCtx, bursts: number[], where: (out: THREE.Vector3) => THR
         const y = o.y + (p.vy * life - 2.2 * life * life) * c.u;
         const z = o.z + p.vz * life * c.u + c.u * 0.3;
         q.setFromEuler(e.set(p.tilt + life * p.spin, life * p.spin * 0.7, life * p.spin * 0.4));
-        const s = c.u * 0.045 * (life > 1.2 ? Math.max(0, 1 - (life - 1.2) / 0.4) : 1);
+        const s = c.u * 0.045 * (opt.size ?? 1) * (life > 1.2 ? Math.max(0, 1 - (life - 1.2) / 0.4) : 1);
         m4.compose(tmp2.set(x, y, z), q, new THREE.Vector3(s, s, s));
         mesh.setMatrixAt(i, m4);
       });
       mesh.instanceMatrix.needsUpdate = true;
-      mat.opacity = fadeOut(t, 0.88);
+      mat.opacity = fadeOut(t, opt.fadeFrom ?? 0.88);
       return true;
     },
     dispose() {
@@ -660,6 +665,60 @@ function confetti(c: FxCtx, bursts: number[], where: (out: THREE.Vector3) => THR
 }
 
 defineEffect('perform:cheer', (c) => confetti(c, [0.3, 0.66], (o) => c.actor.toy.headTop(o), 14));
+
+/** Where a dance's finish lands, as a share of its length. */
+function finishAt(c: FxCtx): number {
+  const d = c.id ? parseDanceId(c.id) : null;
+  return d ? danceSections(d).finish / d.beats : 0.85;
+}
+
+// The Welcome Parade (D44 PR D): the newcomer's finish throws the big confetti and a fan of stars; each guest a small
+// handful, so the shower is full but never a blizzard.
+defineEffect('perform:dance:newcomer', (c) => {
+  const at = finishAt(c);
+  const pop = confetti(c, [at, at + 0.04], (o) => c.actor.toy.headTop(o), 20, finishConfetti(at));
+  const fan = starFan(c, at);
+  return {
+    // Both every frame: the stars must hide until the finish and fly after it, whatever the confetti is doing.
+    update: (now) => {
+      const a = pop.update(now);
+      const b = fan.update(now);
+      return a || b;
+    },
+    dispose() {
+      pop.dispose();
+      fan.dispose();
+    },
+  };
+});
+defineEffect('perform:dance:guest', (c) => confetti(c, [finishAt(c)], (o) => c.actor.toy.headTop(o), 8, finishConfetti(finishAt(c))));
+defineEffect('perform:dance:group', (c) => confetti(c, [finishAt(c)], (o) => c.actor.toy.headTop(o), 12, finishConfetti(finishAt(c))));
+/** A dance's finish is seen from the whole scene, not a close-up: bigger pieces, and they fade only near the end. */
+const finishConfetti = (at: number) => ({ size: 2.2, fadeFrom: at + (1 - at) * 0.65 });
+
+/** A fan of stars over an animal that rises and fades from `at` (a share of the clip). */
+function starFan(c: FxCtx, at: number): Effect {
+  const colors = ['#F7C534', '#FFF3B0', '#F4A6D0', '#9FE0E6', '#F7C534'];
+  const stars = colors.map((col) => {
+    const m = new THREE.Mesh(c.fx.shape('star', () => starGeometry()), c.fx.shiny(col, 0.45));
+    c.fx.scene.add(m);
+    return m;
+  });
+  return group(stars, (t) => {
+    c.actor.toy.headTop(tmp);
+    const life = (t - at) / (1 - at);
+    stars.forEach((s, i) => {
+      s.visible = life > 0;
+      if (!s.visible) return;
+      const a = Math.PI * (0.1 + (i / (stars.length - 1)) * 0.8);
+      const r = c.u * (0.3 + easeInOut(life) * 0.6);
+      s.position.set(tmp.x + Math.cos(a) * r, tmp.y + Math.sin(a) * r * 0.8, tmp.z + c.u * 0.1);
+      s.scale.setScalar(c.u * 0.15 * (life < 0.2 ? easeOutBack(life / 0.2) : 1 - ((life - 0.2) / 0.8) * 0.6));
+      s.rotation.set(life * 3, life * 5 + i, 0);
+      s.material.opacity = fadeOut(life, 0.6);
+    });
+  }, c);
+}
 
 defineEffect('perform:starstruck', (c) => {
   const cols = ['#F7C534', '#F4A6D0', '#9FE0E6', '#F7C534', '#B8F0B0', '#FFF3B0'];

@@ -422,6 +422,10 @@ export class SceneStage {
       const moving = classes.has(`is-trick-${trick}`);
       const ms = e.actor.perform(trick, now, !moving);
       if (ms) this.effects.perform(trick, e.actor, now, ms, !moving);
+    } else if (!trick && e.seen.trick && e.actor.performing(now) === e.seen.trick) {
+      // Taken back before its end (a skipped dance, D44 PR D): the toy settles at once and its props go.
+      e.actor.endPerform(now);
+      this.effects.clearFor(e.actor, 'perform');
     }
     e.seen = { classes, trick };
   }

@@ -1,0 +1,312 @@
+/*
+ * Group dances for drawn figures (D44 PR D; ui/components/dance.ts sets the classes on the beat). The 3D toys dance
+ * the same steps from three/dance.ts. Every length is in beats (`--beat`, set per dance), so the drawing keeps time
+ * with the music. Nothing loops forever: each step repeats a fixed number of times and the class comes off when the
+ * part ends. Reduced motion: nothing here plays (the choreographer doesn't add these classes, and this guard holds).
+ */
+
+.sanctuary__scene.is-live .sanctuary__pet.is-dancing {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* ------------------------------------------------------------------ the intro */
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-enter {
+  animation: sp-dance-enter calc(var(--beat) * 4) cubic-bezier(0.3, 0.7, 0.3, 1) 1 both;
+}
+@keyframes sp-dance-enter {
+  0% {
+    transform: none;
+  }
+  3% {
+    transform: scale(1.06, 0.9);
+  }
+  14% {
+    transform: translateY(-34px) scale(0.96, 1.05);
+  }
+  25% {
+    transform: translateY(0) scale(1.08, 0.86);
+  }
+  30% {
+    transform: translateY(-7px) scale(0.97, 1.04);
+  }
+  38%,
+  50% {
+    transform: none;
+  }
+  65% {
+    transform: scaleX(-1);
+  }
+  80%,
+  100% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-invite {
+  animation: sp-dance-invite calc(var(--beat) * 4) ease-in-out 1 both;
+}
+@keyframes sp-dance-invite {
+  0%,
+  25% {
+    transform: none;
+  }
+  45%,
+  58% {
+    transform: translateX(calc(var(--side, 1) * 2px)) rotate(calc(var(--side, 1) * 4deg));
+  }
+  66% {
+    transform: translateX(calc(var(--side, 1) * 3px)) translateY(-5px);
+  }
+  76%,
+  92% {
+    transform: translateX(calc(var(--side, 1) * 2px));
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ the steps (each loops in whole beats) */
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-sway {
+  animation: sp-dance-sway calc(var(--beat) * 2) ease-in-out 6;
+}
+@keyframes sp-dance-sway {
+  0%,
+  50%,
+  100% {
+    transform: translateY(1px);
+  }
+  25% {
+    transform: rotate(-8deg) translateX(-2px);
+  }
+  75% {
+    transform: rotate(8deg) translateX(2px);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-wiggle {
+  animation: sp-dance-wiggle calc(var(--beat) * 2) ease-in-out 6;
+}
+@keyframes sp-dance-wiggle {
+  0%,
+  100% {
+    transform: none;
+  }
+  8% {
+    transform: translateY(-7px);
+  }
+  16% {
+    transform: scale(1.06, 0.92);
+  }
+  28%,
+  53%,
+  78% {
+    transform: rotate(-7deg);
+  }
+  40%,
+  66%,
+  90% {
+    transform: rotate(7deg);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-twirl {
+  animation: sp-dance-twirl calc(var(--beat) * 2) ease-in-out 6;
+}
+@keyframes sp-dance-twirl {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: scaleX(-1);
+  }
+  30% {
+    transform: none;
+  }
+  50% {
+    transform: none;
+  }
+  60% {
+    transform: translateY(-6px);
+  }
+  70% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-bob {
+  animation: sp-dance-bob var(--beat) ease-in-out 12;
+}
+@keyframes sp-dance-bob {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(2px) scale(1.02, 0.96);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-flap {
+  animation: sp-dance-flap calc(var(--beat) / 2) ease-in-out 24;
+}
+@keyframes sp-dance-flap {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(-3px) scale(1.05, 0.97);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-stomp {
+  animation: sp-dance-stomp calc(var(--beat) * 2) ease-in-out 6;
+}
+@keyframes sp-dance-stomp {
+  0%,
+  50%,
+  100% {
+    transform: scale(1.04, 0.95);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-4deg);
+  }
+  75% {
+    transform: translateX(3px) rotate(4deg);
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-hop {
+  animation: sp-dance-hop var(--beat) ease-in-out 12;
+}
+@keyframes sp-dance-hop {
+  0%,
+  100% {
+    transform: scale(1.05, 0.93);
+  }
+  12% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+  88% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-strut {
+  animation: sp-dance-strut calc(var(--beat) * 4) ease-in-out 3;
+}
+@keyframes sp-dance-strut {
+  0%,
+  50%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-4px) rotate(-3deg);
+  }
+  75% {
+    transform: translateX(4px) rotate(3deg);
+  }
+}
+
+/* ------------------------------------------------------------------ the finishing poses (held, then let go) */
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-pose-0 {
+  animation: sp-dance-hooray calc(var(--beat) * 2.15) ease-out 1 both;
+}
+@keyframes sp-dance-hooray {
+  0% {
+    transform: none;
+  }
+  14% {
+    transform: translateY(-9px) scale(0.96, 1.06);
+  }
+  28%,
+  80% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-pose-1 {
+  animation: sp-dance-lean calc(var(--beat) * 2.15) ease-out 1 both;
+}
+@keyframes sp-dance-lean {
+  0% {
+    transform: none;
+  }
+  18%,
+  80% {
+    transform: rotate(calc(var(--side, 1) * 11deg)) translateX(calc(var(--side, 1) * 2px));
+  }
+  100% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-pose-2 {
+  animation: sp-dance-turn calc(var(--beat) * 2.15) ease-out 1 both;
+}
+@keyframes sp-dance-turn {
+  0% {
+    transform: none;
+  }
+  10% {
+    transform: scaleX(-1);
+  }
+  22%,
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: none;
+  }
+}
+.sanctuary__scene.is-live .sanctuary__pet.is-dance-pose-3 {
+  animation: sp-dance-leap calc(var(--beat) * 2.15) cubic-bezier(0.3, 0.7, 0.3, 1) 1 both;
+}
+@keyframes sp-dance-leap {
+  0% {
+    transform: none;
+  }
+  18% {
+    transform: translateY(-14px);
+  }
+  32% {
+    transform: scale(1.08, 0.88);
+  }
+  42%,
+  80% {
+    transform: none;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ the finish's confetti (drawn scenes) */
+.sanctuary__scene .sp-dance-confetti .sp-confetti {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: sp-dance-confetti 1500ms cubic-bezier(0.2, 0.6, 0.4, 1) 1 both;
+}
+.sanctuary__scene .sp-dance-confetti.is-still .sp-confetti {
+  animation: none;
+}
+@keyframes sp-dance-confetti {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.4);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(26px) rotate(160deg);
+  }
+}
+
+/* Reduced motion: still, whatever the classes say. */
+:root[data-motion='reduce'] .sanctuary__scene .sanctuary__pet.is-dancing,
+:root[data-motion='reduce'] .sanctuary__scene .sp-dance-confetti .sp-confetti {
+  animation: none !important;
+}

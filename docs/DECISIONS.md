@@ -1398,3 +1398,21 @@ Owner decisions, asked up front (2026-11-09):
   for the session (a glide is one GPU transform of the drawing and the 3D canvas, sharp when it lands; depth flat).
 - **Reduced motion**: a glide is a cut; offsets (a dance's beat sway) are ignored.
 - Every sanctuary screen has a camera (`region.ts`); it is disposed with the screen and gives the whole scene back.
+
+### PR D — group dances
+- `three/dance.ts` makes a dance clip from its id alone (`dance:<role>:<style>:<variant>:<L|R>:<bpm>:<beats>`), so
+  every dancer is a pure function of time on one beat clock: the music's (`Playback.msAt`), which runs in silence too.
+- **Roles**: the **newcomer** leaps in from rest (crouch, leap, land, bounce, spin, eyes wide in the air), each
+  **guest** turns toward it and beckons, and a **group** (no newcomer) starts straight on the step. Then everyone
+  dances their own step and strikes a finishing pose on the last two beats.
+- **Steps by animal**: kind first (sheep sway, pigs wiggle, bunnies twirl, turtles and snails bob), then body (birds
+  flap, seals bob, big animals stomp, tall ones sway), then temperament (playful/energetic hop, proud strut, shy bob,
+  others sway). Finishing poses (hooray, lean, turn, leap) go round across the scene so neighbours differ.
+- `ui/components/dance.ts` (`planDance`, `startDance`): every dancer's figure gets the dance id as its `data-trick`
+  (busy: no trick, stroll or decoration starts), which the 3D stage plays as a clip; drawn figures (3D off, or a kind
+  the toys can't make) play the same parts in CSS (`styles/dance.css`), every length in beats.
+- **The finish**: confetti over every dancer and a fan of stars over the newcomer (3D: sized for the whole scene, not a
+  close-up; drawn: a small SVG overlay).
+- **Stopping**: a skip or leaving the screen puts every dancer back at once: classes come off, and in 3D the clip
+  fades (`Actor.endPerform`) and its props go. Nothing loops forever.
+- **Reduced motion**: nobody moves; every dancer shows its happy face for the dance's length, confetti still.
