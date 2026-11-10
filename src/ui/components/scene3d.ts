@@ -37,8 +37,10 @@ export type Scene3DState = 'off' | 'loading' | 'drawing' | 'suspended' | 'lost' 
 
 /** A lost context that hasn't come back after this long is given up on: the stage is rebuilt with a new one. */
 export const LOST_REBUILD_MS = 3000;
-/** How many times one scene rebuilds after lost contexts before it stays drawn. */
+/** How many times in a row one scene rebuilds after lost contexts before it stays drawn. */
 export const MAX_REBUILDS = 2;
+/** How long a rebuilt renderer has to keep drawing before the rebuilds count starts again. */
+export const STEADY_MS = 30000;
 
 /** Counts across every scene (tests and the QA page): renderers made and released, rebuilds, failures. */
 const stats = { created: 0, disposed: 0, rebuilds: 0, failures: 0 };
@@ -115,8 +117,7 @@ export function createScene3D(): Scene3D {
   };
 
   const release = () => {
-    if (lostTimer !== null) clearTimeout(lostTimer);
-    lostTimer = null;
+    clearTimers();
     if (!stage) return;
     const i = liveStages.indexOf(stage);
     if (i >= 0) liveStages.splice(i, 1);
@@ -125,36 +126,54 @@ export function createScene3D(): Scene3D {
     stage = null;
   };
 
+  /** A rebuilt stage that keeps drawing this long has earned the rebuild budget back (review of D46). */
+  let steadyTimer: ReturnType<typeof setTimeout> | null = null;
+  const clearTimers = () => {
+    if (lostTimer !== null) clearTimeout(lostTimer);
+    if (steadyTimer !== null) clearTimeout(steadyTimer);
+    lostTimer = steadyTimer = null;
+  };
+  /** A context gone for good: a new renderer with a new context (twice at most in a row), or the drawn scene. */
+  const rebuild = () => {
+    lostTimer = null;
+    if (disposed || suspended || !stage?.contextLost) return;
+    // Not while the app is away (iOS takes contexts from apps in the background, and making one there can fail):
+    // when it is back, if the context still hasn't returned.
+    if (document.hidden) {
+      const back = () => {
+        if (document.hidden) return;
+        document.removeEventListener('visibilitychange', back);
+        if (lostTimer === null && !disposed && !suspended && stage?.contextLost) lostTimer = setTimeout(rebuild, 500);
+      };
+      document.addEventListener('visibilitychange', back);
+      return;
+    }
+    release();
+    started = false;
+    epoch++;
+    if (rebuilds >= MAX_REBUILDS) {
+      // Twice in a row is enough: this scene stays drawn (the drawn animals do everything the toys do).
+      failed = true;
+      stats.failures++;
+      become(false);
+      return;
+    }
+    rebuilds++;
+    stats.rebuilds++;
+    if (target && wants3D()) start();
+    else become(false);
+  };
+
   /** The OS took the context back (D46 PR B): the drawn animals show; if it doesn't come back, rebuild. */
   const onContext = (drawing: boolean) => {
     if (disposed || suspended) return;
+    clearTimers();
     if (drawing) {
-      if (lostTimer !== null) clearTimeout(lostTimer);
-      lostTimer = null;
       become(true);
       return;
     }
     become(false);
-    if (lostTimer !== null) clearTimeout(lostTimer);
-    lostTimer = setTimeout(() => {
-      lostTimer = null;
-      if (disposed || suspended || !stage?.contextLost) return;
-      release();
-      started = false;
-      epoch++;
-      if (rebuilds >= MAX_REBUILDS) {
-        // Twice is enough: this scene stays drawn (the drawn animals do everything the toys do).
-        failed = true;
-        stats.failures++;
-        return;
-      }
-      rebuilds++;
-      stats.rebuilds++;
-      if (target) {
-        become(null);
-        start();
-      }
-    }, LOST_REBUILD_MS);
+    lostTimer = setTimeout(rebuild, LOST_REBUILD_MS);
   };
 
   const start = () => {
@@ -190,6 +209,14 @@ export function createScene3D(): Scene3D {
         stage.attach(...target);
         stage.setView(view);
         become(!stage.contextLost);
+        // A rebuilt renderer that keeps drawing gives the budget back: a loss much later starts afresh.
+        if (rebuilds > 0) {
+          const made = stage;
+          steadyTimer = setTimeout(() => {
+            steadyTimer = null;
+            if (stage === made && !made.contextLost) rebuilds = 0;
+          }, STEADY_MS);
+        }
       })
       .catch(() => {
         if (mine !== epoch) return;

@@ -16,6 +16,8 @@
  */
 
 import { app } from '../../app/app';
+import { sanctuaryDef } from '../../meta/catalogs/sanctuaries';
+import { isHome, type AnimalId } from '../../meta/animals';
 import { featureFlags } from '../../config/featureFlags';
 import { SCORES, THEME_HOMES, type CueId } from '../../audio/scores';
 import { TRICKS } from '../../meta/catalogs/tricks';
@@ -234,8 +236,9 @@ export async function runFarmCheck(onStep: (label: string, i: number, n: number)
   };
 }
 
+/** A Farm animal who is home, to lead the parade (review: the first animal anywhere led nobody on the Farm). */
 function firstFarmResident(): string | undefined {
-  return Object.keys(app.save.inventory.companions)[0];
+  return sanctuaryDef('farm').arrivals.map((a) => a.id as string).find((id) => isHome(app.save, id as AnimalId));
 }
 
 /** The report as plain text, to paste into a message or an issue. */
