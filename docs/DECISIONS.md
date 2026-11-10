@@ -1477,3 +1477,22 @@ Owner decisions, asked up front (2026-11-09):
 - **Stop any time**: a Stop button, Escape, a tap on the scene, leaving the app; a parade, a trick or a re-render
   also end it. It always ends on the whole scene. Nobody wanders off meanwhile (ambient life and activities pause).
 - It grants nothing. **Reduced motion**: cuts between stops, each held 2.1 s.
+
+### PR I — walking round the Farm in 3D (Option B)
+- A **Walk** button in the Farm scene's corner (only where 3D toys are on: the setting and a device that can draw
+  WebGL; otherwise the drawn Farm is the Farm, unchanged) opens a full-screen 3D Farm (`three/walk.ts`, loaded on
+  demand, ~15 kB on top of the toys' three.js chunk).
+- **The world**, built in code from simple shapes and growing with the Farm's stage like its drawn scene: rolling grass
+  with a dirt path from the gate, the fenced pasture, hay, mud, the red barn with lit windows in the evening and the
+  party lights, hay bales, the duck pond with ducks and reeds, the hen house, sunflowers, the orchard, a turning
+  windmill on the hill; a sky dome (dusk at evening), fog, and hills closing it in.
+- **Animals**: the Farm's residents as the same soft toys (D34); they turn to watch the player and say hello (once per
+  visit) when the player comes within 4 m.
+- **Getting round**: drag to look, tap the ground to walk there, tap an animal to walk up and say hello; hold the
+  arrow buttons (or arrows/WASD) to walk and turn. The player walks round the barn, pond, hen house, hay and trees,
+  never through them, and never off the edge (`three/walkMath.ts`, tested on its own).
+- **Quality tiers**: high (antialiased, up to 2× pixels, ~520 grass tufts) unless the setting says lite or frames come
+  slow (>25 of the first 45 over 34 ms), then lite (1× pixels, ~160 tufts).
+- It draws only while showing (paused when the app is hidden); Close, Escape or leaving the screen release the WebGL
+  context and give focus back to the Walk button. **Reduced motion**: taps and arrow presses move in steps (and 45°
+  turns) instead of gliding, the windmill rests, the animals just smile.
