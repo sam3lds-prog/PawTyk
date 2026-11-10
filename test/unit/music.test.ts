@@ -160,6 +160,7 @@ describe('with a real-enough audio context', () => {
     cancelScheduledValues() {}
   }
   let started = 0;
+  let stops = 0;
   class Node_ {
     gain = new Param();
     frequency = new Param();
@@ -173,7 +174,9 @@ describe('with a real-enough audio context', () => {
     start() {
       started++;
     }
-    stop() {}
+    stop() {
+      stops++;
+    }
   }
   class FakeCtx {
     currentTime = 0;
@@ -198,6 +201,31 @@ describe('with a real-enough audio context', () => {
     expect(started).toBeGreaterThanOrEqual(notes);
     pb.stop(0);
     vi.unstubAllGlobals();
+  });
+
+  it("a cue's last notes, still ringing past its end, are faded too when the music stops or the next cue starts", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('AudioContext', FakeCtx);
+    setMusicEnabled(true);
+    const pb = playCue('triumph')!;
+    vi.advanceTimersByTime(pb.durationMs + 100);
+    // Its beats are over (the clock is done), but its ring is still the player's to stop.
+    expect(pb.stopped).toBe(true);
+    stops = 0;
+    stopMusic(100);
+    expect(stops).toBeGreaterThan(0);
+    // Once only.
+    stops = 0;
+    stopMusic(100);
+    expect(stops).toBe(0);
+    // The same when a new cue takes over.
+    const a = playCue('welcome')!;
+    vi.advanceTimersByTime(a.durationMs + 100);
+    stops = 0;
+    playCue('triumph')!.stop(0);
+    expect(stops).toBeGreaterThan(0);
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 });
 
