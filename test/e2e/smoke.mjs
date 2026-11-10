@@ -541,8 +541,15 @@ try {
     return { on: fig?.dataset.trick, shown };
   });
   check('a free trick plays with its emote', trick.on === 'wave' && trick.shown, JSON.stringify(trick));
-  await page.waitForTimeout(1800);
+  // D44 PR F: the trick gets a close-up (the scene quiets around it) and the whole scene comes back after.
+  await page.waitForTimeout(550);
+  const close = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, quiet: !!document.querySelector('.sanctuary__scene.is-closeup') }));
+  check('a trick gets a close-up, and the rest of the scene quiets (D44)', close.zoom > 1.8 && close.quiet, JSON.stringify(close));
+  await page.waitForTimeout(1250);
   check('the trick ends by itself', await page.evaluate(() => !document.querySelector('.sp-trick') && !document.querySelector('.sanctuary__scene [data-trick]')));
+  await page.waitForTimeout(700);
+  const back = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, quiet: !!document.querySelector('.sanctuary__scene.is-closeup'), vb: document.querySelector('.sanctuary__scene svg').getAttribute('viewBox') }));
+  check('after the trick, the camera gives the whole scene back (D44)', back.zoom === 1 && !back.quiet && back.vb === '0 0 360 300', JSON.stringify(back));
   await page.click('[data-tray-tab="emote"]');
   await page.click('.trick-chip[data-trick="love"]');
   check('a free emote plays from the Emotes tab', await page.evaluate(() => document.querySelector('.sanctuary__scene .sanctuary__pet[data-trick]')?.dataset.trick === 'love'));

@@ -31,6 +31,8 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
+import { sceneCloseUps } from '../components/closeup';
+import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
@@ -90,6 +92,8 @@ export const sanctuaryScreen: ScreenDef = {
     const tray = mountTrickTray(scope, trayHost, () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), {
       returnFocus: tricksBtn,
       onToggle: (open) => tricksBtn()?.setAttribute('aria-expanded', String(open)),
+      // A trick gets its close-up (D44 PR F).
+      onPlayed: (fig, trick) => closeups.play(fig, trick),
     });
 
     // ---------------------------------------------------------------- ambient life (D24)
@@ -106,8 +110,23 @@ export const sanctuaryScreen: ScreenDef = {
         life?.setLive(!on && !document.hidden);
         acts?.setLive(!on && !document.hidden);
       },
-      closeTray: () => tray.isOpen && tray.close(),
+      closeTray: () => {
+        // A parade takes the camera: a trick's close-up ends first.
+        closeups.cancel();
+        if (tray.isOpen) tray.close();
+      },
       reducedMotion: () => app.reducedMotion,
+    });
+    const closeups = sceneCloseUps({
+      host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),
+      svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+      camera,
+      reducedMotion: () => app.reducedMotion,
+      pause: (on) => {
+        life?.setLive(!on && !document.hidden);
+        acts?.setLive(!on && !document.hidden);
+      },
+      react: (fig, action) => life?.play(figureId(fig as unknown as HTMLElement), action),
     });
     scope.onDispose(() => {
       life?.dispose();
@@ -116,6 +135,7 @@ export const sanctuaryScreen: ScreenDef = {
       s3d.dispose();
     });
     scope.on(document, 'visibilitychange', () => {
+      if (document.hidden) closeups.cancel();
       life?.setLive(!document.hidden && !parades.active);
       acts?.setLive(!document.hidden && !parades.active);
       s3d.setLive(!document.hidden);
@@ -157,8 +177,9 @@ export const sanctuaryScreen: ScreenDef = {
     }
 
     function render(): void {
-      // A re-render draws a new scene: a parade on the old one ends first.
+      // A re-render draws a new scene: a parade or a close-up on the old one ends first.
       parades.skip();
+      closeups.cancel();
       const save = app.save;
       const pets = unlockedPets(save);
       const ownedDecor = DECOR.filter((d) => decorHome(d) === 'harmony' && owns(save, d.id));

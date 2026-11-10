@@ -27,6 +27,8 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
+import { sceneCloseUps } from '../components/closeup';
+import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
 import { toast } from '../components/sheet';
 import { dismissSceneCue, sceneCue, sceneCueMarkup, type SceneCue } from '../components/sceneCues';
@@ -80,6 +82,8 @@ export const regionScreen: ScreenDef = {
     const tray = mountTrickTray(scope, trayHost, () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), {
       returnFocus: tricksBtn,
       onToggle: (open) => tricksBtn()?.setAttribute('aria-expanded', String(open)),
+      // A trick gets its close-up (D44 PR F).
+      onPlayed: (fig, trick) => closeups.play(fig, trick),
     });
     let life: SceneLife | null = null;
     let acts: ActivityRunner | null = null;
@@ -96,8 +100,23 @@ export const regionScreen: ScreenDef = {
         life?.setLive(!on && !document.hidden);
         acts?.setLive(!on && !document.hidden);
       },
-      closeTray: () => tray.isOpen && tray.close(),
+      closeTray: () => {
+        // A parade takes the camera: a trick's close-up ends first.
+        closeups.cancel();
+        if (tray.isOpen) tray.close();
+      },
       reducedMotion: () => app.reducedMotion,
+    });
+    const closeups = sceneCloseUps({
+      host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),
+      svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+      camera,
+      reducedMotion: () => app.reducedMotion,
+      pause: (on) => {
+        life?.setLive(!on && !document.hidden);
+        acts?.setLive(!on && !document.hidden);
+      },
+      react: (fig, action) => life?.play(figureId(fig as unknown as HTMLElement), action),
     });
     scope.onDispose(() => {
       life?.dispose();
@@ -106,6 +125,7 @@ export const regionScreen: ScreenDef = {
       s3d.dispose();
     });
     scope.on(document, 'visibilitychange', () => {
+      if (document.hidden) closeups.cancel();
       life?.setLive(!document.hidden && !parades.active);
       acts?.setLive(!document.hidden && !parades.active);
       s3d.setLive(!document.hidden);
@@ -172,8 +192,9 @@ export const regionScreen: ScreenDef = {
     }
 
     function render(): void {
-      // A re-render (a decoration toggled) draws a new scene: a parade on the old one ends first.
+      // A re-render (a decoration toggled) draws a new scene: a parade or a close-up on the old one ends first.
       parades.skip();
+      closeups.cancel();
       const save = app.save;
       const open = isOpen(save, id);
       const stage = stageOf(save, id);
