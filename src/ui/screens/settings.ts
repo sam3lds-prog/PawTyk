@@ -8,6 +8,7 @@ import { iap } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
 import { sfx } from '../../services/audio';
+import { playCue } from '../../services/music';
 import { haptic } from '../../services/haptics';
 import { leaderboard } from '../../services/leaderboard';
 import { resetLeaderboardLocal } from '../../app/leaderboardSync';
@@ -23,7 +24,7 @@ import { POLICY_UPDATED_TEXT, policyHtml } from '../../legal/privacyPolicy';
 import { animalSvg } from '../art/animals';
 import { ICON } from '../icons';
 
-type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
+type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'music' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
 
 function sw(key: BoolKey, label: string, help = ''): string {
   const on = app.settings[key];
@@ -108,6 +109,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       </div>
       <div class="rows-title">Comfort</div>
       <div class="rows">
+        ${sw('music', 'Music', 'Tunes for wins, new friends, the Welcome Parade and tricks')}
         ${sw('sound', 'Sound effects')}
         ${sw('haptics', 'Haptics')}
         ${choice('reducedMotion', 'Motion', [
@@ -206,11 +208,13 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       app.settings[key] = v;
       swEl.setAttribute('aria-checked', String(v));
       swEl.querySelector('.switch')?.setAttribute('aria-checked', String(v));
+      if (key === 'music') app.settings.musicChosen = true;
       changed = true;
       app.applySettings();
       app.persist();
       // D40: turning sound or haptics on gives a small sample, so the player knows what they turned on.
       if (v && key === 'sound') sfx('hello', { style: 'playful' });
+      if (v && key === 'music') playCue('triumph');
       if (v && key === 'haptics') haptic('light');
       return;
     }

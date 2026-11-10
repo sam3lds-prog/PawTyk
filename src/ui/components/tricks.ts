@@ -195,7 +195,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     const status = host.querySelector('[data-tray-status]');
     const name = animalName(target.id);
     if (s && fig && performTrick(s, fig, id, app.reducedMotion)) {
-      feel('trick');
+      feel('trick', { cue: `trick:${id}` });
       track('trick_played', { trick: id });
       if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!`;
     } else if (fig) {
@@ -269,7 +269,7 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
   const preview = () => {
     const s = sh.el.querySelector<SVGSVGElement>('.trick-sheet__stage svg');
     const fig = s?.querySelector<SVGGElement>('.sanctuary__pet');
-    if (s && fig) performTrick(s, fig, id, app.reducedMotion);
+    if (s && fig && performTrick(s, fig, id, app.reducedMotion)) feel('trick', { cue: `trick:${id}` });
   };
   // The preview animal is a 3D toy too (D34), when the sanctuary's are.
   const s3d = createScene3D();

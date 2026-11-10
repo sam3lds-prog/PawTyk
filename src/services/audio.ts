@@ -53,15 +53,24 @@ export function soundEnabled(): boolean {
   return enabled;
 }
 
-function audio(): AudioContext | null {
-  if (!enabled) return null;
+/**
+ * The game's one audio context, shared by sound effects and music (D44 PR B), created on first use. On iOS 17+ the
+ * audio session is "ambient": PawTyk follows the silent switch and mixes with whatever else is playing.
+ */
+export function audioContext(): AudioContext | null {
   try {
     if (!ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return null;
+      try {
+        const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+        if (session) session.type = 'ambient';
+      } catch {
+        /* no audio session API */
+      }
       ctx = new Ctor();
       master = ctx.createGain();
-      master.gain.value = MASTER_GAIN;
+      master.gain.value = enabled ? MASTER_GAIN : 0;
       master.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') void ctx.resume();
@@ -69,6 +78,10 @@ function audio(): AudioContext | null {
   } catch {
     return null;
   }
+}
+
+function audio(): AudioContext | null {
+  return enabled ? audioContext() : null;
 }
 
 interface Tone {

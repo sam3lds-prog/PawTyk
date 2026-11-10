@@ -1361,3 +1361,24 @@ Owner decisions, asked up front (2026-11-09):
 - **No unfair mistake from a bounce**: two presses on one tile closer than 50 ms (`TAP_BOUNCE_MS`) are one touch
   reported twice, so the second is dropped. A human double tap is never that fast (the browser tests now double-tap
   at a human pace). A double-fired wrong guess already cost nothing (D37).
+
+### PR B — PawTyk's own music
+- **The music is composed in code** (`src/audio/scores.ts`) and played by the game's synthesizer
+  (`src/services/music.ts`): no audio files, no licenses. Everything is original and in C major; the **PawTyk motif**
+  (a rising C–E–G that turns up to A or C) opens the win sting, carries Welcome Home and ends Barnyard Bounce's dance.
+- Cues: **Tiny Triumph** (every solve, about 1.1 s), **Welcome Home** (a new animal, 3.6 s, 100 BPM), **Barnyard
+  Bounce** (the Welcome Parade, 132 BPM, 16 beats ≈ 7.3 s: intro 0–4, dance 4–12, finish 12–16, big accent on 14),
+  and a **tune for each of the 18 tricks and emotes**, exactly as long as the trick (a rising flourish for Spin, a
+  drum-roll build for Backflip, a slow falling phrase for Sleepy, Barnyard Bounce's finish for Party time).
+- Instruments: plucked bass, strummed chords, marimba, bells, brass, a whistle, pads, a gliding swoop, claps, stomps,
+  shaker, wood block and a soft cymbal. Measured in Chrome (the browser tests render every cue offline): peaks at most
+  0.23 of full scale, loudness 0.010–0.021 RMS; quiet tunes carry a `level` trim.
+- **One channel, its own switch**: music plays on a channel under the sound effects, so a tap always reads through.
+  Settings → *Music* (on). The `music` setting existed before with nothing behind it (off in every save), so it is on
+  until the player sets it (`musicChosen`). With Music on, a solve, an arrival and a trick play their cue *instead of*
+  their sound effect; with Music off they keep their sound effects.
+- **A beat clock** comes with every cue (`Playback.beatAt`, `msAt`, `done`), and runs even with Music off or no audio,
+  so the dances (PR D) keep their timing in silence.
+- Leaving the app fades the music out. On iOS 17+ the audio session is *ambient*: PawTyk follows the silent switch and
+  mixes with other audio.
+- **Recorded tracks later**: `useRecordedTrack(id, url)` swaps a cue's score for an audio file at the same tempo.
