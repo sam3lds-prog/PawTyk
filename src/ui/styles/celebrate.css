@@ -498,3 +498,151 @@
 .sanctuary__scene.is-parading .scene-tour {
   display: none;
 }
+
+/* ------------------------------------------------------------------ walking the Farm in 3D (D44 PR I) */
+.scene-walk {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 252, 244, 0.88);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px -2px rgba(40, 52, 52, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.scene-walk[hidden] {
+  display: none;
+}
+.sanctuary__scene.is-parading .scene-walk,
+.sanctuary__scene.is-touring .scene-walk {
+  display: none;
+}
+body.has-walk {
+  overflow: hidden;
+}
+.walk {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: #bfe3f2;
+  color: var(--ink);
+}
+.walk__view {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.walk__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.walk__loading {
+  max-width: 28ch;
+  text-align: center;
+  font-weight: 700;
+}
+.walk__top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.walk__top > * {
+  pointer-events: auto;
+}
+.walk__title {
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 252, 244, 0.86);
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+}
+.walk__close {
+  background: rgba(255, 252, 244, 0.92);
+}
+.walk__hint {
+  position: absolute;
+  left: 50%;
+  top: calc(max(12px, env(safe-area-inset-top, 0px)) + 56px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: rgba(40, 52, 52, 0.6);
+  color: #fffaf0;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-align: center;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+.walk__hint.is-gone {
+  opacity: 0;
+}
+.walk__pad {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(2, 52px);
+  gap: 6px;
+}
+.walk__btn {
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 252, 244, 0.9);
+  color: var(--ink);
+  box-shadow: 0 3px 10px -3px rgba(40, 52, 52, 0.35);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.walk__btn:active {
+  background: #fff;
+  transform: scale(0.96);
+}
+.walk__btn:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.walk__btn--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+.walk__btn--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+.walk__btn--down {
+  grid-column: 2;
+  grid-row: 2;
+}
+.walk__btn--right {
+  grid-column: 3;
+  grid-row: 2;
+}

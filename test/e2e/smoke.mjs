@@ -484,6 +484,38 @@ try {
   await page.waitForTimeout(700);
   const toured = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, caption: !!document.querySelector('.tour-caption'), btn: !document.querySelector('.sanctuary__scene [data-act="tour"]')?.hidden }));
   check('Stop ends the tour on the whole scene (D44)', toured.zoom === 1 && !toured.caption && toured.btn, JSON.stringify(toured));
+  // D44 PR I: walk round the Farm in 3D: it opens with its animals, draws, the arrows walk, a tap walks there, and
+  // closing releases its WebGL context and gives focus back.
+  await page.click('.sanctuary__scene [data-act="walk"]');
+  await page.waitForSelector('.walk canvas.walk__canvas', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  const w0 = await page.evaluate(() => {
+    const w = window.__walk;
+    return w ? { x: w.walker.x, z: w.walker.z, drawn: w.drawn, animals: w.animals.length } : null;
+  });
+  const fwd = await page.$('.walk__btn--up');
+  const fb = await fwd?.boundingBox();
+  if (fb) {
+    await page.mouse.move(fb.x + fb.width / 2, fb.y + fb.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(900);
+    await page.mouse.up();
+  }
+  const w1 = await page.evaluate(() => ({ z: window.__walk?.walker.z ?? 0, drawn: window.__walk?.drawn ?? 0 }));
+  const vb = await page.$('.walk__view');
+  const vbb = await vb?.boundingBox();
+  if (vbb) await page.mouse.click(vbb.x + vbb.width * 0.5, vbb.y + vbb.height * 0.82);
+  await page.waitForTimeout(400);
+  const w2 = await page.evaluate(() => ({ target: !!window.__walk?.walker.target || (window.__walk?.walker.z ?? 0) < 0 }));
+  check(
+    'the Walk button opens the 3D Farm with its animals; it draws, the arrows walk and a tap sets off (D44)',
+    !!w0 && w0.animals >= 1 && w0.drawn > 0 && w1.z < w0.z - 0.3 && w1.drawn > w0.drawn && w2.target,
+    JSON.stringify({ w0, w1, w2 }),
+  );
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  const closedWalk = await page.evaluate(() => ({ open: !!document.querySelector('.walk'), canvases: document.querySelectorAll('canvas').length, focus: document.activeElement?.dataset?.act ?? '' }));
+  check('closing the walk releases it and returns focus to the Walk button (D44)', !closedWalk.open && closedWalk.canvases === 1 && closedWalk.focus === 'walk', JSON.stringify(closedWalk));
   await page.evaluate((g) => {
     window.__pt.app.save.world.growth.farm = g;
     window.__pt.go({ screen: 'region', id: 'farm' });

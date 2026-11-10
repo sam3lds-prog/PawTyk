@@ -30,6 +30,7 @@ import { sceneParades } from '../components/parade';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
+import { canWalk, showFarmWalk, walkButtonMarkup } from '../components/walk';
 import { HOME_SCENERY } from '../art/homeScenery';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -239,6 +240,7 @@ export const regionScreen: ScreenDef = {
         <figure class="sanctuary__scene card is-live ${open ? '' : 'is-locked'}">
           <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: isEvening() }, `rg-${id}`)}</svg>
           ${tourButtonMarkup(open && welcomed.length > 0)}
+          ${id === 'farm' ? walkButtonMarkup(open && stage >= 1 && canWalk()) : ''}
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
@@ -362,6 +364,22 @@ export const regionScreen: ScreenDef = {
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
       if (parades.onClick(t)) return;
+      // Walk round the Farm in 3D (D44 PR I): the scene's own 3D layer rests meanwhile.
+      if (t.closest('[data-act="walk"]')) {
+        tour.stop();
+        closeups.cancel();
+        if (tray.isOpen) tray.close();
+        s3d.setLive(false);
+        life?.setLive(false);
+        acts?.setLive(false);
+        void showFarmWalk(scope, { returnFocus: () => el.querySelector<HTMLElement>('[data-act="walk"]') }).done.then(() => {
+          if (!scope.alive) return;
+          s3d.setLive(!document.hidden);
+          life?.setLive(!document.hidden);
+          acts?.setLive(!document.hidden);
+        });
+        return;
+      }
       if (tour.onClick(t)) return;
       if (t.closest('[data-act="tricks"]')) {
         if (tray.isOpen) tray.close();
