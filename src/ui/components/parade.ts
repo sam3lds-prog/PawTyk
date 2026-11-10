@@ -200,7 +200,7 @@ export const TOYS_WAIT_MS = 1200;
 
 export interface SceneParades {
   /** Plays the parade (with a newcomer) or the group dance. Resolves true if anyone danced. */
-  play(newcomer?: string, opts?: { short?: boolean }): Promise<boolean>;
+  play(newcomer?: string, opts?: { short?: boolean; toysWaited?: boolean }): Promise<boolean>;
   /**
    * Offers a celebration that never started (D46 PR A): the player began something else during its lead-in, or left.
    * The button under the scene says *Watch Truffle's welcome* (or *Celebrate the new stage*) and plays it in full.
@@ -301,11 +301,16 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       if (b0) b0.hidden = true;
       // The toys for the renderer there is now (D46 PR B): rebuilt just after the walk closed, say. Everyone dances
       // from the first beat in the same form, toys or drawn; it never waits long.
-      if (host.toysReady) {
+      // A parade the screen scheduled has waited for them already, inside its lead-in (review of D46: a second wait
+      // here sat outside the pending moment, so leaving then lost the welcome).
+      if (host.toysReady && !opts.toysWaited) {
         const me = (starting = { cancelled: false, wake: () => {} });
+        // Tour and Walk step aside while it waits: the scene is the parade's already (taps on it wait).
+        fig.classList.add('is-starting');
         let timer: ReturnType<typeof setTimeout> | undefined;
         await Promise.race([host.toysReady(), new Promise((r) => (timer = setTimeout(r, TOYS_WAIT_MS))), new Promise<void>((r) => (me.wake = r))]);
         clearTimeout(timer);
+        fig.classList.remove('is-starting');
         if (me.cancelled) return false;
         starting = null;
         if (!scope.alive) return false;
@@ -426,7 +431,7 @@ export function scheduleParade(
           return;
         }
         if (!pend.begin()) return;
-        const danced = await parades.play(o.newcomer, { short: o.short });
+        const danced = await parades.play(o.newcomer, { short: o.short, toysWaited: true });
         // The app went to the background while it waited for the toys: offered for when the player is back.
         if (!danced && scope.alive && document.hidden && !parades.offered) parades.offer(o.newcomer);
         done(danced);

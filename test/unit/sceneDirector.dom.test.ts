@@ -493,7 +493,11 @@ describe('a parade and the toys of the renderer there is now (D46 PR B)', () => 
     expect(s.parades.active).toBe(true);
     expect(s.director.owner).toBe('parade');
     expect(s.director.paused).toBe(true);
+    // Tour and Walk step aside while it waits (review: they showed but their taps were swallowed).
+    expect(s.el.querySelector('.sanctuary__scene.is-starting')).not.toBeNull();
     toys(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.el.querySelector('.sanctuary__scene.is-starting')).toBeNull();
     await vi.advanceTimersByTimeAsync(10);
     expect(s.el.querySelector('.is-parading')).not.toBeNull();
     s.parades.skip();
@@ -509,7 +513,7 @@ describe('a parade and the toys of the renderer there is now (D46 PR B)', () => 
     s.parades.skip();
   });
 
-  it('a tour (or Skip) during the wait cancels it: no parade starts later, and the scene isn’t left held', async () => {
+  it('anything else taking the scene during the wait (or Skip, or leaving) cancels it: no parade later, nothing held', async () => {
     const s = stage({ toysReady: () => new Promise<boolean>(() => {}) });
     const played = s.parades.play();
     await vi.advanceTimersByTimeAsync(200);
