@@ -64,6 +64,10 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     </div>`);
   document.body.appendChild(el);
   document.body.classList.add('has-walk');
+  // Modal: the screen underneath can't be tabbed to or tapped while walking (D44 PR I review).
+  const under = document.getElementById('app');
+  const wasInert = !!under?.inert;
+  if (under) under.inert = true;
   const view = el.querySelector<HTMLElement>('[data-walk-view]')!;
   const status = el.querySelector<HTMLElement>('[data-walk-status]')!;
   el.querySelector<HTMLElement>('[data-act="walk-close"]')?.focus({ preventScroll: true });
@@ -78,6 +82,7 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     walk = null;
     el.remove();
     document.body.classList.remove('has-walk');
+    if (under) under.inert = wasInert;
     opts.returnFocus?.()?.focus({ preventScroll: true });
     resolve();
   });
@@ -192,13 +197,35 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     if ((e.target as HTMLElement).closest('[data-act="walk-close"]')) close();
   });
   scope.on(document, 'keydown', (e) => {
-    if ((e as KeyboardEvent).key === 'Escape') {
+    const ke = e as KeyboardEvent;
+    if (ke.key === 'Escape') {
       e.preventDefault();
       close();
+    } else if (ke.key === 'Tab') {
+      // Focus stays inside the walk view.
+      const items = [...el.querySelectorAll<HTMLElement>('button:not([disabled])')];
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!el.contains(document.activeElement)) {
+        ke.preventDefault();
+        first.focus();
+      } else if (ke.shiftKey && document.activeElement === first) {
+        ke.preventDefault();
+        last.focus();
+      } else if (!ke.shiftKey && document.activeElement === last) {
+        ke.preventDefault();
+        first.focus();
+      }
     }
   });
-  // Leaving the app pauses it (nothing draws unseen).
-  scope.on(document, 'visibilitychange', () => walk?.setLive(!document.hidden));
+  // Leaving the app pauses it (nothing draws unseen), and lets go of any held key or button: its release may happen
+  // elsewhere, and walking on when the player comes back would be a surprise (D44 PR I review).
+  scope.on(document, 'visibilitychange', () => {
+    if (document.hidden) walk?.hold(0, 0);
+    walk?.setLive(!document.hidden);
+  });
+  scope.on(window, 'blur', () => walk?.hold(0, 0));
 
   return { close, done };
 }

@@ -44,6 +44,21 @@ describe('the walkable Farm', () => {
     expect(settle(0, 15, obs)).toEqual({ x: 0, z: 15 });
   });
 
+  it('the barn’s collider turns with the barn: its corners are solid, the ground beside them is not', () => {
+    const obs = obstaclesAt(2);
+    // Inside the turned barn (its back-right corner), though outside an unturned box: pushed out.
+    expect(settle(16.5, -15, obs)).not.toEqual({ x: 16.5, z: -15 });
+    const out = settle(16.5, -15, obs);
+    const c = Math.cos(PLACES.barn.rot);
+    const s = Math.sin(PLACES.barn.rot);
+    const lx = (out.x - PLACES.barn.x) * c - (out.z - PLACES.barn.z) * s;
+    const lz = (out.x - PLACES.barn.x) * s + (out.z - PLACES.barn.z) * c;
+    expect(Math.abs(lx) >= PLACES.barn.w / 2 + 0.4 || Math.abs(lz) >= PLACES.barn.d / 2 + 0.4).toBe(true);
+    // Open ground the unturned box would have blocked is free.
+    const free = { x: PLACES.barn.x + 5.1, z: PLACES.barn.z + 6.2 };
+    expect(settle(free.x, free.z, obs)).toEqual(free);
+  });
+
   it('walking to a spot turns toward it and arrives; a wall in the way stops it', () => {
     const w: Walker = { x: 0, z: 20, yaw: 0, target: { x: 6, z: 14 } };
     for (let i = 0; i < 400 && w.target; i++) stepWalker(w, 1 / 30, obstaclesAt(4));
