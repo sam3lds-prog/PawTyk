@@ -351,3 +351,84 @@
 .sanctuary__scene.is-closeup::after {
   opacity: 1;
 }
+
+/* ------------------------------------------------------------------ the homes, dressed up (D44 PR G) */
+/* Grass sways from its root (played by the ambient director, like every other lively part). */
+.sanctuary__scene.is-live .is-sway .sp-grass {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sp-grass 1600ms ease-in-out;
+}
+@keyframes sp-grass {
+  30% {
+    transform: rotate(6deg);
+  }
+  70% {
+    transform: rotate(-4deg);
+  }
+}
+
+/* A landmark to tap: doors swing open from their hinges, a critter peeks out, then all goes back. */
+.sanctuary__scene .sp-landmark {
+  cursor: pointer;
+}
+.sanctuary__scene .sp-landmark .sp-door {
+  transform-box: fill-box;
+  transition: transform 520ms cubic-bezier(0.3, 0.7, 0.3, 1) 260ms;
+}
+.sanctuary__scene .sp-landmark .sp-door--l {
+  transform-origin: 0% 50%;
+}
+.sanctuary__scene .sp-landmark .sp-door--r {
+  transform-origin: 100% 50%;
+}
+.sanctuary__scene .sp-landmark.is-open .sp-door {
+  transform: scaleX(0.14);
+  transition-delay: 0ms;
+}
+.sanctuary__scene .sp-landmark .sp-peek {
+  transform: translate(var(--px, 0px), var(--py, 14px));
+  transition: transform 360ms ease-in;
+}
+.sanctuary__scene .sp-landmark.is-open .sp-peek {
+  transform: none;
+  transition: transform 520ms cubic-bezier(0.3, 1.5, 0.45, 1) 280ms;
+}
+
+/* The party spot: its lights are off by day, lit in the evening and whenever the home celebrates. */
+.sanctuary__scene .sp-bulb-halo {
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+.sanctuary__scene .sp-party.is-lit .sp-bulb-halo,
+.sanctuary__scene.is-parading .sp-bulb-halo {
+  opacity: 0.42;
+}
+.sanctuary__scene.is-parading .sp-bulb {
+  animation: sp-bulb-twinkle 900ms ease-in-out 8 alternate;
+}
+.sanctuary__scene.is-parading .sp-bulb:nth-child(2n) {
+  animation-delay: 450ms;
+}
+@keyframes sp-bulb-twinkle {
+  to {
+    opacity: 0.7;
+  }
+}
+
+/* The dance floor: a pool of light under each dancer while the home celebrates. */
+.sanctuary__scene .sp-dance-light {
+  opacity: 0;
+  animation: sp-dance-light 600ms ease-out 1 both;
+  pointer-events: none;
+}
+@keyframes sp-dance-light {
+  to {
+    opacity: 1;
+  }
+}
+
+:root[data-motion='reduce'] .sanctuary__scene.is-parading .sp-bulb,
+:root[data-motion='reduce'] .sanctuary__scene .is-sway .sp-grass {
+  animation: none !important;
+}

@@ -16,6 +16,7 @@ import { BIOMES, isPlaceId, placeDef, placeIndex, type BiomeId, type LookId } fr
 import { companionFigure, figureTop, kitSpeciesOf, type CompanionMood, type FriendId } from './companions';
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
 import { LANDSCAPE_ART, LANDSCAPE_SPOTS, type NewBiome } from './landscapes';
+import { HOME_SCENERY, eveningLights, sunlight } from './homeScenery';
 
 export type RegionDecorId = Extract<
   DecorId,
@@ -1108,6 +1109,18 @@ export function regionScene(region: RegionId, st: RegionSceneState, id = 'region
       else items.push({ base: f.base, svg: g });
     }
   }
+  // The five hand-made homes, dressed up (D44 PR G): ambient life, a landmark to tap, a party spot, light and depth.
+  const home = place ? null : HOME_SCENERY[region as BaseRegionId];
+  if (home) {
+    const add = (s: number, base: number, svg: string) => {
+      const g = `<g class="sp-stage" data-stage="${s}">${svg}</g>`;
+      if (base < 0) sky.push(g);
+      else items.push({ base, svg: g });
+    };
+    for (const f of home.features) if (st.stage >= f.stage) add(f.stage, f.base, f.svg(id));
+    if (st.stage >= home.landmark.stage) add(home.landmark.stage, home.landmark.base, home.landmark.svg(id, !!st.evening));
+    if (st.stage >= home.party.stage) add(home.party.stage, home.party.base, `<g class="sp-party${st.evening ? ' is-lit' : ''}">${home.party.svg(id)}</g>`);
+  }
   // Decorations belong to their own hand-made sanctuary; the endless world's places have none (yet).
   if (!place)
     for (const d of st.decor) {
@@ -1145,7 +1158,12 @@ export function regionScene(region: RegionId, st: RegionSceneState, id = 'region
   const landLook = /-land-look/.test(defs) ? ` filter="url(#${id}-land-look)"` : '';
   const bg = look === 'classic' ? flip(art.sky(id)) : `<g${skyLook}>${flip(art.sky(id))}</g>`;
   const ground = look === 'classic' ? flip(art.land(id)) : `<g${landLook}>${flip(art.land(id))}</g>`;
-  return (defs ? `<defs>${defs}</defs>` : '') + bg + sky.join('') + ground + lookOverlay(look, id) + items.map((i) => i.svg).join('') + evening;
+  // Depth for the scene camera (D44 PR C/G): the sky far back, what floats in it a little nearer, the corners in front.
+  const far = `<g data-depth="0.35">${bg}</g>${sky.length ? `<g data-depth="0.55">${sky.join('')}</g>` : ''}`;
+  const light = home && !st.evening ? sunlight(id, home.sun) : '';
+  const front = home ? `<g data-depth="1.22" pointer-events="none">${home.front}</g>` : '';
+  const lamps = home && st.evening ? eveningLights(id, home.lights, st.stage) : '';
+  return (defs ? `<defs>${defs}</defs>` : '') + far + ground + lookOverlay(look, id) + light + items.map((i) => i.svg).join('') + front + evening + lamps;
 }
 
 /** The scene for a sanctuary's world-map card: its land at the stage reached, with no figures. */

@@ -1451,3 +1451,21 @@ Owner decisions, asked up front (2026-11-09):
   nearest two animals look over and say hello a third of the way through.
 - A new trick replaces the close-up; a parade, a re-render or leaving the app ends it with the scene back at once.
 - **Reduced motion**: no close-ups (the trick plays in the whole scene, as before).
+
+### PR G — the five homes, dressed up
+- `art/homeScenery.ts` adds, for the Farm, Outback, Savanna, Arctic and Rainforest (the endless world's places keep
+  their own look):
+  - **Depth**: the sky on a far layer (`data-depth` 0.35), what floats in it at 0.55, and foreground grass, spinifex,
+    dry grass, snow or fronds at the bottom corners at 1.22, so the camera's close-ups and the tour have parallax.
+    Animals are never on a depth layer (they stay where the 3D toys are).
+  - **Light**: warm sunlight from each home's sun (cool on the ice) by day; in the evening the barn's windows and
+    hayloft, the hen house, the snow den and the platform lantern glow.
+  - **A landmark to tap**: the barn's doors swing open and a chick peeks out; a bilby pops up from the Outback burrow;
+    a rock hyrax peeks over the Savanna lookout; an arctic fox kit peeks out of the snow den; a golden tamarin peeks
+    round the Rainforest tree. The chat line says so; it closes after 2.6 s and grants nothing. Each critter hides
+    behind its own transform, so a world-map card never shows it.
+  - **A party spot**: a string of lights (lanterns in the Savanna and Rainforest, ice lights on the snow den) where
+    the animals gather; lit in the evening and, twinkling, whenever the home celebrates.
+  - **Ambient life** the director plays (D24): butterflies, swaying grass (new `.sp-grass`), drifting leaves, petals
+    and snow, a windmill on the Farm's far hill, sunbeams through the Rainforest canopy.
+- **The dance floor**: every dance puts a soft pool of light on the ground under each dancer for its length.

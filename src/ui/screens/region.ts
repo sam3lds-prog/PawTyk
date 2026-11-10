@@ -28,6 +28,8 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { sceneCloseUps } from '../components/closeup';
+import { openLandmark } from '../components/landmarks';
+import { HOME_SCENERY } from '../art/homeScenery';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
 import { toast } from '../components/sheet';
@@ -349,7 +351,7 @@ export const regionScreen: ScreenDef = {
       const svgEl = t.closest('.sanctuary__scene svg') as SVGSVGElement | null;
       const fig =
         (t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null) ??
-        (svgEl && !t.closest('[data-decor].has-act') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
+        (svgEl && !t.closest('[data-decor].has-act, [data-landmark]') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
         // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
@@ -357,6 +359,13 @@ export const regionScreen: ScreenDef = {
         selectFigure(scope, el.querySelector<HTMLElement>('.sanctuary__scene')!, fig);
         life?.tap(fig);
         tray.open(fig as unknown as SVGGElement);
+        return;
+      }
+      // The home's landmark (D44 PR G): the barn's doors open, a critter peeks out.
+      const lm = t.closest('.sanctuary__scene [data-landmark]');
+      if (lm) {
+        const line = isPlaceId(id) ? '' : (HOME_SCENERY[id as keyof typeof HOME_SCENERY]?.landmark.line ?? '');
+        openLandmark(scope, lm, el.querySelector('[data-chat]'), line);
         return;
       }
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;
