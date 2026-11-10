@@ -448,6 +448,23 @@ describe('a welcome on the Farm screen, and what the player does first (D46 PR A
     router.go({ screen: 'journey' });
   });
 
+  it('an owed welcome waits for a new stage’s dance on the same visit, then is offered (review: they shared one button)', async () => {
+    const { missedWelcome } = await import('../../src/ui/components/parade');
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
+    await vi.advanceTimersByTimeAsync(200);
+    router.go({ screen: 'journey' });
+    expect(missedWelcome('farm')).toBe('cotton');
+    // Back, straight to a stage that just appeared: the group dance plays first, the welcome is offered after it.
+    router.go({ screen: 'region', id: 'farm', fresh: 2 });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(offered()).toBeNull();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(parading()).toBe(true);
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(offered()).toBe('Watch Cotton’s welcome');
+    router.go({ screen: 'journey' });
+  });
+
   it('rapid re-entry while the first visit was still in its lead-in leaves one scene and no stray parade', async () => {
     for (let i = 0; i < 4; i++) {
       router.go({ screen: 'region', id: 'farm', welcome: ['cotton'] });
