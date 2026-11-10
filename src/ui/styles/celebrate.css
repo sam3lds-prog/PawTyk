@@ -232,7 +232,7 @@
   animation: spotlight-turn 3200ms linear 500ms 1 both;
 }
 .spotlight.is-in .spotlight__sparkles i {
-  animation: spotlight-twinkle 900ms ease-in-out calc(500ms + var(--a) * 1.2ms) 3 both;
+  animation: spotlight-twinkle 900ms ease-in-out calc(500ms + var(--i, 0) * 70ms) 3 both;
 }
 @keyframes spotlight-turn {
   to {
