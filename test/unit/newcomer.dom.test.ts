@@ -10,6 +10,10 @@ import { regionScreen } from '../../src/ui/screens/region';
 import { sanctuaryScreen } from '../../src/ui/screens/sanctuary';
 import { SPOTLIGHT_MS } from '../../src/ui/components/newcomer';
 import { defaultSave } from '../../src/services/storage';
+import { cueMs, SCORES } from '../../src/audio/scores';
+
+/** Long enough for the Welcome Parade to play out (D44 PR E). */
+const PARADE_MS = cueMs(SCORES.bounce) + 600;
 
 const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
 
@@ -87,11 +91,15 @@ describe('the newcomer is easy to find (D39)', () => {
 });
 
 describe('the arrival ends with the next goal (D40 PR C)', () => {
-  it('after Meet, once the newcomer has said hello, a card says what the next puzzles bring closer', () => {
+  it('after Meet, once the Welcome Parade has played (D44 PR E), a card says what the next puzzles bring closer', async () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
-    // Reduced motion (set above): it comes at once; with motion, after the hello.
-    vi.advanceTimersByTime(10);
+    await vi.advanceTimersByTimeAsync(400);
+    // The parade first (still, under the reduced motion set above): the goal waits for it.
+    expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
+    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    await vi.advanceTimersByTimeAsync(PARADE_MS);
+    expect(document.querySelector('.sanctuary__scene.is-parading')).toBeNull();
     const goal = document.querySelector('[data-next-goal]')!;
     expect(goal).not.toBeNull();
     expect(goal.textContent).toMatch(/Next goal/);
@@ -114,30 +122,32 @@ describe('the arrival ends with the next goal (D40 PR C)', () => {
     expect(nextGoal(app.save, 'farm')?.where).toBe('harmony');
   });
 
-  it('coming back to the place after the welcome (Back from a board) opens it plainly: nothing replays', () => {
+  it('coming back to the place after the welcome (Back from a board) opens it plainly: nothing replays', async () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
-    vi.advanceTimersByTime(10);
+    await vi.advanceTimersByTimeAsync(400 + PARADE_MS);
     expect(document.querySelector('[data-next-goal]')).not.toBeNull();
     expect(router.route).toMatchObject({ screen: 'region', id: 'farm' });
     expect((router.route as { welcome?: unknown }).welcome).toBeUndefined();
-    vi.advanceTimersByTime(3000);
+    await vi.advanceTimersByTimeAsync(3000);
     router.go({ screen: 'pets' });
     router.back({ screen: 'world' });
-    vi.advanceTimersByTime(3000);
+    await vi.advanceTimersByTimeAsync(3000);
     expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('.sanctuary__scene.is-parading, [data-trick^="dance:"]')).toBeNull();
     expect(document.querySelector('.sp-spotlight')).toBeNull();
     expect(document.querySelector('.resident.is-new')).toBeNull();
   });
 
-  it("a new player's starter gift waits until the welcome has played, so it never covers it", () => {
+  it("a new player's starter gift waits until the welcome has played, so it never covers it", async () => {
     app.save.onboarding.starterDecorChosen = false;
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
-    vi.advanceTimersByTime(10);
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
     expect(document.querySelector('.sheet [data-choose]')).toBeNull();
-    vi.advanceTimersByTime(700);
+    await vi.advanceTimersByTimeAsync(PARADE_MS);
+    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
     expect(document.querySelector('.sheet [data-choose]')).not.toBeNull();
   });
 
@@ -149,14 +159,17 @@ describe('the arrival ends with the next goal (D40 PR C)', () => {
     expect(g.where).toBe('farm');
   });
 
-  it('the Pet Garden shows it too, once its "came home" card is closed', () => {
+  it('the Pet Garden shows it too, once its "came home" card is closed and its parade has played', async () => {
     app.save.world.growth.harmony = 1;
     app.save.inventory.companions.juniper = { unlockedAt: '2026-10-31T11:00:00.000Z' };
     const router = mount();
     router.go({ screen: 'sanctuary', welcome: ['juniper'] });
     expect(document.querySelector('[data-next-goal]')).toBeNull();
     (document.querySelector('.intro-sheet [data-act="ok"]') as HTMLButtonElement).click();
-    vi.advanceTimersByTime(50);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
+    expect(document.querySelector('[data-friend="juniper"], [data-pet="juniper"]')?.getAttribute('data-trick')).toMatch(/^dance:newcomer:/);
+    await vi.advanceTimersByTimeAsync(PARADE_MS);
     expect(document.querySelector('[data-next-goal]')?.textContent).toMatch(/Next goal/);
   });
 });

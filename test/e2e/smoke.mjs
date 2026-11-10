@@ -83,9 +83,19 @@ async function solveActive({ stopAfter = Infinity, pace = 0 } = {}) {
       await place(r, c, sol[r][c]);
       placed++;
     }
-  // The very first animal's board ends in its arrival (D41), every other in the win sheet.
-  await page.waitForSelector('.win-sheet, .arrival', { timeout: 5000 });
+  // D44 PR E: every win sparkles over the board for about a second.
+  lastSparkle = await page.evaluate(() => !!document.querySelector('.board-frame .win-burst'));
+  // The very first animal's board ends in its arrival (D41), every other in the win sheet; a new animal first gets its
+  // spotlight (D44 PR E), which a tap moves on from.
+  await page.waitForSelector('.win-sheet, .arrival, .spotlight', { timeout: 5000 });
+  lastSpotlight = await page.evaluate(() => document.querySelector('.spotlight')?.textContent?.replace(/\s+/g, ' ').trim() ?? null);
+  if (lastSpotlight) {
+    await page.click('.spotlight');
+    await page.waitForSelector('.win-sheet', { timeout: 5000 });
+  }
 }
+let lastSparkle = false;
+let lastSpotlight = null;
 
 /** A tile that can't hold an animal on the active board, still empty. */
 const emptyTile = () =>
@@ -202,6 +212,7 @@ try {
   await solveActive();
   const nextLabel = await page.textContent('[data-act="next"]');
   check('win sheet offers the NEXT level', nextLabel?.includes('level 3'), nextLabel ?? '');
+  check('a win sparkles over the board, and an ordinary one has no spotlight (D44)', lastSparkle && lastSpotlight === null);
   check('an ordinary win has one big button and no milestone hero', (await page.$$('.win-sheet .sheet__actions .btn--block')).length === 1 && !(await page.$('.win-sheet .win-hero')) && /Farm \+1/.test((await page.textContent('.win-sheet')) ?? ''));
   await page.click('[data-act="next"]');
   await page.waitForTimeout(200);
@@ -445,6 +456,43 @@ try {
     danced.n >= 1 && danced.during.every((p) => p?.startsWith('dance:')) && danced.after.every((p) => !p) && danced.busy === 0,
     JSON.stringify(danced),
   );
+  // D44 PR E: Meet opens the Welcome Parade: the camera comes in on the newcomer, then every toy dances; Skip gives the
+  // whole scene back with nobody mid-dance, and Replay is offered.
+  const newcomer = await page.evaluate(() => document.querySelector('.sanctuary__scene .sanctuary__pet[data-friend]')?.dataset.friend);
+  await page.evaluate((who) => window.__pt.go({ screen: 'region', id: 'farm', welcome: [who] }), newcomer);
+  await page.waitForSelector('.sanctuary__scene.has-3d.is-parading', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(1600);
+  const parade = await page.evaluate(() => {
+    const st = window.__stage3d;
+    const figs = [...document.querySelectorAll('.sanctuary__scene .sanctuary__pet[data-gx]')];
+    const key = (f) => f.dataset.pet ?? `friend:${f.dataset.friend}`;
+    const now = performance.now();
+    return {
+      skip: !!document.querySelector('.sanctuary__scene .parade-skip'),
+      roles: figs.map((f) => (f.dataset.trick ?? '').split(':')[1] ?? ''),
+      toys: figs.map((f) => st?.actor(key(f))?.performing(now)?.split(':')[1] ?? null),
+      zoom: window.__cam?.zoom ?? 0,
+    };
+  });
+  check(
+    'Meet plays the Welcome Parade: the newcomer leads, every toy dances, the camera comes in close (D44)',
+    parade.skip && parade.roles.filter((r) => r === 'newcomer').length === 1 && parade.toys.every((t) => t === 'newcomer' || t === 'guest') && parade.zoom > 1.2,
+    JSON.stringify(parade),
+  );
+  await page.click('.sanctuary__scene .parade-skip');
+  await page.waitForTimeout(600);
+  const afterSkip = await page.evaluate(() => {
+    const st = window.__stage3d;
+    const figs = [...document.querySelectorAll('.sanctuary__scene .sanctuary__pet[data-gx]')];
+    const key = (f) => f.dataset.pet ?? `friend:${f.dataset.friend}`;
+    return {
+      dancing: figs.filter((f) => f.dataset.trick?.startsWith('dance:')).length,
+      toys: figs.filter((f) => st?.actor(key(f))?.performing(performance.now())?.startsWith('dance:')).length,
+      vb: document.querySelector('.sanctuary__scene svg').getAttribute('viewBox'),
+      replay: !document.querySelector('[data-act="parade-replay"]')?.hidden,
+    };
+  });
+  check('Skip ends the parade: nobody mid-dance, the whole scene back, Replay offered (D44)', afterSkip.dancing === 0 && afterSkip.toys === 0 && afterSkip.vb === '0 0 360 300' && afterSkip.replay, JSON.stringify(afterSkip));
   await page.waitForTimeout(3000);
   await page.evaluate(() => {
     window.__seen = new Set();
@@ -677,6 +725,7 @@ try {
   });
   await page.waitForTimeout(200);
   await solveActive();
+  check('a new animal gets its spotlight before the results (D44)', /Truffle the piglet is coming home to the Farm/.test(lastSpotlight ?? ''), String(lastSpotlight));
   check('an arrival makes the newcomer the hero of the win sheet', (await page.textContent('.win-sheet h2'))?.trim() === 'Truffle is home!' && /Your new piglet/.test((await page.textContent('.win-sheet [data-hero="arrived"]')) ?? ''));
   await page.click('.win-sheet [data-act="next"]');
   await page.waitForTimeout(200);
@@ -910,7 +959,7 @@ try {
     return out;
   });
   const badLevels = levels.filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
-  check(`every music cue renders, never clips and can be heard (${levels.length} cues, D44)`, levels.length === 21 && badLevels.length === 0, JSON.stringify(badLevels));
+  check(`every music cue renders, never clips and can be heard (${levels.length} cues, D44)`, levels.length === 22 && badLevels.length === 0, JSON.stringify(badLevels));
   await page.evaluate(() => window.__pt.go({ screen: 'journey' }));
   await page.evaluate(() => document.querySelector('[data-act="settings"]')?.click());
   const musicSwitch = await page.$('.sheet [data-switch="music"]');

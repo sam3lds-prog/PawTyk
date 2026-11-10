@@ -11,6 +11,8 @@
  *  - `welcome` (Welcome Home): a new animal's spotlight, about 3.6 s, warm and slower.
  *  - `bounce` (Barnyard Bounce): the Welcome Parade, 132 BPM, 16 beats (about 7.3 s): an intro while the newcomer
  *    arrives, eight beats of dance, a big finish on beat 14.
+ *  - `jig` (Barnyard Jig): a home's group celebration when it reaches a new stage (D44 PR E), 132 BPM, 8 beats (about
+ *    3.6 s): the Bounce's groove, a quick turn of its tune, and the motif's finish on beat 6.
  *  - `trick:<id>`: a tune for every trick and emote, exactly as long as the trick (see `meta/catalogs/tricks.ts`).
  *
  * A score is beats, not seconds: `bpm` sets the speed, and the dances (D44 PR D) follow the same beats.
@@ -66,7 +68,7 @@ export interface Score {
   level?: number;
 }
 
-export type CueId = 'triumph' | 'welcome' | 'bounce' | `trick:${TrickId}`;
+export type CueId = 'triumph' | 'welcome' | 'bounce' | 'jig' | `trick:${TrickId}`;
 
 const NAMES: Record<string, number> = {
   C: 0,
@@ -276,6 +278,65 @@ const bounce: Score = {
       [14.25, 'C7', 1.5, 0.22],
     ]),
     part('cymbal', [[14, null, 2, 0.45]]),
+  ],
+};
+
+const jig: Score = {
+  id: 'jig',
+  title: 'Barnyard Jig',
+  bpm: 132,
+  beats: 8,
+  accents: [0, 6],
+  sections: { dance: [0, 6], finish: [6, 8] },
+  parts: [
+    hits('stomp', [0, 1, 2, 3, 4, 5, 6], 0.8),
+    hits('clap', [1, 3, 5, 5.5], 0.7),
+    hits('shaker', [0.5, 1.5, 2.5, 3.5, 4.5], 0.4),
+    part('bass', [
+      [0, 'C2', 0.5],
+      [1, 'G2', 0.5],
+      [2, 'F2', 0.5],
+      [3, 'C3', 0.5],
+      [4, 'G2', 0.5],
+      [5, 'D3', 0.5],
+      [6, 'C2', 2, 0.95],
+    ]),
+    part('pluck', [
+      [0.5, C, 0.4, 0.5],
+      [1.5, C, 0.4, 0.5],
+      [2.5, F, 0.4, 0.55],
+      [3.5, F, 0.4, 0.55],
+      [4.5, G, 0.4, 0.55],
+      [5.5, G, 0.4, 0.55],
+      [6, C, 1.8, 0.6],
+    ]),
+    part('marimba', [
+      [0, 'E5', 0.5],
+      [0.5, 'G5', 0.5],
+      [1, 'E5', 0.5],
+      [1.5, 'C5', 0.5],
+      [2, 'F5', 0.5],
+      [2.5, 'A5', 0.5],
+      [3, 'F5', 0.5],
+      [3.5, 'C5', 0.5],
+      [4, 'D5', 0.5],
+      [4.5, 'G5', 0.5],
+      [5, 'B4', 0.5],
+      [5.5, 'D5', 0.5],
+    ]),
+    // The motif rises into the finish.
+    part('brass', [
+      [4, 'C5', 0.5, 0.6],
+      [4.5, 'E5', 0.5, 0.65],
+      [5, 'G5', 0.5, 0.7],
+      [5.5, 'A5', 0.5, 0.75],
+      [6, ['C5', 'E5', 'G5', 'C6'], 2, 0.75],
+    ]),
+    part('bell', [
+      [6, 'G6', 1.6, 0.3],
+      [6.25, 'C7', 1.5, 0.22],
+    ]),
+    part('cymbal', [[6, null, 2, 0.45]]),
   ],
 };
 
@@ -715,7 +776,7 @@ const tricks: Score[] = [
   ),
 ];
 
-export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, welcome, bounce, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
+export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, welcome, bounce, jig, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
 
 export function scoreFor(id: CueId): Score | undefined {
   return SCORES[id];

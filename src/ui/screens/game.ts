@@ -29,6 +29,7 @@ import { afterSolve, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { showFirstArrival } from '../components/arrival';
+import { showSpotlight, winSparkle } from '../components/celebrate';
 import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
@@ -1293,14 +1294,29 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     for (const c of growth?.arrived ?? []) track('animal_arrived', { animal: c, sanctuary: growth!.sanctuary });
     feel('solved');
     coach('Puzzle solved!');
-    // The board locks and glows for a beat (faces smile in a wave), then the results rise in stages. Nothing waits on
-    // the animation: the sheet's buttons work the moment it opens, and a tap reveals everything at once.
+    // D44 PR E, celebration level 1: light sweeps the board as its faces smile in a wave and stars pop over it, then
+    // the results rise in stages. Nothing waits on the sparkle: the sheet's buttons work the moment it opens, and a tap
+    // reveals everything at once.
+    winSparkle(scope, board.el, frame, app.reducedMotion);
     if (queued) void syncLeaderboard();
-    scope.timeout(() => showWin(rec, result.seconds, rewards, news, cupScore, growth, { replay, friendBefore }), app.reducedMotion ? 150 : 500);
+    // Level 2: a win that brings an animal home first gives it a moment in the light (skippable), then the results with
+    // Meet (the Welcome Parade) as their main action. The very first arrival has its own scene (D41) instead.
+    const hero = heroOf(growth);
+    const spotlit =
+      !!growth &&
+      hero?.kind === 'arrived' &&
+      isMilestone(growth) &&
+      mode.kind !== 'cup' &&
+      !(isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind === 'level');
+    const results = () => showWin(rec, result.seconds, rewards, news, cupScore, growth, { replay, friendBefore, spotlit });
+    scope.timeout(() => {
+      if (spotlit && hero?.kind === 'arrived') showSpotlight(scope, { animal: hero.animal, where: growth!.sanctuary, reducedMotion: app.reducedMotion }, results);
+      else results();
+    }, app.reducedMotion ? 150 : 650);
   }
 
   /** What this solve did (or didn't) for the world, carried into the win sheet (D38). */
-  type WorldStep = { replay: boolean; friendBefore: ReturnType<typeof arrivalProgress> };
+  type WorldStep = { replay: boolean; friendBefore: ReturnType<typeof arrivalProgress>; spotlit?: boolean };
 
   function rewardsMarkup(r: RewardSummary): string {
     if (!r.coins && !r.decor.length && !r.lives && !r.hints) return '';
@@ -1693,7 +1709,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const ws = sheet;
     let leaving = false;
     // D40: a new animal has a sound of its own, a beat after the success melody, as its portrait comes up.
-    if (milestone && hero?.kind === 'arrived') ws.scope.timeout(() => feel('arrival'), app.reducedMotion ? 300 : 900);
+    // (Unless the spotlight just played it, D44 PR E.)
+    if (milestone && hero?.kind === 'arrived' && !step.spotlit) ws.scope.timeout(() => feel('arrival'), app.reducedMotion ? 300 : 900);
     // Paw Points count up while the results rise (skipped with reduced motion or a tap).
     const counter = ws.el.querySelector('[data-count]') as HTMLElement | null;
     // The sanctuary bar moves from where it was to where it is now: one short step, a beat after the results rise.

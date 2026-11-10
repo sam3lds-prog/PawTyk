@@ -435,6 +435,12 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
   function solveBoard(): void {
     placeAll();
     vi.advanceTimersByTime(700);
+    // A win that brings an animal home opens with its spotlight (D44 PR E): a tap goes on to the results.
+    const spot = document.querySelector<HTMLElement>('.spotlight');
+    if (spot) {
+      spot.click();
+      vi.advanceTimersByTime(300);
+    }
   }
   function placeAll(): void {
     const s = app.active!.session;
@@ -1203,15 +1209,24 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     startGame({ kind: 'daily', dateKey: '2026-10-31' });
     solveBoard();
     expect(arrival()).toBeNull();
+    // Cotton's moment in the light first (D44 PR E), then the Daily's own results.
+    (document.querySelector('.spotlight') as HTMLElement).click();
+    vi.advanceTimersByTime(300);
     expect(document.querySelector('.win-sheet')).not.toBeNull();
   });
 
-  it('only the first animal ever: a later arrival keeps the win sheet', () => {
+  it('only the first animal ever: a later arrival keeps the win sheet, after its spotlight (D44 PR E)', () => {
     app.save.world.growth.farm = 3;
     app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
     start(4);
     solveBoard();
     expect(arrival()).toBeNull();
+    const spot = document.querySelector<HTMLElement>('.spotlight');
+    expect(spot?.textContent).toMatch(/is coming home to the Farm/);
+    expect(document.querySelector('.win-sheet')).toBeNull();
+    spot!.click();
+    vi.advanceTimersByTime(300);
+    expect(document.querySelector('.spotlight')).toBeNull();
     expect(document.querySelector('.win-sheet [data-hero="arrived"]')).not.toBeNull();
   });
 });

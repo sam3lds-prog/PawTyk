@@ -26,6 +26,7 @@ import { animalName, startSceneActivities, type ActivityRunner } from '../compon
 import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
+import { sceneParades } from '../components/parade';
 import { trickBadge } from '../art/tricks';
 import { toast } from '../components/sheet';
 import { dismissSceneCue, sceneCue, sceneCueMarkup, type SceneCue } from '../components/sceneCues';
@@ -87,6 +88,17 @@ export const regionScreen: ScreenDef = {
     // The scene camera (D44 PR C): close-ups, the parade's glide, the guided tour. The drawing and the toys move together.
     const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
     if (import.meta.env.DEV) (window as unknown as { __cam?: SceneCamera }).__cam = camera;
+    // The Welcome Parade and group celebrations (D44 PR E).
+    const parades = sceneParades(scope, {
+      el,
+      camera,
+      pause: (on) => {
+        life?.setLive(!on && !document.hidden);
+        acts?.setLive(!on && !document.hidden);
+      },
+      closeTray: () => tray.isOpen && tray.close(),
+      reducedMotion: () => app.reducedMotion,
+    });
     scope.onDispose(() => {
       life?.dispose();
       acts?.dispose();
@@ -94,8 +106,8 @@ export const regionScreen: ScreenDef = {
       s3d.dispose();
     });
     scope.on(document, 'visibilitychange', () => {
-      life?.setLive(!document.hidden);
-      acts?.setLive(!document.hidden);
+      life?.setLive(!document.hidden && !parades.active);
+      acts?.setLive(!document.hidden && !parades.active);
       s3d.setLive(!document.hidden);
     });
 
@@ -160,6 +172,8 @@ export const regionScreen: ScreenDef = {
     }
 
     function render(): void {
+      // A re-render (a decoration toggled) draws a new scene: a parade on the old one ends first.
+      parades.skip();
       const save = app.save;
       const open = isOpen(save, id);
       const stage = stageOf(save, id);
@@ -180,6 +194,7 @@ export const regionScreen: ScreenDef = {
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
+          ${parades.replayMarkup()}
           <button class="scene-tricks" data-act="tricks" aria-controls="${trayHost.id}" aria-expanded="${tray.isOpen}" hidden>${trickBadge('sparkle')}Tricks</button>
         </div>
         ${freshStage && def.stages[freshStage] ? `<p class="stage-news${stageNewsShown ? '' : ' is-entering'}" data-stage-news style="--accent:${def.accent}">${ICON.sprout}<span><b>New at the ${esc(def.short)}: ${esc(def.stages[freshStage].name)}</b> ${esc(def.stages[freshStage].change)}.</span></p>` : ''}
@@ -244,8 +259,16 @@ export const regionScreen: ScreenDef = {
     let stageNewsShown = false;
     render();
 
+    // Straight from a win's Meet: the Welcome Parade (D44 PR E). A new stage (and no newcomer to welcome): the whole
+    // home celebrates with a group dance.
+    const welcoming = !!newcomers.length && !!route.welcome?.includes(newcomers[0]);
+    const groupDance = !welcoming && !!freshStage && isOpen(app.save, id) && !!el.querySelector('.sanctuary__scene .sanctuary__pet');
+
+    /** Waits (briefly) for the 3D toys, so they dance from the first beat; the drawing dances if they don't come. */
+    const toysReady = () => Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]);
+
     // Arrival: a new stage grows in, then everyone says hello (a bigger hello on the first visit of the day, or right
-    // after a solve that helped this place).
+    // after a solve that helped this place). A parade or a group dance is the hello instead.
     if (isOpen(app.save, id) && life) {
       const svg = el.querySelector('.sanctuary__scene svg');
       // What changed glows for a moment (also under reduced motion: a glow, not a movement), and a line says what it is.
@@ -255,41 +278,42 @@ export const regionScreen: ScreenDef = {
           g.classList.add('is-fresh');
           scope.timeout(() => g.classList.remove('is-fresh'), STAGE_GLOW_MS);
         }
-      greetAll(life, (fn, ms) => scope.timeout(fn, ms), route.fresh !== undefined || firstVisitToday);
+      if (!welcoming && !groupDance) greetAll(life, (fn, ms) => scope.timeout(fn, ms), route.fresh !== undefined || firstVisitToday);
     }
     // After the first board: a starter gift for the Farm (if the Pet Garden hasn't offered it already). Straight from a
     // win's Meet, it waits until the arrival has played out, so its card never covers the welcome (D40 review).
-    const welcoming = !!newcomers.length && !!route.welcome?.includes(newcomers[0]);
-    if (isOpen(app.save, id)) {
-      if (welcoming) scope.timeout(() => offerStarterGift(scope, id, render), app.reducedMotion ? 600 : 3200);
-      else offerStarterGift(scope, id, render);
-    }
+    if (isOpen(app.save, id) && !welcoming) offerStarterGift(scope, id, render);
     // Someone came home, just now or while the player was elsewhere: say so, ring them in the scene, and let them say hello.
     if (newcomers.length) {
       const a = animalInfo(newcomers[0]);
       toast(`${a.name} the ${a.noun} came home to the ${def.short}!`, ICON.heart);
       spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), newcomers[0]);
-      // Straight from the win that brought them (D38): the newcomer settles into place first (≤0.9 s, one time, never
-      // under reduced motion), then says hello like any arrival.
-      if (route.welcome?.includes(newcomers[0]) && !app.reducedMotion) {
-        const fig = el.querySelector(`.sanctuary__scene [data-friend="${newcomers[0]}"]`);
-        fig?.classList.add('is-arriving');
-        scope.timeout(() => fig?.classList.remove('is-arriving'), 900);
-      }
-      scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
-      // D40, the arrival's last two steps: the place livens up for a moment around its newcomer, then the next goal.
-      if (welcoming)
-        scope.timeout(() => {
-          life?.cheer();
-          goalShown = true;
-          showNextGoal(el, id, true);
-        }, app.reducedMotion ? 0 : 2300);
-    }
+      if (welcoming) {
+        // Straight from the win that brought them: the Welcome Parade (D44 PR E), then (D40) the next goal, and after
+        // the first board the Farm's starter gift, so its card never covers the welcome.
+        const who = newcomers[0];
+        scope.timeout(
+          () =>
+            void toysReady().then(async () => {
+              if (!scope.alive) return;
+              await parades.play(who);
+              if (!scope.alive) return;
+              goalShown = true;
+              showNextGoal(el, id, true);
+              offerStarterGift(scope, id, render);
+            }),
+          app.reducedMotion ? 300 : 600,
+        );
+      } else scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
+    } else if (groupDance)
+      // The new stage pops in first, then everyone dances.
+      scope.timeout(() => void toysReady().then(() => scope.alive && parades.play()), app.reducedMotion ? 400 : 1100);
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      if (parades.onClick(t)) return;
       if (t.closest('[data-act="tricks"]')) {
         if (tray.isOpen) tray.close();
         else tray.openFor(undefined, true);

@@ -1,0 +1,337 @@
+/*
+ * Celebrations (D44 PR E; ui/components/celebrate.ts and parade.ts): the win sparkle over a solved board, the
+ * new-animal spotlight, and the parade's Skip and Replay controls. Under reduced motion each shows its still form.
+ */
+
+/* ------------------------------------------------------------------ level 1: the win sparkle */
+.win-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.win-sweep::before {
+  content: '';
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 46%;
+  background: linear-gradient(100deg, rgba(255, 249, 225, 0) 0%, rgba(255, 249, 225, 0.78) 45%, rgba(255, 236, 170, 0.55) 55%, rgba(255, 249, 225, 0) 100%);
+  transform: translateX(-120%) skewX(-12deg);
+  animation: win-sweep 760ms cubic-bezier(0.45, 0.05, 0.35, 1) 60ms 1 both;
+  mix-blend-mode: screen;
+}
+@keyframes win-sweep {
+  to {
+    transform: translateX(330%) skewX(-12deg);
+  }
+}
+.board.is-win-glow {
+  box-shadow:
+    0 0 0 4px var(--seam),
+    0 0 0 5px var(--board-frame),
+    0 0 26px 6px rgba(247, 197, 52, 0.55);
+}
+
+.win-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.win-burst__star {
+  position: absolute;
+  left: -13px;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  color: #f7c534;
+  filter: drop-shadow(0 1px 1px rgba(160, 110, 0, 0.35));
+  opacity: 0;
+  animation: win-star 900ms cubic-bezier(0.2, 0.7, 0.3, 1) calc(240ms + var(--delay, 0ms)) 1 both;
+}
+.win-burst__star:nth-child(3n) {
+  color: #f4a6d0;
+}
+.win-burst__star:nth-child(3n + 1) {
+  color: #ffe58a;
+}
+.win-burst__star svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+@keyframes win-star {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(0) scale(0.3);
+  }
+  18% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(calc(-92px * var(--d))) scale(1) rotate(140deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(-112px * var(--d))) scale(0.7) rotate(200deg);
+  }
+}
+.win-burst__ring {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid rgba(247, 197, 52, 0.85);
+  opacity: 0;
+  animation: win-ring 620ms ease-out 220ms 1 both;
+}
+@keyframes win-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+/* Still: the stars rest around the board's middle, no ring. */
+.win-burst.is-still .win-burst__star {
+  animation: none;
+  opacity: 0.95;
+  transform: rotate(var(--a)) translateY(calc(-84px * var(--d)));
+}
+.win-burst.is-still .win-burst__ring {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ level 2: the new-animal spotlight */
+.spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: radial-gradient(ellipse 70% 50% at 50% 42%, rgba(30, 40, 40, 0.62), rgba(18, 24, 24, 0.9));
+  color: #fffaf0;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  cursor: pointer;
+}
+.spotlight.is-in {
+  opacity: 1;
+}
+.spotlight.is-out {
+  opacity: 0;
+}
+.spotlight__beam {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: min(120vw, 560px);
+  height: 62%;
+  transform: translateX(-50%);
+  background: conic-gradient(from 166deg at 50% 0%, transparent 0deg, rgba(255, 244, 205, 0.32) 10deg, rgba(255, 244, 205, 0.32) 18deg, transparent 28deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 600ms ease 120ms;
+}
+.spotlight.is-in .spotlight__beam {
+  opacity: 1;
+}
+.spotlight__stage {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  display: grid;
+  place-items: center;
+}
+.spotlight__stage::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent, #f7c534) 34%, #fff6d8) 0%, color-mix(in srgb, var(--accent, #f7c534) 20%, #fff2c4) 55%, rgba(255, 242, 196, 0) 72%);
+}
+.spotlight__art {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: #fff8e8;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transform: scale(0.3) translateY(40px);
+  opacity: 0;
+}
+.spotlight.is-in .spotlight__art {
+  animation: spotlight-pop 640ms cubic-bezier(0.25, 1.4, 0.4, 1) 160ms 1 both;
+}
+@keyframes spotlight-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.spotlight__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.spotlight__sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.spotlight__sparkles i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  color: #ffe58a;
+  opacity: 0;
+  transform: rotate(var(--a)) translateY(-86px);
+}
+.spotlight__sparkles i:nth-child(2n) {
+  color: #f4a6d0;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+}
+.spotlight__sparkles svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+.spotlight.is-in .spotlight__sparkles {
+  animation: spotlight-turn 3200ms linear 500ms 1 both;
+}
+.spotlight.is-in .spotlight__sparkles i {
+  animation: spotlight-twinkle 900ms ease-in-out calc(500ms + var(--a) * 1.2ms) 3 both;
+}
+@keyframes spotlight-turn {
+  to {
+    transform: rotate(80deg);
+  }
+}
+@keyframes spotlight-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.spotlight__kicker {
+  margin: 10px 0 0;
+  font-size: var(--t-sm);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffe58a;
+}
+.spotlight__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  line-height: 1.1;
+  text-wrap: balance;
+  color: #fffaf0;
+}
+.spotlight__line {
+  margin: 0 0 14px;
+  font-size: var(--t-md);
+  color: rgba(255, 250, 240, 0.88);
+}
+.spotlight__go {
+  min-width: 160px;
+}
+/* Still: the same picture at once (no pop, no turning sparkles). */
+.spotlight.is-still,
+.spotlight.is-still .spotlight__beam {
+  transition: none;
+}
+.spotlight.is-still .spotlight__art {
+  transform: none;
+  opacity: 1;
+  animation: none !important;
+}
+.spotlight.is-still .spotlight__sparkles,
+.spotlight.is-still .spotlight__sparkles i {
+  animation: none !important;
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------ level 3: the parade's controls */
+.sanctuary__scene.is-parading {
+  cursor: default;
+}
+.parade-skip {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 6;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(40, 52, 52, 0.62);
+  color: #fffaf0;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.parade-skip:focus-visible {
+  outline: 3px solid #ffe58a;
+  outline-offset: 2px;
+}
+.scene-replay {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px 0 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  color: var(--ink);
+}
+.scene-replay svg {
+  width: 18px;
+  height: 18px;
+}
+.scene-replay[hidden] {
+  display: none;
+}
