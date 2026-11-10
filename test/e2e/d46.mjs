@@ -49,7 +49,8 @@ async function tapAt(qa, selector) {
   const reachable = await qa.evaluate((s) => {
     const el = document.querySelector(s);
     if (!el || el.hidden) return false;
-    el.scrollIntoView({ block: 'nearest' });
+    // Scrolled to the middle, as a player would: at an edge the tab bar or the sticky header can sit on it.
+    el.scrollIntoView({ block: 'center' });
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) return false;
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
