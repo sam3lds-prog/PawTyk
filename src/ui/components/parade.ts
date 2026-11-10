@@ -154,7 +154,7 @@ export interface SceneParadeHost {
 
 export interface SceneParades {
   /** Plays the parade (with a newcomer) or the group dance. Resolves true if anyone danced. */
-  play(newcomer?: string): Promise<boolean>;
+  play(newcomer?: string, opts?: { short?: boolean }): Promise<boolean>;
   skip(): void;
   readonly active: boolean;
   /** The Replay button, for the row under the scene (hidden until a parade has played). */
@@ -172,6 +172,8 @@ const REPLAY_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden
 export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: Event) => void): void; onDispose(fn: () => void): void; readonly alive: boolean }, host: SceneParadeHost): SceneParades {
   let current: ParadeHandle | null = null;
   let replay: { newcomer?: string } | null = null;
+  /** The last one played was the short welcome: Replay offers the full parade by name. */
+  let wasShort = false;
   const label = () => (replay?.newcomer ? 'Replay the parade' : 'Dance again');
   scope.on(document, 'keydown', (e) => {
     if ((e as KeyboardEvent).key === 'Escape' && current?.active && !document.querySelector('.overlay')) current.skip();
@@ -183,7 +185,7 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
   scope.onDispose(() => current?.skip());
 
   const api: SceneParades = {
-    async play(newcomer) {
+    async play(newcomer, opts = {}) {
       current?.skip();
       // Started while the app was hidden (the player left during the lead-in): it doesn't play unseen (D44 review).
       if (document.hidden) return false;
@@ -196,7 +198,8 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const btn = () => host.el.querySelector<HTMLElement>('[data-act="parade-replay"]');
       const b0 = btn();
       if (b0) b0.hidden = true;
-      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion() });
+      // The short welcome (D45 PR B): the same parade to the shorter Barnyard Jig. Replay plays the full one.
+      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined });
       current = p;
       await p.done;
       // Replayed before it ended: the newer parade owns the scene's pause now, so this one leaves it be (D45 PR A).
@@ -210,15 +213,16 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const b = btn();
       if (b) {
         b.hidden = false;
-        b.innerHTML = `${REPLAY_ICON}${label()}`;
+        b.innerHTML = `${REPLAY_ICON}${opts.short && newcomer ? 'Play the full parade' : label()}`;
       }
+      wasShort = !!opts.short && !!newcomer;
       return true;
     },
     skip: () => current?.skip(),
     get active() {
       return !!current?.active;
     },
-    replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${label()}</button>`,
+    replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${wasShort ? 'Play the full parade' : label()}</button>`,
     onClick(t) {
       if (t.closest('[data-act="parade-skip"]')) {
         current?.skip();

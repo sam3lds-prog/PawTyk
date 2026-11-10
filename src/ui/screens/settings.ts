@@ -117,6 +117,16 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
           ['reduce', 'Reduced'],
           ['full', 'Full'],
         ])}
+        ${choice(
+          'celebrations',
+          'Celebrations',
+          [
+            ['smart', 'Smart'],
+            ['full', 'Full'],
+            ['short', 'Short'],
+          ],
+          'Smart plays the full welcome for your first friends, then a shorter one. Replay always plays it in full.',
+        )}
         ${sw('toys3d', '3D animals', 'Sanctuary animals as 3D toys. Off draws them flat and saves battery.')}
         ${sw('highContrast', 'High contrast')}
         ${sw('regionPatterns', 'Region patterns', 'Adds a texture to each color region')}

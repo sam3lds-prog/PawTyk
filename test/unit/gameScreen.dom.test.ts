@@ -7,7 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../../src/app/app';
 import { Router, type CanonicalRoute } from '../../src/ui/router';
-import { gameScreen } from '../../src/ui/screens/game';
+import { gameScreen, SPOTLIGHT_AFTER_TRIUMPH_MS } from '../../src/ui/screens/game';
+import { cueMs, SCORES } from '../../src/audio/scores';
+import { nowPlaying } from '../../src/services/music';
 import { startGame } from '../../src/app/gameFlow';
 import { CAT, DOG, EMPTY } from '../../src/engine/types';
 import { MARK } from '../../src/game/session';
@@ -435,6 +437,8 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
   function solveBoard(): void {
     placeAll();
     vi.advanceTimersByTime(700);
+    // A spotlit win waits for Tiny Triumph to finish before its spotlight (D45 PR B).
+    if (!document.querySelector('.win-sheet, .arrival, .spotlight')) vi.advanceTimersByTime(600);
     // A win that brings an animal home opens with its spotlight (D44 PR E): a tap goes on to the results.
     const spot = document.querySelector<HTMLElement>('.spotlight');
     if (spot) {
@@ -1115,7 +1119,7 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     vi.useRealTimers();
     app.settings.reducedMotion = 'system';
   });
-  function solveBoard(): void {
+  function placeWin(): void {
     const s = app.active!.session;
     for (let r = 0; r < s.size; r++)
       for (let c = 0; c < s.size; c++) {
@@ -1125,7 +1129,12 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
         dblTap(r, c);
         if (s.outcome === 'won') break;
       }
+  }
+  function solveBoard(): void {
+    placeWin();
     vi.advanceTimersByTime(700);
+    // A spotlit win waits for Tiny Triumph to finish before its spotlight (D45 PR B).
+    if (!document.querySelector('.win-sheet, .arrival, .spotlight')) vi.advanceTimersByTime(600);
   }
   const arrival = () => document.querySelector<HTMLElement>('.arrival');
   const title = () => arrival()?.querySelector('[data-caption-title]')?.textContent;
@@ -1175,7 +1184,8 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(arrival()!.querySelector('.is-new, .is-arriving')).toBeNull();
     expect(document.activeElement).toBe(play);
     (arrival()!.querySelector('[data-act="visit"]') as HTMLButtonElement).click();
-    expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm' });
+    // D45 PR B: the Farm welcomes Cotton with the parade, and is told the introduction has been made.
+    expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm', welcome: ['cotton'], met: true });
   });
 
   it('under reduced motion it is the end at once: the scene as it is now, the news and the goal', () => {
@@ -1213,6 +1223,34 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     (document.querySelector('.spotlight') as HTMLElement).click();
     vi.advanceTimersByTime(300);
     expect(document.querySelector('.win-sheet')).not.toBeNull();
+  });
+
+  it('the spotlight waits for Tiny Triumph: Welcome Home answers the win instead of cutting it off (D45 PR B)', () => {
+    app.save.world.growth.farm = 3;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(4);
+    placeWin();
+    expect(SPOTLIGHT_AFTER_TRIUMPH_MS).toBeGreaterThanOrEqual(Math.round(cueMs(SCORES.triumph)));
+    vi.advanceTimersByTime(700);
+    // The old moment (0.65 s): the win's own tune is still playing, and nothing has replaced it.
+    expect(document.querySelector('.spotlight')).toBeNull();
+    expect(nowPlaying()?.id).toBe('triumph');
+    vi.advanceTimersByTime(SPOTLIGHT_AFTER_TRIUMPH_MS - 700 + 10);
+    expect(document.querySelector('.spotlight')).not.toBeNull();
+    expect(nowPlaying()?.id).toBe('welcome');
+  });
+
+  it('with music off there is nothing to wait for: the spotlight opens at once', () => {
+    app.settings.music = false;
+    app.applySettings();
+    app.save.world.growth.farm = 3;
+    app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
+    start(4);
+    placeWin();
+    vi.advanceTimersByTime(700);
+    expect(document.querySelector('.spotlight')).not.toBeNull();
+    app.settings.music = true;
+    app.applySettings();
   });
 
   it('only the first animal ever: a later arrival keeps the win sheet, after its spotlight (D44 PR E)', () => {

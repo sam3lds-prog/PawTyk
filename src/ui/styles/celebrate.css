@@ -234,6 +234,15 @@
 .spotlight.is-in .spotlight__sparkles i {
   animation: spotlight-twinkle 900ms ease-in-out calc(500ms + var(--i, 0) * 70ms) 3 both;
 }
+/* The brief spotlight (D45 PR B): one turn in its shorter time, two twinkles. */
+.spotlight.is-short.is-in .spotlight__sparkles {
+  animation-duration: 1500ms;
+  animation-delay: 300ms;
+}
+.spotlight.is-short.is-in .spotlight__sparkles i {
+  animation-iteration-count: 2;
+  animation-duration: 650ms;
+}
 @keyframes spotlight-turn {
   to {
     transform: rotate(80deg);

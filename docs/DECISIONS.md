@@ -1535,3 +1535,19 @@ close-up paused the scene, ended the close-up, and the close-up's ending un-paus
 - Tests: holds and ownership on their own; the real close-ups, tour and parades wired through a director (trick → tour
   → Stop → live; tour → trick; parade ↔ tour; replay; rapid switching; app hidden; leaving); and the Farm screen
   itself, where the old wiring fails the "no wake-up during the tour" check. Browser test: the same hand-over.
+
+### PR B — first arrival and celebration pacing
+- **Cotton gets her parade.** The first arrival's own scene (D41) ends in "Visit the Farm", which opened the Farm
+  plainly: the first animal was the only one with no Welcome Parade. It now passes `welcome` like a Meet, plus `met`:
+  the arrival scene has already said "Cotton is home!", so the Farm doesn't say it again in a toast. The parade plays
+  (Skip as ever), then the next goal and the starter gift. The route settles after, so coming back never replays it.
+- **Tiny Triumph is heard out.** A spotlit win opened its spotlight 0.65 s after the last placement, and Welcome Home
+  replaced the win's tune mid-phrase. With music on, the spotlight now opens when Tiny Triumph ends
+  (`SPOTLIGHT_AFTER_TRIUMPH_MS`, 1.1 s, as the sparkle finishes); Welcome Home opens on the chord that follows it
+  (C → F G C), so it reads as the answer. With music off, or reduced motion, nothing waits.
+- **Smart pacing** (`meta/celebration.ts`): a full celebration (3.3 s spotlight, ~7 s parade) for the first three
+  animals home and for the first animal in each home; after that a brief spotlight (1.8 s: the name lands with Welcome
+  Home's third beat) and the short parade (the same staging to the 3.6 s Barnyard Jig). After a short parade the
+  button under the scene reads **Play the full parade**; replays are always the full one.
+- **The player's choice**: Settings → Comfort → Celebrations: Smart (default), Full, Short.
+- Nothing here grants anything; lengths only.
