@@ -16,6 +16,15 @@ describe('the privacy policy', () => {
     expect(text).toMatch(/don’t sell data/);
   });
 
+  it('says purchases are checked at every launch, and only the leaderboard and videos wait for the player (Codex review on #28)', () => {
+    const text = JSON.stringify(privacyPolicy('hi@example.com'));
+    // src/boot.ts calls app.reconcilePurchases() at launch, which reaches RevenueCat whenever a key is set.
+    expect(text).toMatch(/Each time PawTyk starts, it asks RevenueCat/);
+    expect(text).toMatch(/leaderboard and reward videos stay off until you choose/);
+    expect(text).not.toMatch(/Each one stays off until you choose/);
+    expect(text).not.toMatch(/Nothing leaves your device unless you choose/);
+  });
+
   it('gives the contact address when it is set, and points to the App Store page when it is not', () => {
     expect(policyHtml('hi@example.com')).toContain('hi@example.com');
     const without = policyHtml(null);

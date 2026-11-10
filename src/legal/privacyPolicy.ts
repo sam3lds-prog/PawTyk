@@ -25,7 +25,7 @@ export function privacyPolicy(contact: string | null): PolicyBlock[] {
       h: 'The short version',
       p: [
         `PawTyk is a puzzle game made by ${PUBLISHER} (“we”). It plays fully offline. Your progress is saved on your device, and we can’t see it.`,
-        'PawTyk has no accounts and never asks for your email, contacts, location, photos or microphone. We don’t sell data and we don’t send analytics. Nothing leaves your device unless you choose one of the optional features below.',
+        'PawTyk has no accounts and never asks for your email, contacts, location, photos or microphone. We don’t sell data and we don’t send analytics. Unless your version of PawTyk has one of the optional features below, nothing leaves your device.',
       ],
     },
     {
@@ -38,11 +38,11 @@ export function privacyPolicy(contact: string | null): PolicyBlock[] {
     {
       h: 'Optional features',
       p: [
-        'Some versions of PawTyk include the features below. Each one stays off until you choose to use it, and each is described here before it ships. If a feature isn’t in your version of the app, nothing in this section applies to you.',
+        'Some versions of PawTyk include the features below, and each is described here before it ships. The leaderboard and reward videos stay off until you choose to use them. In a version that sells gems, PawTyk checks your purchases each time it starts. If a feature isn’t in your version of the app, nothing in this section applies to you.',
       ],
       ul: [
         'Leaderboard (Google Firebase). Only if you tap Join. We keep a random player id, the nickname and picture you choose (one of your animals), your leaderboard points, and, for each board you solve after joining, which board it was and your moves, so our server can check the score. Other players see your nickname, picture and points. Leave any time in Challenges → Leaderboard, and all of it is deleted; entries with no activity for a year are deleted automatically. [Firebase privacy](https://firebase.google.com/support/privacy).',
-        'Purchases (Apple and RevenueCat). Apple handles payment; we never see your card or Apple ID. RevenueCat, the service that confirms what you own, receives a random app user id and your purchase history. [RevenueCat privacy](https://www.revenuecat.com/privacy).',
+        'Purchases (Apple and RevenueCat). Only in a version that sells gems. Apple handles payment; we never see your card or Apple ID. Each time PawTyk starts, it asks RevenueCat, the service that confirms what you own, for your purchases, so anything you bought reaches you even if the app closed partway through. RevenueCat receives a random app user id and your purchase history (empty if you haven’t bought anything), plus what every internet connection carries, such as your IP address. [RevenueCat privacy](https://www.revenuecat.com/privacy).',
         'Reward videos (Google AdMob). Only when you choose to watch one, for an extra life, a hint or a video token. Google may collect information about your device to show and measure the video, and uses your device’s advertising identifier only if you allow tracking when your device asks. [Google privacy](https://policies.google.com/privacy).',
       ],
     },
