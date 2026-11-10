@@ -19,6 +19,8 @@ export const MUSIC_GAIN = 0.34;
 let enabled = false;
 let bus: GainNode | null = null;
 let current: Playback | null = null;
+/** Cues past their last beat whose final notes are still ringing: a stop or a new cue fades these too. */
+const ringing = new Set<(fadeMs: number) => void>();
 const recorded = new Map<CueId, AudioBuffer>();
 const noiseFor = new WeakMap<BaseAudioContext, AudioBuffer>();
 
@@ -59,10 +61,11 @@ function musicBus(a: AudioContext): GainNode {
   return bus;
 }
 
-/** Stops whatever is playing, with a short fade. */
+/** Stops whatever is playing (and any last notes still ringing), with a short fade. */
 export function stopMusic(fadeMs = 150): void {
   current?.stop(fadeMs);
   current = null;
+  for (const hush of [...ringing]) hush(fadeMs);
 }
 
 /** The cue playing now, if any. */
@@ -117,6 +120,29 @@ export function playCue(id: CueId, opts: { silent?: boolean } = {}): Playback | 
     if (endTimer) clearTimeout(endTimer);
     resolve();
   };
+  /** Fades this cue's output and stops its sources (the playback's own stop, or a ring cut short). */
+  const silence = (fadeMs: number) => {
+    if (!out || !a) return;
+    try {
+      const now = a.currentTime;
+      out.gain.cancelScheduledValues(now);
+      out.gain.setValueAtTime(out.gain.value, now);
+      if (fadeMs <= 0) out.gain.setValueAtTime(0, now);
+      else out.gain.linearRampToValueAtTime(0, now + fadeMs / 1000);
+      const end = now + Math.max(0, fadeMs) / 1000 + 0.02;
+      for (const s of sources) {
+        try {
+          s.stop(end);
+        } catch {
+          /* already stopped */
+        }
+      }
+      const o = out;
+      setTimeout(() => o.disconnect(), fadeMs + 60);
+    } catch {
+      /* audio gone */
+    }
+  };
   const pb: Playback = {
     id,
     score,
@@ -131,36 +157,31 @@ export function playCue(id: CueId, opts: { silent?: boolean } = {}): Playback | 
     done,
     stop(fadeMs = 150) {
       if (stopped) return;
-      if (out && a) {
-        try {
-          const now = a.currentTime;
-          out.gain.cancelScheduledValues(now);
-          out.gain.setValueAtTime(out.gain.value, now);
-          if (fadeMs <= 0) out.gain.setValueAtTime(0, now);
-          else out.gain.linearRampToValueAtTime(0, now + fadeMs / 1000);
-          const end = now + Math.max(0, fadeMs) / 1000 + 0.02;
-          for (const s of sources) {
-            try {
-              s.stop(end);
-            } catch {
-              /* already stopped */
-            }
-          }
-          const o = out;
-          setTimeout(() => o.disconnect(), fadeMs + 60);
-        } catch {
-          /* audio gone */
-        }
-      }
+      silence(fadeMs);
       finish();
     },
   };
-  // The cue's beats, plus the last notes' ring.
+  // The cue's beats, plus the last notes' ring. While they ring, a stop (music off, the app hidden) or the next cue
+  // still fades them (D44 PR B review).
   endTimer = setTimeout(
     () => {
       if (current === pb) current = null;
       finish();
-      if (out) setTimeout(() => out?.disconnect(), 1200);
+      if (!out) return;
+      let hushed = false;
+      const hush = (fadeMs: number) => {
+        if (hushed) return;
+        hushed = true;
+        ringing.delete(hush);
+        silence(fadeMs);
+      };
+      ringing.add(hush);
+      setTimeout(() => {
+        if (hushed) return;
+        hushed = true;
+        ringing.delete(hush);
+        out?.disconnect();
+      }, 1200);
     },
     durationMs + lead * 1000,
   );
