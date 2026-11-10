@@ -9,8 +9,27 @@
 
 const env = import.meta.env;
 
+/**
+ * Tester page only (D43): Settings → Tester shortcuts → *See the App Store build* sets this key and reloads, and the page
+ * then runs without the test store, test videos and the on-device leaderboard — exactly what a release build without
+ * RevenueCat, AdMob and Firebase shows. Ignored in a release build.
+ */
+export const QA_RELEASE_VIEW_KEY = 'pawtyk.qa.releaseView';
+
+function qaReleaseView(): boolean {
+  if (!(env.DEV || env.VITE_QA === '1')) return false;
+  try {
+    return globalThis.localStorage?.getItem(QA_RELEASE_VIEW_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** The tester page is showing the App Store build's services (see `QA_RELEASE_VIEW_KEY`). */
+export const RELEASE_VIEW = qaReleaseView();
+
 /** Development builds and the tester web preview (`npm run artifact -- --qa`). Never true in a release build. */
-export const TEST_BUILD = !!env.DEV || env.VITE_QA === '1';
+export const TEST_BUILD = (!!env.DEV || env.VITE_QA === '1') && !RELEASE_VIEW;
 
 export const REVENUECAT = {
   /** RevenueCat's public iOS SDK key (starts with `appl_`). Empty → purchases off. */

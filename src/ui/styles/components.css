@@ -870,3 +870,36 @@ body[data-nav='off'] .toast-host {
     transform: translateX(10px);
   }
 }
+
+/* D43: the privacy policy, in the app. Plain reading text; links open outside the app. */
+.policy-sheet .policy__date {
+  margin: calc(var(--s2) * -1) 0 0;
+  font-size: 13px;
+}
+.policy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  line-height: 1.5;
+}
+.policy h3 {
+  margin: 0 0 var(--s1);
+  font-size: 16px;
+}
+.policy p,
+.policy ul {
+  margin: 0 0 var(--s2);
+  color: var(--muted-ink);
+}
+.policy ul {
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.policy a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}

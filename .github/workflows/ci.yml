@@ -1,0 +1,69 @@
+# PawTyk release checks (D43). Runs on every pull request and every push to main, and keeps the results on GitHub
+# (Actions tab) so a release can point to a green run. The same commands work locally; see docs/release-checklist.md.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Type check and build
+        run: npm run build
+
+      - name: Puzzle generator (1000 puzzles)
+        run: npm run gen:check
+
+      - name: Level packs unchanged
+        run: npm run pack:check
+
+      - name: Places unchanged
+        run: npm run places:check
+
+      - name: App icon matches its source
+        run: npm run icons:check
+
+      # The browser tests run in Chromium through Playwright, which the repo doesn't install by default.
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests (iPhone-sized)
+        run: |
+          npm run dev -- --port 5173 --strictPort > dev.log 2>&1 &
+          npx --yes wait-on@8 -t 60000 http://localhost:5173/
+          npm run e2e
+
+      - name: Keep the dev server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-server-log
+          path: dev.log
+          retention-days: 7

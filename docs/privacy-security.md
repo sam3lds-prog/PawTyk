@@ -9,11 +9,18 @@ talk to the network, each off until it is configured *and* the player uses it:
 | Service | When | What it gets |
 | --- | --- | --- |
 | **Google AdMob** (reward videos) | Only after the player taps "Watch a short video" (iOS app, `VITE_ADMOB_ENABLED=1`). Consent (UMP) and Apple's tracking prompt are asked on that first chosen video, never at launch. | What the Google Mobile Ads SDK collects for ads (device/advertising data per the player's consent). No interstitials, no banners. |
-| **RevenueCat / App Store** (gems) | When the player opens the Gems tab or buys (iOS app with a RevenueCat key). | Purchase records tied to an anonymous RevenueCat app user id. |
+| **RevenueCat / App Store** (gems) | At every launch (`app.reconcilePurchases()` in `boot.ts`, so a purchase cut off by a closed app is still credited), and when the player opens the Gems tab or buys (iOS app with a RevenueCat key). | Purchase records tied to an anonymous RevenueCat app user id. |
 | **Firebase** (leaderboard) | Only after the player taps **Join** in League → Leaderboard. | An anonymous Firebase user id, the chosen nickname and picture (one of their animals), and for each board solved after joining: which board, its spec and the move log (to check it). Stored: nickname, picture, Paw Points awarded (per award id), weekly and all-time totals, a per-hour/day solve counter, and reports of their name. |
 
 Nothing else: no analytics leave the device (`services/analytics.ts` keeps a 200-event in-memory ring buffer with no
 sink; identifier-looking keys are dropped), no email, no contacts, no location, no crash reporting.
+
+## The privacy policy (D43)
+
+The player-facing policy is `src/legal/privacyPolicy.ts`: shown in Settings → Privacy policy, and built into the hosted
+page by `npm run site`. It must stay in step with this file: a new service, or new data for an existing one, is added
+there before it ships, with a new `POLICY_UPDATED` date. A build only shows a service's features when that service is
+configured (`src/app/offers.ts`), so the policy describes optional features as "only if your version has them".
 
 ## Leaderboard rules (server-enforced)
 

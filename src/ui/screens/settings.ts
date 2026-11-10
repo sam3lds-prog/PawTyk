@@ -15,7 +15,11 @@ import { openSheet, toast } from '../components/sheet';
 import { actionOf, esc, plural } from '../dom';
 import type { Scope } from '../router';
 import { featureFlags } from '../../config/featureFlags';
+import { QA_RELEASE_VIEW_KEY, RELEASE_VIEW } from '../../config/services';
 import { currentRules, showRules } from './rules';
+import { leaderboardOffered } from '../../app/offers';
+import { CONTACT_EMAIL, PRIVACY_URL } from '../../config/legal';
+import { POLICY_UPDATED_TEXT, policyHtml } from '../../legal/privacyPolicy';
 import { animalSvg } from '../art/animals';
 import { ICON } from '../icons';
 
@@ -66,8 +70,17 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
   let changed = false;
   const ra = app.save.purchases.removeAds;
   const purchaseState = app.removeAds
-    ? `<p class="muted">Ad-free is active${ra.source === 'legacy-v1' ? ' (carried over from the previous version; it will be confirmed with the App Store once purchases are connected)' : ra.source === 'dev' ? ' (development test purchase)' : ''}.</p>`
+    ? `<p class="muted">Ad-free is active${ra.source === 'legacy-v1' ? ' (carried over from the first version)' : ra.source === 'dev' ? ' (development test purchase)' : ''}.</p>`
     : '';
+  // D43: nothing about purchases is shown when this build sells nothing (no "coming soon").
+  const purchases = iap.available
+    ? `<div class="rows-title">Purchases</div>
+      <div class="rows">
+        <div class="row"><span class="row__label">Gem packs<small>${iap.isStub ? 'Test store: nothing is charged, and test gems never carry into a release build.' : 'App Store connected. Gems only buy premium decorations and tricks.'}</small></span></div>
+        <button class="row" data-act="restore"><span class="row__label">Restore purchases</span></button>
+      </div>
+      ${purchaseState}`
+    : purchaseState;
   const sh = openSheet(scope, {
     title: 'Settings',
     onClose: () => {
@@ -107,31 +120,34 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         ${sw('regionPatterns', 'Region patterns', 'Adds a texture to each color region')}
         ${sw('leftHanded', 'Left-handed layout')}
       </div>
-      <div class="rows-title">Purchases</div>
-      <div class="rows">
-        <div class="row"><span class="row__label">Gem packs<small>${iap.available ? (iap.isStub ? 'Test store: nothing is charged, and test gems never carry into a release build.' : 'App Store connected. Gems only buy premium decorations.') : 'Coming soon. Nothing can be bought in this version.'}</small></span></div>
-        ${iap.available ? `<button class="row" data-act="restore"><span class="row__label">Restore purchases</span></button>` : ''}
-      </div>
-      ${purchaseState}
+      ${purchases}
       <div class="rows-title">Your data</div>
       <div class="rows">
         <div class="row"><span class="row__label">Saved on this device<small>PawTyk plays fully offline. ${app.save.leaderboard.joined ? 'Only the leaderboard uses the internet.' : 'No account, no sign-in.'}</small></span></div>
-        <button class="row" data-act="leaderboard"><span class="row__label">Leaderboard<small>${
-          leaderboard.mode === 'off'
-            ? 'Not open yet. When it is, joining is your choice.'
-            : app.save.leaderboard.joined
-              ? `On, as ${esc(app.save.leaderboard.nickname)}. Our server keeps a random player id, that name, a picture and your leaderboard points. Leave in League to delete it all.`
-              : 'Off. If you join (in League), our server keeps a random player id, a nickname, a picture and your leaderboard points. Nothing else.'
-        }</small></span>${ICON.chevron}</button>
-        <div class="row"><span class="row__label">Analytics<small>None are sent in this version. Gameplay events stay in memory on your device and are never linked to you.</small></span></div>
-        <div class="row"><span class="row__label">Reward videos<small>${ads.available ? (ads.isStub ? 'Test videos only, clearly labeled.' : 'Only when you choose one, for an extra life, a hint or a video token. Never between boards, never in Paw Cup.') : 'This version shows no videos and no ads.'}</small></span></div>
+        ${
+          leaderboardOffered()
+            ? `<button class="row" data-act="leaderboard"><span class="row__label">Leaderboard<small>${
+                app.save.leaderboard.joined
+                  ? `On, as ${esc(app.save.leaderboard.nickname)}. Our server keeps a random player id, that name, a picture and your leaderboard points. Leave in Challenges to delete it all.`
+                  : 'Off. If you join (in Challenges), our server keeps a random player id, a nickname, a picture and your leaderboard points. Nothing else.'
+              }</small></span>${ICON.chevron}</button>`
+            : ''
+        }
+        <div class="row"><span class="row__label">Analytics<small>PawTyk sends no analytics. Gameplay events stay in memory on your device and are never linked to you.</small></span></div>
+        <div class="row"><span class="row__label">${ads.available ? 'Reward videos' : 'Ads'}<small>${ads.available ? (ads.isStub ? 'Test videos only, clearly labeled.' : 'Only when you choose one, for an extra life, a hint or a video token. Never between boards, never in Paw Cup.') : 'PawTyk shows no ads.'}</small></span></div>
         ${ads.available && !ads.isStub ? `<button class="row" data-act="ad-privacy"><span class="row__label">Ad privacy choices<small>Change what the video network may use</small></span>${ICON.chevron}</button>` : ''}
+        <button class="row" data-act="privacy"><span class="row__label">Privacy policy<small>What PawTyk keeps, and what it never asks for</small></span>${ICON.chevron}</button>
         <button class="row" data-act="reset"><span class="row__label" style="color:var(--error)">Erase progress<small>Purchases and settings are kept</small></span></button>
       </div>
       ${
         featureFlags.qaTools
           ? `<div class="rows-title">Tester shortcuts</div>
       <div class="rows">
+        <button class="row" role="switch" aria-checked="${RELEASE_VIEW}" data-qa="release"><span class="row__label">See the App Store build<small>${
+          RELEASE_VIEW
+            ? 'On: no test store, test videos or test leaderboard, as App Review will see it. Tap to bring them back.'
+            : 'Hides the test store, test videos and test leaderboard, as App Review will see the game. Reloads.'
+        }</small></span><span class="switch" aria-checked="${RELEASE_VIEW}" aria-hidden="true"></span></button>
         <button class="row" data-qa="skip:11"><span class="row__label">Skip to level 11<small>Marks 1–10 solved; the Outback opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="skip:21"><span class="row__label">Skip to level 21<small>The first two-animal board, with its lesson</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="skip:41"><span class="row__label">Skip to level 41<small>Two-animal boards; the Savanna and the Arctic are open</small></span>${ICON.chevron}</button>
@@ -152,7 +168,16 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
     const qa = t.closest('[data-qa]') as HTMLElement | null;
     if (qa && featureFlags.qaTools) {
       const [what, arg] = (qa.dataset.qa ?? '').split(':');
-      if (what === 'skip') {
+      if (what === 'release') {
+        try {
+          if (RELEASE_VIEW) localStorage.removeItem(QA_RELEASE_VIEW_KEY);
+          else localStorage.setItem(QA_RELEASE_VIEW_KEY, '1');
+        } catch {
+          toast("This browser won't keep the setting.");
+          return;
+        }
+        location.reload();
+      } else if (what === 'skip') {
         skipToLevel(app.save, Number(arg));
         clearSessions(app.save);
         app.persist();
@@ -230,12 +255,35 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       } else toast(res.ok ? 'No purchases to restore.' : 'The store is not available right now.');
     } else if (a.act === 'rules') {
       showRules(sh.scope);
+    } else if (a.act === 'privacy') {
+      showPrivacyPolicy(sh.scope);
     } else if (a.act === 'gallery') {
       sh.close();
       app.router.go({ screen: 'gallery' });
     } else if (a.act === 'reset') {
       confirmErase(sh.scope, () => sh.close());
     }
+  });
+}
+
+/**
+ * The privacy policy, in full, inside the app (D43: Apple asks for it to be reachable in the app). It works offline;
+ * when the hosted copy's address is set, a link to it follows.
+ */
+export function showPrivacyPolicy(scope: Scope): void {
+  const sh = openSheet(scope, {
+    title: 'Privacy policy',
+    className: 'policy-sheet',
+    body: `
+      <p class="muted policy__date">Last updated ${esc(POLICY_UPDATED_TEXT)}</p>
+      <div class="policy">${policyHtml(CONTACT_EMAIL)}</div>
+      <div class="sheet__actions">
+        ${PRIVACY_URL ? `<a class="btn btn--secondary btn--block" href="${esc(PRIVACY_URL)}" target="_blank" rel="noopener noreferrer">Read it online</a>` : ''}
+        <button class="btn btn--quiet" data-act="close" data-autofocus>Done</button>
+      </div>`,
+  });
+  sh.scope.on(sh.el, 'click', (e) => {
+    if (actionOf(e)?.act === 'close') sh.close();
   });
 }
 

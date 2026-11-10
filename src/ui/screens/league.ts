@@ -4,7 +4,9 @@
  *
  * Paw Cup: with `featureFlags.onlineLeagues` off, it is honest practice: the real five weekly boards with the real rules
  * (no hints, no revives, two attempts, best counts), scores computed by the same replay verifier, kept on this device
- * and never ranked against anyone. The division preview shows only the player. No made-up names, ranks or live counts
+ * and never ranked against anyone. No made-up names, ranks or live counts anywhere. D43: with leagues off, nothing
+ * previews them either (no division table, tier ladder or "when leagues open"), and with no leaderboard service there is
+ * no Leaderboard tab (`app/offers.ts`): the screen is the Paw Cup and the Daily, as they are today.
  * anywhere.
  */
 
@@ -26,9 +28,12 @@ import { ICON } from '../icons';
 import type { Scope, ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
 import { mountLeaderboard } from './leaderboardTab';
+import { leaderboardOffered } from '../../app/offers';
 
 type Tab = 'leaderboard' | 'week' | 'daily';
-let lastTab: Tab = 'leaderboard';
+let lastTab: Tab = leaderboardOffered() ? 'leaderboard' : 'week';
+const leagueTabs = (): Tab[] => (leaderboardOffered() ? ['leaderboard', 'week', 'daily'] : ['week', 'daily']);
+const TAB_NAME: Record<Tab, string> = { leaderboard: 'Leaderboard', week: 'Paw Cup', daily: 'Daily' };
 
 export function tierEmblem(tier: LeagueTier, size = 56): string {
   const c = TIER_INFO[tier].color;
@@ -50,6 +55,7 @@ export const leagueScreen: ScreenDef = {
   title: 'League',
   mount(root, scope, route) {
     if (route.screen === 'challenges' && route.tab) lastTab = route.tab;
+    if (!leagueTabs().includes(lastTab)) lastTab = 'week';
     track('league_open', { online: featureFlags.onlineLeagues });
     const el = h(`<div class="league"></div>`);
     root.appendChild(el);
@@ -100,19 +106,21 @@ export const leagueScreen: ScreenDef = {
         <section class="card you-card" aria-labelledby="you-h">
           <h3 id="you-h">You this week</h3>
           <div class="stats">
-            <div class="stat"><div class="stat__v num">${sum.total}</div><div class="stat__k">practice points</div></div>
+            <div class="stat"><div class="stat__v num">${sum.total}</div><div class="stat__k">points</div></div>
             <div class="stat"><div class="stat__v num">${sum.boardsCleared}/5</div><div class="stat__k">boards cleared</div></div>
             <div class="stat"><div class="stat__v num">${sum.cleanClears}</div><div class="stat__k">clean clears</div></div>
           </div>
           ${delta !== null ? `<p class="you-card__delta ${delta >= 0 ? 'is-up' : ''}">${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)} vs last week (${prev.total})</p>` : `<p class="muted">Next week you'll see how you compare with yourself.</p>`}
           ${sum.cleanClears === 5 ? `<p class="chip chip--gold">${ICON.sparkle}Clean Sweep</p>` : ''}
         </section>
-        <section class="card division" aria-labelledby="div-h">
-          <div class="division__head"><h3 id="div-h">Your division</h3><span class="chip chip--preview">Preview</span></div>
+        ${
+          featureFlags.onlineLeagues
+            ? `<section class="card division" aria-labelledby="div-h">
+          <div class="division__head"><h3 id="div-h">Your division</h3></div>
           <ol class="division__list">
             <li class="division__row is-you"><span class="num">–</span><span class="division__name">You</span><span class="num">${sum.total}</span></li>
           </ol>
-          <p class="muted division__empty">When online leagues open, about ${LEAGUE_RULES.cohortTarget} real players at your level will share this table. The top ${LEAGUE_RULES.promote} move up each week. We will never fill it with made-up players.</p>
+          <p class="muted division__empty">About ${LEAGUE_RULES.cohortTarget} real players at your level share this table. The top ${LEAGUE_RULES.promote} move up each week. We never fill it with made-up players.</p>
         </section>
         <section class="card tiers" aria-labelledby="tiers-h">
           <h3 id="tiers-h">League tiers</h3>
@@ -120,7 +128,9 @@ export const leagueScreen: ScreenDef = {
             ${TIERS.map((t) => `<li class="${t === tier ? 'is-current' : ''}">${tierEmblem(t, 40)}<span>${esc(TIER_INFO[t].name)}</span></li>`).join('')}
           </ol>
           <p class="muted">Everyone starts in Seedling. Moving up is by points only. Nobody moves down for skipping a week.</p>
-        </section>`;
+        </section>`
+            : ''
+        }`;
     }
 
     function dailyTab(): string {
@@ -130,7 +140,7 @@ export const leagueScreen: ScreenDef = {
       return `
         <section class="card">
           <h3>Daily Cozy Puzzle</h3>
-          <p class="muted">The same board for everyone each day. It's yours to enjoy offline; Daily Dash rankings arrive with online leagues.</p>
+          <p class="muted">The same board for everyone each day.${featureFlags.onlineLeagues ? ' Daily Dash rankings compare times.' : ' Keep your streak going.'}</p>
           <div class="stats">
             <div class="stat"><div class="stat__v num">${streak}</div><div class="stat__k">day streak</div></div>
             <div class="stat"><div class="stat__v num">${app.save.daily.bestStreak}</div><div class="stat__k">best streak</div></div>
@@ -156,14 +166,14 @@ export const leagueScreen: ScreenDef = {
       return `<section class="league-hero card">
           ${tierEmblem(tier, 64)}
           <div class="league-hero__body">
-            <b>${esc(TIER_INFO[tier].name)} · ${esc(utcWeekKey().replace('-W', ' week '))}</b>
+            <b>${featureFlags.onlineLeagues ? `${esc(TIER_INFO[tier].name)} · ` : 'Paw Cup · '}${esc(utcWeekKey().replace('-W', ' week '))}</b>
             <span class="muted">Five boards, all week. New boards in ${formatDuration(ends)}.</span>
           </div>
         </section>
         ${
           featureFlags.onlineLeagues
             ? ''
-            : `<p class="notice">${ICON.info}<span>Paw Cup divisions aren't online yet. Practice the real weekly boards with the real rules. These scores stay on this device and aren't ranked against anyone.</span></p>`
+            : `<p class="notice">${ICON.info}<span>Your Paw Cup scores stay on this device. Beat your own best each week.</span></p>`
         }`;
     }
 
@@ -175,10 +185,10 @@ export const leagueScreen: ScreenDef = {
           <h1 data-autofocus>Challenges</h1>
           <div class="screen-head__end">${coinPill()}</div>
         </header>
-        <div class="segmented" role="tablist" aria-label="League views">
-          <button role="tab" data-tab="leaderboard" aria-selected="${lastTab === 'leaderboard'}">Leaderboard</button>
-          <button role="tab" data-tab="week" aria-selected="${lastTab === 'week'}">Paw Cup</button>
-          <button role="tab" data-tab="daily" aria-selected="${lastTab === 'daily'}">Daily</button>
+        <div class="segmented" role="tablist" aria-label="Challenge views">
+          ${leagueTabs()
+            .map((t) => `<button role="tab" data-tab="${t}" aria-selected="${lastTab === t}">${TAB_NAME[t]}</button>`)
+            .join('')}
         </div>
         <div class="league__body">${lastTab === 'leaderboard' ? '<div class="lb" data-lb></div>' : lastTab === 'week' ? cupHead() + weekTab() : dailyTab()}</div>`;
       const host = el.querySelector('[data-lb]') as HTMLElement | null;
@@ -258,7 +268,7 @@ function showScoring(scope: Scope): void {
       </dl>
       <p class="muted">Example, par 2:30: solved clean in 1:15 → 900 · in 2:30 → 850 · in 2:30 with one mistake → 775.</p>
       <p class="muted">Pars: easy ${fmtClock(PAR_SECONDS.easy)}, medium ${fmtClock(PAR_SECONDS.medium)}, hard ${fmtClock(PAR_SECONDS.hard)}, expert ${fmtClock(PAR_SECONDS.expert)}. Your weekly total is your best attempt on each of the five boards. Ties go to more clean clears, then less total time.</p>
-      <p class="muted">Fair play: no hints, no refills, nothing to buy. In online leagues, your moves are checked by the server and time comes from the server clock.</p>
+      <p class="muted">Fair play: no hints, no refills, nothing to buy.${featureFlags.onlineLeagues ? ' Your moves are checked by the server and time comes from the server clock.' : ''}</p>
       <div class="sheet__actions"><button class="btn btn--block" data-act="ok">Got it</button></div>`,
   });
   sh.scope.on(sh.el, 'click', (e) => {
@@ -273,7 +283,7 @@ function showIntro(scope: Scope): void {
     body: `
       <div class="league-intro">${tierEmblem('seedling', 72)}</div>
       <p class="sheet__lead">Each week brings five fixed boards, the same for everyone. You get two attempts on each, and your best one counts. No hints, nothing to buy: just you and the puzzle.</p>
-      <p class="muted">Online leagues aren't open yet, so for now your scores are personal practice.</p>
+      ${featureFlags.onlineLeagues ? '' : '<p class="muted">Your scores stay on this device: beat your own best each week.</p>'}
       <div class="sheet__actions"><button class="btn btn--block" data-act="ok">Let's go</button></div>`,
   });
   sh.scope.on(sh.el, 'click', (e) => {

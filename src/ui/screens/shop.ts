@@ -4,8 +4,10 @@
  *    choosing to watch a reward video), premium ones for gems (bought on the App Store).
  *  - **Food**: food for Paw Coins, special treats for video tokens. Fed to animals from their cards.
  *  - **Tricks**: two free, everyday ones for video tokens, the most animated ones for gems (D33).
- *  - **Gems**: gem packs with store prices, honestly "coming soon" until a store is connected.
+ *  - **Gems**: gem packs with store prices, only when a store is connected.
  * Nothing here changes puzzles or rankings; there are no countdowns, fake discounts or random packs.
+ * D43: what a build can't sell isn't shown (`app/offers.ts`): without the App Store there is no Gems tab and nothing
+ * priced in gems; without reward videos nothing priced in video tokens. What the player owns always shows.
  */
 
 import { app } from '../../app/app';
@@ -24,6 +26,7 @@ import { canOfferVideo, videosLeftToday, watchVideoFor } from '../../app/rewarde
 import { feel } from '../../services/feel';
 import { GEM_PACKS, iap, PRODUCT_CATALOG, type ProductId, type ProductInfo } from '../../services/iap';
 import { ads } from '../../services/ads';
+import { currencyOffered, gemPacksOnSale } from '../../app/offers';
 import { decorIcon } from '../art/sanctuary';
 import { activityFor } from '../art/activities';
 import { foodIcon } from '../art/foods';
@@ -82,12 +85,16 @@ export const shopScreen: ScreenDef = {
       lastPlace = shopHome(route.sanctuary);
     }
     if (route.screen === 'shop' && route.tab) tab = lastTab = route.tab;
+    const tabs = (): Tab[] => (gemPacksOnSale() ? ['decor', 'food', 'tricks', 'gems'] : ['decor', 'food', 'tricks']);
+    if (!tabs().includes(tab)) tab = lastTab = 'decor';
     // The sanctuary you're building comes first, until you pick another.
     let place: BaseSanctuaryId = lastPlace ?? shopHome(activeSanctuary(app.save) ?? 'farm');
     let products: ProductInfo[] = PRODUCT_CATALOG.map((p) => ({ ...p, price: null }));
+    let pricesIn = false;
     void iap.products().then((ps) => {
       if (!scope.alive) return;
       products = ps;
+      pricesIn = true;
       if (tab === 'gems') render();
     });
 
@@ -126,7 +133,7 @@ export const shopScreen: ScreenDef = {
     function decorSection(tier: DecorTier | 'everyday', title: string, note: string, extra = ''): string {
       const items = DECOR.filter(
         (d) => decorHome(d) === place && (tier === 'everyday' ? decorTier(d) === 'coins' || decorTier(d) === 'gift' : decorTier(d) === tier),
-      );
+      ).filter((d) => owns(app.save, d.id) || offered(decorPrice(d.id)?.currency));
       if (!items.length) return '';
       const owned = items.filter((d) => owns(app.save, d.id)).length;
       return `<section class="shop-section shop-section--${tier}">
@@ -137,8 +144,13 @@ export const shopScreen: ScreenDef = {
       </section>`;
     }
 
+    /** Whether things in this currency are for sale in this build (D43). Coins, gifts and free things always are. */
+    function offered(currency: 'coins' | 'vtoken' | 'gem' | null | undefined): boolean {
+      return !currency || currencyOffered(app.save, currency);
+    }
+
     function videoTokenCard(): string {
-      if (!ads.available) return `<p class="notice">${ICON.info}Video tokens come from short reward videos, which this version doesn't show yet.</p>`;
+      if (!ads.available) return '';
       const left = videosLeftToday(app.save);
       return `<div class="earn-card card">
         <span class="earn-card__icon">${ICON.videoToken}</span>
@@ -161,7 +173,7 @@ export const shopScreen: ScreenDef = {
         ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(sanctuaryDef(place).name)} opens after level ${sanctuaryDef(place).opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
         ${decorSection('everyday', `${placeShort(place)} decor`, 'Paid for with Paw Coins, which you earn by solving puzzles.')}
         ${decorSection('video', 'Special decor', 'Only for video tokens.', videoTokenCard())}
-        ${decorSection('premium', 'Premium decor', `For gems. ${iap.available ? '' : 'Gem packs are coming soon.'}`)}`;
+        ${decorSection('premium', 'Premium decor', 'For gems.')}`;
     }
 
     function foodCard(id: FoodId): string {
@@ -179,20 +191,24 @@ export const shopScreen: ScreenDef = {
     function foodTab(): string {
       // Each sanctuary has its own treats (D35); the special ones are loved everywhere.
       const everyday = foodsOf(place).filter((f) => f.coins);
-      const special = FOODS.filter((f) => f.tokens);
+      const special = offered('vtoken') ? FOODS.filter((f) => f.tokens) : [];
       return `
         ${placeChips()}
         <section class="shop-section">
           <div class="section-head"><h2>${esc(placeShort(place))} treats</h2></div>
           <p class="muted shop__note">Feed animals from their cards. Favorites count double.</p>
-          ${everyday.length ? `<ul class="shop-grid">${everyday.map((f) => foodCard(f.id)).join('')}</ul>` : `<p class="empty">The animals here love the special treats below.</p>`}
+          ${everyday.length ? `<ul class="shop-grid">${everyday.map((f) => foodCard(f.id)).join('')}</ul>` : `<p class="empty">${special.length ? 'The animals here love the special treats below.' : 'The animals here love treats from the other sanctuaries. Pick one above.'}</p>`}
         </section>
-        <section class="shop-section shop-section--video">
+        ${
+          special.length
+            ? `<section class="shop-section shop-section--video">
           <div class="section-head"><h2>Special treats</h2></div>
           <p class="muted shop__note">Only for video tokens. Every animal loves them.</p>
           ${videoTokenCard()}
           <ul class="shop-grid">${special.map((f) => foodCard(f.id)).join('')}</ul>
-        </section>`;
+        </section>`
+            : ''
+        }`;
     }
 
     function trickCard(id: TrickId): string {
@@ -209,7 +225,8 @@ export const shopScreen: ScreenDef = {
     }
 
     function trickSection(kind: TrickKind, tier: TrickTier, title: string, note: string, extra = ''): string {
-      const items = TRICKS.filter((t) => t.kind === kind && t.tier === tier);
+      const items = TRICKS.filter((t) => t.kind === kind && t.tier === tier && (ownsTrick(app.save, t.id) || offered(trickCurrency(t))));
+      if (!items.length) return '';
       const owned = items.filter((t) => ownsTrick(app.save, t.id)).length;
       return `<section class="shop-section shop-section--${tier === 'free' ? 'everyday' : tier}">
         <div class="section-head"><h2>${esc(title)}</h2>${tier === 'free' ? '' : `<span class="muted num">${owned} of ${items.length} learned</span>`}</div>
@@ -226,48 +243,43 @@ export const shopScreen: ScreenDef = {
         <h2 class="shop__group">Tricks</h2>
         ${trickSection('trick', 'free', 'Everyone knows', 'Every resident and wildlife friend can do these.')}
         ${trickSection('trick', 'video', 'Video-token tricks', 'Only for video tokens.')}
-        ${trickSection('trick', 'premium', 'Premium tricks', `The most animated tricks, for gems. ${iap.available ? '' : 'Gem packs are coming soon.'}`)}
+        ${trickSection('trick', 'premium', 'Premium tricks', 'The most animated tricks, for gems.')}
         <h2 class="shop__group">Emotes</h2>
         ${trickSection('emote', 'free', 'Everyone feels', 'Heart eyes and giggles, free for everyone.')}
         ${trickSection('emote', 'video', 'Video-token emotes', 'Only for video tokens.')}
-        ${trickSection('emote', 'premium', 'Premium emotes', `The most fun ones, with props, for gems. ${iap.available ? '' : 'Gem packs are coming soon.'}`)}`;
+        ${trickSection('emote', 'premium', 'Premium emotes', 'The most fun ones, with props, for gems.')}`;
     }
 
     function gemsTab(): string {
-      const packs = products.filter((p) => isGemPack(p.id));
+      // Before the store answers, packs wait for their price; after, a pack the store doesn't sell is left out.
+      const packs = products.filter((p) => isGemPack(p.id) && (!pricesIn || p.price));
       const removeAds = products.find((p) => p.id === 'remove_ads');
-      const status = iap.available
-        ? iap.isStub
-          ? `<p class="notice notice--dev">${ICON.info}Test store: nothing is charged, and test gems never carry into a release build.</p>`
-          : ''
-        : `<p class="notice">${ICON.info}Gem packs are coming soon. Everything else in PawTyk is earned by playing.</p>`;
+      // Only reached when a store is connected (D43).
+      const status = iap.isStub ? `<p class="notice notice--dev">${ICON.info}Test store: nothing is charged, and test gems never carry into a release build.</p>` : '';
       return `
         <section class="shop-section">
           <div class="section-head"><h2>Gems</h2><span class="muted num">${ICON.gem}${walletBalance(app.save, 'gem')}</span></div>
           <p class="muted shop__note">Gems buy premium decorations and tricks. They never buy hearts, hints or anything that helps win.</p>
           ${status}
+          ${pricesIn && !packs.length ? `<p class="notice">${ICON.info}The App Store didn't answer. Try again in a little while.</p>` : ''}
           <ul class="gem-packs">
             ${packs
               .map(
                 (p) => `<li class="gem-pack card">
                   <span class="gem-pack__art" aria-hidden="true">${ICON.gem.repeat(p.id === 'gems_60' ? 1 : p.id === 'gems_160' ? 2 : 3)}</span>
                   <span class="gem-pack__body"><b>${esc(p.title)}</b><small>${GEM_PACKS[p.id as keyof typeof GEM_PACKS]} gems</small></span>
-                  ${iap.available && p.price ? `<button class="btn btn--small" data-buy="${p.id}">${esc(p.price)}</button>` : `<span class="chip chip--preview">Coming soon</span>`}
+                  ${p.price ? `<button class="btn btn--small" data-buy="${p.id}">${esc(p.price)}</button>` : `<span class="chip chip--preview" aria-label="Loading the price">…</span>`}
                 </li>`,
               )
               .join('')}
           </ul>
         </section>
-        ${
-          iap.available
-            ? `<section class="shop-section">
-                <ul class="rows">
-                  ${removeAds && app.save.purchases.owned.remove_ads ? `<li class="row"><span class="row__label">${esc(removeAds.title)}<small>Owned. Thank you!</small></span></li>` : ''}
-                </ul>
-                <button class="btn btn--quiet" data-act="restore">Restore purchases</button>
-              </section>`
-            : ''
-        }`;
+        <section class="shop-section">
+          <ul class="rows">
+            ${removeAds && app.save.purchases.owned.remove_ads ? `<li class="row"><span class="row__label">${esc(removeAds.title)}<small>Owned. Thank you!</small></span></li>` : ''}
+          </ul>
+          <button class="btn btn--quiet" data-act="restore">Restore purchases</button>
+        </section>`;
     }
 
     // Opened from a sanctuary: Back returns there (the tab bar still opens the Shop on its own).
@@ -282,7 +294,7 @@ export const shopScreen: ScreenDef = {
           <div class="screen-head__end">${walletPills()}</div>
         </header>
         <div class="seg" role="tablist" aria-label="Shop sections">
-          ${(['decor', 'food', 'tricks', 'gems'] as Tab[])
+          ${tabs()
             .map(
               (t) => `<button role="tab" class="seg__btn" data-tab="${t}" aria-selected="${t === tab}">${t === 'gems' ? ICON.gem : ''}${TAB_LABEL[t]}</button>`,
             )
@@ -391,10 +403,12 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
       price.currency === 'coins'
         ? 'Solving a new level earns 35.'
         : price.currency === 'vtoken'
-          ? 'Video tokens come from short reward videos, one per video, in the Shop.'
+          ? ads.available
+            ? 'Video tokens come from short reward videos, one per video, in the Shop.'
+            : ''
           : iap.available
             ? 'Gem packs are in the Gems tab.'
-            : 'Gem packs are coming soon.';
+            : '';
     actions =
       short > 0
         ? `<button class="btn btn--block" disabled>${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button><p class="muted">You need ${short} more ${CURRENCY_NAME[price.currency]}. ${how}</p>`
