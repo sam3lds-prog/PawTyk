@@ -26,7 +26,7 @@ import { animalName, startSceneActivities, type ActivityRunner } from '../compon
 import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
-import { sceneParades } from '../components/parade';
+import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
 import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
@@ -327,6 +327,8 @@ export const regionScreen: ScreenDef = {
 
     /** Waits (briefly) for the 3D toys, so they dance from the first beat; the drawing dances if they don't come. */
     const toysReady = () => Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]);
+    /** The celebration this visit starts by itself, if any (tests and QA). */
+    let welcome: import('../components/parade').ScheduledParade | null = null;
 
     // Arrival: a new stage grows in, then everyone says hello (a bigger hello on the first visit of the day, or right
     // after a solve that helped this place). A parade or a group dance is the hello instead.
@@ -352,24 +354,33 @@ export const regionScreen: ScreenDef = {
       spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), newcomers[0]);
       if (welcoming) {
         // Straight from the win that brought them: the Welcome Parade (D44 PR E), then (D40) the next goal, and after
-        // the first board the Farm's starter gift, so its card never covers the welcome.
+        // the first board the Farm's starter gift, so its card never covers the welcome. If the player starts a walk,
+        // the tour or a trick before it begins, theirs is kept and the parade is offered instead (D46 PR A); the goal
+        // and the gift then wait until the scene is free.
         const who = newcomers[0];
-        scope.timeout(
-          () =>
-            void toysReady().then(async () => {
-              if (!scope.alive) return;
-              await parades.play(who, { short: celebrationLength(app.save, app.settings.celebrations, who, id) === 'short' });
-              if (!scope.alive) return;
-              goalShown = true;
-              showNextGoal(el, id, true);
-              offerStarterGift(scope, id, render);
-            }),
-          app.reducedMotion ? 300 : 600,
-        );
+        welcome = scheduleParade(scope, director, parades, {
+          newcomer: who,
+          delay: app.reducedMotion ? 300 : 600,
+          waitFor: toysReady,
+          short: celebrationLength(app.save, app.settings.celebrations, who, id) === 'short',
+          after: () => {
+            goalShown = true;
+            showNextGoal(el, id, true);
+            offerStarterGift(scope, id, render);
+          },
+        });
       } else scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
-    } else if (groupDance)
-      // The new stage pops in first, then everyone dances.
-      scope.timeout(() => void toysReady().then(() => scope.alive && parades.play()), app.reducedMotion ? 400 : 1100);
+    }
+    // A welcome the player missed by leaving during its lead-in (D46 PR A): offered here, never played by itself. On a
+    // visit that also dances for a new stage, offered once that dance is done (the button under the scene is one slot,
+    // and the welcome is the one still owed).
+    const owed = !welcoming ? missedWelcome(id) : undefined;
+    const offerOwed = () => owed && isHome(app.save, owed as AnimalId) && parades.offer(owed);
+    if (!newcomers.length && groupDance)
+      // The new stage pops in first, then everyone dances (unless the player has started something: D46 PR A).
+      welcome = scheduleParade(scope, director, parades, { delay: app.reducedMotion ? 400 : 1100, waitFor: toysReady, after: offerOwed });
+    else offerOwed();
+    if (import.meta.env.DEV) (window as unknown as { __welcome?: unknown }).__welcome = welcome;
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
 

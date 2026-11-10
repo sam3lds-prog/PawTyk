@@ -8,6 +8,7 @@
 // in-progress boards resume, decor is charged exactly once, reset keeps unrelated data, faces are facial-only.
 
 import { createRequire } from 'node:module';
+import { d46Checks } from './d46.mjs';
 
 let chromium;
 try {
@@ -1369,6 +1370,9 @@ try {
   const overview = await qa.evaluate(() => ({ walk: !!document.querySelector('.walk'), canvases: document.querySelectorAll('canvas').length, toys: !!document.querySelector('.sanctuary__scene.has-3d'), focus: document.activeElement?.dataset?.act ?? '' }));
   check('Overview returns to the drawn Farm: the walk is gone, the scene’s 3D toys are back, focus on Walk (D45)', !overview.walk && overview.canvases === 1 && overview.toys && overview.focus === 'walk', JSON.stringify(overview));
   await qa.close();
+
+  // D46: transitions between farm interactions, and the 3D layer's lifecycle.
+  await d46Checks({ browser, URL, check, errors });
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {

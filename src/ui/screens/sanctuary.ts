@@ -30,7 +30,7 @@ import { animalName, startSceneActivities, type ActivityRunner } from '../compon
 import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
-import { sceneParades } from '../components/parade';
+import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
 import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
@@ -371,22 +371,25 @@ export const sanctuaryScreen: ScreenDef = {
       introduce(scope, arrivals, () => {
         spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), arrivals[0]);
         if (!met) return intro();
-        // Straight from a win's Meet: the Welcome Parade (D44 PR E), then the next goal and the starter gift.
+        // Straight from a win's Meet: the Welcome Parade (D44 PR E), then the next goal and the starter gift. A trick
+        // the player starts first is kept, and the parade is offered instead (D46 PR A).
         const who = arrivals[0];
-        scope.timeout(
-          () =>
-            void Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]).then(async () => {
-              if (!scope.alive) return;
-              await parades.play(who, { short: celebrationLength(app.save, app.settings.celebrations, who, 'harmony') === 'short' });
-              if (!scope.alive) return;
-              goalShown = true;
-              showNextGoal(el, 'harmony', true);
-              scope.timeout(intro, 900);
-            }),
-          app.reducedMotion ? 200 : 500,
-        );
+        scheduleParade(scope, director, parades, {
+          newcomer: who,
+          delay: app.reducedMotion ? 200 : 500,
+          waitFor: () => Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]),
+          short: celebrationLength(app.save, app.settings.celebrations, who, 'harmony') === 'short',
+          after: () => {
+            goalShown = true;
+            showNextGoal(el, 'harmony', true);
+            scope.timeout(intro, 900);
+          },
+        });
       });
     else intro();
+    // A welcome missed by leaving during its lead-in (D46 PR A) is offered under the scene, never played by itself.
+    const owed = !met ? missedWelcome('harmony') : undefined;
+    if (owed && isHome(app.save, owed as AnimalId)) parades.offer(owed);
     if (met) app.router.settle({ screen: 'sanctuary' });
   },
 };

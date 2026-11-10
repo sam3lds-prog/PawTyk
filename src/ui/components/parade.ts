@@ -16,6 +16,8 @@ import { rhythmFor, scoreFor, type CueId } from '../../audio/scores';
 import { animalInfo, isAnimalId } from '../../meta/animals';
 import { planDance, startDance, type DanceHandle, type Dancer } from './dance';
 import { clampView, scenePoint, viewAt, type SceneCamera, type View } from './camera';
+import type { MissedBy, SceneDirector } from './sceneDirector';
+import type { Scope } from '../router';
 
 export type ParadeEnd = 'ended' | 'skipped';
 
@@ -191,6 +193,13 @@ export interface SceneParadeHost {
 export interface SceneParades {
   /** Plays the parade (with a newcomer) or the group dance. Resolves true if anyone danced. */
   play(newcomer?: string, opts?: { short?: boolean }): Promise<boolean>;
+  /**
+   * Offers a celebration that never started (D46 PR A): the player began something else during its lead-in, or left.
+   * The button under the scene says *Watch Truffle's welcome* (or *Celebrate the new stage*) and plays it in full.
+   */
+  offer(newcomer?: string): void;
+  /** What the button under the scene offers now (tests and QA): `null` while it is hidden. */
+  readonly offered: { newcomer?: string; unplayed: boolean } | null;
   skip(): void;
   readonly active: boolean;
   /** The Replay button, for the row under the scene (hidden until a parade has played). */
@@ -202,15 +211,36 @@ export interface SceneParades {
 const REPLAY_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5L8 5.5Z" fill="currentColor"/></svg>`;
 
 /**
+ * Welcomes that never played (D46 PR A), by home: the player left during the lead-in. Coming back offers it under
+ * the scene. Kept for this session only; a welcome grants nothing, so nothing is lost if the app closes.
+ */
+const missedWelcomes = new Map<string, string>();
+/** The newcomer whose welcome this home still owes, if any. */
+export const missedWelcome = (home: string): string | undefined => missedWelcomes.get(home);
+
+/** The label for a celebration the player hasn't seen yet. */
+function unplayedLabel(newcomer?: string): string {
+  if (!newcomer) return 'Celebrate the new stage';
+  const name = isAnimalId(newcomer) ? animalInfo(newcomer).name : 'the newcomer';
+  return `Watch ${name}’s welcome`;
+}
+
+/**
  * Parades on a sanctuary screen: Skip and Replay, Escape to skip, leaving the app ends it, and the scene is the
  * parade's stage while it plays (taps on it and the Tricks button wait).
  */
 export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: Event) => void): void; onDispose(fn: () => void): void; readonly alive: boolean }, host: SceneParadeHost): SceneParades {
   let current: ParadeHandle | null = null;
-  let replay: { newcomer?: string } | null = null;
+  let replay: { newcomer?: string; unplayed?: boolean } | null = null;
   /** The last one played was the short welcome: Replay offers the full parade by name. */
   let wasShort = false;
-  const label = () => (replay?.newcomer ? 'Replay the parade' : 'Dance again');
+  const label = () => (replay?.unplayed ? unplayedLabel(replay.newcomer) : wasShort ? 'Play the full parade' : replay?.newcomer ? 'Replay the parade' : 'Dance again');
+  const showButton = () => {
+    const b = host.el.querySelector<HTMLElement>('[data-act="parade-replay"]');
+    if (!b) return;
+    b.hidden = !replay;
+    b.innerHTML = `${REPLAY_ICON}${label()}`;
+  };
   scope.on(document, 'keydown', (e) => {
     if ((e as KeyboardEvent).key === 'Escape' && current?.active && !document.querySelector('.overlay')) current.skip();
   });
@@ -229,6 +259,8 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const svg = host.el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       if (!fig || !svg || !scope.alive) return false;
       host.closeTray();
+      // This home's welcome is being seen now (D46 PR A): nothing is owed any more.
+      if (newcomer && host.home && missedWelcomes.get(host.home) === newcomer) missedWelcomes.delete(host.home);
       // Nobody wanders off or starts something else mid-dance.
       host.pause(true);
       const btn = () => host.el.querySelector<HTMLElement>('[data-act="parade-replay"]');
@@ -246,19 +278,25 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       if (!p.dancers.length) return false;
       // It grants nothing, so it can be played again as often as the player likes.
       replay = { newcomer };
-      const b = btn();
-      if (b) {
-        b.hidden = false;
-        b.innerHTML = `${REPLAY_ICON}${opts.short && newcomer ? 'Play the full parade' : label()}`;
-      }
       wasShort = !!opts.short && !!newcomer;
+      showButton();
       return true;
+    },
+    offer(newcomer) {
+      // A welcome is owed until it is watched, here or on the next visit.
+      if (newcomer && host.home) missedWelcomes.set(host.home, newcomer);
+      replay = { newcomer, unplayed: true };
+      wasShort = false;
+      showButton();
+    },
+    get offered() {
+      return replay ? { newcomer: replay.newcomer, unplayed: !!replay.unplayed } : null;
     },
     skip: () => current?.skip(),
     get active() {
       return !!current?.active;
     },
-    replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${wasShort ? 'Play the full parade' : label()}</button>`,
+    replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${label()}</button>`,
     onClick(t) {
       if (t.closest('[data-act="parade-skip"]')) {
         current?.skip();
@@ -273,4 +311,80 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
     },
   };
   return api;
+}
+
+export interface ScheduledParade {
+  /** The player missed it (they started something else, or a re-render ended everything) and it was offered instead. */
+  readonly missed: MissedBy | 'hidden' | undefined;
+  /** Whether it is still waiting for its lead-in. */
+  readonly waiting: boolean;
+}
+
+/**
+ * A celebration the screen starts by itself (D46 PR A): the Welcome Parade straight from Meet, or a new stage's group
+ * dance. It waits `delay`, then (briefly) for `waitFor` (the 3D toys), and plays, unless in the meantime the player
+ * started something (Walk, Tour, a trick: what they chose is kept), the scene was re-drawn, the app was hidden or the
+ * screen went. Then it never starts by itself: the button under the scene offers it (and a welcome missed by leaving
+ * is offered on the next visit). Either way `after` runs once the scene is free (no moment owns the camera): the next
+ * goal and the starter gift, which must never cover a walk or a tour.
+ */
+export function scheduleParade(
+  scope: Scope,
+  director: SceneDirector,
+  parades: SceneParades,
+  o: { newcomer?: string; delay: number; waitFor?: () => Promise<unknown>; short?: boolean; after?: (played: boolean) => void },
+): ScheduledParade {
+  let missed: MissedBy | 'hidden' | undefined;
+  let finished = false;
+  const done = (played: boolean) => {
+    if (finished || !scope.alive) return;
+    finished = true;
+    if (played) return o.after?.(true);
+    // Once nothing owns the camera: a walk closed, a tour or a trick over. Checked from the next tick on: the moment
+    // that missed it claims the scene before it starts running.
+    // One timer at a time (review: scope.timeout would add a disposer every 250 ms of a long walk).
+    let t: ReturnType<typeof setTimeout> | undefined;
+    scope.onDispose(() => clearTimeout(t));
+    const whenFree = () => {
+      if (!scope.alive) return;
+      if (director.owner === null) o.after?.(false);
+      else t = setTimeout(whenFree, 250);
+    };
+    t = setTimeout(whenFree, 250);
+  };
+  const onMissed = (by: MissedBy | 'hidden') => {
+    missed = by;
+    // Left during the lead-in: the next visit offers it (a welcome only; a stage's dance is just a moment).
+    if (!scope.alive) {
+      if (o.newcomer) parades.offer(o.newcomer);
+      return;
+    }
+    parades.offer(o.newcomer);
+    done(false);
+  };
+  const pend = director.pending('parade', onMissed);
+  scope.timeout(
+    () =>
+      void (o.waitFor?.() ?? Promise.resolve()).then(async () => {
+        if (!scope.alive || !pend.waiting) return;
+        // The player left the app during the lead-in: it doesn't play unseen; it's offered for when they're back.
+        if (document.hidden) {
+          pend.drop();
+          onMissed('hidden');
+          return;
+        }
+        if (!pend.begin()) return;
+        const danced = await parades.play(o.newcomer, { short: o.short });
+        done(danced);
+      }),
+    o.delay,
+  );
+  return {
+    get missed() {
+      return missed;
+    },
+    get waiting() {
+      return pend.waiting;
+    },
+  };
 }
