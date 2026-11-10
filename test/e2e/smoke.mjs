@@ -1302,6 +1302,28 @@ try {
     atPond.where === 'pond' && atPond.shown && /The pond.*ducks splash.*1 of 4/.test(atPond.text) && atPond.here === 'pond' && atPond.current === 'pond' && /ducks/.test(atPond.said) && atBarn.where === 'barn' && atBarn.found === 2 && again.where === 'pond' && again.text === 'The pond' && again.found === 2,
     JSON.stringify({ atPond, atBarn, again }),
   );
+  // A discovery that runs out while the app is away still comes to rest (no duck left mid-hop): start one with
+  // motion on, leave at once, come back after it would have ended.
+  await qa.evaluate(() => {
+    window.__pt.app.save.settings.reducedMotion = 'full';
+    window.__pt.app.applySettings();
+    const w = window.__walk;
+    Object.assign(w.walker, { x: 0, z: 20, target: null });
+  });
+  await qa.waitForTimeout(500);
+  await qa.evaluate(async () => {
+    const m = await import('/src/three/walkMath.ts');
+    const l = m.LANDMARKS.find((x) => x.id === 'orchard');
+    Object.assign(window.__walk.walker, { x: l.stand.x, z: l.stand.z, target: null });
+  });
+  await qa.waitForFunction(() => window.__walk?.where === 'orchard' && !window.__walk.settled, null, { timeout: 5000 }).catch(() => {});
+  const midway = await qa.evaluate(() => ({ where: window.__walk?.where, settled: window.__walk?.settled }));
+  await hidden(true);
+  await qa.waitForTimeout(3600);
+  await hidden(false);
+  await qa.waitForFunction(() => window.__walk?.settled, null, { timeout: 5000 }).catch(() => {});
+  const rested = await qa.evaluate(() => window.__walk?.settled);
+  check('a discovery that ran out while the app was away comes to rest on return (D45)', midway.where === 'orchard' && midway.settled === false && rested === true, JSON.stringify({ midway, rested }));
   await qa.click('.walk__back');
   await qa.waitForTimeout(1500);
   const overview = await qa.evaluate(() => ({ walk: !!document.querySelector('.walk'), canvases: document.querySelectorAll('canvas').length, toys: !!document.querySelector('.sanctuary__scene.has-3d'), focus: document.activeElement?.dataset?.act ?? '' }));

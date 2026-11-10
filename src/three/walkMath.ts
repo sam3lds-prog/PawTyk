@@ -208,8 +208,11 @@ export const TURN = 2.4;
 /**
  * One step of walking toward the target: turn to face it, then go, stopping round obstacles. Returns true while
  * still on the way.
+ *
+ * `pivot` (following a route): turn on the spot first and set off once facing the way. Walking while turning cuts the
+ * corner in an arc, and a route's legs are only known to be clear along the straight line (D45 PR C review).
  */
-export function stepWalker(w: Walker, dt: number, obstacles: Obstacle[]): boolean {
+export function stepWalker(w: Walker, dt: number, obstacles: Obstacle[], pivot = false): boolean {
   if (!w.target) return false;
   const want = yawTo(w.x, w.z, w.target.x, w.target.z);
   w.yaw = turnToward(w.yaw, want, TURN * 1.6 * dt);
@@ -219,7 +222,7 @@ export function stepWalker(w: Walker, dt: number, obstacles: Obstacle[]): boolea
     return false;
   }
   const facing = Math.abs(Math.atan2(Math.sin(want - w.yaw), Math.cos(want - w.yaw)));
-  const go = Math.min(dist, SPEED * dt * Math.max(0, 1 - facing / 1.2));
+  const go = pivot && facing > 0.12 ? 0 : Math.min(dist, SPEED * dt * Math.max(0, 1 - facing / 1.2));
   const nx = w.x - Math.sin(w.yaw) * go;
   const nz = w.z - Math.cos(w.yaw) * go;
   const s = settle(nx, nz, obstacles);

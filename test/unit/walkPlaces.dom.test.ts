@@ -101,15 +101,17 @@ describe('destinations', () => {
 
 describe('finding the way', () => {
   const obs = obstaclesAt(4, ALL_DECOR);
-  const walk = (from: { x: number; z: number }, to: { x: number; z: number }) => {
-    const w: Walker = { x: from.x, z: from.z, yaw: 0, target: null };
+  // As the walk follows a route: turning on the spot before each leg (`pivot`).
+  const walk = (from: { x: number; z: number }, to: { x: number; z: number }, o: { yaw?: number; hz?: number; pivot?: boolean } = {}) => {
+    const w: Walker = { x: from.x, z: from.z, yaw: o.yaw ?? 0, target: null };
     const path = route(w, to, obs);
+    const dt = 1 / (o.hz ?? 30);
     let t = 0;
     for (const p of path) {
       w.target = p;
       while (w.target && t < 90) {
-        stepWalker(w, 1 / 30, obs);
-        t += 1 / 30;
+        stepWalker(w, dt, obs, o.pivot ?? true);
+        t += dt;
       }
     }
     return { w, t, path };
@@ -143,6 +145,29 @@ describe('finding the way', () => {
         // No long way round: within three times the straight walk (plus turning).
         expect(t, `${a.id} → ${b.id}`).toBeLessThan((Math.hypot(a.stand.x - b.stand.x, a.stand.z - b.stand.z) / SPEED) * 3 + 6);
       }
+  });
+
+  it('facing the wrong way beside a decoration: it turns on the spot first, and does not curve into it (D45 review)', () => {
+    // Beside the trough, facing away from the pond: the straight line is clear, an arc is not.
+    const pond = LANDMARKS.find((l) => l.id === 'pond')!;
+    const from = { x: 15, z: 2.5 };
+    expect(route(from, pond.stand, obs).length).toBeGreaterThanOrEqual(1);
+    for (const hz of [30, 60]) {
+      const { w } = walk(from, pond.stand, { yaw: 0, hz });
+      expect(Math.hypot(w.x - pond.stand.x, w.z - pond.stand.z), `${hz} Hz`).toBeLessThan(0.6);
+    }
+    // Without the pivot (a plain tap-and-go arc) this is the walk that used to stop short.
+    const arc = walk(from, pond.stand, { yaw: 0, hz: 60, pivot: false });
+    expect(Math.hypot(arc.w.x - pond.stand.x, arc.w.z - pond.stand.z)).toBeGreaterThan(1);
+  });
+
+  it('pivoting: the walker does not move until it faces the way', () => {
+    const w: Walker = { x: 0, z: 20, yaw: Math.PI, target: { x: 0, z: 10 } };
+    stepWalker(w, 1 / 30, obs, true);
+    expect(w.z).toBe(20);
+    expect(w.yaw).not.toBe(Math.PI);
+    for (let i = 0; i < 400 && w.target; i++) stepWalker(w, 1 / 30, obs, true);
+    expect(Math.hypot(w.x, w.z - 10)).toBeLessThan(0.3);
   });
 
   it('a goal inside something ends beside it', () => {

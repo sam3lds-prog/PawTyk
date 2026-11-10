@@ -73,6 +73,8 @@ interface Moment {
   start: number;
   ms: number;
   frame(t: number): void;
+  /** Its last frame has been drawn (so a moment that ran out while nothing was drawing still comes to rest). */
+  rested?: boolean;
 }
 
 const col = (c: string) => new THREE.Color(c);
@@ -776,6 +778,7 @@ export class FarmWalk {
     if (this.held.move) {
       w.target = null;
       this.path = [];
+      this.goal = null;
       nudge(w, this.held.move * 3.2 * dt, this.obstacles);
     }
     if (w.target) {
@@ -783,15 +786,24 @@ export class FarmWalk {
         // Reduced motion: no walking glide; the player is simply there.
         const end = this.path.pop() ?? w.target;
         this.path = [];
+        this.goal = null;
         const s = settle(end.x, end.z, this.obstacles);
         w.yaw = yawTo(w.x, w.z, end.x, end.z);
         w.x = s.x;
         w.z = s.z;
         w.target = null;
-      } else stepWalker(w, dt, this.obstacles);
+      } else stepWalker(w, dt, this.obstacles, !!this.goal);
     }
     // The next corner of the way there.
     if (!w.target && this.path.length) w.target = this.path.shift()!;
+    // Stopped short of where it was going (something was in the way after all): find the way again from here.
+    if (!w.target && this.goal) {
+      const g = this.goal;
+      if (Math.hypot(g.x - w.x, g.z - w.z) > 0.6 && this.replans < 3) {
+        this.replans++;
+        this.walkTo(g.x, g.z, true);
+      } else this.goal = null;
+    }
     // Arrived from a "Go to": turn to look at the place.
     if (!w.target && this.lookAtOnArrival) {
       const want = yawTo(w.x, w.z, this.lookAtOnArrival.x, this.lookAtOnArrival.z);
@@ -831,7 +843,10 @@ export class FarmWalk {
         this.found.add(at);
         const m = this.moments.get(at);
         // Each arrival plays it again (it is short); under reduced motion it is simply shown finished.
-        if (m && now - m.start > m.ms) m.start = still ? now - m.ms : now;
+        if (m && now - m.start > m.ms) {
+          m.start = still ? now - m.ms : now;
+          m.rested = false;
+        }
       }
       this.o.onPlace?.(at, first);
     }
@@ -839,8 +854,13 @@ export class FarmWalk {
     this.barnOpen = still ? open : this.barnOpen + (open - this.barnOpen) * Math.min(1, dt * 3);
     for (const h of this.barnDoors) h.rotation.y = (h.userData.side as number) * this.barnOpen * 1.9;
     for (const m of this.moments.values()) {
+      if (m.rested !== false) continue;
+      // Every started moment gets its last frame, even if the app was away while it ran out (drawing stops then, the
+      // clock doesn't): no duck left mid-hop, no bird hanging in the air (D45 PR C review).
       const t = (now - m.start) / m.ms;
-      if (t >= 0 && t <= 1.05) m.frame(Math.min(1, t));
+      if (t < 0) continue;
+      m.frame(Math.min(1, t));
+      if (t >= 1) m.rested = true;
     }
     if (now - this.movedAt > 120) {
       this.movedAt = now;
@@ -848,6 +868,11 @@ export class FarmWalk {
     }
   }
   private movedAt = 0;
+
+  /** Whether every discovery that started has come to rest (tests and the QA page). */
+  get settled(): boolean {
+    return [...this.moments.values()].every((m) => m.rested !== false);
+  }
 
   /** Where the player is (a destination's id), if at one. */
   get where(): LandmarkId | null {
@@ -865,6 +890,7 @@ export class FarmWalk {
       // Not drawing (hidden, or a test): arrive at once.
       const end = this.path[this.path.length - 1] ?? this.walker.target!;
       this.path = [];
+      this.goal = null;
       Object.assign(this.walker, end, { target: null, yaw: yawTo(end.x, end.z, l.at.x, l.at.z) });
       this.lookAtOnArrival = null;
       this.step(0, performance.now());
@@ -876,11 +902,17 @@ export class FarmWalk {
   /** The corners still to walk through after the current target (a way round the barn, the pond, a decoration). */
   private path: Array<{ x: number; z: number }> = [];
 
+  /** Where a routed walk is going, and how often it has had to find a new way (a few times at most). */
+  private goal: { x: number; z: number } | null = null;
+  private replans = 0;
+
   /** Sets off to a point, round whatever is in the way. */
-  private walkTo(x: number, z: number): void {
+  private walkTo(x: number, z: number, again = false): void {
     const [first, ...rest] = route(this.walker, { x, z }, this.obstacles);
     this.walker.target = first;
     this.path = rest;
+    this.goal = rest[rest.length - 1] ?? first;
+    if (!again) this.replans = 0;
   }
 
   private render(now: number): void {
@@ -908,6 +940,7 @@ export class FarmWalk {
     this.pitch = Math.max(-0.6, Math.min(0.35, this.pitch + dy * 0.004));
     this.walker.target = null;
     this.path = [];
+    this.goal = null;
     this.lookAtOnArrival = null;
     if (!this.raf) this.renderNow();
   }
