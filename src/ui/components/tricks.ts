@@ -13,6 +13,8 @@ import { buyTrick, ownsTrick } from '../../meta/tricks';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
+import { rhythmFor, type RhythmFeel } from '../../audio/scores';
+import { animalInfo, isAnimalId } from '../../meta/animals';
 import { iap } from '../../services/iap';
 import { currencyOffered } from '../../app/offers';
 import { trickBadge } from '../art/tricks';
@@ -33,6 +35,11 @@ import { avatarPortrait } from '../screens/leaderboardTab';
 const CURRENCY = { vtoken: { icon: () => ICON.videoToken, name: 'video tokens' }, gem: { icon: () => ICON.gem, name: 'gems' } } as const;
 
 export { performTrick };
+
+/** The rhythm an animal performs to (by its kind). */
+export function rhythmOf(id: string): RhythmFeel {
+  return rhythmFor(isAnimalId(id) ? animalInfo(id).animal : undefined);
+}
 
 function priceTag(id: TrickId): string {
   const t = TRICK_BY_ID[id];
@@ -197,7 +204,8 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     const status = host.querySelector('[data-tray-status]');
     const name = animalName(target.id);
     if (s && fig && performTrick(s, fig, id, app.reducedMotion)) {
-      feel('trick', { cue: `trick:${id}` });
+      // The tune, with this animal's own rhythm under it (D45 PR D): a sheep's wave and a piglet's don't sound alike.
+      feel('trick', { cue: `trick:${id}`, rhythm: rhythmOf(target.id) });
       track('trick_played', { trick: id });
       opts.onPlayed?.(fig, id);
       if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!`;

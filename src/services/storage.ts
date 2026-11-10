@@ -83,6 +83,8 @@ export interface Settings {
    * shorter after), always 'full', or always 'short'. The full parade can always be replayed.
    */
   celebrations: 'smart' | 'full' | 'short';
+  /** A gentle tune while visiting a home (D45 PR D). Off unless the player turns it on; it needs Music on too. */
+  ambientMusic: boolean;
   /** After a move that finishes a line or color, light the line that left it one spot and say so (D39). Off: only the first few. */
   explainMoves: boolean;
   /** The pet tool the player last picked, so the next board opens with it selected. */
@@ -370,6 +372,7 @@ export function defaultSettings(): Settings {
     largeBoard: false,
     toys3d: true,
     celebrations: 'smart',
+    ambientMusic: false,
     explainMoves: false,
     lastSpecies: 'cat',
   };
@@ -527,6 +530,7 @@ function normSettings(x: unknown): Settings {
     largeBoard: bool(x.largeBoard, d.largeBoard),
     toys3d: bool(x.toys3d, d.toys3d),
     celebrations: oneOf(x.celebrations, ['smart', 'full', 'short'] as const, d.celebrations),
+    ambientMusic: bool(x.ambientMusic, d.ambientMusic),
     explainMoves: bool(x.explainMoves, d.explainMoves),
     lastSpecies: oneOf(x.lastSpecies, ['cat', 'dog'] as const, d.lastSpecies),
   };

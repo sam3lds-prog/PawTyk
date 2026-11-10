@@ -1574,3 +1574,42 @@ close-up paused the scene, ended the close-up, and the close-up's ending un-paus
   the player comes close to perks up to look at them as well as turning.
 - **Reduced motion**: Go to places the player there at once; doors are simply open, the chick simply there; no
   butterflies or birds.
+
+### PR D — music and animation quality pass
+**Music** (all original; nothing quotes or imitates an existing tune)
+- **Variety in the trick tunes**: they shared three chords and mostly a marimba. Four new synthesized voices (tuba,
+  accordion, kalimba, glockenspiel) and the key's other chords: a kalimba hello, a tuba under the hops, a
+  glockenspiel twirl, a plagal "ta-daa" for the bow, an accordion roll, an A-minor shuffle, a floating major-seventh
+  bubble, a lullaby on the fourth for sleepy, a shy A minor that peeks into C, "Oh!" ending on the fifth like a
+  question. Still all in C major, so any two can follow each other; a test requires every tune to have its own band.
+- **A rhythm for every kind of animal** (`withRhythm`): seven small figures laid under a trick's tune for whoever
+  performs it: sheep (and other soft animals) a two-note lilt, pigs an oom-pah, cows and elephants a plod, birds a
+  peck, hoofed animals a clip-clop, hoppers a bounce, cats and foxes a prowl. The Welcome Parade plays the newcomer's
+  rhythm under its entrance.
+- **The theme and its variations** (`themeVariation`): Barnyard Bounce's tune is the PawTyk theme. Every home plays
+  the same notes at the same tempo (one dance fits them all) with its own band: Farm the original, Pet Garden a toy
+  box, Outback thumb piano and tuba, Savanna hand-drum patter, Arctic glockenspiel and bells, Amazon a whistled tune
+  over shakers. The short parade (the Jig) and the ambient tune take the same variation.
+- **Phone speakers**: a phone plays almost nothing under 300 Hz, where the bass and the stomp lived. Both now carry
+  harmonics a phone can play; the music channel has a master chain (55 Hz high-pass, a gentle compressor, make-up
+  gain); and the per-tune trims were re-measured **through a phone-speaker filter**: every trick tune's loudest moment
+  is within 3 dB of the others, the signature cues within 2.5 dB, no cue loses more than 5 dB to the speaker, nothing
+  clips (also checked for every home's parade and every rhythm). The browser tests measure this on every run.
+- **Optional ambient music**: Settings → Comfort → **Home music**, off by default. On a home's screen it plays Meadow
+  Morning (the theme slowed to 72 BPM, no drums) in that home's voicing, quietly (half a cue's level, lower still
+  while a cue plays), rests 9 s, and after four plays leaves the place in peace. It stops on leaving the screen or the
+  app, and needs Music on.
+
+**Staging**
+- **The stage**: the dancers stood in separate pools of light. A wide warm wash now lies under the whole group, and
+  every light comes up for the final pose.
+- **The hero shot**: at the finish the camera goes out to a wider framing with the dancers low in the picture (the
+  party lights and confetti above them), with a small push as the poses land. Group dances get it too.
+- **Close-ups at 2×**: checked on a 390 pt phone at 2× for the animals at the scene's edges. The camera can't centre
+  an animal near the edge (it never shows past the scene), which left a neighbour in the middle of the frame looking
+  like the star. The performer now has its own pool of light on the ground for the close-up.
+- Reduced motion: lights are simply on; no camera move.
+
+**Not done here** (they need a device or a studio): before/after recordings on real iPhones, loudness checked by ear on
+real speakers, and a professionally recorded track. `music.useRecordedTrack(id, url)` is the hook for the last: a
+recording replaces a cue's synthesized score and keeps its beat clock.

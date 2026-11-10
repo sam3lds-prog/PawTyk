@@ -32,6 +32,7 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
+import { startAmbient, stopAmbient } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
 import { isEveningAt } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
@@ -115,6 +116,7 @@ export const sanctuaryScreen: ScreenDef = {
     });
     const parades = sceneParades(scope, {
       el,
+      home: 'harmony',
       camera,
       pause: (on) => director.hold('parade', on),
       closeTray: () => {
@@ -134,7 +136,10 @@ export const sanctuaryScreen: ScreenDef = {
     });
     director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
     director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
+    // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
+    if (app.settings.ambientMusic && true) scope.timeout(() => scope.alive && startAmbient('harmony'), 1800);
     scope.onDispose(() => {
+      stopAmbient();
       // Leaving ends every scene moment together, then the camera, the toys and the life go.
       director.cancelAll();
       life?.dispose();

@@ -13,11 +13,12 @@ import { defaultSave, loadSave } from '../../src/services/storage';
 import { MemoryKV } from '../../src/services/kv';
 
 const all = Object.values(SCORES) as Score[];
-const KNOWN = new Set(['bass', 'pluck', 'marimba', 'bell', 'brass', 'whistle', 'pad', 'swoop', 'clap', 'stomp', 'shaker', 'block', 'cymbal']);
+const KNOWN = new Set(['bass', 'pluck', 'marimba', 'bell', 'brass', 'whistle', 'pad', 'swoop', 'clap', 'stomp', 'shaker', 'block', 'cymbal', 'tuba', 'accordion', 'kalimba', 'glock']);
 
 describe('the scores', () => {
   it('are well-formed: known instruments, notes inside the cue (with a little ring), real pitches and loudness', () => {
-    expect(all.length).toBe(4 + TRICKS.length);
+    // The win, Welcome Home, the parade, the jig, the ambient tune (D45), and a tune per trick.
+    expect(all.length).toBe(5 + TRICKS.length);
     for (const s of all) {
       expect(s.bpm).toBeGreaterThan(40);
       expect(s.bpm).toBeLessThan(260);
