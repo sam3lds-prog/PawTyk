@@ -199,7 +199,9 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion() });
       current = p;
       await p.done;
-      if (current === p) current = null;
+      // Replayed before it ended: the newer parade owns the scene's pause now, so this one leaves it be (D45 PR A).
+      if (current !== p) return false;
+      current = null;
       if (!scope.alive) return false;
       host.pause(false);
       if (!p.dancers.length) return false;

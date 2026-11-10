@@ -1511,3 +1511,27 @@ Checked in the browser tests on a small iPhone (320 × 568), on top of each PR's
   no close-up.
 - **Tiers**: in the lite tier the walk draws at 1× pixels.
 - CI: unit tests, build, generator (1000 boards), level packs, places, icons and the browser tests all green.
+
+## 2026-11-10 · D45 — follow-ups from the D44 review
+
+Four focused PRs after an outside review of D44: scene coordination (A), first arrival and celebration pacing (B),
+the 3D farm (C), and a music and animation quality pass (D).
+
+### PR A — the scene director
+A sanctuary scene has four moments that each want the camera and a quiet scene: the Welcome Parade, a trick's
+close-up, the guided tour and (on the Farm) the 3D walk. Each used to pause and resume the scene's ambient life with
+its own `pause(true/false)`, so one moment ending could switch life back on under another: starting the tour during a
+close-up paused the scene, ended the close-up, and the close-up's ending un-paused it for the whole tour.
+
+- **`ui/components/sceneDirector.ts`**: one per scene screen (the Pet Garden and every home).
+  - **One owner of the camera.** Each moment registers how to end; `claim(kind)` ends every other one first. The
+    screens no longer list who to cancel in each place.
+  - **Holds, not a switch.** `hold(kind, on)` adds or drops that moment's hold; ambient life and activities run only
+    while there are no holds and the app is showing. A moment ending drops only its own hold.
+  - **Leaving ends everything together**: `cancelAll()` on a re-render and on leaving, before the camera, toys and
+    life are released. The 3D walk is a moment too (anything else claiming the scene closes it).
+- **Parade replay race**: a parade replayed before it ended had its hold dropped by the first one's ending; the older
+  parade now leaves the scene to the newer one.
+- Tests: holds and ownership on their own; the real close-ups, tour and parades wired through a director (trick → tour
+  → Stop → live; tour → trick; parade ↔ tour; replay; rapid switching; app hidden; leaving); and the Farm screen
+  itself, where the old wiring fails the "no wake-up during the tour" check. Browser test: the same hand-over.

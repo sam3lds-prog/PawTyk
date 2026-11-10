@@ -27,10 +27,11 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
+import { createSceneDirector } from '../components/sceneDirector';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
-import { canWalk, showFarmWalk, walkButtonMarkup } from '../components/walk';
+import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
 import { HOME_SCENERY } from '../art/homeScenery';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -88,7 +89,7 @@ export const regionScreen: ScreenDef = {
       onToggle: (open) => tricksBtn()?.setAttribute('aria-expanded', String(open)),
       // A trick gets its close-up (D44 PR F); the tour, if it's running, ends first.
       onPlayed: (fig, trick) => {
-        tour.stop();
+        director.claim('closeup');
         closeups.play(fig, trick);
       },
     });
@@ -100,17 +101,18 @@ export const regionScreen: ScreenDef = {
     const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
     if (import.meta.env.DEV) (window as unknown as { __cam?: SceneCamera }).__cam = camera;
     // The Welcome Parade and group celebrations (D44 PR E).
+    // The scene director (D45 PR A): one owner of the camera, and holds (not switches) on ambient life.
+    const director = createSceneDirector((live) => {
+      life?.setLive(live);
+      acts?.setLive(live);
+    });
     const parades = sceneParades(scope, {
       el,
       camera,
-      pause: (on) => {
-        life?.setLive(!on && !document.hidden);
-        acts?.setLive(!on && !document.hidden);
-      },
+      pause: (on) => director.hold('parade', on),
       closeTray: () => {
         // A parade takes the camera: a trick's close-up or the tour ends first.
-        closeups.cancel();
-        tour.stop();
+        director.claim('parade');
         if (tray.isOpen) tray.close();
       },
       reducedMotion: () => app.reducedMotion,
@@ -120,10 +122,7 @@ export const regionScreen: ScreenDef = {
       svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
       camera,
       reducedMotion: () => app.reducedMotion,
-      pause: (on) => {
-        life?.setLive(!on && !document.hidden);
-        acts?.setLive(!on && !document.hidden);
-      },
+      pause: (on) => director.hold('closeup', on),
       react: (fig, action) => life?.play(figureId(fig as unknown as HTMLElement), action),
     });
     // The guided tour (D44 PR H): the landmark, every animal, the party spot, and back.
@@ -132,19 +131,23 @@ export const regionScreen: ScreenDef = {
       el,
       camera,
       reducedMotion: () => app.reducedMotion,
-      pause: (on) => {
-        life?.setLive(!on && !document.hidden);
-        acts?.setLive(!on && !document.hidden);
-      },
+      pause: (on) => director.hold('tour', on),
       greet: (fig) => life?.play(figureId(fig as unknown as HTMLElement), 'greet'),
       openLandmark: (lm) => openLandmark(scope, lm, el.querySelector('[data-chat]'), landmarkLine()),
       onStart: () => {
-        parades.skip();
-        closeups.cancel();
+        director.claim('tour');
         if (tray.isOpen) tray.close();
       },
     });
+    director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
+    director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
+    director.register('tour', { cancel: () => tour.stop(), active: () => tour.active });
+    let walking: WalkHandle | null = null;
+    director.register('walk', { cancel: () => walking?.close(), active: () => !!walking });
+    if (import.meta.env.DEV) (window as unknown as { __director?: unknown }).__director = director;
     scope.onDispose(() => {
+      // Leaving ends every scene moment together, then the camera, the toys and the life go.
+      director.cancelAll();
       life?.dispose();
       acts?.dispose();
       camera.dispose();
@@ -152,8 +155,7 @@ export const regionScreen: ScreenDef = {
     });
     scope.on(document, 'visibilitychange', () => {
       if (document.hidden) closeups.cancel();
-      life?.setLive(!document.hidden && !parades.active);
-      acts?.setLive(!document.hidden && !parades.active);
+      director.refresh();
       s3d.setLive(!document.hidden);
     });
 
@@ -219,9 +221,7 @@ export const regionScreen: ScreenDef = {
 
     function render(): void {
       // A re-render (a decoration toggled) draws a new scene: a parade, a close-up or the tour on the old one ends first.
-      parades.skip();
-      closeups.cancel();
-      tour.stop();
+      director.cancelAll();
       const save = app.save;
       const open = isOpen(save, id);
       const stage = stageOf(save, id);
@@ -366,17 +366,17 @@ export const regionScreen: ScreenDef = {
       if (parades.onClick(t)) return;
       // Walk round the Farm in 3D (D44 PR I): the scene's own 3D layer rests meanwhile.
       if (t.closest('[data-act="walk"]')) {
-        tour.stop();
-        closeups.cancel();
+        director.claim('walk');
         if (tray.isOpen) tray.close();
         s3d.setLive(false);
-        life?.setLive(false);
-        acts?.setLive(false);
-        void showFarmWalk(scope, { returnFocus: () => el.querySelector<HTMLElement>('[data-act="walk"]') }).done.then(() => {
+        director.hold('walk', true);
+        const w = showFarmWalk(scope, { returnFocus: () => el.querySelector<HTMLElement>('[data-act="walk"]') });
+        walking = w;
+        void w.done.then(() => {
+          if (walking === w) walking = null;
           if (!scope.alive) return;
           s3d.setLive(!document.hidden);
-          life?.setLive(!document.hidden);
-          acts?.setLive(!document.hidden);
+          director.hold('walk', false);
         });
         return;
       }

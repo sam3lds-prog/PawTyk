@@ -484,6 +484,24 @@ try {
   await page.waitForTimeout(700);
   const toured = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, caption: !!document.querySelector('.tour-caption'), btn: !document.querySelector('.sanctuary__scene [data-act="tour"]')?.hidden }));
   check('Stop ends the tour on the whole scene (D44)', toured.zoom === 1 && !toured.caption && toured.btn, JSON.stringify(toured));
+  // D45 PR A: the scene director. A trick's close-up, then the tour: the close-up ends, the scene stays held for the
+  // whole tour (the close-up's ending must not wake it), and Stop gives back a live scene with nobody owning the camera.
+  await page.click('.sanctuary__scene .sanctuary__pet');
+  await page.waitForSelector('.trick-tray');
+  await page.click('.trick-chip[data-trick="wave"]');
+  await page.waitForTimeout(300);
+  const sceneDir = () => page.evaluate(() => ({ owner: window.__director?.owner ?? null, paused: window.__director?.paused ?? null, closeup: !!document.querySelector('.sanctuary__scene.is-closeup'), touring: !!document.querySelector('.sanctuary__scene.is-touring'), tray: !!document.querySelector('.trick-tray') }));
+  const sd1 = await sceneDir();
+  await page.evaluate(() => document.querySelector('.sanctuary__scene [data-act="tour"]').click());
+  const sd2 = await sceneDir();
+  await page.waitForTimeout(2200);
+  const sd3 = await sceneDir();
+  check('a tour started during a trick takes the camera over, and the scene stays held throughout (D45)', sd1.owner === 'closeup' && sd1.paused && sd2.owner === 'tour' && sd2.paused && !sd2.closeup && !sd2.tray && sd3.owner === 'tour' && sd3.paused && sd3.touring, JSON.stringify({ sd1, sd2, sd3 }));
+  await page.click('.sanctuary__scene [data-act="tour-stop"]');
+  await page.waitForTimeout(700);
+  const sd4 = await sceneDir();
+  check('after Stop nobody owns the camera and the scene is live again (D45)', sd4.owner === null && sd4.paused === false && !sd4.touring && (await page.evaluate(() => window.__cam?.zoom)) === 1, JSON.stringify(sd4));
+  await page.waitForTimeout(1500);
   // D44 PR I: walk round the Farm in 3D: it opens with its animals, draws, the arrows walk, a tap walks there, and
   // closing releases its WebGL context and gives focus back.
   await page.click('.sanctuary__scene [data-act="walk"]');
