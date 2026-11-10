@@ -118,6 +118,29 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
 
   const partClasses = (d: Dancer) => [`is-dance-${d.spec.style}`, 'is-dance-enter', 'is-dance-invite', ...[0, 1, 2, 3].map((n) => `is-dance-pose-${n}`)];
 
+  // The dance floor (D44 PR G): a soft pool of light on the ground under each dancer, for the dance's length.
+  for (const d of dancers) {
+    const x = Number(d.fig.dataset.gx);
+    const y = Number(d.fig.dataset.gy);
+    const h = Number(d.fig.dataset.gh) || 30;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    const pool = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    pool.setAttribute('class', 'sp-dance-light');
+    pool.setAttribute('cx', String(x));
+    pool.setAttribute('cy', String(y + 0.5));
+    pool.setAttribute('rx', (h * 0.75).toFixed(1));
+    pool.setAttribute('ry', (h * 0.2).toFixed(1));
+    pool.setAttribute('fill', 'url(#sp-dance-light)');
+    pool.setAttribute('aria-hidden', 'true');
+    d.fig.parentNode?.insertBefore(pool, d.fig);
+    overlays.push(pool);
+  }
+  if (dancers.length && !svg.querySelector('#sp-dance-light'))
+    svg.insertAdjacentHTML(
+      'afterbegin',
+      `<defs><radialGradient id="sp-dance-light"><stop offset="0" stop-color="#fff4c2" stop-opacity="0.85"/><stop offset="0.6" stop-color="#ffe08a" stop-opacity="0.35"/><stop offset="1" stop-color="#ffe08a" stop-opacity="0"/></radialGradient></defs>`,
+    );
+
   for (const d of dancers) {
     const f = d.fig;
     f.dataset.trick = d.id;

@@ -56,6 +56,7 @@ const PART_ACTIONS: Array<[string, AmbientAction]> = [
   ['.sp-blades', 'spin'],
   ['.sp-aurora', 'shimmer'],
   ['.sp-sway', 'sway'],
+  ['.sp-grass', 'sway'],
   ['.sp-birds', 'flutter'],
   ['.sp-kite', 'sway'],
   ['.sp-balloon', 'sway'],

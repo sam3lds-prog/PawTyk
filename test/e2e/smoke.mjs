@@ -456,6 +456,30 @@ try {
     danced.n >= 1 && danced.during.every((p) => p?.startsWith('dance:')) && danced.after.every((p) => !p) && danced.busy === 0,
     JSON.stringify(danced),
   );
+  // D44 PR G: the Farm's landmark: tapping the barn opens its doors and a chick peeks out (in 3D too).
+  const grownBefore = await page.evaluate(() => window.__pt.app.save.world.growth.farm ?? 0);
+  await page.evaluate(() => {
+    window.__pt.app.save.world.growth.farm = Math.max(window.__pt.app.save.world.growth.farm ?? 0, 8);
+    window.__pt.go({ screen: 'region', id: 'farm' });
+  });
+  await page.waitForSelector('.sanctuary__scene [data-landmark="barn"]', { timeout: 5000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const barn = await page.evaluate(async () => {
+    const lm = document.querySelector('.sanctuary__scene [data-landmark="barn"]');
+    if (!lm) return null;
+    lm.querySelector('.sp-door--l').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 1000));
+    const door = lm.querySelector('.sp-door--l').getBoundingClientRect().width;
+    const peek = getComputedStyle(lm.querySelector('.sp-peek')).transform;
+    return { open: lm.classList.contains('is-open'), door, peek, line: document.querySelector('[data-chat] span')?.textContent ?? '' };
+  });
+  check('tapping the barn opens its doors and a chick peeks out (D44)', !!barn && barn.open && barn.door < 8 && /none|matrix\(1, 0, 0, 1, 0, 0\)/.test(barn.peek) && /chick/.test(barn.line), JSON.stringify(barn));
+  await page.evaluate((g) => {
+    window.__pt.app.save.world.growth.farm = g;
+    window.__pt.go({ screen: 'region', id: 'farm' });
+  }, grownBefore);
+  await page.waitForSelector('.sanctuary__scene.has-3d > canvas.scene3d', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(1500);
   // D44 PR E: Meet opens the Welcome Parade: the camera comes in on the newcomer, then every toy dances; Skip gives the
   // whole scene back with nobody mid-dance, and Replay is offered.
   const newcomer = await page.evaluate(() => document.querySelector('.sanctuary__scene .sanctuary__pet[data-friend]')?.dataset.friend);
