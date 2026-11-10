@@ -1469,3 +1469,11 @@ Owner decisions, asked up front (2026-11-09):
   - **Ambient life** the director plays (D24): butterflies, swaying grass (new `.sp-grass`), drifting leaves, petals
     and snow, a windmill on the Farm's far hill, sunbeams through the Rainforest canopy.
 - **The dance floor**: every dance puts a soft pool of light on the ground under each dancer for its length.
+
+### PR H — the guided tour
+- `components/tour.ts`: a **Tour** button in the scene's corner (every open home with animals) takes the camera round
+  it: the landmark first (it opens), every animal at home left to right (each says hello as the camera arrives), the
+  party spot (its lights come on), and back to the whole scene. A caption names each stop. ~0.9 s glides, 1.5 s holds.
+- **Stop any time**: a Stop button, Escape, a tap on the scene, leaving the app; a parade, a trick or a re-render
+  also end it. It always ends on the whole scene. Nobody wanders off meanwhile (ambient life and activities pause).
+- It grants nothing. **Reduced motion**: cuts between stops, each held 2.1 s.

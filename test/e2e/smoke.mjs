@@ -474,6 +474,16 @@ try {
     return { open: lm.classList.contains('is-open'), door, peek, line: document.querySelector('[data-chat] span')?.textContent ?? '' };
   });
   check('tapping the barn opens its doors and a chick peeks out (D44)', !!barn && barn.open && barn.door < 8 && /none|matrix\(1, 0, 0, 1, 0, 0\)/.test(barn.peek) && /chick/.test(barn.line), JSON.stringify(barn));
+  // D44 PR H: the guided tour: the camera visits the barn first (captioned), and Stop gives the whole scene back.
+  await page.waitForTimeout(2000);
+  await page.click('.sanctuary__scene [data-act="tour"]');
+  await page.waitForTimeout(1300);
+  const touring = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, caption: document.querySelector('.tour-caption')?.textContent ?? '', open: !!document.querySelector('[data-landmark="barn"].is-open') }));
+  check('the Tour button takes the camera round the home, starting at the barn (D44)', touring.zoom > 1.5 && touring.caption === 'The barn' && touring.open, JSON.stringify(touring));
+  await page.click('.sanctuary__scene [data-act="tour-stop"]');
+  await page.waitForTimeout(700);
+  const toured = await page.evaluate(() => ({ zoom: window.__cam?.zoom ?? 0, caption: !!document.querySelector('.tour-caption'), btn: !document.querySelector('.sanctuary__scene [data-act="tour"]')?.hidden }));
+  check('Stop ends the tour on the whole scene (D44)', toured.zoom === 1 && !toured.caption && toured.btn, JSON.stringify(toured));
   await page.evaluate((g) => {
     window.__pt.app.save.world.growth.farm = g;
     window.__pt.go({ screen: 'region', id: 'farm' });
