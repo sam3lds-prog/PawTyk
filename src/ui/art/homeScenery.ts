@@ -136,7 +136,7 @@ export const HOME_SCENERY: Record<BaseRegionId, HomeScenery> = {
           'the barn',
           `<defs><clipPath id="${id}-lm"><rect x="268" y="141.5" width="36" height="39.5"/></clipPath></defs>
           <rect x="267.5" y="141.5" width="37" height="39.5" fill="#3a2320"/><rect x="267.5" y="172" width="37" height="9" fill="#5a3a2a" opacity="0.6"/>
-          ${peek(`${id}-lm`, 0, 22, chick(286, 172))}
+          ${peek(`${id}-lm`, 0, 28, chick(286, 172))}
           <g class="sp-door sp-door--l"><rect x="266" y="140" width="20" height="42" fill="#a9372c" stroke="#f3efe6" stroke-width="2.6"/><path d="M267.6 141.6 L284.4 180.4" stroke="#f3efe6" stroke-width="2.2"/></g>
           <g class="sp-door sp-door--r"><rect x="286" y="140" width="20" height="42" fill="#a9372c" stroke="#f3efe6" stroke-width="2.6"/><path d="M304.4 141.6 L287.6 180.4" stroke="#f3efe6" stroke-width="2.2"/></g>`,
         ),
@@ -168,7 +168,7 @@ export const HOME_SCENERY: Record<BaseRegionId, HomeScenery> = {
           'the burrow',
           `<defs><clipPath id="${id}-lm"><rect x="14" y="200" width="40" height="41.6"/></clipPath></defs>
           <rect x="4" y="218" width="66" height="26" fill="transparent"/>
-          ${peek(`${id}-lm`, 0, 18, bilby(34, 234))}`,
+          ${peek(`${id}-lm`, 0, 30, bilby(34, 234))}`,
         ),
     },
     party: { stage: 2, base: 214, svg: () => festoon(214, 180, 280, 170, 6, 6) },
@@ -193,7 +193,7 @@ export const HOME_SCENERY: Record<BaseRegionId, HomeScenery> = {
           'the rocky lookout',
           `<defs><clipPath id="${id}-lm"><rect x="24" y="140" width="24" height="31"/></clipPath></defs>
           <rect x="22" y="150" width="76" height="50" fill="transparent"/>
-          ${peek(`${id}-lm`, 0, 14, hyrax(36, 164))}`,
+          ${peek(`${id}-lm`, 0, 20, hyrax(36, 164))}`,
         ),
     },
     party: { stage: 1, base: 172, svg: () => festoon(252, 104, 338, 100, 8, 5, 'lantern') },
@@ -218,7 +218,7 @@ export const HOME_SCENERY: Record<BaseRegionId, HomeScenery> = {
           `<defs><clipPath id="${id}-lm"><path d="M278 218 C278 200 304 200 304 218 Z"/></clipPath></defs>
           <rect x="250" y="186" width="84" height="32" fill="transparent"/>
           ${evening ? `<path d="M282 218 C282 206 300 206 300 218 Z" fill="#ffd27a" opacity="0.9"/>` : ''}
-          ${peek(`${id}-lm`, 0, 16, foxKit(291, 211))}`,
+          ${peek(`${id}-lm`, 0, 24, foxKit(291, 211))}`,
         ),
     },
     party: { stage: 2, base: 218.4, svg: () => festoon(252, 206, 332, 206, -14, 7, 'ice') },
@@ -249,7 +249,7 @@ export const HOME_SCENERY: Record<BaseRegionId, HomeScenery> = {
           'the big tree',
           `<defs><clipPath id="${id}-lm"><rect x="190" y="100" width="31" height="36"/></clipPath></defs>
           <rect x="196" y="96" width="50" height="60" fill="transparent"/>
-          ${peek(`${id}-lm`, 16, 0, tamarin(212, 118))}`,
+          ${peek(`${id}-lm`, 26, 0, tamarin(212, 118))}`,
         ),
     },
     party: { stage: 2, base: 216.4, svg: () => festoon(198, 154, 268, 154, 5, 6, 'lantern') },

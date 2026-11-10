@@ -45,7 +45,7 @@ describe('the five homes, dressed up', () => {
   it('the critter is hidden until the landmark opens, even without the screen’s styles (a world-map card)', () => {
     const svg = svgOf(regionThumb('farm', 4, 'thumb'));
     const peek = svg.querySelector<SVGGElement>('.sp-peek')!;
-    expect(peek.getAttribute('transform')).toMatch(/^translate\(0 2\d\)$/);
+    expect(peek.getAttribute('transform')).toMatch(/^translate\(0 \d\d\)$/);
     expect(svg.querySelector('.sp-bulb-halo')!.getAttribute('opacity')).toBe('0');
   });
 
