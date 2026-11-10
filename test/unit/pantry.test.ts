@@ -213,16 +213,17 @@ describe('a treat on a board', () => {
     expect(s.addHeart()).toBe(false); // already full
     const [r, c] = wrongCell(s);
     s.place(r, c, CAT);
-    expect(s.hearts).toBe(4);
+    expect(s.hearts).toBe(CASUAL_HEARTS - 1);
     expect(s.addHeart()).toBe(true);
-    expect(s.hearts).toBe(5);
+    expect(s.hearts).toBe(CASUAL_HEARTS);
+    expect(s.addHeart()).toBe(false); // never above three
     expect(s.revives).toBe(1);
   });
 
   it('after a loss it brings the board back with one heart and every placement intact', () => {
     const s = new Session(p, { maxHearts: CASUAL_HEARTS });
     const [r, c] = wrongCell(s);
-    for (let i = 0; i < 5; i++) s.place(r, c, CAT);
+    for (let i = 0; i < CASUAL_HEARTS; i++) s.place(r, c, CAT);
     expect(s.claimOutcome()).toBe('lost');
     expect(s.addHeart()).toBe(true);
     expect(s.outcome).toBe('playing');

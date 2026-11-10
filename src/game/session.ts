@@ -616,7 +616,9 @@ export class Session {
   static restore(puzzle: Puzzle, snap: SessionSnapshot, opts: SessionOptions = {}): Session | null {
     const n = puzzle.size;
     if (!snap || snap.v !== 1 || !Array.isArray(snap.cells) || snap.cells.length !== n) return null;
-    const s = new Session(puzzle, { ...opts, hearts: snap.heartsEnabled });
+    // D44: a board keeps the larger of the rule's allowance and the one it was saved with (five, from before three).
+    const kept = typeof snap.maxHearts === 'number' && Number.isFinite(snap.maxHearts) ? clampInt(snap.maxHearts, 1, 9, LEGACY_MAX_HEARTS) : 0;
+    const s = new Session(puzzle, { ...opts, hearts: snap.heartsEnabled, maxHearts: Math.max(opts.maxHearts ?? LEGACY_MAX_HEARTS, kept) });
     for (let r = 0; r < n; r++) {
       const row = snap.cells[r];
       if (!Array.isArray(row) || row.length !== n) return null;
@@ -635,7 +637,9 @@ export class Session {
     s.history = Array.isArray(snap.history) ? snap.history.filter(okAction).map((a) => ({ ...a })) : [];
     s.redoStack = Array.isArray(snap.redo) ? snap.redo.filter(okAction).map((a) => ({ ...a })) : [];
     // A board saved under a smaller allowance (the old three hearts) keeps the mistakes it already made and gains
-    // the extra hearts of the new rule, e.g. 2 of 3 left becomes 4 of 5. A larger saved allowance is clamped.
+    // the extra hearts of the new rule, e.g. 2 of 3 left becomes 4 of 5. A larger saved allowance (five hearts, saved
+    // before D44's three) is kept for that board, so a puzzle never gets harder halfway through (`restore` builds the
+    // session with it; see below).
     const savedMax = clampInt(snap.maxHearts, 1, 9, LEGACY_MAX_HEARTS);
     const bonus = Math.max(0, s.maxHearts - savedMax);
     s.hearts = Math.min(s.maxHearts, clampInt(snap.hearts, 0, savedMax, savedMax) + bonus);

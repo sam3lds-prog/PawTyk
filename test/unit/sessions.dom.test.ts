@@ -122,7 +122,7 @@ describe('a saved board survives other modes (the P0)', () => {
     const before = fingerprint(savedFor({ kind: 'level', level: 8 }));
     expect(before?.mistakes).toBe(1);
     expect(before?.hintsUsed).toBe(1);
-    expect(before?.hearts).toBe(4);
+    expect(before?.hearts).toBe(2);
 
     // The Daily: started, played, saved — then finished, which clears its own slot and nothing else.
     const daily = dailyToday();
@@ -148,7 +148,7 @@ describe('a saved board survives other modes (the P0)', () => {
     expect(active?.session.cells).toEqual(before?.cells);
     expect(active?.session.mistakes).toBe(1);
     expect(active?.session.hintsUsed).toBe(1);
-    expect(active?.session.hearts).toBe(4);
+    expect(active?.session.hearts).toBe(2);
   });
 
   it('the other way round: a half-played Daily survives a Journey level and a Zen board', () => {

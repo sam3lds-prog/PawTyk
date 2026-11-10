@@ -13,7 +13,7 @@ import { MAX_EVENTS, verifyAttempt } from '../competitions/verify';
 import type { Difficulty } from '../engine/types';
 import { addDaysKey } from '../game/dates';
 import { profileOf } from '../game/grading';
-import { rulesFor, type ModeRef } from '../game/modes';
+import { CASUAL_HEARTS_BEFORE_D44, rulesFor, type ModeRef } from '../game/modes';
 import { currentSpec, puzzleFor } from '../game/puzzles';
 import { isSessionEvent, type SessionEvent } from '../game/session';
 import { DAILY_V2_FROM, dailyPointsTier, levelRewardKey, type SpecVersion } from '../game/specs';
@@ -99,7 +99,10 @@ export function checkSolve(sub: SolveSubmission, now: Date): CheckResult {
   // replay's cost (every hint runs the deduction engine).
   if (sub.events.filter((e) => e.type === 'hint').length > puzzle.size * puzzle.size) return fail('invalid-log');
   const rules = rulesFor(mode);
-  const v = verifyAttempt({ puzzle, events: sub.events, parSeconds: 1, ranked: false, hearts: rules.hearts, maxHearts: rules.maxHearts });
+  // D44: casual boards dropped from five hearts to three, but a board started before the update keeps five until it
+  // ends, so the replay allows five. A log that fits three fits five, so nothing valid is refused.
+  const maxHearts = mode.kind === 'level' || mode.kind === 'daily' ? Math.max(rules.maxHearts, CASUAL_HEARTS_BEFORE_D44) : rules.maxHearts;
+  const v = verifyAttempt({ puzzle, events: sub.events, parSeconds: 1, ranked: false, hearts: rules.hearts, maxHearts });
   if (!v.valid) return fail('invalid-log');
   if (!v.completed) return fail('not-solved');
   if (v.placements > 0 && v.logMs / v.placements < MIN_MS_PER_PLACEMENT) return fail('too-fast');

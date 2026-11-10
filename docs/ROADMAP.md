@@ -119,7 +119,7 @@ walks between anchor points; capybara, otter, axolotl and owl (need art); season
 
 ## Needs you (external)
 
-0. **Feel check on a phone**: five hearts and the treat sheet (tap the hearts), the hint button's Free / ticket badge,
+0. **Feel check on a phone**: three hearts (D44) and the treat sheet (tap the hearts), the hint button's Free / ticket badge,
    a wrong pet on a Dog tile, the win sheet's three-stage reveal, and the sanctuary after a minute (it should move
    gently, never more than two things at once). Tell me if the economy feels stingy or generous: starter pantry 3
    treats + 5 tickets, +1 treat per new level, +1 ticket per two new levels (`src/meta/items.ts`).

@@ -313,7 +313,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
         !save.onboarding.seenPantryIntro && save.onboarding.tutorialDone && !shouldShowLoopCoach(save)
           ? `<section class="card pantry-intro" data-pantry-intro aria-labelledby="pantry-title">
         <h2 id="pantry-title">New: extra lives and hints</h2>
-        <p class="muted">Journey and Daily boards now give you ${CASUAL_HEARTS} hearts. They start fresh on every board.</p>
+        <p class="muted">Journey and Daily boards give you ${CASUAL_HEARTS} hearts, fresh on every board.</p>
         <div class="pantry-row">
           <span class="pantry-chip">${ICON.lifePlus}<b class="num">${itemBalance(save, 'life')}</b><small>extra lives: one heart back each</small></span>
           <span class="pantry-chip">${ICON.bulb}<b class="num">${itemBalance(save, 'hint')}</b><small>hints: one hint each</small></span>
