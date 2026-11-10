@@ -1109,7 +1109,7 @@ try {
 
   // No reward twice: replaying the parade and the tour changes nothing in the save.
   await qa.waitForTimeout(500);
-  const save0 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, bonds: window.__pt.app.save.bonds ?? null }));
+  const save0 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, affection: window.__pt.app.save.sanctuary.affection, growth: window.__pt.app.save.world.growth }));
   await qa.evaluate(() => document.querySelector('[data-act="parade-replay"]')?.click());
   await qa.waitForTimeout(1500);
   await qa.evaluate(() => document.querySelector('.parade-skip')?.click());
@@ -1118,9 +1118,13 @@ try {
   await qa.waitForTimeout(1500);
   await qa.evaluate(() => document.querySelector('[data-act="tour-stop"]')?.click());
   await qa.waitForTimeout(600);
-  const save1 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, bonds: window.__pt.app.save.bonds ?? null }));
+  const save1 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, affection: window.__pt.app.save.sanctuary.affection, growth: window.__pt.app.save.world.growth }));
   const stuck = await qa.evaluate(() => document.querySelectorAll('.sanctuary__scene [data-trick], .sanctuary__scene .is-dancing').length);
-  check('replaying the parade and the tour pays nothing twice, and nobody is left mid-trick (D44)', save0 === save1 && stuck === 0, `${stuck} stuck`);
+  check(
+    'replaying the parade and the tour pays nothing twice (coins, inventory, affection, growth), and nobody is left mid-trick (D44)',
+    save0 === save1 && stuck === 0 && /"affection":\{/.test(save0),
+    `${stuck} stuck`,
+  );
 
   // 3D off: the drawn animals dance, tour and open the barn; no Walk button, no WebGL.
   await qaHome({ toys3d: false, welcome: true });
