@@ -5,6 +5,7 @@
  * everyone dancing, the whole scene back; Skip, Replay, Escape, leaving the app) and a home's group dance at a new
  * stage. None of them grants anything, so a skip or a replay can never pay twice; nothing is left mid-dance.
  */
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../../src/app/app';
 import { Router, Scope, type CanonicalRoute, type ScreenDef } from '../../src/ui/router';
@@ -301,6 +302,27 @@ describe('the parade on Meet, and a group dance at a new stage', () => {
     await vi.advanceTimersByTimeAsync(JIG_MS);
     expect(document.querySelector('[data-trick^="dance:"]')).toBeNull();
     expect(document.querySelector<HTMLElement>('[data-act="parade-replay"]')?.textContent).toMatch(/Dance again/);
+  });
+
+  it('left before it starts (the lead-in): no parade plays unseen, and the next goal still follows', async () => {
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(PARADE_MS);
+    expect(document.querySelector('.sanctuary__scene.is-parading, [data-trick^="dance:"]')).toBeNull();
+    expect(nowPlaying()).toBeNull();
+    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+  });
+
+  it('the spotlight sparkles twinkle one after another (a time delay per sparkle, D44 review)', () => {
+    showSpotlight(new Scope(), { animal: 'truffle', where: 'farm', reducedMotion: false }, () => {});
+    const idx = [...document.querySelectorAll<HTMLElement>('.spotlight__sparkles i')].map((i) => i.style.getPropertyValue('--i'));
+    expect(idx).toEqual(['0', '1', '2', '3', '4', '5']);
+    const css = readFileSync('src/ui/styles/celebrate.css', 'utf8');
+    expect(css).toMatch(/spotlight-twinkle[^;]*var\(--i, 0\) \* 70ms/);
+    expect(css).not.toMatch(/var\(--a\) \* [\d.]+ms/);
   });
 
   it('an ordinary visit: no parade, no dance', async () => {
