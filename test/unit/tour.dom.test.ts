@@ -127,6 +127,18 @@ describe('the tour', () => {
     }
   });
 
+  it('an animal off on a decoration is brought home by the pause first, and visited (D44 review)', () => {
+    const el = scene();
+    const hazel = el.querySelector<SVGGElement>('[data-friend="hazel"]')!;
+    const cam = { full: FULL, viewOf: () => FULL, moveTo: async () => true, reset: async () => true } as unknown as SceneCamera;
+    // Pausing the scene's activities ends a ride: the rider is back in the scene.
+    const t = sceneTour(new Scope(), { el, camera: cam, reducedMotion: () => false, pause: (on) => on && hazel.classList.remove('is-away'), greet: () => {}, openLandmark: () => {} });
+    t.start();
+    vi.advanceTimersByTime(3 * (TOUR_GLIDE_MS + TOUR_HOLD_MS));
+    expect(el.querySelector('.tour-caption')?.textContent).toMatch(/^Hazel the /);
+    t.stop();
+  });
+
   it('reduced motion: cuts from stop to stop, each held longer', () => {
     const r = rig(true);
     r.tour.start();
