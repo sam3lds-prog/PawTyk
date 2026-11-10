@@ -33,6 +33,7 @@ import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
 import { celebrationLength } from '../../meta/celebration';
+import { isEveningAt } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -56,8 +57,7 @@ export function shownDecor(): DecorId[] {
 
 /** Local evening (7 pm to 6 am): a dusk wash and fireflies. */
 export function isEvening(d = new Date()): boolean {
-  const h = d.getHours();
-  return h >= 19 || h < 6;
+  return isEveningAt(d);
 }
 
 /** The sanctuary picture for the current save (used here, live, and on Home, still). */

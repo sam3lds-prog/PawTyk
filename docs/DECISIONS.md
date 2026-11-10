@@ -1551,3 +1551,26 @@ close-up paused the scene, ended the close-up, and the close-up's ending un-paus
   button under the scene reads **Play the full parade**; replays are always the full one.
 - **The player's choice**: Settings → Comfort → Celebrations: Smart (default), Full, Short.
 - Nothing here grants anything; lengths only.
+
+### PR C — the 3D Farm shows the player's Farm
+- **One description for both pictures** (`meta/homeState.ts`): stage, residents in arrival order, the decorations that
+  are out, evening. The drawn Farm and the 3D walk are both built from it, so they can't disagree. Before, the walk
+  got the stage and residents only: a player's tractor or scarecrow was missing in 3D.
+- **Decorations in 3D**: the Farm's five (scarecrow, flower wheelbarrow, water trough, tire-swing tree, little red
+  tractor) are modelled and stand where `walkMath.DECOR_PLACES` says; each is solid. A test ties the list to the
+  catalog, so a sixth Farm decoration can't ship without a 3D place.
+- **One renderer at a time**: opening the walk suspends the scene's own 3D layer (`Scene3D.suspend`: the stage is
+  disposed and its WebGL context released; the drawn animals stand in), and closing resumes it. Two contexts at once
+  is what a small phone can't afford.
+- **Finding the way back and around**: the Close ✕ became a labelled **Overview** button (Escape and Back still
+  work). A small map (bottom left) shows the pasture, barn, pond, orchard and the decorations, with an arrow for the
+  player and the way they face. **Go to** buttons walk to each destination that is built, round whatever is in the
+  way (`walkMath.route`: a straight line when clear, else the shortest way over a 1 m grid with unneeded corners
+  removed; taps on the ground and on animals use it too, so a tap behind the barn no longer stops at its wall).
+- **Destinations and discoveries**: arriving somewhere names it, and the first time says what happens there and counts
+  it ("2 of 4 places found"; per walk, nothing saved, nothing granted). The barn's doors swing open and a chick steps
+  out; the pond's ducks hop, shake and turn to the player with rings on the water; an apple drops in the orchard and
+  three birds fly up; butterflies rise from the pasture's clover. Each plays once per arrival and rests. An animal
+  the player comes close to perks up to look at them as well as turning.
+- **Reduced motion**: Go to places the player there at once; doors are simply open, the chick simply there; no
+  butterflies or birds.

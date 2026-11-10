@@ -17,16 +17,24 @@ import { Toy, ToyKit } from './toy';
 import {
   ANIMAL_SPOTS,
   EYE,
+  DECOR_PLACES,
   HELLO_RANGE,
   PLACES,
   TURN,
   featuresAt,
   groundY,
+  isFarmDecor,
+  landmarkNear,
+  landmarksAt,
   nudge,
   obstaclesAt,
+  route,
   settle,
   stepWalker,
+  turnToward,
   yawTo,
+  type FarmDecor,
+  type LandmarkId,
   type Obstacle,
   type Walker,
 } from './walkMath';
@@ -38,8 +46,14 @@ export interface WalkOptions {
   evening: boolean;
   reducedMotion: () => boolean;
   quality: 'high' | 'lite';
+  /** The decorations the player has out on the Farm (D45 PR C): the same ones the drawn Farm shows. */
+  decor?: readonly string[];
   /** Told when an animal says hello (its id). */
   onHello?: (id: string) => void;
+  /** Told where the player is, a few times a second while drawing (the mini-map follows). */
+  onMove?: (x: number, z: number, yaw: number) => void;
+  /** Told when the player arrives at a destination (`first`: the first time this walk), or leaves them all (null). */
+  onPlace?: (id: LandmarkId | null, first: boolean) => void;
 }
 
 interface Resident {
@@ -50,6 +64,17 @@ interface Resident {
   baseYaw: number;
   greetedAt: number;
   near: boolean;
+  /** How far it has perked up toward the player (0–1). */
+  perk: number;
+}
+
+/** A small moment at a destination: it plays once from `start` (ms) for `ms`, then rests. */
+interface Moment {
+  start: number;
+  ms: number;
+  frame(t: number): void;
+  /** Its last frame has been drawn (so a moment that ran out while nothing was drawing still comes to rest). */
+  rested?: boolean;
 }
 
 const col = (c: string) => new THREE.Color(c);
@@ -77,6 +102,14 @@ export class FarmWalk {
   private ray = new THREE.Raycaster();
   /** Frames drawn so far (tests and the QA page read it). */
   drawn = 0;
+  /** The destination the player is at, and the ones found so far this walk (D45 PR C). */
+  private place: LandmarkId | null = null;
+  readonly found = new Set<LandmarkId>();
+  private moments = new Map<LandmarkId, Moment>();
+  private barnDoors: THREE.Group[] = [];
+  private barnOpen = 0;
+  /** The decorations standing here (tests and the QA page). */
+  readonly decor: FarmDecor[];
 
   constructor(private readonly o: WalkOptions) {
     this.quality = o.quality;
@@ -86,7 +119,8 @@ export class FarmWalk {
     this.canvas = this.renderer.domElement;
     this.canvas.className = 'walk__canvas';
     this.canvas.setAttribute('aria-hidden', 'true');
-    this.obstacles = obstaclesAt(o.stage);
+    this.decor = (o.decor ?? []).filter(isFarmDecor);
+    this.obstacles = obstaclesAt(o.stage, this.decor);
     this.build();
   }
 
@@ -154,9 +188,14 @@ export class FarmWalk {
     if (f.has('pond')) this.buildPond();
     if (f.has('henhouse')) this.buildHenHouse();
     if (f.has('sunflowers')) this.buildSunflowers();
-    if (f.has('orchard')) for (const [x, z] of PLACES.orchard) this.buildTree(x, z);
+    if (f.has('orchard')) {
+      for (const [x, z] of PLACES.orchard) this.buildTree(x, z);
+      this.buildOrchardLife();
+    }
     if (f.has('windmill')) this.buildWindmill();
     if (f.has('party')) this.buildPartyLights(ev);
+    for (const d of this.decor) this.buildDecor(d);
+    this.buildPastureLife();
     this.buildResidents();
   }
 
@@ -291,13 +330,44 @@ export class FarmWalk {
     this.add(rg, this.mat('#7a2f26'), 0, h, -d / 2 - 0.3, barn);
     // Front: big doors with their white X, the hayloft, two windows.
     const front = d / 2 + 0.02;
-    const doors = this.add(this.geo(new THREE.PlaneGeometry(3.4, 3.6)), this.mat('#a9372c'), 0, 1.8, front, barn);
-    void doors;
-    const bar = this.geo(new THREE.BoxGeometry(0.16, 4.9, 0.05));
-    for (const r of [0.75, -0.75]) {
-      const b = this.add(bar, white, 0, 1.8, front + 0.03, barn);
-      b.rotation.z = r;
+    // The doorway (dark inside), and two doors on their hinges, each with half of the white X: they swing open when
+    // the player walks up (D45 PR C), and a chick looks out.
+    this.add(this.geo(new THREE.PlaneGeometry(3.4, 3.6)), this.mat('#3a2a22', 1), 0, 1.8, front, barn);
+    const doorG = this.geo(new THREE.BoxGeometry(1.7, 3.6, 0.08));
+    const doorM = this.mat('#a9372c');
+    const bar = this.geo(new THREE.BoxGeometry(0.14, 3.9, 0.04));
+    for (const side of [-1, 1]) {
+      const hinge = new THREE.Group();
+      hinge.position.set(side * 1.7, 1.8, front + 0.05);
+      barn.add(hinge);
+      this.add(doorG, doorM, -side * 0.85, 0, 0, hinge);
+      const b = this.add(bar, white, -side * 0.85, 0, 0.06, hinge);
+      b.rotation.z = side * 0.44;
+      hinge.userData.side = side;
+      this.barnDoors.push(hinge);
     }
+    // The chick in the doorway: out of sight until the doors open.
+    const chick = new THREE.Group();
+    chick.position.set(0.5, 0, front - 0.9);
+    barn.add(chick);
+    const yellow = this.mat('#ffd84a', 0.7);
+    this.add(this.geo(new THREE.SphereGeometry(0.26, 14, 10)), yellow, 0, 0.26, 0, chick);
+    this.add(this.geo(new THREE.SphereGeometry(0.17, 12, 10)), yellow, 0, 0.6, 0.08, chick);
+    this.add(this.geo(new THREE.ConeGeometry(0.05, 0.14, 8)), this.mat('#f2a23a'), 0, 0.58, 0.28, chick).rotation.x = Math.PI / 2;
+    const eye = this.geo(new THREE.SphereGeometry(0.025, 8, 6));
+    const dark = this.mat('#2f2a27', 0.4);
+    this.add(eye, dark, -0.07, 0.65, 0.22, chick);
+    this.add(eye, dark, 0.07, 0.65, 0.22, chick);
+    this.moments.set('barn', {
+      start: -1e9,
+      ms: 2600,
+      frame: (t) => {
+        // Steps forward into the doorway, a little hop, and stays looking out.
+        const out = Math.min(1, t / 0.35);
+        chick.position.z = front - 0.9 + out * 1.5;
+        chick.position.y = t > 0.4 && t < 0.75 ? Math.abs(Math.sin(((t - 0.4) / 0.35) * Math.PI * 2)) * 0.22 : 0;
+      },
+    });
     const frame = this.geo(new THREE.BoxGeometry(3.6, 0.18, 0.06));
     this.add(frame, white, 0, 3.65, front + 0.03, barn);
     const glow = this.o.evening;
@@ -336,14 +406,52 @@ export class FarmWalk {
     this.disposables.push(water);
     const w = this.add(this.geo(new THREE.CircleGeometry(r, 40)), water, x, 0.05, z);
     w.rotation.x = -Math.PI / 2;
-    // Two ducks.
+    // Two ducks. When the player comes to the bank they splash hello (D45 PR C): a hop, a shake, rings on the water.
+    const ducks: THREE.Group[] = [];
     const duck = (dx: number, dz: number, c: string) => {
-      this.add(this.geo(new THREE.SphereGeometry(0.28, 16, 12)), this.mat(c), x + dx, 0.2, z + dz).scale.set(1.3, 0.8, 1);
-      this.add(this.geo(new THREE.SphereGeometry(0.17, 14, 10)), this.mat(c), x + dx + 0.24, 0.45, z + dz);
-      this.add(this.geo(new THREE.ConeGeometry(0.06, 0.16, 8)), this.mat('#f2a23a'), x + dx + 0.42, 0.44, z + dz).rotation.z = -Math.PI / 2;
+      const g = new THREE.Group();
+      g.position.set(x + dx, 0, z + dz);
+      this.scene.add(g);
+      this.add(this.geo(new THREE.SphereGeometry(0.28, 16, 12)), this.mat(c), 0, 0.2, 0, g).scale.set(1.3, 0.8, 1);
+      this.add(this.geo(new THREE.SphereGeometry(0.17, 14, 10)), this.mat(c), 0.24, 0.45, 0, g);
+      this.add(this.geo(new THREE.ConeGeometry(0.06, 0.16, 8)), this.mat('#f2a23a'), 0.42, 0.44, 0, g).rotation.z = -Math.PI / 2;
+      ducks.push(g);
     };
     duck(-1, 0.6, '#ffffff');
     duck(1.2, -0.8, '#f6e9b0');
+    const ringM = new THREE.MeshBasicMaterial({ color: col('#ffffff'), transparent: true, opacity: 0, depthWrite: false });
+    this.disposables.push(ringM);
+    const ringG = this.geo(new THREE.RingGeometry(0.42, 0.5, 28));
+    const rings = ducks.map((d) => {
+      const m = this.add(ringG, ringM, d.position.x, 0.07, d.position.z);
+      m.rotation.x = -Math.PI / 2;
+      return m;
+    });
+    const dropM = new THREE.MeshBasicMaterial({ color: col('#dff3fb'), transparent: true, opacity: 0, depthWrite: false });
+    this.disposables.push(dropM);
+    const dropG = this.geo(new THREE.SphereGeometry(0.05, 6, 5));
+    const drops = ducks.flatMap((d, k) => [0, 1, 2, 3, 4].map((i) => ({ m: this.add(dropG, dropM, d.position.x, 0.1, d.position.z), a: i * 1.26 + k, d })));
+    this.moments.set('pond', {
+      start: -1e9,
+      ms: 2200,
+      frame: (t) => {
+        ducks.forEach((d, i) => {
+          const u = Math.max(0, Math.min(1, (t - i * 0.12) / 0.6));
+          d.position.y = Math.sin(u * Math.PI) * 0.34;
+          d.rotation.z = Math.sin(u * Math.PI * 6) * 0.22 * (1 - u);
+          // They turn to face the player as they settle.
+          d.rotation.y = -yawTo(d.position.x, d.position.z, this.walker.x, this.walker.z) - Math.PI / 2;
+        });
+        const k = Math.max(0, Math.min(1, (t - 0.2) / 0.8));
+        rings.forEach((r) => r.scale.setScalar(1 + k * 3.2));
+        ringM.opacity = t >= 1 ? 0 : Math.sin(k * Math.PI) * 0.7;
+        for (const dr of drops) {
+          const u = Math.max(0, Math.min(1, (t - 0.18) / 0.5));
+          dr.m.position.set(dr.d.position.x + Math.cos(dr.a) * u * 0.9, 0.1 + Math.sin(u * Math.PI) * 0.75, dr.d.position.z + Math.sin(dr.a) * u * 0.9);
+        }
+        dropM.opacity = t > 0.18 && t < 0.68 ? 0.9 : 0;
+      },
+    });
     // Reeds.
     const reed = this.geo(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6));
     const head = this.geo(new THREE.CapsuleGeometry(0.07, 0.3, 4, 8));
@@ -392,6 +500,158 @@ export class FarmWalk {
     for (let i = 0; i < 6; i++) {
       const a = i * 1.1;
       this.add(apple, red, x + Math.cos(a) * 1.5, 3.1 + Math.sin(i * 2.3) * 0.6, z + Math.sin(a) * 1.5);
+    }
+  }
+
+  /** The orchard's moment (D45 PR C): an apple drops from the nearest tree, and three birds fly up out of it. */
+  private buildOrchardLife(): void {
+    const [tx, tz] = PLACES.orchard[2];
+    const apple = this.add(this.geo(new THREE.SphereGeometry(0.14, 10, 8)), this.mat('#d8342c', 0.5), tx + 1.2, 2.6, tz + 1.3);
+    const birdM = this.mat('#4a4f63', 0.8);
+    const wingG = this.geo(new THREE.BoxGeometry(0.34, 0.02, 0.14));
+    const birds = [0, 1, 2].map((i) => {
+      const g = new THREE.Group();
+      g.visible = false;
+      const l = new THREE.Group();
+      const r = new THREE.Group();
+      this.add(wingG, birdM, -0.17, 0, 0, l);
+      this.add(wingG, birdM, 0.17, 0, 0, r);
+      g.add(l, r);
+      this.scene.add(g);
+      return { g, l, r, a: 0.6 + i * 0.9 };
+    });
+    this.moments.set('orchard', {
+      start: -1e9,
+      ms: 3200,
+      frame: (t) => {
+        // The apple: falls, bounces twice, rests in the grass.
+        const u = Math.min(1, t / 0.4);
+        const fall = u < 0.55 ? (u / 0.55) ** 2 : 1 - Math.abs(Math.sin(((u - 0.55) / 0.45) * Math.PI * 2)) * 0.12 * (1 - u);
+        apple.position.y = 2.6 - fall * 2.47;
+        for (const b of birds) {
+          const k = Math.max(0, Math.min(1, (t - 0.1) / 0.9));
+          b.g.visible = k > 0 && k < 1;
+          b.g.position.set(tx + Math.cos(b.a) * (1 + k * 9), 3.6 + k * 7 + Math.sin(k * 9 + b.a) * 0.3, tz + Math.sin(b.a) * (1 + k * 9));
+          b.g.rotation.y = -b.a;
+          const flap = Math.sin(k * 60 + b.a) * 0.7;
+          b.l.rotation.z = flap;
+          b.r.rotation.z = -flap;
+        }
+      },
+    });
+  }
+
+  /** The pasture's moment (D45 PR C): butterflies rise from the clover, flutter round and settle again. */
+  private buildPastureLife(): void {
+    const wingG = this.geo(new THREE.CircleGeometry(0.09, 10));
+    const flies = ['#f6a5c0', '#ffd84a', '#9fd3f2', '#ffffff', '#f6a5c0'].map((c, i) => {
+      const m = new THREE.MeshBasicMaterial({ color: col(c), side: THREE.DoubleSide });
+      this.disposables.push(m);
+      const g = new THREE.Group();
+      g.visible = false;
+      const l = new THREE.Group();
+      const r = new THREE.Group();
+      this.add(wingG, m, -0.08, 0, 0, l);
+      this.add(wingG, m, 0.08, 0, 0, r);
+      g.add(l, r);
+      this.scene.add(g);
+      return { g, l, r, x: -2.5 + i * 1.3, z: 4.5 + (i % 2) * 2.2, a: i * 1.7 };
+    });
+    // A patch of clover flowers where they live.
+    const cl = this.geo(new THREE.SphereGeometry(0.07, 8, 6));
+    const pink = this.mat('#f4b6cf');
+    for (const f of flies) for (const [dx, dz] of [[0, 0], [0.25, 0.18], [-0.2, 0.22]]) this.add(cl, pink, f.x + dx, groundY(f.x, f.z) + 0.1, f.z + dz);
+    this.moments.set('pasture', {
+      start: -1e9,
+      ms: 5200,
+      frame: (t) => {
+        for (const f of flies) {
+          const k = Math.sin(Math.min(1, t) * Math.PI);
+          f.g.visible = t > 0 && t < 1;
+          const a = f.a + t * 7;
+          f.g.position.set(f.x + Math.cos(a) * k * 1.1, groundY(f.x, f.z) + 0.15 + k * 1.3 + Math.sin(a * 2.3) * 0.12, f.z + Math.sin(a) * k * 1.1);
+          f.g.rotation.y = -a;
+          const flap = Math.abs(Math.sin(t * 90 + f.a)) * 1.2;
+          f.l.rotation.z = flap;
+          f.r.rotation.z = -flap;
+        }
+      },
+    });
+  }
+
+  /** One of the player's decorations (D45 PR C), where the drawn Farm has it too. */
+  private buildDecor(id: FarmDecor): void {
+    const p = DECOR_PLACES[id];
+    const g = new THREE.Group();
+    g.position.set(p.x, groundY(p.x, p.z), p.z);
+    g.rotation.y = p.rot;
+    g.name = `decor:${id}`;
+    this.scene.add(g);
+    const box = (w: number, h: number, d: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.BoxGeometry(w, h, d)), this.mat(c), x, y, z, g);
+    const cyl = (r0: number, r1: number, h: number, c: string, x: number, y: number, z: number, seg = 14) => this.add(this.geo(new THREE.CylinderGeometry(r0, r1, h, seg)), this.mat(c), x, y, z, g);
+    const ball = (r: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.SphereGeometry(r, 14, 10)), this.mat(c), x, y, z, g);
+    const wheel = (r: number, x: number, y: number, z: number) => {
+      const w = cyl(r, r, r * 0.5, '#3d3a3a', x, y, z, 18);
+      w.rotation.x = Math.PI / 2;
+      const hub = cyl(r * 0.4, r * 0.4, r * 0.52, '#f6c430', x, y, z, 12);
+      hub.rotation.x = Math.PI / 2;
+    };
+    if (id === 'scarecrow') {
+      cyl(0.06, 0.07, 2.3, '#8a6a4f', 0, 1.15, 0, 6);
+      cyl(0.05, 0.05, 1.8, '#8a6a4f', 0, 1.65, 0, 6).rotation.z = Math.PI / 2;
+      box(0.75, 0.8, 0.3, '#5d8fc9', 0, 1.45, 0);
+      box(0.22, 0.22, 0.32, '#e2603f', -0.15, 1.3, 0.01);
+      ball(0.28, '#f3e2bf', 0, 2.15, 0);
+      this.add(this.geo(new THREE.ConeGeometry(0.42, 0.4, 12)), this.mat('#d9a441'), 0, 2.5, 0, g);
+      cyl(0.5, 0.5, 0.03, '#d9a441', 0, 2.32, 0);
+      for (const sx of [-0.1, 0.1]) ball(0.035, '#2f2a27', sx, 2.2, 0.25);
+      for (const sx of [-0.95, 0.95]) ball(0.12, '#e8c76a', sx, 1.65, 0);
+    } else if (id === 'wheelbarrow') {
+      box(1.1, 0.4, 0.75, '#d6453a', 0, 0.62, 0);
+      box(1.0, 0.06, 0.65, '#6b4a34', 0, 0.82, 0);
+      wheel(0.26, 0.75, 0.26, 0);
+      for (const sz of [-0.3, 0.3]) {
+        cyl(0.03, 0.03, 0.9, '#8a6a4f', -0.9, 0.62, sz, 6).rotation.z = Math.PI / 2 - 0.25;
+        cyl(0.03, 0.03, 0.45, '#8a6a4f', -0.35, 0.22, sz, 6);
+      }
+      // Daisies and sweet peas.
+      const cols = ['#ffffff', '#f4a6c4', '#f6d27a', '#c9a0e8', '#ffffff', '#f4a6c4'];
+      cols.forEach((c, i) => {
+        const fx = -0.38 + (i % 3) * 0.38;
+        const fz = i < 3 ? -0.17 : 0.17;
+        cyl(0.015, 0.015, 0.3, '#6f9a4a', fx, 0.98, fz, 5);
+        ball(0.09, c, fx, 1.16, fz);
+      });
+    } else if (id === 'trough') {
+      box(2.4, 0.5, 0.9, '#8a6a4f', 0, 0.42, 0);
+      const water = new THREE.MeshStandardMaterial({ color: col('#a7d3e4'), roughness: 0.15, metalness: 0.1 });
+      this.disposables.push(water);
+      this.add(this.geo(new THREE.BoxGeometry(2.2, 0.04, 0.7)), water, 0, 0.66, 0, g);
+      for (const sx of [-1, 1]) for (const sz of [-0.35, 0.35]) box(0.14, 0.34, 0.14, '#6b4a34', sx, 0.17, sz);
+    } else if (id === 'tireswing') {
+      // An apple tree with a tire on its lowest branch.
+      cyl(0.26, 0.36, 3, '#8a6648', 0, 1.5, 0, 8);
+      const crown = ball(2.0, '#7fb35d', 0, 4.3, 0);
+      crown.scale.y = 0.85;
+      cyl(0.09, 0.12, 2.2, '#8a6648', 1.0, 2.75, 0, 6).rotation.z = Math.PI / 2 - 0.12;
+      cyl(0.015, 0.015, 1.5, '#e8dcc0', 1.7, 1.95, 0, 5);
+      const tire = this.add(this.geo(new THREE.TorusGeometry(0.42, 0.15, 10, 22)), this.mat('#3d3a3a', 0.95), 1.7, 0.85, 0, g);
+      tire.rotation.y = Math.PI / 2;
+      for (let i = 0; i < 5; i++) ball(0.13, '#d8342c', Math.cos(i * 1.3) * 1.7, 4 + Math.sin(i * 2.1) * 0.6, Math.sin(i * 1.3) * 1.7);
+    } else {
+      // The little red tractor.
+      box(1.9, 0.7, 1.0, '#d6453a', 0.25, 0.95, 0);
+      box(0.95, 0.85, 1.0, '#d6453a', -0.75, 1.5, 0);
+      box(1.05, 0.08, 1.15, '#3d3a3a', -0.75, 2.0, 0);
+      const glass = new THREE.MeshStandardMaterial({ color: col('#cfe9f5'), roughness: 0.1, transparent: true, opacity: 0.7 });
+      this.disposables.push(glass);
+      this.add(this.geo(new THREE.BoxGeometry(0.04, 0.5, 0.8)), glass, -0.26, 1.6, 0, g);
+      cyl(0.06, 0.06, 0.7, '#3d3a3a', 0.9, 1.6, 0.3, 8);
+      for (const sz of [-0.62, 0.62]) {
+        wheel(0.62, -0.8, 0.62, sz);
+        wheel(0.36, 0.95, 0.36, sz);
+      }
+      for (const sz of [-0.3, 0.3]) ball(0.08, '#fff3c4', 1.21, 1.05, sz);
     }
   }
 
@@ -445,9 +705,11 @@ export class FarmWalk {
       toy.root.position.set(s.x, groundY(s.x, s.z), s.z);
       toy.root.scale.setScalar(spec.body === 'big' || spec.body === 'tall' ? 1.25 : 0.95);
       const baseYaw = yawTo(s.x, s.z, PLACES.start.x, PLACES.start.z) + Math.PI;
+      // Turned first, then tipped: an animal perks up toward the player whichever way it faces (D45 PR C).
+      toy.root.rotation.order = 'YXZ';
       toy.root.rotation.y = baseYaw;
       this.scene.add(toy.root);
-      this.residents.push({ id, actor, x: s.x, z: s.z, baseYaw, greetedAt: -1e9, near: false });
+      this.residents.push({ id, actor, x: s.x, z: s.z, baseYaw, greetedAt: -1e9, near: false, perk: 0 });
     });
   }
 
@@ -515,17 +777,38 @@ export class FarmWalk {
     if (this.held.turn) w.yaw += this.held.turn * TURN * dt;
     if (this.held.move) {
       w.target = null;
+      this.path = [];
+      this.goal = null;
       nudge(w, this.held.move * 3.2 * dt, this.obstacles);
     }
     if (w.target) {
       if (still) {
         // Reduced motion: no walking glide; the player is simply there.
-        const s = settle(w.target.x, w.target.z, this.obstacles);
-        w.yaw = yawTo(w.x, w.z, w.target.x, w.target.z);
+        const end = this.path.pop() ?? w.target;
+        this.path = [];
+        this.goal = null;
+        const s = settle(end.x, end.z, this.obstacles);
+        w.yaw = yawTo(w.x, w.z, end.x, end.z);
         w.x = s.x;
         w.z = s.z;
         w.target = null;
-      } else stepWalker(w, dt, this.obstacles);
+      } else stepWalker(w, dt, this.obstacles, !!this.goal);
+    }
+    // The next corner of the way there.
+    if (!w.target && this.path.length) w.target = this.path.shift()!;
+    // Stopped short of where it was going (something was in the way after all): find the way again from here.
+    if (!w.target && this.goal) {
+      const g = this.goal;
+      if (Math.hypot(g.x - w.x, g.z - w.z) > 0.6 && this.replans < 3) {
+        this.replans++;
+        this.walkTo(g.x, g.z, true);
+      } else this.goal = null;
+    }
+    // Arrived from a "Go to": turn to look at the place.
+    if (!w.target && this.lookAtOnArrival) {
+      const want = yawTo(w.x, w.z, this.lookAtOnArrival.x, this.lookAtOnArrival.z);
+      w.yaw = still ? want : turnToward(w.yaw, want, TURN * 1.4 * dt);
+      if (Math.abs(Math.atan2(Math.sin(want - w.yaw), Math.cos(want - w.yaw))) < 0.02) this.lookAtOnArrival = null;
     }
     // The animals: turn to watch the player when near, say hello once per visit.
     for (const r of this.residents) {
@@ -540,9 +823,96 @@ export class FarmWalk {
         this.o.onHello?.(r.id);
       }
       r.near = near;
+      // Near the player, it looks up at them (the player is taller than every animal here).
+      r.perk = still ? (near ? 1 : 0) : r.perk + ((near ? 1 : 0) - r.perk) * Math.min(1, dt * 5);
+      r.actor.toy.root.rotation.x = -0.2 * r.perk;
       r.actor.update(now, !still);
     }
     if (this.windmillSails && !still) this.windmillSails.rotation.z += dt * 0.6;
+    this.stepPlaces(dt, now, still);
+  }
+
+  /** Destinations (D45 PR C): arriving plays the place's small moment, and the barn's doors follow the player. */
+  private stepPlaces(dt: number, now: number, still: boolean): void {
+    const w = this.walker;
+    const at = landmarkNear(w.x, w.z, this.o.stage)?.id ?? null;
+    if (at !== this.place) {
+      this.place = at;
+      const first = !!at && !this.found.has(at);
+      if (at) {
+        this.found.add(at);
+        const m = this.moments.get(at);
+        // Each arrival plays it again (it is short); under reduced motion it is simply shown finished.
+        if (m && now - m.start > m.ms) {
+          m.start = still ? now - m.ms : now;
+          m.rested = false;
+        }
+      }
+      this.o.onPlace?.(at, first);
+    }
+    const open = at === 'barn' ? 1 : 0;
+    this.barnOpen = still ? open : this.barnOpen + (open - this.barnOpen) * Math.min(1, dt * 3);
+    for (const h of this.barnDoors) h.rotation.y = (h.userData.side as number) * this.barnOpen * 1.9;
+    for (const m of this.moments.values()) {
+      if (m.rested !== false) continue;
+      // Every started moment gets its last frame, even if the app was away while it ran out (drawing stops then, the
+      // clock doesn't): no duck left mid-hop, no bird hanging in the air (D45 PR C review).
+      const t = (now - m.start) / m.ms;
+      if (t < 0) continue;
+      m.frame(Math.min(1, t));
+      if (t >= 1) m.rested = true;
+    }
+    if (now - this.movedAt > 120) {
+      this.movedAt = now;
+      this.o.onMove?.(w.x, w.z, w.yaw);
+    }
+  }
+  private movedAt = 0;
+
+  /** Whether every discovery that started has come to rest (tests and the QA page). */
+  get settled(): boolean {
+    return [...this.moments.values()].every((m) => m.rested !== false);
+  }
+
+  /** Where the player is (a destination's id), if at one. */
+  get where(): LandmarkId | null {
+    return this.place;
+  }
+
+  /** Walks to a destination (its place to stand and look). False if it isn't built yet. */
+  goTo(id: LandmarkId): boolean {
+    const l = landmarksAt(this.o.stage).find((x) => x.id === id);
+    if (!l) return false;
+    this.held = { move: 0, turn: 0 };
+    this.walkTo(l.stand.x, l.stand.z);
+    this.lookAtOnArrival = l.at;
+    if (!this.raf) {
+      // Not drawing (hidden, or a test): arrive at once.
+      const end = this.path[this.path.length - 1] ?? this.walker.target!;
+      this.path = [];
+      this.goal = null;
+      Object.assign(this.walker, end, { target: null, yaw: yawTo(end.x, end.z, l.at.x, l.at.z) });
+      this.lookAtOnArrival = null;
+      this.step(0, performance.now());
+      this.renderNow();
+    }
+    return true;
+  }
+  private lookAtOnArrival: { x: number; z: number } | null = null;
+  /** The corners still to walk through after the current target (a way round the barn, the pond, a decoration). */
+  private path: Array<{ x: number; z: number }> = [];
+
+  /** Where a routed walk is going, and how often it has had to find a new way (a few times at most). */
+  private goal: { x: number; z: number } | null = null;
+  private replans = 0;
+
+  /** Sets off to a point, round whatever is in the way. */
+  private walkTo(x: number, z: number, again = false): void {
+    const [first, ...rest] = route(this.walker, { x, z }, this.obstacles);
+    this.walker.target = first;
+    this.path = rest;
+    this.goal = rest[rest.length - 1] ?? first;
+    if (!again) this.replans = 0;
   }
 
   private render(now: number): void {
@@ -569,12 +939,16 @@ export class FarmWalk {
     this.walker.yaw += dx * 0.006;
     this.pitch = Math.max(-0.6, Math.min(0.35, this.pitch + dy * 0.004));
     this.walker.target = null;
+    this.path = [];
+    this.goal = null;
+    this.lookAtOnArrival = null;
     if (!this.raf) this.renderNow();
   }
 
   /** Held buttons or keys: move forward (1) or back (-1), turn left (1) or right (-1). */
   hold(move: number, turn: number): void {
     this.held = { move, turn };
+    if (move || turn) this.lookAtOnArrival = null;
     if (this.o.reducedMotion()) {
       // Reduced motion: a button press is a step (or a 45° turn), not a glide.
       if (move) nudge(this.walker, move * 2, this.obstacles);
@@ -589,6 +963,7 @@ export class FarmWalk {
    * there. Returns what was tapped.
    */
   tap(u: number, v: number): 'animal' | 'ground' | null {
+    this.lookAtOnArrival = null;
     this.ray.setFromCamera(new THREE.Vector2(u * 2 - 1, -(v * 2 - 1)), this.camera);
     const hitsAnimal = this.ray.intersectObjects(
       this.residents.flatMap((r) => r.actor.toy.hits),
@@ -598,13 +973,13 @@ export class FarmWalk {
       const r = this.residents.find((x) => x.actor.toy.hits.includes(hitsAnimal.object));
       if (r) {
         const a = yawTo(r.x, r.z, this.walker.x, this.walker.z);
-        this.walker.target = settle(r.x - Math.sin(a) * 1.8, r.z - Math.cos(a) * 1.8, this.obstacles);
+        this.walkTo(r.x - Math.sin(a) * 1.8, r.z - Math.cos(a) * 1.8);
         return 'animal';
       }
     }
     const g = this.ray.intersectObject(this.ground, false)[0];
     if (!g) return null;
-    this.walker.target = settle(g.point.x, g.point.z, this.obstacles);
+    this.walkTo(g.point.x, g.point.z);
     return 'ground';
   }
 
