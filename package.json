@@ -2,6 +2,7 @@
   "name": "pawtyk",
   "version": "0.2.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "PawTyk — a cozy logic puzzle. One animal in every row, column and color (two from level 21); sanctuaries that grow with every puzzle you solve.",
   "type": "module",
   "scripts": {

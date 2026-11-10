@@ -88,3 +88,8 @@ docs/              roadmap, decisions, architecture, design system, assets, priv
 - No account, no sign-in, no analytics sent. Everything stays on the device.
 
 See `docs/ROADMAP.md` for status and the steps that need you (Apple, StoreKit, Firebase).
+
+## License
+
+All rights reserved: see [LICENSE](LICENSE). The code and art are published to be read, not reused. Bundled
+fonts and npm packages keep their own licenses (docs/ASSETS.md).
