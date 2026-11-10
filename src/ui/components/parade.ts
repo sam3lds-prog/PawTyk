@@ -185,6 +185,8 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
   const api: SceneParades = {
     async play(newcomer) {
       current?.skip();
+      // Started while the app was hidden (the player left during the lead-in): it doesn't play unseen (D44 review).
+      if (document.hidden) return false;
       const fig = host.el.querySelector<HTMLElement>('.sanctuary__scene');
       const svg = host.el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       if (!fig || !svg || !scope.alive) return false;
