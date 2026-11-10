@@ -33,6 +33,9 @@ export const canWalk = (): boolean => wants3D();
 export const walkButtonMarkup = (show: boolean) => `<button class="scene-walk" data-act="walk" ${show ? '' : 'hidden'} aria-label="Walk around the Farm in 3D">${WALK_ICON}<span>Walk</span></button>`;
 
 type WalkModule = typeof import('../../three/walk');
+
+/** How long the walk waits for a lost WebGL context to come back before saying so (D46 PR B). */
+export const WALK_LOST_MS = 3000;
 let loading: Promise<WalkModule> | null = null;
 
 export interface WalkHandle {
@@ -128,6 +131,40 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
   const fail = () => {
     view.innerHTML = `<p class="walk__loading">3D isn’t available on this device right now. The Farm is still here to visit.</p>`;
   };
+  // D46 PR B: the context went (the phone needed the memory, or the app was away). A note over the view while it
+  // comes back; if it doesn't within a few seconds, the walk says so and Overview takes the player back to the Farm.
+  let lostTimer: ReturnType<typeof setTimeout> | null = null;
+  scope.onDispose(() => {
+    if (lostTimer !== null) clearTimeout(lostTimer);
+  });
+  const note = (text: string | null) => {
+    let n = view.querySelector<HTMLElement>('.walk__note');
+    if (text === null) return n?.remove();
+    if (!n) {
+      n = document.createElement('p');
+      n.className = 'walk__loading walk__note';
+      view.appendChild(n);
+    }
+    n.textContent = text;
+  };
+  const onContext = (drawing: boolean) => {
+    if (!scope.alive) return;
+    if (lostTimer !== null) clearTimeout(lostTimer);
+    lostTimer = null;
+    if (drawing) {
+      note(null);
+      status.textContent = 'The Farm is back.';
+      return;
+    }
+    note('Getting the Farm back…');
+    lostTimer = setTimeout(() => {
+      lostTimer = null;
+      if (!scope.alive || !walk?.contextLost) return;
+      note('3D paused on this phone. Tap Overview to go back to the Farm.');
+      status.textContent = '3D paused. Overview returns to the Farm.';
+      el.querySelector<HTMLElement>('[data-act="walk-close"]')?.focus({ preventScroll: true });
+    }, WALK_LOST_MS);
+  };
   loading ??= import('../../three/walk');
   loading
     .then((m: WalkModule) => {
@@ -146,6 +183,7 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
           },
           onMove: moved,
           onPlace: arrived,
+          onContext,
         });
       } catch {
         fail();

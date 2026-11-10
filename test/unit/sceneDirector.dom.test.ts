@@ -91,7 +91,7 @@ describe('the director', () => {
 });
 
 /** The real close-ups, tour and parades, wired through a director the way the sanctuary screens wire them. */
-function stage() {
+function stage(o: { toysReady?: () => Promise<unknown> } = {}) {
   document.body.innerHTML = `<div id="root"><figure class="sanctuary__scene is-live"><svg viewBox="0 0 360 300" data-vb="0 0 360 300">
     <g class="sp-landmark" data-landmark="barn" data-name="the barn"><rect x="266" y="140" width="40" height="42"/></g>
     <g class="sanctuary__pet" data-friend="cotton" data-gx="80" data-gy="230" data-gh="40"></g>
@@ -117,7 +117,7 @@ function stage() {
   const scope = new Scope();
   const closeups = sceneCloseUps({ host: () => el.querySelector<HTMLElement>('.sanctuary__scene'), svg: () => svg, camera, reducedMotion: () => false, pause: (on) => director.hold('closeup', on) });
   const tour = sceneTour(scope, { el, camera, reducedMotion: () => false, pause: (on) => director.hold('tour', on), greet: () => {}, openLandmark: () => {}, onStart: () => director.claim('tour') });
-  const parades = sceneParades(scope, { el, camera, pause: (on) => director.hold('parade', on), closeTray: () => director.claim('parade'), reducedMotion: () => true });
+  const parades = sceneParades(scope, { el, camera, pause: (on) => director.hold('parade', on), closeTray: () => director.claim('parade'), reducedMotion: () => true, toysReady: o.toysReady });
   director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
   director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
   director.register('tour', { cancel: () => tour.stop(), active: () => tour.active });
@@ -462,5 +462,46 @@ describe('a welcome on the Farm screen, and what the player does first (D46 PR A
     expect(document.querySelectorAll('.parade-skip').length).toBe(0);
     expect(offered()).toBe('Watch Cotton’s welcome');
     router.go({ screen: 'journey' });
+  });
+});
+
+describe('a parade and the toys of the renderer there is now (D46 PR B)', () => {
+  it('waits for toys being rebuilt before its first beat, owning the scene meanwhile; then dances', async () => {
+    let toys!: (ok: boolean) => void;
+    const s = stage({ toysReady: () => new Promise<boolean>((r) => (toys = r)) });
+    const played = s.parades.play();
+    await vi.advanceTimersByTimeAsync(300);
+    // Not dancing yet, but it owns the scene: a tap waits, ambient life is held.
+    expect(s.el.querySelector('.is-parading')).toBeNull();
+    expect(s.parades.active).toBe(true);
+    expect(s.director.owner).toBe('parade');
+    expect(s.director.paused).toBe(true);
+    toys(true);
+    await vi.advanceTimersByTimeAsync(10);
+    expect(s.el.querySelector('.is-parading')).not.toBeNull();
+    s.parades.skip();
+    expect(await played).toBe(true);
+    expect(s.director.paused).toBe(false);
+  });
+
+  it('never waits long: toys that don’t come in time are left out and everyone dances drawn', async () => {
+    const s = stage({ toysReady: () => new Promise<boolean>(() => {}) });
+    void s.parades.play();
+    await vi.advanceTimersByTimeAsync(1300);
+    expect(s.el.querySelector('.is-parading')).not.toBeNull();
+    s.parades.skip();
+  });
+
+  it('a tour (or Skip) during the wait cancels it: no parade starts later, and the scene isn’t left held', async () => {
+    const s = stage({ toysReady: () => new Promise<boolean>(() => {}) });
+    const played = s.parades.play();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(s.tour.start()).toBe(true);
+    expect(s.director.owner).toBe('tour');
+    expect(await played).toBe(false);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(s.el.querySelector('.is-parading')).toBeNull();
+    s.tour.stop();
+    expect(s.director.paused).toBe(false);
   });
 });

@@ -1644,3 +1644,35 @@ home and the Pet Garden.
   **acceptance matrix**: every farm interaction (parade replay, trick, tour, walk, the barn) started straight after
   every other, then ended as a player ends it; after each of the 20 pairs the scene is at rest (no owner, no hold,
   nothing pending, nobody mid-trick, no tune, one canvas, the toys back, still on the Farm) and the save is unchanged.
+
+### PR B — the 3D layer's lifecycle
+- **Readiness per renderer** (`Scene3D.ready`, the review's Issue B): `ready` was one promise made when the scene's 3D
+  layer was created. After the walk suspended and resumed it, it still said "yes" from the first renderer while the
+  replacement was loading, so a celebration started just after Overview began drawn and the toys popped in mid-dance.
+  Now `ready` is a getter for the renderer there is now: a new promise whenever the answer changes (suspended, the
+  context lost, rebuilt, a scene that stays drawn), settling true once that stage draws. `state` says where it is
+  (`off`, `loading`, `drawing`, `suspended`, `lost`, `failed`, `disposed`). A late load for a renderer that has gone
+  (suspended, disposed, re-targeted meanwhile) is dropped by an epoch.
+- **Parades wait for the toys** (briefly): `sceneParades` takes `toysReady` and waits for it, at most 1.2 s, after
+  taking the scene and before its first beat. Meanwhile it owns the scene (taps wait, ambient life is held); Skip, a
+  tour, a trick or leaving cancels the wait and nothing starts later.
+- **Lost contexts.** The stage reports `webglcontextlost` / `webglcontextrestored` (`onContext`). Lost: `ready` says
+  false at once and the drawn animals show. Back: true again. Not back within 3 s: the renderer is disposed and rebuilt
+  with a new context (at most twice per scene; then that scene stays drawn). A renderer that can't be made at all
+  (the constructor throws) leaves the drawn scene and isn't retried on that scene. three.js failing to load (offline,
+  first launch) is retried on the next scene.
+- **The walk's own context**: asks for it back (`preventDefault`), stops drawing and lets go of held keys; a note
+  *Getting the Farm back…* over the view; if it isn't back in 3 s: *3D paused on this phone. Tap Overview to go back
+  to the Farm.*, with focus on Overview.
+- **A leak in three.js r186, found by the soak test**: one module-level DFG lookup texture is shared by every
+  physically based material, each renderer adds a `dispose` listener to it, and `renderer.dispose()` doesn't remove
+  it. So every renderer ever made stayed alive with its (lost) WebGL context and canvas: after three walks, four
+  renderers and seven canvases. `three/release.ts` finds that texture once and disposes it after each renderer is
+  released (every renderer forgets it; a live one re-uploads it on its next frame). After the fix: one renderer alive.
+- Tests: unit (a stand-in stage): readiness after suspend → resume (the review's case: pending, not the old "yes"),
+  eight round trips leaving one renderer, suspend/resume while loading, lost and restored, lost and rebuilt (and the
+  cap), a renderer that can't be made, a scene that stays drawn, 3D off, disposed while loading; parades waiting for
+  toys, with a bound, and cancelled by a tour. Browser: seven Walk → Overview round trips (one WebGL canvas at a time,
+  toys back each time, one renderer alive after GC, heap steady); a celebration started the moment the walk closes
+  dances in 3D from its first beat; the scene's context lost and restored, lost and rebuilt; the walk's context lost
+  and restored, lost for good (and Overview still works).

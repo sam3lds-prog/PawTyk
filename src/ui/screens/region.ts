@@ -103,6 +103,8 @@ export const regionScreen: ScreenDef = {
     // The scene camera (D44 PR C): close-ups, the parade's glide, the guided tour. The drawing and the toys move together.
     const camera = new SceneCamera({ reducedMotion: () => app.reducedMotion, onView: (v) => s3d.setView(v) });
     if (import.meta.env.DEV) (window as unknown as { __cam?: SceneCamera }).__cam = camera;
+    // Dev and QA: the scene's 3D layer (D46 PR B: its state, suspend/resume by hand).
+    if (import.meta.env.DEV) (window as unknown as { __s3d?: unknown }).__s3d = s3d;
     // The Welcome Parade and group celebrations (D44 PR E).
     // The scene director (D45 PR A): one owner of the camera, and holds (not switches) on ambient life.
     const director = createSceneDirector((live) => {
@@ -120,6 +122,8 @@ export const regionScreen: ScreenDef = {
         if (tray.isOpen) tray.close();
       },
       reducedMotion: () => app.reducedMotion,
+      // D46 PR B: a parade waits for the toys of the renderer there is now (rebuilt after the walk, say).
+      toysReady: () => s3d.ready,
     });
     const closeups = sceneCloseUps({
       host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),

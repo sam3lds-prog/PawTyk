@@ -9,6 +9,7 @@
  */
 
 import * as THREE from 'three';
+import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
 import { activityClip, ambientClip } from './clips';
 import { Effects } from './effects';
@@ -18,6 +19,11 @@ import { Toy, ToyKit } from './toy';
 
 export interface StageOptions {
   reducedMotion: () => boolean;
+  /**
+   * Told when the WebGL context goes (false: the OS took it back, the drawn animals show) and comes back (true: the
+   * toys show again). D46 PR B: the scene's 3D layer follows it, so nothing waits on toys that aren't drawing.
+   */
+  onContext?: (drawing: boolean) => void;
 }
 
 /** The camera distance, in scene units (the drawn frame is 360 × 300 in a sanctuary, smaller in a trick card). */
@@ -123,6 +129,7 @@ export class SceneStage {
       this.lost = true;
       this.figure?.classList.remove('has-3d');
       this.stop();
+      if (!this.disposed) this.o.onContext?.(false);
     });
     // three.js rebuilds its GPU state when the context comes back; then the toys can show again.
     this.canvas.addEventListener('webglcontextrestored', () => {
@@ -131,6 +138,7 @@ export class SceneStage {
       this.renderNow();
       this.figure.classList.add('has-3d');
       this.kick();
+      this.o.onContext?.(true);
     });
     if (typeof IntersectionObserver !== 'undefined')
       this.visible = new IntersectionObserver((es) => {
@@ -184,6 +192,11 @@ export class SceneStage {
   setLive(on: boolean): void {
     this.live = on;
     this.kick();
+  }
+
+  /** Whether the WebGL context is gone right now (D46 PR B). */
+  get contextLost(): boolean {
+    return this.lost;
   }
 
   /**
@@ -501,6 +514,7 @@ export class SceneStage {
     }
     this.effects.update(now);
     this.renderer.render(this.scene, this.camera);
+    noteSharedTextures(this.renderer, this.scene);
   }
 
   private renderNow(): void {
@@ -529,8 +543,8 @@ export class SceneStage {
     (this.dusk.material as THREE.Material).dispose();
     this.kit.dispose();
     this.canvas.remove();
-    this.renderer.dispose();
-    this.renderer.forceContextLoss();
+    // D46 PR B: all of it, including what three.js's shared lookup texture would otherwise keep alive.
+    releaseRenderer(this.renderer);
   }
 }
 

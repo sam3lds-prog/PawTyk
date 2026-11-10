@@ -2,6 +2,9 @@
 // stuck (D46 PR A), and the 3D layer's lifecycle (D46 PR B). Called from smoke.mjs; `node test/e2e/d46.mjs` runs them
 // alone (same dev server, E2E_URL, CHROME_PATH).
 
+/** Waits for a selector without holding on to the element (a held handle keeps a canvas and its renderer alive). */
+const waitFor = (qa, sel, timeout = 15000) => qa.waitForFunction((s) => !!document.querySelector(s), sel, { timeout }).then((h) => (h.dispose(), true), () => false);
+
 /** A 320 × 568 page (the smallest iPhone) on the Farm, set up like the D44 QA list. */
 async function farmPage(browser, URL, errors) {
   const qa = await browser.newPage({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, hasTouch: true });
@@ -33,7 +36,7 @@ async function openFarm(qa, o = {}) {
         window.__d46 = { did: o.then.what, parading: !!document.querySelector('.is-parading'), waiting: window.__director?.waiting ?? 0 };
       }, o.then.ms);
   }, o);
-  if (o.then?.what !== 'leave') await qa.waitForSelector('.region .sanctuary__scene svg');
+  if (o.then?.what !== 'leave') await waitFor(qa, '.region .sanctuary__scene svg', 30000);
 }
 
 /**
@@ -130,7 +133,7 @@ export async function d46Checks({ browser, URL, check, errors }) {
   await qa.waitForTimeout(2800);
   const away = await qa.evaluate(async () => ({ music: (await import('/src/services/music.ts')).nowPlaying()?.id ?? null, parading: !!document.querySelector('.is-parading'), journey: !!document.querySelector('.journey, [data-screen="journey"]') || !document.querySelector('.region') }));
   await qa.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
-  await qa.waitForSelector('.region .sanctuary__scene svg');
+  await waitFor(qa, '.region .sanctuary__scene svg', 30000);
   await qa.waitForTimeout(3000);
   const back = await sceneState(qa);
   check('leaving during the lead-in plays nothing later; back on the Farm, the welcome is offered and nothing starts by itself (D46)', !away.music && !away.parading && away.journey && atRest(back) && back.offered === 'Watch Cotton’s welcome', JSON.stringify({ away, back }));
@@ -138,7 +141,7 @@ export async function d46Checks({ browser, URL, check, errors }) {
   // Rapid re-entry while each visit is still in its lead-in.
   for (let i = 0; i < 4; i++) await arriveThen(qa, 'leave', 90 + i * 60);
   await qa.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
-  await qa.waitForSelector('.region .sanctuary__scene svg');
+  await waitFor(qa, '.region .sanctuary__scene svg', 30000);
   await qa.waitForTimeout(3500);
   const rapid = await sceneState(qa);
   const scenes = await qa.evaluate(() => document.querySelectorAll('.sanctuary__scene').length);
@@ -148,7 +151,7 @@ export async function d46Checks({ browser, URL, check, errors }) {
   // ended the way a player ends it. After each pair the scene is at rest: nobody stuck mid-trick, no tune left playing,
   // still on the Farm, one 3D canvas, the toys back. (A tap that the running moment doesn't allow simply doesn't start.)
   await openFarm(qa, { welcome: true });
-  await qa.waitForSelector('.sanctuary__scene.is-parading', { timeout: 8000 }).catch(() => {});
+  await waitFor(qa, '.sanctuary__scene.is-parading', 8000);
   await tapAt(qa, '.parade-skip');
   await qa.waitForTimeout(800);
   const start = {
@@ -188,6 +191,139 @@ export async function d46Checks({ browser, URL, check, errors }) {
   const save1 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, growth: window.__pt.app.save.world.growth }));
   check(`every farm interaction started straight after every other ends at rest: ${kinds.length * (kinds.length - 1)} pairs (D46)`, bad.length === 0, JSON.stringify(bad).slice(0, 900));
   check('switching between farm interactions pays nothing (coins, inventory, growth unchanged) (D46)', save0 === save1);
+
+  // ---------------------------------------------------------------- D46 PR B: the 3D layer's lifecycle
+  const stats = () => qa.evaluate(() => window.__scene3dStats?.() ?? null);
+  const heap = async () => {
+    const cdp = await qa.context().newCDPSession(qa);
+    await cdp.send('HeapProfiler.collectGarbage');
+    const { usedSize } = await cdp.send('Runtime.getHeapUsage');
+    await cdp.detach();
+    return usedSize;
+  };
+  const toysBack = () => qa.waitForFunction(() => !!document.querySelector('.sanctuary__scene.has-3d') && !document.querySelector('.walk'), null, { timeout: 8000 }).then((h) => (h.dispose(), true), () => false);
+  /** WebGL renderers alive after a garbage collection (three.js r186 kept every one ever made: D46 PR B). */
+  const renderers = async () => {
+    const cdp = await qa.context().newCDPSession(qa);
+    await cdp.send('HeapProfiler.collectGarbage');
+    const { result } = await cdp.send('Runtime.evaluate', { expression: 'Object.getPrototypeOf(window.__stage3d.renderer)', objectGroup: 'd46' });
+    const { objects } = await cdp.send('Runtime.queryObjects', { prototypeObjectId: result.objectId, objectGroup: 'd46' });
+    const { result: n } = await cdp.send('Runtime.callFunctionOn', { objectId: objects.objectId, functionDeclaration: 'function () { return this.length; }', returnByValue: true });
+    await cdp.send('Runtime.releaseObjectGroup', { objectGroup: 'd46' });
+    await cdp.detach();
+    return n.value;
+  };
+  await openFarm(qa);
+  await qa.waitForTimeout(2500);
+  // Walk → Overview, again and again: one renderer at a time, every earlier one released, toys back each time, and no
+  // memory that keeps growing.
+  const cycle = async () => {
+    await tapAt(qa, '.sanctuary__scene [data-act="walk"]');
+    await waitFor(qa, '.walk canvas.walk__canvas');
+    await qa.waitForTimeout(500);
+    const during = await qa.evaluate(() => document.querySelectorAll('canvas').length);
+    await tapAt(qa, '.walk [data-act="walk-close"]');
+    return { during, back: await toysBack() };
+  };
+  const s0 = await stats();
+  const first = await cycle();
+  const h1 = await heap();
+  const runs = [first];
+  for (let i = 0; i < 6; i++) runs.push(await cycle());
+  const h7 = await heap();
+  const s7 = await stats();
+  const one = await qa.evaluate(() => document.querySelectorAll('canvas').length);
+  const alive = await renderers();
+  check(
+    'Walk → Overview seven times: one WebGL canvas at a time, the toys back after each, one renderer left alive, memory steady (D46)',
+    runs.every((r) => r.during === 1 && r.back) && one === 1 && s7.live === s0.live && s7.created - s0.created === 7 && alive === 1 && h7 - h1 < 3e6,
+    JSON.stringify({ runs, s0, s7, one, alive, grewMB: ((h7 - h1) / 1e6).toFixed(2) }),
+  );
+
+  // The review's handoff: Overview, then straight away a celebration. It waits for the toys being rebuilt, so it
+  // dances in 3D from its first beat (before, the old "ready" let it start drawn and the toys popped in mid-dance).
+  await tapAt(qa, '.sanctuary__scene [data-act="walk"]');
+  await waitFor(qa, '.walk canvas.walk__canvas');
+  await qa.waitForTimeout(400);
+  await qa.evaluate(() => {
+    document.querySelector('.walk [data-act="walk-close"]').click();
+    document.querySelector('[data-act="parade-replay"]').click();
+    window.__firstBeat = null;
+    const scene = document.querySelector('.sanctuary__scene');
+    const seen = () => {
+      if (scene.classList.contains('is-parading') && window.__firstBeat === null) window.__firstBeat = { toys: scene.classList.contains('has-3d'), at: performance.now() };
+      else if (window.__firstBeat === null) requestAnimationFrame(seen);
+    };
+    seen();
+  });
+  await qa.waitForFunction(() => window.__firstBeat, null, { timeout: 6000 }).catch(() => {});
+  const handoff = await qa.evaluate(() => window.__firstBeat);
+  await tapAt(qa, '.parade-skip');
+  await qa.waitForTimeout(800);
+  check('a celebration started the moment the walk closes dances with the 3D toys from its first beat (D46)', !!handoff?.toys, JSON.stringify(handoff));
+
+  // The OS takes the scene's WebGL context back (memory pressure, the background): the drawn animals show at once;
+  // when it comes back, the toys do. If it doesn't come back, the scene rebuilds its renderer with a new context.
+  const lose = (sel, restoreAfter) =>
+    qa.evaluate(
+      ([sel, restoreAfter]) => {
+        const c = document.querySelector(sel);
+        const gl = c?.getContext('webgl2') ?? c?.getContext('webgl');
+        const ext = gl?.getExtension('WEBGL_lose_context');
+        if (!ext) return false;
+        ext.loseContext();
+        if (restoreAfter >= 0) setTimeout(() => ext.restoreContext(), restoreAfter);
+        return true;
+      },
+      [sel, restoreAfter],
+    );
+  const lost = await lose('.sanctuary__scene canvas.scene3d', 800);
+  await qa.waitForTimeout(300);
+  const whileLost = await qa.evaluate(() => ({ toys: !!document.querySelector('.sanctuary__scene.has-3d'), drawn: document.querySelectorAll('.sanctuary__scene .sanctuary__pet').length }));
+  const restored = await toysBack();
+  const r0 = await stats();
+  await lose('.sanctuary__scene canvas.scene3d', -1);
+  await qa.waitForTimeout(400);
+  const gone = await qa.evaluate(() => !!document.querySelector('.sanctuary__scene.has-3d'));
+  await qa.waitForTimeout(3600);
+  const rebuilt = await toysBack();
+  const r1 = await stats();
+  // A celebration during all this still plays (drawn or in 3D), and the scene ends at rest.
+  await tapAt(qa, '[data-act="parade-replay"]');
+  await qa.waitForTimeout(900);
+  const dancing = await sceneState(qa);
+  await tapAt(qa, '.parade-skip');
+  await qa.waitForTimeout(900);
+  const settled = await sceneState(qa);
+  check(
+    'a lost scene context: drawn animals at once, toys back when it returns; never returned, the renderer is rebuilt (D46)',
+    lost && !whileLost.toys && whileLost.drawn >= 2 && restored && !gone && rebuilt && r1.rebuilds === r0.rebuilds + 1 && r1.live === r0.live,
+    JSON.stringify({ lost, whileLost, restored, gone, rebuilt, r0, r1 }),
+  );
+  check('celebrations still play after the scene’s renderer was rebuilt, and end at rest (D46)', dancing.parading && atRest(settled) && settled.toys, JSON.stringify({ dancing, settled }));
+
+  // The walk's own context: a note while it comes back; if it doesn't, the walk says so and Overview still works.
+  await tapAt(qa, '.sanctuary__scene [data-act="walk"]');
+  await waitFor(qa, '.walk canvas.walk__canvas');
+  await qa.waitForTimeout(600);
+  await lose('.walk canvas.walk__canvas', 900);
+  await qa.waitForTimeout(300);
+  const wNote = await qa.evaluate(() => document.querySelector('.walk__note')?.textContent ?? '');
+  await qa.waitForTimeout(1300);
+  const wBack = await qa.evaluate(() => ({ note: !!document.querySelector('.walk__note'), lost: window.__walk?.contextLost ?? null, d: window.__walk?.drawn ?? 0 }));
+  await qa.waitForTimeout(400);
+  const wDraws = await qa.evaluate(() => window.__walk?.drawn ?? 0);
+  await lose('.walk canvas.walk__canvas', -1);
+  await qa.waitForTimeout(3500);
+  const wGone = await qa.evaluate(() => ({ note: document.querySelector('.walk__note')?.textContent ?? '', focus: document.activeElement?.dataset?.act ?? '' }));
+  await tapAt(qa, '.walk [data-act="walk-close"]');
+  const wHome = await toysBack();
+  const wRest = await sceneState(qa);
+  check(
+    'a lost walk context: “Getting the Farm back…”, then it draws again; never returned, it says so and Overview returns to the Farm (D46)',
+    wNote === 'Getting the Farm back…' && !wBack.note && wBack.lost === false && wDraws > wBack.d && /3D paused/.test(wGone.note) && wGone.focus === 'walk-close' && wHome && atRest(wRest),
+    JSON.stringify({ wNote, wBack, wDraws, wGone, wHome }),
+  );
 
   await qa.close();
 }

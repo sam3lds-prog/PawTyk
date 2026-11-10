@@ -125,6 +125,8 @@ export const sanctuaryScreen: ScreenDef = {
         if (tray.isOpen) tray.close();
       },
       reducedMotion: () => app.reducedMotion,
+      // D46 PR B: a parade waits for the toys of the renderer there is now (rebuilt after the walk, say).
+      toysReady: () => s3d.ready,
     });
     const closeups = sceneCloseUps({
       host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),

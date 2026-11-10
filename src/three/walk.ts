@@ -10,6 +10,7 @@
  */
 
 import * as THREE from 'three';
+import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
 import { addLights } from './lights';
 import { toySpec } from './species';
@@ -54,6 +55,8 @@ export interface WalkOptions {
   onMove?: (x: number, z: number, yaw: number) => void;
   /** Told when the player arrives at a destination (`first`: the first time this walk), or leaves them all (null). */
   onPlace?: (id: LandmarkId | null, first: boolean) => void;
+  /** Told when the WebGL context goes (false) and comes back (true) (D46 PR B). */
+  onContext?: (drawing: boolean) => void;
 }
 
 interface Resident {
@@ -93,6 +96,8 @@ export class FarmWalk {
   private raf = 0;
   private live = true;
   private disposed = false;
+  /** The WebGL context is gone (D46 PR B): nothing draws until it comes back. */
+  private lostContext = false;
   private last = 0;
   private held: { move: number; turn: number } = { move: 0, turn: 0 };
   private quality: 'high' | 'lite';
@@ -119,6 +124,23 @@ export class FarmWalk {
     this.canvas = this.renderer.domElement;
     this.canvas.className = 'walk__canvas';
     this.canvas.setAttribute('aria-hidden', 'true');
+    // D46 PR B: the OS can take the context back (memory pressure, the app in the background). Asking for it back
+    // (preventDefault) lets three.js rebuild its GPU state when it returns; meanwhile nothing draws.
+    this.canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.lostContext = true;
+      if (this.raf) cancelAnimationFrame(this.raf);
+      this.raf = 0;
+      this.held = { move: 0, turn: 0 };
+      if (!this.disposed) this.o.onContext?.(false);
+    });
+    this.canvas.addEventListener('webglcontextrestored', () => {
+      this.lostContext = false;
+      if (this.disposed) return;
+      this.renderNow();
+      this.kick();
+      this.o.onContext?.(true);
+    });
     this.decor = (o.decor ?? []).filter(isFarmDecor);
     this.obstacles = obstaclesAt(o.stage, this.decor);
     this.build();
@@ -738,14 +760,14 @@ export class FarmWalk {
   }
 
   private kick(): void {
-    if (this.raf || this.disposed || !this.live) return;
+    if (this.raf || this.disposed || !this.live || this.lostContext) return;
     this.last = 0;
     this.raf = requestAnimationFrame(this.tick);
   }
 
   private tick = (now: number): void => {
     this.raf = 0;
-    if (this.disposed || !this.live) return;
+    if (this.disposed || !this.live || this.lostContext) return;
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0.016;
     // Adapt: a phone that can't keep up gets the lite tier (half the pixels).
     if (this.last && this.quality === 'high') {
@@ -922,12 +944,18 @@ export class FarmWalk {
     this.camera.position.set(w.x, y, w.z);
     this.camera.rotation.set(this.pitch, w.yaw, 0, 'YXZ');
     this.renderer.render(this.scene, this.camera);
+    noteSharedTextures(this.renderer, this.scene);
     this.drawn++;
+  }
+
+  /** Whether the WebGL context is gone right now (tests and QA). */
+  get contextLost(): boolean {
+    return this.lostContext;
   }
 
   /** Draws one frame now (after a resize, or for a test). */
   renderNow(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.lostContext) return;
     this.render(performance.now());
   }
 
@@ -995,8 +1023,8 @@ export class FarmWalk {
     for (const r of this.residents) r.actor.toy.dispose();
     for (const d of this.disposables) d.dispose();
     this.kit.dispose();
-    this.renderer.dispose();
-    this.renderer.forceContextLoss?.();
+    // D46 PR B: all of it, including what three.js's shared lookup texture would otherwise keep alive.
+    releaseRenderer(this.renderer);
     this.canvas.remove();
   }
 }
