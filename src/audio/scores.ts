@@ -438,15 +438,19 @@ const tricks: Score[] = [
     'Twirl and Twirl',
     4,
     [
+      // A turn round G, landing high, then the same turn a step up (D46 PR C: it used to open C-E-G-C in sixteenths,
+      // note for note Tiny Triumph, so a spin sounded like a solved puzzle).
       part('glock', [
-        [0, 'C5', 0.25, 0.7],
-        [0.25, 'E5', 0.25, 0.75],
+        [0, 'G5', 0.25, 0.7],
+        [0.25, 'A5', 0.25, 0.75],
         [0.5, 'G5', 0.25, 0.8],
-        [0.75, 'C6', 0.4, 0.85],
-        [1.5, 'D5', 0.25, 0.7],
-        [1.75, 'F5', 0.25, 0.75],
+        [0.75, 'E5', 0.25, 0.75],
+        [1, 'C6', 0.4, 0.85],
+        [1.5, 'A5', 0.25, 0.7],
+        [1.75, 'B5', 0.25, 0.75],
         [2, 'A5', 0.25, 0.8],
-        [2.25, 'D6', 0.4, 0.85],
+        [2.25, 'F5', 0.25, 0.75],
+        [2.5, 'D6', 0.4, 0.85],
       ]),
       part('pad', [
         [0, C, 1.5, 0.4],

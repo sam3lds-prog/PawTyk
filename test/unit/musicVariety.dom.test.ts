@@ -84,6 +84,39 @@ describe('the trick tunes have their own colours', () => {
   });
 });
 
+/** A cue's opening: the first four single notes of its melody (the voice with the most), as pitch@beat from the first. */
+function opening(sc: Score): string {
+  const voices = ['marimba', 'kalimba', 'whistle', 'glock', 'accordion', 'bell', 'brass', 'pluck'];
+  const leads = sc.parts
+    .filter((p) => voices.includes(p.inst))
+    .map((p) => p.notes.filter((n) => n.p.length === 1))
+    .sort((a, b) => b.length - a.length);
+  const head = (leads[0] ?? []).slice(0, 4);
+  return head.map((n) => `${n.p[0]}@${(n.b - head[0].b).toFixed(2)}`).join(' ');
+}
+
+describe('nothing sounds like something else (D46 PR C)', () => {
+  it('no trick tune opens with a signature cue’s notes in its rhythm (a spin used to sound like a solved puzzle)', () => {
+    const signature = (['triumph', 'welcome', 'bounce', 'jig'] as const).map((id) => opening(SCORES[id]));
+    for (const t of tricks) expect(signature, t.id).not.toContain(opening(t));
+  });
+
+  it('no two trick tunes open the same way', () => {
+    const heads = tricks.map(opening).filter((h) => h.split(' ').length >= 3);
+    expect(new Set(heads).size).toBe(heads.length);
+  });
+
+  it('the theme’s hook comes back: Barnyard Bounce answers its first phrase with the same shape a step higher', () => {
+    const lead = SCORES.bounce.parts.filter((p) => p.inst === 'marimba').flatMap((p) => p.notes.filter((n) => n.p.length === 1));
+    const shape = (from: number) => {
+      const ns = lead.filter((n) => n.b >= from && n.b < from + 2).map((n) => n.p[0]);
+      return ns.slice(1).map((p, i) => Math.sign(p - ns[i])).join('');
+    };
+    expect(shape(4)).not.toBe('');
+    expect(shape(8)).toBe(shape(4));
+  });
+});
+
 describe('a rhythm for every kind of animal', () => {
   it('every kind in the game has one; a sheep and a pig do not share theirs', () => {
     const kinds = new Set<string>(['cat', 'dog', ...COMPANIONS.map((c) => c.animal), ...FOODS.flatMap((f) => (f.favorites === 'all' ? [] : f.favorites))]);
@@ -376,6 +409,19 @@ describe('the final pose: a hero shot on a lit stage', () => {
       expect((y - hero.y) / hero.h).toBeGreaterThan(0.55);
       expect((y - hero.y) / hero.h).toBeLessThan(0.95);
     }
+    // D46 PR C: the Farm as it is (six animals from the sheep at the left to the horse at the right). Framing them
+    // came to about 1.1×, which cut the sheep and the horse in half; now the dance and the finish show the whole scene.
+    const farm = scene([
+      ['cotton', 60, 240],
+      ['marigold', 134, 232],
+      ['truffle', 182, 262],
+      ['pepper', 214, 166],
+      ['buttercup', 262, 230],
+      ['hazel', 320, 270],
+    ]);
+    const farmDancers = planDance(farm, { bpm: 132, beats: 16, newcomer: 'truffle' });
+    expect(groupView(FULL, farmDancers)).toEqual(FULL);
+    expect(heroView(FULL, farmDancers)).toEqual(FULL);
     // A group right across the scene: the whole scene is the wide shot.
     const wide = scene([
       ['cotton', 30, 240],

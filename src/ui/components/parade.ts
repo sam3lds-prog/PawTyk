@@ -51,17 +51,25 @@ export const PARADE_CLOSE_ZOOM = 1.9;
 const GLIDE_IN_MS = 450;
 /** The most the camera zooms to frame the whole dancing group. */
 const GROUP_MAX_ZOOM = 1.45;
+/**
+ * The least zoom worth a move (D46 PR C). Framing a group that already fills most of the scene came to about 1.1×,
+ * which cut the dancers at the edges in half (the Farm's sheep and horse, at every size) for a move nobody notices.
+ */
+export const MIN_GROUP_ZOOM = 1.2;
 
-/** A view framing every dancer (a margin around their figures), no closer than `GROUP_MAX_ZOOM`. */
+/**
+ * A view framing every dancer, no closer than `GROUP_MAX_ZOOM`: a whole figure's height of room each side (they sway
+ * and hop sideways), a little more above (hops, stars) and below. The whole scene if that wouldn't be a real close-up.
+ */
 export function groupView(full: View, dancers: Dancer[]): View {
   const pts = dancers.map((d) => scenePoint(d.fig)).filter((p): p is NonNullable<typeof p> => !!p);
   if (!pts.length) return full;
-  const x0 = Math.min(...pts.map((p) => p.x - p.h * 0.7));
-  const x1 = Math.max(...pts.map((p) => p.x + p.h * 0.7));
-  const y0 = Math.min(...pts.map((p) => p.y - p.h * 1.1));
-  const y1 = Math.max(...pts.map((p) => p.y + p.h * 0.75));
+  const x0 = Math.min(...pts.map((p) => p.x - p.h));
+  const x1 = Math.max(...pts.map((p) => p.x + p.h));
+  const y0 = Math.min(...pts.map((p) => p.y - p.h * 1.3));
+  const y1 = Math.max(...pts.map((p) => p.y + p.h * 0.9));
   const zoom = Math.min(GROUP_MAX_ZOOM, full.w / Math.max(1, x1 - x0), full.h / Math.max(1, y1 - y0));
-  return zoom <= 1.02 ? full : clampView(full, viewAt(full, (x0 + x1) / 2, (y0 + y1) / 2, zoom));
+  return zoom < MIN_GROUP_ZOOM ? full : clampView(full, viewAt(full, (x0 + x1) / 2, (y0 + y1) / 2, zoom));
 }
 
 /** The final pose's zoom: wide enough for the whole group, the lights above them and the confetti. */
@@ -77,9 +85,10 @@ export function heroView(full: View, dancers: Dancer[]): View {
   const x0 = Math.min(...pts.map((p) => p.x - p.h));
   const x1 = Math.max(...pts.map((p) => p.x + p.h));
   const top = Math.min(...pts.map((p) => p.y - p.h * 2.6));
-  const bottom = Math.max(...pts.map((p) => p.y + p.h * 0.6));
+  const bottom = Math.max(...pts.map((p) => p.y + p.h * 0.9));
   const zoom = Math.min(HERO_MAX_ZOOM, full.w / Math.max(1, x1 - x0), full.h / Math.max(1, bottom - top));
-  if (zoom <= 1.04) return full;
+  // A hero shot of a group that fills the scene is the whole scene (D46 PR C: 1.07× cut the edge dancers).
+  if (zoom < 1.1) return full;
   // The ground line two thirds of the way down.
   const ground = Math.max(...pts.map((p) => p.y));
   return clampView(full, viewAt(full, (x0 + x1) / 2, ground - (full.h / zoom) * 0.17, zoom));
