@@ -48,6 +48,10 @@ jobs:
       - name: App icon matches its source
         run: npm run icons:check
 
+      # D46: what App Review gets: no tester code, the privacy policy in the app, an icon with no alpha.
+      - name: Release bundle
+        run: npm run release:bundle
+
       # The browser tests run in Chromium through Playwright, which the repo doesn't install by default.
       - name: Install Playwright and Chromium
         run: |

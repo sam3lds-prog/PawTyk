@@ -260,6 +260,48 @@
 - [ ] `npm run release:check` passes on the machine that archives the build
 - [ ] The hosted pages (`npm run site:deploy`) open on a phone: privacy, support, home
 
+### D46 — final polish: the TestFlight smoke test
+A tester build (`VITE_QA=1`) on a real iPhone, ideally an older one too. Before starting: Settings → Tester shortcuts →
+*Skip to level 41*, then *Finish every open home* once (a full Farm). Turn on Device checks → *Frame rate counter*.
+
+**The acceptance test** (from the review): start, stop, skip, replay and switch between every Farm interaction. Never
+stuck, never an unexpected screen, no reward lost or paid twice, never two tunes at once, never the wrong animal
+animating.
+- [ ] Solve a board that brings an animal home → *Meet* → tap **Walk** at once (before the parade starts): the walk stays
+      open; back on the Farm, *Watch [name]’s welcome* is under the scene and plays it; then *Replay the parade*
+- [ ] The same with **Tour** at once: the tour runs to the end; the welcome is offered, not forced
+- [ ] *Meet*, then Back straight away, then the Farm again: nothing plays by itself; *Watch …’s welcome* is offered
+- [ ] A trick, then Tour straight away, then Stop: the scene comes back to life, nobody stuck mid-trick
+- [ ] A parade: everyone stays in the picture through the dance and the final pose; Skip (top right) never covers an
+      animal; Skip, then Replay: the full parade again
+- [ ] Walk → Overview five times in a row, then a parade straight away: it dances with the 3D toys from the first beat
+- [ ] Settings → 3D animals off and on, between parades: drawn animals dance the same; no Walk button when off
+- [ ] Settings → Home music on, then a parade: the home tune ducks under the parade and comes back; Home music off during
+      it: silence after the parade, never two tunes
+- [ ] Force-quit (swipe up) in the middle of a board, during a parade and during the walk; reopen each time: the board
+      resumes with the last move, coins and animals unchanged, the Farm opens plainly
+
+**Performance** (Device checks → *Performance check*, then *Copy results* and paste them into the release notes)
+- [ ] Every step reads *Smooth* (55+ fps) on a recent iPhone; *Fine* (40+) at worst on an older one, with the walk
+      dropping to the lite tier by itself
+- [ ] *Third walk vs first* at 85% or more (no slowdown that builds up); *3D renderers alive: 1*
+- [ ] Walk round a full Farm for five minutes with the counter on: steady, no warmth beyond normal use, no stutter after
+      the first few seconds; Xcode → Debug Navigator → Memory: flat after the first walk (no climb per Walk → Overview)
+- [ ] Leave the app during the walk for a minute, come back: it draws again (or says *Getting the Farm back…* briefly);
+      Overview always works
+
+**Sound** (Device checks → *Listen to every tune*, phone speaker, ringer on, normal volume)
+- [ ] *Play all in order*: nothing harsh, buzzy or much louder than the rest; Barnyard Bounce sounds upbeat in every home
+- [ ] Spin and the solve's Tiny Triumph no longer sound alike; a run of different tricks doesn't feel repetitive
+- [ ] Ringer switch on silent: no music, no sounds; music stops when the app goes to the background
+
+**App Store**
+- [ ] `npm run release:check` passes on the machine that archives (settings, then the release bundle: no tester code,
+      the privacy policy in the app, the icon with no alpha, name and bundle id)
+- [ ] The archive is built without `VITE_QA` (Settings shows no *Tester shortcuts*)
+- [ ] Screenshots retaken from this build (the Farm's parade frames differently now); privacy answers as `release:check`
+      lists them
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
