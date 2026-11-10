@@ -273,6 +273,20 @@ describe('the ambient tune', () => {
       expect(ambientPlaying()).toBeNull();
     });
 
+    it('leaving mid-trick ends its tune with the scene (camera, audio and animation go together)', () => {
+      const router = open();
+      router.go({ screen: 'region', id: 'farm' });
+      vi.advanceTimersByTime(3000);
+      document.querySelector('.sanctuary__scene .sanctuary__pet')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      document.querySelector<HTMLElement>('.trick-chip[data-trick="wave"]')!.click();
+      // Cotton's wave, with a sheep's lilt under it.
+      expect(nowPlaying()?.id).toBe('trick:wave');
+      expect(nowPlaying()!.score.parts.length).toBeGreaterThan(SCORES['trick:wave'].parts.length);
+      router.go({ screen: 'journey' });
+      expect(nowPlaying()).toBeNull();
+      expect(document.querySelector('.is-closeup, .sp-closeup-light')).toBeNull();
+    });
+
     it('with it on, the tune starts after the hellos and ends when the player leaves', () => {
       app.settings.ambientMusic = true;
       const router = open();

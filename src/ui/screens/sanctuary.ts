@@ -32,7 +32,7 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
-import { startAmbient, stopAmbient } from '../../services/music';
+import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
 import { isEveningAt } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
@@ -140,6 +140,8 @@ export const sanctuaryScreen: ScreenDef = {
     if (app.settings.ambientMusic && true) scope.timeout(() => scope.alive && startAmbient('harmony'), 1800);
     scope.onDispose(() => {
       stopAmbient();
+      // A trick's tune or the parade's goes with the scene it belongs to (D45: camera, audio and animation end together).
+      stopMusic(200);
       // Leaving ends every scene moment together, then the camera, the toys and the life go.
       director.cancelAll();
       life?.dispose();
