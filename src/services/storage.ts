@@ -78,6 +78,11 @@ export interface Settings {
   largeBoard: boolean;
   /** Sanctuary animals as 3D toys (D34); off draws them flat, like before. */
   toys3d: boolean;
+  /**
+   * How long a new animal's celebration runs (D45 PR B): 'smart' (full for the first few and the first in each home,
+   * shorter after), always 'full', or always 'short'. The full parade can always be replayed.
+   */
+  celebrations: 'smart' | 'full' | 'short';
   /** After a move that finishes a line or color, light the line that left it one spot and say so (D39). Off: only the first few. */
   explainMoves: boolean;
   /** The pet tool the player last picked, so the next board opens with it selected. */
@@ -364,6 +369,7 @@ export function defaultSettings(): Settings {
     showTimer: true,
     largeBoard: false,
     toys3d: true,
+    celebrations: 'smart',
     explainMoves: false,
     lastSpecies: 'cat',
   };
@@ -520,6 +526,7 @@ function normSettings(x: unknown): Settings {
     showTimer: bool(x.showTimer, d.showTimer),
     largeBoard: bool(x.largeBoard, d.largeBoard),
     toys3d: bool(x.toys3d, d.toys3d),
+    celebrations: oneOf(x.celebrations, ['smart', 'full', 'short'] as const, d.celebrations),
     explainMoves: bool(x.explainMoves, d.explainMoves),
     lastSpecies: oneOf(x.lastSpecies, ['cat', 'dog'] as const, d.lastSpecies),
   };

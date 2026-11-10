@@ -28,6 +28,7 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
+import { celebrationLength } from '../../meta/celebration';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
@@ -336,7 +337,8 @@ export const regionScreen: ScreenDef = {
     // Someone came home, just now or while the player was elsewhere: say so, ring them in the scene, and let them say hello.
     if (newcomers.length) {
       const a = animalInfo(newcomers[0]);
-      toast(`${a.name} the ${a.noun} came home to the ${def.short}!`, ICON.heart);
+      // Straight from the first arrival's own scene (D45 PR B), the news has been told: no second announcement.
+      if (!route.met) toast(`${a.name} the ${a.noun} came home to the ${def.short}!`, ICON.heart);
       spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), newcomers[0]);
       if (welcoming) {
         // Straight from the win that brought them: the Welcome Parade (D44 PR E), then (D40) the next goal, and after
@@ -346,7 +348,7 @@ export const regionScreen: ScreenDef = {
           () =>
             void toysReady().then(async () => {
               if (!scope.alive) return;
-              await parades.play(who);
+              await parades.play(who, { short: celebrationLength(app.save, app.settings.celebrations, who, id) === 'short' });
               if (!scope.alive) return;
               goalShown = true;
               showNextGoal(el, id, true);

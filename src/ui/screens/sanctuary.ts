@@ -32,6 +32,7 @@ import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { sceneParades } from '../components/parade';
 import { createSceneDirector } from '../components/sceneDirector';
+import { celebrationLength } from '../../meta/celebration';
 import { sceneCloseUps } from '../components/closeup';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -369,7 +370,7 @@ export const sanctuaryScreen: ScreenDef = {
           () =>
             void Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]).then(async () => {
               if (!scope.alive) return;
-              await parades.play(who);
+              await parades.play(who, { short: celebrationLength(app.save, app.settings.celebrations, who, 'harmony') === 'short' });
               if (!scope.alive) return;
               goalShown = true;
               showNextGoal(el, 'harmony', true);

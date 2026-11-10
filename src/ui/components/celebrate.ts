@@ -23,6 +23,8 @@ import type { Scope } from '../router';
 export const WIN_SPARKLE_MS = 1150;
 /** How long the spotlight holds before the results come up by themselves. */
 export const SPOTLIGHT_HOLD_MS = 3300;
+/** The brief spotlight (D45 PR B): long enough to read the name, which lands as Welcome Home reaches its third beat. */
+export const SPOTLIGHT_SHORT_MS = 1800;
 /** Its fade out. */
 const SPOTLIGHT_OUT_MS = 220;
 
@@ -57,6 +59,8 @@ export interface SpotlightOptions {
   animal: AnimalId;
   where: SanctuaryId;
   reducedMotion: boolean;
+  /** The brief version (D45 PR B): the same moment, held for less. */
+  short?: boolean;
 }
 
 /**
@@ -69,7 +73,7 @@ export function showSpotlight(parent: Scope, o: SpotlightOptions, onDone: (how: 
   const def = sanctuaryDef(o.where);
   const prevFocus = document.activeElement as HTMLElement | null;
   const el = h(`
-    <div class="spotlight${o.reducedMotion ? ' is-still' : ''}" role="dialog" aria-modal="true" aria-labelledby="spotlight-name" style="--accent:${def.accent}">
+    <div class="spotlight${o.reducedMotion ? ' is-still' : ''}${o.short ? ' is-short' : ''}" role="dialog" aria-modal="true" aria-labelledby="spotlight-name" style="--accent:${def.accent}">
       <div class="spotlight__beam" aria-hidden="true"></div>
       <div class="spotlight__stage">
         <div class="spotlight__sparkles" aria-hidden="true">${Array.from({ length: 6 }, (_, i) => `<i style="--a:${i * 60}deg;--i:${i}">${STAR}</i>`).join('')}</div>
@@ -104,7 +108,7 @@ export function showSpotlight(parent: Scope, o: SpotlightOptions, onDone: (how: 
     el.remove();
     if (prevFocus && document.contains(prevFocus)) prevFocus.focus({ preventScroll: true });
   });
-  scope.timeout(() => finish('ended'), SPOTLIGHT_HOLD_MS);
+  scope.timeout(() => finish('ended'), o.short ? SPOTLIGHT_SHORT_MS : SPOTLIGHT_HOLD_MS);
   scope.on(el, 'click', () => finish('skipped'));
   scope.on(document, 'keydown', (e) => {
     const k = (e as KeyboardEvent).key;

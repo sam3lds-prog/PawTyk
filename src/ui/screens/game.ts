@@ -30,6 +30,8 @@ import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { showFirstArrival } from '../components/arrival';
 import { showSpotlight, winSparkle } from '../components/celebrate';
+import { celebrationLength } from '../../meta/celebration';
+import { cueMs, scoreFor } from '../../audio/scores';
 import { isPlaceId } from '../../meta/catalogs/places';
 import { activeSanctuary, alreadyGrown, arrivalProgress, countsForGrowth, creditSolve, isMilestone, nextStage, nextToOpen, openRegions, stageOf, type GrowthNews } from '../../meta/world';
 import { regionThumb } from '../art/regions';
@@ -71,6 +73,11 @@ export const TAP_BOUNCE_MS = 50;
 export const SLOW_DOUBLE_MS = 900;
 
 /** The board frame's rim on each side and the room its nameplate takes above it (D41), in px; styles/board.css matches. */
+/**
+ * A spotlit win (D45 PR B): the spotlight opens as Tiny Triumph's motif ends, so Welcome Home (which starts on the
+ * chord that follows it) answers the win instead of cutting it off.
+ */
+export const SPOTLIGHT_AFTER_TRIUMPH_MS = Math.max(650, Math.round(cueMs(scoreFor('triumph')!)));
 const FRAME_PAD = 9;
 const PLATE_ROOM = 15;
 
@@ -1309,13 +1316,19 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       mode.kind !== 'cup' &&
       !(isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind === 'level');
     const results = () => showWin(rec, result.seconds, rewards, news, cupScore, growth, { replay, friendBefore, spotlit });
+    // D45 PR B: the spotlight's Welcome Home answers Tiny Triumph instead of cutting it off, so with music on the
+    // spotlight waits for the win's motif to finish. And its length follows the celebration pacing: the full moment
+    // for the first few arrivals, a brief one after (Settings can ask for either always).
+    const short = spotlit && hero?.kind === 'arrived' && celebrationLength(app.save, app.settings.celebrations, hero.animal, growth!.sanctuary) === 'short';
+    const wait = app.reducedMotion ? 150 : spotlit && app.settings.music ? SPOTLIGHT_AFTER_TRIUMPH_MS : 650;
     scope.timeout(() => {
-      if (spotlit && hero?.kind === 'arrived') showSpotlight(scope, { animal: hero.animal, where: growth!.sanctuary, reducedMotion: app.reducedMotion }, results);
+      if (spotlit && hero?.kind === 'arrived') showSpotlight(scope, { animal: hero.animal, where: growth!.sanctuary, reducedMotion: app.reducedMotion, short }, results);
       else results();
-    }, app.reducedMotion ? 150 : 650);
+    }, wait);
   }
 
   /** What this solve did (or didn't) for the world, carried into the win sheet (D38). */
+
   type WorldStep = { replay: boolean; friendBefore: ReturnType<typeof arrivalProgress>; spotlit?: boolean };
 
   function rewardsMarkup(r: RewardSummary): string {
@@ -1614,7 +1627,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           if (typeof next === 'object') playMode(next);
           else app.router.back({ screen: 'journey' });
         },
-        onVisit: () => app.router.go({ screen: 'region', id: growth.sanctuary as RegionId }),
+        // The Farm welcomes the newcomer with its parade (D45 PR B); the arrival has already said who came home.
+        onVisit: () => app.router.go({ screen: 'region', id: growth.sanctuary as RegionId, welcome: [hero.animal], met: true }),
       });
       return;
     }

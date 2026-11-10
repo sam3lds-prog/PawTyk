@@ -190,6 +190,13 @@ try {
   check('first clear pays coins', afterFirst >= 45, String(afterFirst));
   await page.click('.arrival [data-act="visit"]');
   await page.waitForSelector('.region');
+  // D45 PR B: Cotton's first visit gets the Welcome Parade (skippable), with no second "came home" announcement.
+  const firstToast = await page.evaluate(() => document.querySelector('.toast')?.textContent ?? '');
+  // (The scene is marked as parading while the camera glides in; Cotton's dance starts as the glide lands.)
+  const firstParade = await page.waitForSelector('.sanctuary__scene.is-parading [data-friend="cotton"][data-trick^="dance:newcomer:"]', { timeout: 8000, state: 'attached' }).then(() => true, () => false);
+  const firstLead = await page.evaluate(() => document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.dataset.trick ?? '');
+  check('the first visit from the arrival plays Cotton’s Welcome Parade, and does not announce her twice (D45)', firstParade && /^dance:newcomer:/.test(firstLead) && !/came home/.test(firstToast), JSON.stringify({ firstParade, firstLead, firstToast }));
+  await page.click('.sanctuary__scene .parade-skip');
   await page.waitForSelector('.sheet [data-choose="wheelbarrow"]');
   check('visiting opens the Farm, with Farm starter gifts', !!(await page.$('[data-choose="trough"]')));
   check('the first visit names an animal to tap, and rings it (D40)', !!(await page.$('.sanctuary__scene .sp-cue-ring')) && /^Tap Cotton to say hello\.$/.test((await page.textContent('[data-scene-cue="tap"]').catch(() => '')) ?? ''));
@@ -1073,6 +1080,8 @@ try {
       tools.finishOpenHomes(a.save);
       a.save.settings.toys3d = o.toys3d ?? true;
       a.save.settings.reducedMotion = o.reduced ? 'reduce' : 'full';
+      // The full parade unless a check asks for smart pacing (D45 PR B): this save has every animal home.
+      a.save.settings.celebrations = o.smart ? 'smart' : 'full';
       a.applySettings();
       a.persist();
       window.__pt.go({ screen: 'region', id: 'farm', ...(o.welcome ? { welcome: ['cotton'] } : {}) });
@@ -1161,6 +1170,17 @@ try {
   await qa.evaluate(() => document.querySelector('[data-act="tour-stop"]')?.click());
   await qa.waitForTimeout(600);
   check('with 3D off the drawn animals dance, the tour runs, and no Walk button is offered (D44)', off.canvas === 0 && off.drawn >= 1 && !off.walk && offTour.caption === 'The barn' && offTour.vb !== '0 0 360 300', JSON.stringify({ off, offTour }));
+
+  // D45 PR B: smart pacing. With many animals home the welcome is the short parade; the button then offers the full one.
+  await qaHome({ welcome: true, smart: true });
+  await qa.waitForFunction(() => { const b = document.querySelector('[data-act="parade-replay"]'); return b && !b.hidden; }, null, { timeout: 9000 }).catch(() => {});
+  const shortParade = await qa.evaluate(() => ({ label: document.querySelector('[data-act="parade-replay"]')?.textContent?.trim() ?? '', dancing: document.querySelectorAll('.sanctuary__pet[data-trick^="dance:"]').length }));
+  await qa.evaluate(() => document.querySelector('[data-act="parade-replay"]')?.click());
+  await qa.waitForTimeout(900);
+  const fullReplay = await qa.evaluate(() => (document.querySelector('.sanctuary__pet[data-trick^="dance:newcomer:"]')?.dataset.trick ?? '').split(':').pop());
+  await qa.evaluate(() => document.querySelector('.parade-skip')?.click());
+  await qa.waitForTimeout(300);
+  check('smart pacing: a later arrival gets the short parade, and the button plays the full one (D45)', shortParade.label === 'Play the full parade' && shortParade.dancing === 0 && fullReplay === '16', JSON.stringify({ shortParade, fullReplay }));
 
   // Reduced motion: still presentations: the parade's dancers just smile (no moving classes), no close-up on a trick.
   await qaHome({ reduced: true, welcome: true });

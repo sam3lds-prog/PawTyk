@@ -105,7 +105,8 @@ export type Route =
   | { screen: 'shop'; sanctuary?: SanctuaryId; tab?: 'decor' | 'tricks' | 'food' | 'gems' }
   | { screen: 'sanctuary'; welcome?: AnimalId[] }
   | { screen: 'world' }
-  | { screen: 'region'; id: RegionId; fresh?: number; welcome?: AnimalId[] }
+  /** `met`: the newcomer was already introduced on the way here (the first arrival's own scene), so no "came home" news again. */
+  | { screen: 'region'; id: RegionId; fresh?: number; welcome?: AnimalId[]; met?: boolean }
   | { screen: 'game' }
   | { screen: 'gallery' }
   | { screen: 'welcome' }
