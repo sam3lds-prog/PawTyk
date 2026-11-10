@@ -547,7 +547,8 @@
 .sanctuary__scene .sp-party.is-tour-lit .sp-bulb-halo {
   opacity: 0.5;
 }
-.sanctuary__scene.is-parading .scene-tour {
+.sanctuary__scene.is-parading .scene-tour,
+.sanctuary__scene.is-starting .scene-tour {
   display: none;
 }
 
@@ -577,6 +578,7 @@
   display: none;
 }
 .sanctuary__scene.is-parading .scene-walk,
+.sanctuary__scene.is-starting .scene-walk,
 .sanctuary__scene.is-touring .scene-walk {
   display: none;
 }
@@ -605,6 +607,16 @@ body.has-walk {
   max-width: 28ch;
   text-align: center;
   font-weight: 700;
+}
+/* D46 PR B: over the (still) view while a lost WebGL context comes back. */
+.walk__note {
+  position: absolute;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 252, 244, 0.94);
+  color: var(--ink);
+  box-shadow: 0 6px 20px -8px rgba(40, 52, 52, 0.45);
 }
 .walk__top {
   position: absolute;

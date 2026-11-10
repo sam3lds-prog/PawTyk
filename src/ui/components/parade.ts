@@ -188,11 +188,19 @@ export interface SceneParadeHost {
   /** Closes the trick tray, if open. */
   closeTray(): void;
   reducedMotion: () => boolean;
+  /**
+   * The scene's 3D toys, for the renderer there is now (`Scene3D.ready`, D46 PR B). A parade waits for it (briefly)
+   * before its first beat, so toys being rebuilt just after the walk closes don't pop in mid-dance.
+   */
+  toysReady?: () => Promise<unknown>;
 }
+
+/** The longest a parade waits for the scene's toys before it dances with whatever is showing (D46 PR B). */
+export const TOYS_WAIT_MS = 1200;
 
 export interface SceneParades {
   /** Plays the parade (with a newcomer) or the group dance. Resolves true if anyone danced. */
-  play(newcomer?: string, opts?: { short?: boolean }): Promise<boolean>;
+  play(newcomer?: string, opts?: { short?: boolean; toysWaited?: boolean }): Promise<boolean>;
   /**
    * Offers a celebration that never started (D46 PR A): the player began something else during its lead-in, or left.
    * The button under the scene says *Watch Truffle's welcome* (or *Celebrate the new stage*) and plays it in full.
@@ -231,6 +239,16 @@ function unplayedLabel(newcomer?: string): string {
  */
 export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: Event) => void): void; onDispose(fn: () => void): void; readonly alive: boolean }, host: SceneParadeHost): SceneParades {
   let current: ParadeHandle | null = null;
+  /** A parade waiting for the toys before its first beat (D46 PR B): it owns the scene meanwhile. */
+  let starting: { cancelled: boolean; wake: () => void } | null = null;
+  const cancelStarting = () => {
+    if (!starting) return;
+    starting.cancelled = true;
+    starting.wake();
+    starting = null;
+    host.pause(false);
+    showButton();
+  };
   let replay: { newcomer?: string; unplayed?: boolean } | null = null;
   /** The last one played was the short welcome: Replay offers the full parade by name. */
   let wasShort = false;
@@ -242,17 +260,32 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
     b.innerHTML = `${REPLAY_ICON}${label()}`;
   };
   scope.on(document, 'keydown', (e) => {
-    if ((e as KeyboardEvent).key === 'Escape' && current?.active && !document.querySelector('.overlay')) current.skip();
+    if ((e as KeyboardEvent).key === 'Escape' && !document.querySelector('.overlay')) {
+      if (current?.active) current.skip();
+      else cancelStarting();
+    }
   });
   scope.on(document, 'visibilitychange', () => {
     // Leaving the app ends it (its music stops on its own): nothing dances on, unseen.
-    if (document.hidden) current?.skip();
+    if (document.hidden) {
+      current?.skip();
+      cancelStarting();
+    }
   });
-  scope.onDispose(() => current?.skip());
+  scope.onDispose(() => {
+    current?.skip();
+    cancelStarting();
+  });
 
   const api: SceneParades = {
     async play(newcomer, opts = {}) {
       current?.skip();
+      // A newer play takes over one still waiting for the toys (the hold stays: this one takes it on).
+      if (starting) {
+        starting.cancelled = true;
+        starting.wake();
+      }
+      starting = null;
       // Started while the app was hidden (the player left during the lead-in): it doesn't play unseen (D44 review).
       if (document.hidden) return false;
       const fig = host.el.querySelector<HTMLElement>('.sanctuary__scene');
@@ -266,6 +299,27 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       const btn = () => host.el.querySelector<HTMLElement>('[data-act="parade-replay"]');
       const b0 = btn();
       if (b0) b0.hidden = true;
+      // The toys for the renderer there is now (D46 PR B): rebuilt just after the walk closed, say. Everyone dances
+      // from the first beat in the same form, toys or drawn; it never waits long.
+      // A parade the screen scheduled has waited for them already, inside its lead-in (review of D46: a second wait
+      // here sat outside the pending moment, so leaving then lost the welcome).
+      if (host.toysReady && !opts.toysWaited) {
+        const me = (starting = { cancelled: false, wake: () => {} });
+        // Tour and Walk step aside while it waits: the scene is the parade's already (taps on it wait).
+        fig.classList.add('is-starting');
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await Promise.race([host.toysReady(), new Promise((r) => (timer = setTimeout(r, TOYS_WAIT_MS))), new Promise<void>((r) => (me.wake = r))]);
+        clearTimeout(timer);
+        fig.classList.remove('is-starting');
+        if (me.cancelled) return false;
+        starting = null;
+        if (!scope.alive) return false;
+        if (document.hidden || !svg.isConnected) {
+          host.pause(false);
+          showButton();
+          return false;
+        }
+      }
       // The short welcome (D45 PR B): the same parade to the shorter Barnyard Jig. Replay plays the full one.
       const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined, home: host.home });
       current = p;
@@ -292,9 +346,12 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
     get offered() {
       return replay ? { newcomer: replay.newcomer, unplayed: !!replay.unplayed } : null;
     },
-    skip: () => current?.skip(),
+    skip: () => {
+      current?.skip();
+      cancelStarting();
+    },
     get active() {
-      return !!current?.active;
+      return !!current?.active || !!starting;
     },
     replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${label()}</button>`,
     onClick(t) {
@@ -306,8 +363,8 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
         void api.play(replay?.newcomer);
         return true;
       }
-      // While a parade plays, the scene is its stage: taps wait (Skip ends it).
-      return !!current?.active && !!t.closest('.sanctuary__scene, [data-act="tricks"]');
+      // While a parade plays (or is about to), the scene is its stage: taps wait (Skip ends it).
+      return (!!current?.active || !!starting) && !!t.closest('.sanctuary__scene, [data-act="tricks"]');
     },
   };
   return api;
@@ -374,7 +431,9 @@ export function scheduleParade(
           return;
         }
         if (!pend.begin()) return;
-        const danced = await parades.play(o.newcomer, { short: o.short });
+        const danced = await parades.play(o.newcomer, { short: o.short, toysWaited: true });
+        // The app went to the background while it waited for the toys: offered for when the player is back.
+        if (!danced && scope.alive && document.hidden && !parades.offered) parades.offer(o.newcomer);
         done(danced);
       }),
     o.delay,
