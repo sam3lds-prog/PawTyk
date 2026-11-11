@@ -30,7 +30,7 @@ import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { claimMissionDetailed, missionStates, type MissionDef } from '../../meta/missions';
 import { PHOTO_MEMORY_COINS, photoMemoryDone } from '../../meta/photoMemory';
 import { CASUAL_HEARTS, FIRST_PAIR_LEVEL, dailyFor, modeKey, playsSolo, type ModeRef } from '../../game/modes';
-import { todayItems, type TodayItem } from '../../meta/today';
+import { friendRowText, todayItems, type TodayItem } from '../../meta/today';
 import { MAX_NEW_BOARD_SIZE } from '../../game/specs';
 import { itemBalance } from '../../meta/items';
 import { feel } from '../../services/feel';
@@ -251,13 +251,18 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   const weekday = WEEKDAY[new Date().getDay()];
 
   const goal = heroGoalMarkup();
+  // D49 PR D: at most two optional things for today. D50 PR C: when today's Daily (or a Daily in progress) is one of
+  // them, the More to play fold doesn't offer it a second time: it keeps the week, with a pointer up to the row.
+  const todayRows = todayItems(save, { saved: otherSaved.map((s) => s.mode), dailyDone, heroHome: goal.sanctuary });
+  // (Yesterday's Daily left in progress is a different board: today's keeps its card in the fold.)
+  const dailyAbove = todayRows.some((it) => it.kind === 'daily' || (it.kind === 'resume' && it.mode.kind === 'daily' && it.mode.dateKey === todayKey));
 
   /**
    * D49 PR D: at most two optional things for today, under the one goal (`meta/today.ts`), each one tap: a board in
    * progress, today's Daily, an animal close to its next friendship gift, news in another home.
    */
   function todayMarkup(): string {
-    const items = todayItems(save, { saved: otherSaved.map((s) => s.mode), dailyDone, heroHome: goal.sanctuary });
+    const items = todayRows;
     if (!items.length) return '';
     const row = (it: TodayItem): string => {
       switch (it.kind) {
@@ -276,11 +281,11 @@ function mountHub(root: HTMLElement, scope: Scope): void {
             ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ICON.chevron}
           </button>`;
         case 'friend': {
-          const a = animalInfo(it.animal);
-          const what = it.unlock.charAt(0).toLowerCase() + it.unlock.slice(1);
+          // D50 PR C: what the next thing to do does, in plain words (a hello is a heart; a pat on the card another).
+          const t = friendRowText(it, it.home === 'harmony' ? 'Pet Garden' : sanctuaryDef(it.home).short);
           return `<button class="card card--tap today-row today-friend" data-act="visit" data-region="${esc(it.home)}" data-today="friend">
             <span class="card__icon card__icon--portrait portrait">${animalPortrait(it.animal, 'happy')}</span>
-            <span class="card__body"><span class="card__title">${esc(a.name)} has ${esc(what)} to share</span><span class="card__sub">${it.hearts === 1 ? 'One heart away' : `${it.hearts} hearts away`}: say hello in the ${esc(sanctuaryDef(it.home).short)}.</span></span>
+            <span class="card__body"><span class="card__title">${esc(t.title)}</span><span class="card__sub">${esc(t.sub)}</span></span>
             ${ICON.chevron}
           </button>`;
         }
@@ -302,7 +307,8 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   function moreSummary(): string {
     const ms = missionStates(app.save).filter((m) => !m.weekly);
     const done = ms.filter((m) => m.claimed || m.done).length;
-    return `${dailyDone ? 'Daily solved' : 'Daily'} · Zen Garden · Errands ${done} of ${ms.length}`;
+    // D50 PR C: the Daily is named here only when the fold is where it lives (not already a row above).
+    return `${dailyAbove ? 'This week' : dailyDone ? 'Daily solved' : 'Daily'} · Zen Garden · Errands ${done} of ${ms.length}`;
   }
 
   /** After the Daily: tomorrow's board in a few warm words. */
@@ -376,14 +382,18 @@ function mountHub(root: HTMLElement, scope: Scope): void {
         <summary class="more-play__summary"><span class="more-play__text"><b>More to play</b><small data-more-summary>${esc(moreSummary())}</small></span>${ICON.chevron}</summary>
         <div class="more-play__body">
           <div class="daily-block">
-            <button class="card card--tap daily-card ${dailyDone ? 'is-done' : ''}" data-act="daily">
+            ${
+              dailyAbove
+                ? `<p class="daily-block__note" data-daily-above>${ICON.calendar}<span>This week’s Daily Puzzles. Today’s is in <b>Also today</b>, above.</span></p>`
+                : `<button class="card card--tap daily-card ${dailyDone ? 'is-done' : ''}" data-act="daily">
               <span class="card__icon card__icon--coral">${dailyDone ? ICON.check : ICON.calendar}</span>
               <span class="card__body">
                 <span class="card__title">Daily Puzzle</span>
                 <span class="card__sub">${dailyDone ? `Solved today. ${esc(tomorrowLine())}` : `${weekday}: ${daily.size}×${daily.size}${daily.solo ? ', one animal' : ''}. Same board for everyone.`}</span>
               </span>
               ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ''}
-            </button>
+            </button>`
+            }
             ${weekStrip()}
           </div>
 
