@@ -94,9 +94,12 @@ How grants stay safe: gems are granted once per store transaction id; on launch 
 consumable transactions and grants any it missed (a crash between paying and saving). Restore Purchases restores
 `remove_ads` and the Welcome Rescue Pack. The pack is granted by its transaction id too (its 180 gems once, the wagon
 owned and out on the Farm); at launch the app reads RevenueCat's record and grants a pack it never recorded (a closed
-app mid-purchase, a new install after Restore). If RevenueCat answers and no longer has the pack (refunded, or moved to
-another install by a Restore there), the wagon is put away and up to 180 unspent gems are taken back; if the same
-purchase comes back, so do they. An unanswered store never changes anything. Gems only buy premium decorations and
+app mid-purchase, a new install after Restore), and only once per player whatever transaction id the store reports.
+If RevenueCat answers and no longer has the pack, nothing is taken back by default (`REVOKE_WHEN_MISSING` in
+`src/meta/welcomePack.ts`): a Restore on another device moves the purchase there in RevenueCat, so its absence isn't
+proof of a refund. Revocation (wagon put away, up to 180 unspent gems back, both returned if the purchase comes back)
+is built and tested for when the sandbox shows the refund signal is reliable. An unanswered store never changes
+anything. Gems only buy premium decorations and
 tricks — never hearts, hints or rankings, and nothing in the Paw Cup.
 
 ## 3. Leaderboards — Firebase (see `functions/README.md`)

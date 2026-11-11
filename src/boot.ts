@@ -48,7 +48,7 @@ track('app_open', { sessions: app.save.onboarding.sessions });
 // the first screen, so it never slows the start).
 noteDay(app.save);
 app.persist();
-setTimeout(() => void applyUsageChoice(app.save), 1500);
+setTimeout(() => void applyUsageChoice(app.save, { atLaunch: true }), 1500);
 
 // Pause and save the board when the app is backgrounded; resume only if nothing is covering it.
 document.addEventListener('visibilitychange', () => {

@@ -43,8 +43,12 @@ import { ICON } from '../icons';
 import type { Scope, ScreenDef } from '../router';
 
 type Tab = 'decor' | 'food' | 'tricks' | 'gems';
-/** A purchase is waiting on the store (D47 PR 7): nothing else starts meanwhile. */
-let purchasing = false;
+/**
+ * A purchase is waiting on the store (D47 PR 7): nothing else starts meanwhile. A store that never answers frees it
+ * after two minutes (the App Store's own sheet is up all that time, so nothing could be tapped anyway).
+ */
+let purchasingSince = 0;
+const PURCHASE_STALE_MS = 120_000;
 const TAB_LABEL: Record<Tab, string> = { decor: 'Decor', food: 'Food', tricks: 'Tricks', gems: 'Gems' };
 /** The tab and sanctuary the player last looked at, for this app session. */
 let lastTab: Tab = 'decor';
@@ -98,9 +102,11 @@ export const shopScreen: ScreenDef = {
     let pricesIn = false;
     void iap.products().then((ps) => {
       if (!scope.alive) return;
+      const offered = packOffered();
       products = ps;
       pricesIn = true;
-      if (tab === 'gems') render();
+      // The decorations only change if the Welcome Rescue Pack now shows (it waits for the store's price).
+      if (tab === 'gems' || (tab === 'decor' && packOffered() !== offered)) render();
     });
 
     function priceTag(currency: 'coins' | 'vtoken' | 'gem', amount: number): string {
@@ -186,13 +192,16 @@ export const shopScreen: ScreenDef = {
 
     /** D47 PR 7: whether the Welcome Rescue Pack is for sale here and now (sold in this build, the player ready). */
     function packOffered(): boolean {
-      return WELCOME_PACK_ON_SALE && iap.available && !ownsWelcomePack(app.save) && readyForWelcomeOffer(app.save);
+      // Only once the store has answered with its price: nothing may lead to an empty Gems tab.
+      const priced = pricesIn && !!products.find((p) => p.id === 'welcome_pack')?.price;
+      return WELCOME_PACK_ON_SALE && iap.available && priced && !ownsWelcomePack(app.save) && readyForWelcomeOffer(app.save);
     }
 
     /** With the Farm's decorations, now and then (every few days, three times in all, never after "Not now"). */
     let highlighted = false;
     function packHighlight(): string {
-      if (!packOffered() || (!highlighted && !mayHighlightWelcomePack(app.save))) return '';
+      // "Not now" holds at once, in this visit too.
+      if (!packOffered() || app.save.offers?.welcome?.dismissed || (!highlighted && !mayHighlightWelcomePack(app.save))) return '';
       if (!highlighted) {
         highlighted = true;
         noteWelcomeHighlight(app.save);
@@ -400,10 +409,10 @@ export const shopScreen: ScreenDef = {
       const buy = t.closest('[data-buy]') as HTMLButtonElement | null;
       if (buy && !buy.disabled) {
         // One purchase at a time, whatever is tapped meanwhile (D47 PR 7).
-        if (purchasing) return;
+        if (purchasingSince && Date.now() - purchasingSince < PURCHASE_STALE_MS) return;
         const id = buy.dataset.buy as ProductId;
         if (id === 'welcome_pack' && ownsWelcomePack(app.save)) return;
-        purchasing = true;
+        const mine = (purchasingSince = Date.now());
         track('product_view', { product: id });
         track('iap_started', { product: id });
         buy.disabled = true;
@@ -411,14 +420,14 @@ export const shopScreen: ScreenDef = {
         try {
           r = await iap.purchase(id);
         } finally {
-          purchasing = false;
+          if (purchasingSince === mine) purchasingSince = 0;
         }
         if (r.ok && r.id === 'welcome_pack') {
           // The gems once (by the store's transaction id) and the wagon out on the Farm, even if the player left.
-          grantWelcomePack(app.save, r.transactionId, r.source);
+          const got = grantWelcomePack(app.save, r.transactionId, r.source);
           app.persist();
           track('iap_success', { product: id });
-          toast(`Welcome Rescue Pack: +${WELCOME_PACK.gems} gems, and the Rescue Wagon is out on your Farm. Thank you!`, ICON.gift);
+          toast(got > 0 ? `Welcome Rescue Pack: +${got} gems, and the Rescue Wagon is out on your Farm. Thank you!` : 'The Welcome Rescue Pack is yours: the Rescue Wagon is out on your Farm.', ICON.gift);
           if (scope.alive) render();
           return;
         }

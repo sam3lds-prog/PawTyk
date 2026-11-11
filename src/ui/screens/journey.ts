@@ -9,7 +9,7 @@
  */
 
 import { app } from '../../app/app';
-import { applyUsageChoice, shouldAskUsage } from '../../app/usage';
+import { applyUsageChoice, closeUsageAsk, noteUsageAsked, shouldAskUsage } from '../../app/usage';
 import { nextZenMode, playMode, resumableMode, resumableSessions, resumeGame, savedBoardLine, savedFor, startGame } from '../../app/gameFlow';
 import { hasMeaningfulProgress } from '../../game/sessionPersistence';
 import { addDaysKey, localDateKey, localWeekStart } from '../../game/dates';
@@ -329,10 +329,13 @@ function mountHub(root: HTMLElement, scope: Scope): void {
     </div>`);
   root.appendChild(el);
   // D47 PR 6: once, in a build that can send them, after a few sessions: would the player share anonymous usage stats?
-  // Nothing is sent unless they say yes; no answer is the same as no (and Settings has the switch either way).
+  // Nothing is sent unless they say yes; no answer is the same as no (and Settings has the switch either way). Shown
+  // in one run of the app only.
   void shouldAskUsage(save).then((ask) => {
     const slot = el.querySelector<HTMLElement>('[data-usage-ask]');
     if (!ask || !slot || !scope.alive) return;
+    noteUsageAsked(app.save);
+    app.persist();
     slot.innerHTML = `<section class="card usage-ask" aria-labelledby="usage-title">
         <h2 id="usage-title">Help make PawTyk better?</h2>
         <p class="muted">Share anonymous usage stats: which features get used and where puzzles get tricky. Never who you are, no advertising id, nothing sold. You can change this any time in Settings.</p>
@@ -475,6 +478,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
       case 'usage-yes':
       case 'usage-no':
         app.save.onboarding.usageAsked = true;
+        closeUsageAsk();
         app.save.settings.shareUsage = a.act === 'usage-yes';
         app.persist();
         void applyUsageChoice(app.save);

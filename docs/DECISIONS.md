@@ -1841,13 +1841,35 @@ same positions: `docs/screenshots/d47/` (made by `scripts/farm-shots.mjs` on D46
 - Offered only after the first lessons (level 6+), an animal home and a home visited; in the Shop's Gems tab, and
   highlighted with the Farm's decorations at most every 3 days, 3 times, never after "Not now"; never on a board,
   after a loss, in the Paw Cup or a sanctuary (a test enforces where it may appear).
-- Exactly once: gems by the store's transaction id, one purchase at a time; launch reconcile grants a purchase the app
-  never recorded (crash, reinstall + Restore); a refund (or RevenueCat moving the purchase to another install) puts the
-  wagon away and takes back up to 180 unspent gems, given back if the same purchase returns; an unanswered store changes
-  nothing. Remove Interruptions stays unsold and unmarketed; v1 owners keep it.
+- Exactly once: gems by the store's transaction id and once per player (a second id for the same pack grants no
+  more), one purchase at a time; launch reconcile grants a purchase the app never recorded (crash, reinstall +
+  Restore). A pack missing from the store's record is **not** taken back by default (`REVOKE_WHEN_MISSING`): RevenueCat
+  moves a purchase to another install on a Restore there, so absence isn't proof of a refund; the revocation path is
+  built and tested for when the sandbox proves the refund signal. An unanswered store changes nothing. Remove
+  Interruptions stays unsold and unmarketed; v1 owners keep it. A test-store grant never counts in a release build.
 - **Payments stay off in release** until `VITE_WELCOME_PACK=1`, set only after App Store Connect, RevenueCat and the
   sandbox checks (release-checklist D47). Tests: `welcomePack.test`, `welcomePackShop.dom.test`, browser (test store).
-- Open: confirm in the sandbox that a refunded non-consumable leaves RevenueCat's `nonSubscriptionTransactions`.
+- Open: in the sandbox, confirm the purchase's transaction id matches RevenueCat's record (no second grant on
+  relaunch; the gem packs share this), and whether a refund drops the pack from RevenueCat's record.
+
+### Review (independent agent, on the whole stack) and what changed
+No P0. Five P1s and nine P2s; all fixed before merge except where noted:
+- **A video revive at the extra-life cap** turned the reward into coins and then spent one of the player's own lives.
+  The video isn't offered with a full pantry now (test).
+- **The pack's gems were once per transaction id, not per player**: a second id for the same purchase (StoreKit can
+  report one) would grant 180 again. Now once per player; after Erase progress they come back once (tests).
+- **Opting in sent the session's earlier events**: turned on in Settings or on the card, only what follows is sent;
+  only a yes given before this launch sends the launch's first moments. At launch with the choice off, the native SDK
+  is switched off too (its setting outlives the save). Web: consent set before the SDK's first hit (tests).
+- **"In Full Bloom" would have needed the pack**: it counts every decoration except the pack's own (test).
+- **A Restore on a second device would silently take the pack from the first** (RevenueCat moves the purchase): no
+  clawback by default now (above).
+- P2s: "Not now" holds within the same visit; nothing leads to the pack until the store has given its price (no
+  empty Gems tab); the purchase toast says what was actually granted; a test-store pack doesn't count in release; the
+  usage card shows in one run of the app only (unanswered = no) and Erase progress keeps the answer and the bought
+  wagon; a store that never answers frees the purchase guard after two minutes; the postcard mark is retried after a
+  timeout; the walk's idle check allocates nothing per frame; the TestFlight steps carry the Info.plist key that keeps
+  Firebase off until the player says yes.
 
 ### PR 8 — cloud backup: decision and plan only
 - `docs/cloud-backup.md`: optional iCloud backup through CloudKit's private database, no account, merged (the ledgers'

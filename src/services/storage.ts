@@ -1044,6 +1044,10 @@ export function resetProgress(current: SaveV2, kv: KV = platformKV(), now = new 
   fresh.cup.attempts = JSON.parse(JSON.stringify(current.cup.attempts));
   fresh.settings = { ...current.settings };
   fresh.onboarding.seenRules = true;
+  // The usage-stats answer goes with the settings it set (D47): a player who said no isn't asked again.
+  fresh.onboarding.usageAsked = current.onboarding.usageAsked;
+  // A bought decoration stays (D47: the Welcome Rescue Pack's wagon); its gems come back through the store's record.
+  if (current.purchases.packs?.welcome && current.inventory.decor.rescuewagon) fresh.inventory.decor.rescuewagon = { ...current.inventory.decor.rescuewagon };
   saveSave(fresh, kv);
   return fresh;
 }

@@ -82,6 +82,8 @@ export function createFirebaseSink(load: () => Promise<Mod> = () => import('@cap
       if (!native) {
         const [{ firebaseApp }, an] = await Promise.all([import('./firebaseApp'), import('firebase/analytics')]);
         if (!(await an.isSupported())) return false;
+        // Consent first, so even the first hit (the config) is sent under it.
+        an.setConsent({ ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: on ? 'granted' : 'denied' });
         an.getAnalytics(await firebaseApp());
       }
       mod = await load();
@@ -116,4 +118,21 @@ export function createFirebaseSink(load: () => Promise<Mod> = () => import('@cap
       }
     },
   };
+}
+
+/**
+ * At launch with usage stats off: makes sure the native SDK isn't collecting either. Its on/off setting outlives the
+ * app's own (a save recovered as new, a reinstall restored from a backup), so it is switched off whenever the player's
+ * choice is off. Native only (the web SDK isn't loaded at all then). Never throws.
+ */
+export async function switchOffNative(load: () => Promise<Mod> = () => import('@capacitor-firebase/analytics'), native = Capacitor.isNativePlatform()): Promise<boolean> {
+  if (!native || !analyticsAvailable(native)) return false;
+  try {
+    const { FirebaseAnalytics: plugin, ConsentType: T, ConsentStatus: S } = await load();
+    for (const type of [T.AdStorage, T.AdUserData, T.AdPersonalization, T.AnalyticsStorage]) await plugin.setConsent({ type, status: S.Denied }).catch(() => {});
+    await plugin.setEnabled({ enabled: false });
+    return true;
+  } catch {
+    return false;
+  }
 }

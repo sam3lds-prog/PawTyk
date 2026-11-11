@@ -104,6 +104,11 @@ describe('the Welcome Rescue Pack in the Shop', () => {
     await flush();
     expect(q('[data-pack-highlight]')).toBeNull();
     expect(app.save.offers?.welcome?.dismissed).toBe(true);
+    // Not back in the same visit either (another tab and back).
+    q<HTMLElement>('.seg__btn[data-tab="food"]')!.click();
+    q<HTMLElement>('.seg__btn[data-tab="decor"]')!.click();
+    await flush();
+    expect(q('[data-pack-highlight]')).toBeNull();
     router.go({ screen: 'shop', sanctuary: 'farm' });
     await flush();
     expect(q('[data-pack-highlight]')).toBeNull();
@@ -125,6 +130,22 @@ describe('the Welcome Rescue Pack in the Shop', () => {
     await flush();
     expect(q('.seg__btn[aria-selected="true"]')?.getAttribute('data-tab')).toBe('gems');
     expect(q('[data-welcome-pack]')).toBeTruthy();
+  });
+
+  it('a store that doesn’t sell it (no price): nothing leads to it, no highlight, no wagon card, no empty Gems tab', async () => {
+    const real = iap.products.bind(iap);
+    iap.products = async () => (await real()).map((p) => (p.id === 'welcome_pack' ? { ...p, price: null } : p));
+    try {
+      router.go({ screen: 'shop', sanctuary: 'farm' });
+      await flush();
+      expect(q('[data-pack-highlight]')).toBeNull();
+      expect(q('[data-decor="rescuewagon"]')).toBeNull();
+      router.go({ screen: 'shop', tab: 'gems' });
+      await flush();
+      expect(q('[data-welcome-pack]')).toBeNull();
+    } finally {
+      iap.products = real;
+    }
   });
 
   it('a cancelled purchase grants nothing and can be tried again', async () => {

@@ -24,6 +24,10 @@ const solvedSize = (s: SaveV2, min: number) => Object.entries(s.stats.bestBySize
 /** Levels 1–20 actually cleared (a save that moved up for D35 hasn't played its new first chapter yet). */
 const firstChapterClears = (s: SaveV2) => Array.from({ length: 20 }, (_, i) => s.journey.clears[`L${i + 1}`]).filter(Boolean).length;
 
+/** The decorations "In Full Bloom" counts: not the Welcome Rescue Pack's own (D47), so no purchase is ever required. */
+const GARDEN = DECOR.filter((d) => d.unlock.kind !== 'pack').map((d) => d.id);
+const gardenOwned = (s: SaveV2) => GARDEN.filter((id) => !!s.inventory.decor[id]).length;
+
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'first_friend', name: 'First Friend', description: 'Solve your first board.', icon: 'paw', coins: 20, progress: (s) => [Math.min(1, s.stats.solved), 1] },
   { id: 'perfect_pair', name: 'Perfect Pair', description: 'Solve a board without a single mistake.', icon: 'check', coins: 20, progress: (s) => [Math.min(1, s.stats.clean), 1] },
@@ -36,7 +40,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'master_regions', name: 'Master of Regions', description: 'Finish the first chapter, Meadow Gate.', icon: 'star', coins: 40, progress: (s) => [firstChapterClears(s), 20] },
   { id: 'zen_gardener', name: 'Zen Gardener', description: 'Solve five Zen boards.', icon: 'leaf', coins: 20, progress: (s) => [Math.min(5, s.zen.solved), 5] },
   { id: 'grand_thinker', name: 'Grand Thinker', description: 'Solve a 9×9 board (Paw Cup\'s Grand Hall).', icon: 'sparkle', coins: 40, progress: (s) => [solvedSize(s, 9) ? 1 : 0, 1] },
-  { id: 'full_garden', name: 'In Full Bloom', description: `Own all ${DECOR.length} decorations.`, icon: 'trophy', coins: 100, progress: (s) => [Math.min(DECOR.length, count(s.inventory.decor)), DECOR.length] },
+  { id: 'full_garden', name: 'In Full Bloom', description: `Own all ${GARDEN.length} decorations.`, icon: 'trophy', coins: 100, progress: (s) => [gardenOwned(s), GARDEN.length] },
 ];
 
 export function isUnlocked(save: SaveV2, id: string): boolean {

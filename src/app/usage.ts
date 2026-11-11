@@ -95,19 +95,27 @@ const sessionStart = Date.now();
 /**
  * Starts sending if the build can and the player has chosen to (and switches it off again if they change their mind).
  * Loads the Firebase SDK only then. Never throws.
+ *
+ * `atLaunch`: the choice as the app starts. Only then do this session's earlier events go too (the SDK loads a moment
+ * after the app opens, and the player had said yes before). Turned on later, in Settings or on the Journey's card,
+ * nothing from before that moment is sent. At launch with the choice off, the native SDK is told to stay off too.
  */
-export function applyUsageChoice(save: SaveV2): Promise<boolean> {
+export function applyUsageChoice(save: SaveV2, opts: { atLaunch?: boolean } = {}): Promise<boolean> {
   const on = save.settings.shareUsage;
   setAnalyticsEnabled(on);
+  if (!on && opts.atLaunch && !started) {
+    void import('../services/firebaseAnalytics').then((m) => m.switchOffNative()).catch(() => {});
+    return Promise.resolve(false);
+  }
   if (!on || started) return started ?? Promise.resolve(false);
+  const from = opts.atLaunch ? sessionStart : Date.now();
   started = (async () => {
     try {
       const m = await import('../services/firebaseAnalytics');
       if (!m.analyticsAvailable()) return false;
       const sink = m.createFirebaseSink();
       addSink(sink);
-      // This session's events so far (opened, the day counted…) go too: the SDK loads a moment after the app starts.
-      for (const e of recentEvents()) if (e.at >= sessionStart) sink.send(e.name, e.props, e.at);
+      for (const e of recentEvents()) if (e.at >= from) sink.send(e.name, e.props, e.at);
       noteBands(save);
       return await sink.ready;
     } catch {
@@ -117,12 +125,29 @@ export function applyUsageChoice(save: SaveV2): Promise<boolean> {
   return started;
 }
 
-/** Whether to show the one-time "share usage stats?" card: only in a build that can send, after a few sessions. */
+/** The card has been shown in this run of the app (it stays on the Journey until answered, until the app closes). */
+let askOpen = false;
+
+/**
+ * Whether to show the one-time "share usage stats?" card: only in a build that can send, after a few sessions, in one
+ * run of the app. Shown, it counts as asked: closing the app without answering is a no (Settings has the switch).
+ */
 export async function shouldAskUsage(save: SaveV2): Promise<boolean> {
-  if (save.onboarding.usageAsked || save.settings.shareUsage || !save.onboarding.tutorialDone || save.onboarding.sessions < 3) return false;
+  if ((save.onboarding.usageAsked && !askOpen) || save.settings.shareUsage || !save.onboarding.tutorialDone || save.onboarding.sessions < 3) return false;
   try {
     return (await import('../services/firebaseAnalytics')).analyticsAvailable();
   } catch {
     return false;
   }
+}
+
+/** The card is on screen now: it counts as asked (it won't come back after this run of the app). */
+export function noteUsageAsked(save: SaveV2): void {
+  askOpen = true;
+  save.onboarding.usageAsked = true;
+}
+
+/** The player answered: the card is gone for good. */
+export function closeUsageAsk(): void {
+  askOpen = false;
 }

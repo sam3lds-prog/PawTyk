@@ -315,7 +315,9 @@ build is ready on an iPhone. Everything below is for a real device.
    to keep to your Photos." (without it *Save Image* in the share sheet crashes the app).
 4. Only if usage statistics are to be tested: Firebase console → add the iOS app (bundle id `com.sam3lds.catsvsdogs`),
    download `GoogleService-Info.plist` into `App/App` (target App), set `VITE_FIREBASE_ANALYTICS=1` and
-   `VITE_FIREBASE_MEASUREMENT_ID` (docs/native-setup.md §3b, docs/analytics.md).
+   `VITE_FIREBASE_MEASUREMENT_ID`, and in `Info.plist` set `FIREBASE_ANALYTICS_COLLECTION_ENABLED` = NO (and the
+   ad-id keys off, as in docs/native-setup.md §3b) — **without it Firebase collects from launch for everyone**, before
+   the player is asked (docs/analytics.md).
 5. `npm run build && npx cap sync ios` (adds @capacitor/share, @capacitor/filesystem and, if used, the Firebase plugin).
 6. Xcode: bump the build number, Product → Archive → Distribute → TestFlight (internal testing). The bundle id stays
    `com.sam3lds.catsvsdogs`.
@@ -368,10 +370,13 @@ build is ready on an iPhone. Everything below is for a real device.
 **Before selling the pack for real (sandbox, release build with `VITE_WELCOME_PACK=1`)**
 - [ ] App Store Connect: `pawtyk.welcomepack`, non-consumable, $2.99 tier, *Ready to Submit*, review screenshot
 - [ ] RevenueCat: product imported, attached to entitlement `welcome_pack`
+- [ ] Sandbox account: buy, then relaunch: +180 gems once, not again on relaunch (the purchase's transaction id and the
+      one RevenueCat lists must match; if a second +180 appears, stop: the gem packs share this assumption)
 - [ ] Sandbox account: buy (price shown is the App Store's, localized), cancel (nothing granted, no error toast), fail
       (Settings → App Store → sandbox → interrupt), buy again; kill the app right after paying → relaunch grants it
-      once; delete and reinstall → Restore grants it once; refund in the sandbox (or RevenueCat → revoke) → relaunch:
-      wagon put away, gems taken back only up to what is unspent
+      once; delete and reinstall → Restore grants it once; Restore on a second device: the first keeps it (nothing is
+      taken back by default, `REVOKE_WHEN_MISSING`); refund in the sandbox and note whether RevenueCat drops it from
+      the customer's purchases (only if it does, and a Restore elsewhere doesn't, consider turning revocation on)
 - [ ] `npm run release:check` lists *Welcome Rescue Pack: ON*
 
 **Go / no-go for the App Store build**
