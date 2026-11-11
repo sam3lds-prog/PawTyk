@@ -11,6 +11,12 @@ Go-live gate for the leaderboard: rules tests pass on the emulator (`npm run fb:
 real-device join → solve → table → leave run on TestFlight. Strongly recommended before a wide launch: a native App
 Check provider (App Attest) so `ENFORCE_APP_CHECK` can be turned on.
 
+## Not built: cloud backup of progress
+
+Decided in D47 PR 8: an optional iCloud backup through CloudKit's private database, with no account and nothing on our
+servers; Firebase stays the leaderboard backend only. Architecture, merge rules and migration plan:
+`docs/cloud-backup.md`.
+
 ## Not built: online Paw Cup leagues (Phase 6)
 
 Status: **design only.** `featureFlags.onlineLeagues` stays `false` until every item in "Go-live gate" passes.

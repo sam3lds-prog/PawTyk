@@ -84,6 +84,7 @@ Defects confirmed in source and fixed in Sprint 0:
 - [x] **Sprint Z** (D37) — one gesture: tap ✕, double-tap places; mistakes stay marked (red ✕, or the struck animal on
   two-animal boards); Erase takes ✕ only; Hint shows the count; dots on Easy boards only; one-tap scheme retired
 - [ ] Game Center and online Paw Cup leagues — not started
+- [ ] iCloud backup (CloudKit private database, no account) — decided and planned in `docs/cloud-backup.md` (D47 PR 8), not built
 - [ ] D36 device checklist (`docs/release-checklist.md`) and the five-player usability script — need a phone and people
 
 Test count: 415 unit tests + 133 browser e2e checks (plus Firestore rules tests that need the emulator). Bundle: ~167 kB JS gzipped for the app (incl. all three level packs); the 3D toys (~165 kB) load when a sanctuary opens and the Firebase SDK only when the leaderboard is used.
