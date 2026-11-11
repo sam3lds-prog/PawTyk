@@ -285,3 +285,15 @@ body.has-walk .overlay {
 body.has-walk .toast-host {
   z-index: 71;
 }
+
+/* The one-time "share anonymous usage stats?" card on Journey (D47 PR 6). */
+.usage-ask h2 {
+  margin: 0 0 4px;
+  font-size: var(--t-md, 17px);
+}
+.usage-ask__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}

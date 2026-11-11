@@ -11,9 +11,11 @@ talk to the network, each off until it is configured *and* the player uses it:
 | **Google AdMob** (reward videos) | Only after the player taps "Watch a short video" (iOS app, `VITE_ADMOB_ENABLED=1`). Consent (UMP) and Apple's tracking prompt are asked on that first chosen video, never at launch. | What the Google Mobile Ads SDK collects for ads (device/advertising data per the player's consent). No interstitials, no banners. |
 | **RevenueCat / App Store** (gems) | At every launch (`app.reconcilePurchases()` in `boot.ts`, so a purchase cut off by a closed app is still credited), and when the player opens the Gems tab or buys (iOS app with a RevenueCat key). | Purchase records tied to an anonymous RevenueCat app user id. |
 | **Firebase** (leaderboard) | Only after the player taps **Join** in League → Leaderboard. | An anonymous Firebase user id, the chosen nickname and picture (one of their animals), and for each board solved after joining: which board, its spec and the move log (to check it). Stored: nickname, picture, Paw Points awarded (per award id), weekly and all-time totals, a per-hour/day solve counter, and reports of their name. |
+| **Google Analytics for Firebase** (usage statistics, D47) | Only while the player has **Share anonymous usage stats** on (Settings, or the one-time card on Journey after a few sessions; off by default, as the policy promises). The build must also have it configured (`VITE_FIREBASE_ANALYTICS=1`, GoogleService-Info.plist in the app). | The events in `docs/analytics.md`: game facts only (mode, level, size, seconds, counts, which home, results of choices), the day count since install, wide bands as user properties (level band, homes band, install week, bought anything yes/no). The SDK adds its app instance id and device/OS/locale. No user id, no nickname, no advertising id (consent mode denies ad storage, ad user data and ad personalization; IDFA/IDFV collection off in Info.plist). Turned off: collection stops at once. |
 
-Nothing else: no analytics leave the device (`services/analytics.ts` keeps a 200-event in-memory ring buffer with no
-sink; identifier-looking keys are dropped), no email, no contacts, no location, no crash reporting.
+Nothing else: no email, no contacts, no location, no crash reporting. Without usage stats on, events stay in
+`services/analytics.ts`'s 200-event in-memory ring buffer on the device (identifier-looking keys are dropped). Postcards
+(D47) are made on the device and leave it only if the player shares or saves one themselves.
 
 ## The privacy policy (D43)
 
@@ -51,6 +53,9 @@ configured (`src/app/offers.ts`), so the policy describes optional features as "
 - RevenueCat: **Purchases → Purchase History** (App Functionality), linked, not tracking.
 - AdMob: follow Google's current guidance for the SDK version (Device ID / advertising data for Third-Party
   Advertising; tracking only with ATT consent).
+- Google Analytics for Firebase (only if `VITE_FIREBASE_ANALYTICS=1` ships): **Usage Data → Product Interaction**,
+  **Identifiers → Device ID** (Firebase's app instance id), **Diagnostics** is not collected (no Crashlytics). Not
+  linked to the user's identity, not used for tracking, purpose: **Analytics**. Optional for the user (off by default).
 - With none of them configured: "Data Not Collected".
 
 ## Other safeguards

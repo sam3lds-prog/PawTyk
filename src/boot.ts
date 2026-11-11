@@ -17,6 +17,7 @@ import { needsWelcome, welcomeScreen } from './ui/screens/welcome';
 import { track } from './services/analytics';
 import { catchUpAchievements } from './app/events';
 import { startLeaderboardSync } from './app/leaderboardSync';
+import { applyUsageChoice, noteDay } from './app/usage';
 
 const root = document.getElementById('app')!;
 const router = new Router(root);
@@ -42,11 +43,17 @@ app.save.onboarding.sessions++;
 void app.reconcilePurchases();
 startLeaderboardSync();
 catchUpAchievements();
-app.persist();
 track('app_open', { sessions: app.save.onboarding.sessions });
+// D47 PR 6: the day counted for Day 1 / 7 / 30 return, then usage stats if the player chose them (the SDK loads after
+// the first screen, so it never slows the start).
+noteDay(app.save);
+app.persist();
+setTimeout(() => void applyUsageChoice(app.save), 1500);
 
 // Pause and save the board when the app is backgrounded; resume only if nothing is covering it.
 document.addEventListener('visibilitychange', () => {
+  // Back after midnight: a new day.
+  if (!document.hidden && noteDay(app.save)) app.persist();
   const a = app.active;
   if (!a || router.route?.screen !== 'game') return;
   if (document.hidden) {

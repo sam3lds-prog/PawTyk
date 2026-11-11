@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.2.1",
+    "@capacitor-firebase/analytics": "^8.6.0",
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/haptics": "^8.0.2",
@@ -62,5 +63,10 @@
     "@revenuecat/purchases-capacitor": "^13.7.3",
     "firebase": "^13.1.0",
     "three": "0.186.1"
+  },
+  "overrides": {
+    "@capacitor-firebase/analytics": {
+      "firebase": "$firebase"
+    }
   }
 }

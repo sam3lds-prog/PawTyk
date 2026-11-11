@@ -21,11 +21,13 @@ import { currentRules, showRules } from './rules';
 import { leaderboardOffered } from '../../app/offers';
 import { CONTACT_EMAIL, PRIVACY_URL } from '../../config/legal';
 import { POLICY_UPDATED_TEXT, policyHtml } from '../../legal/privacyPolicy';
+import { analyticsAvailable } from '../../services/firebaseAnalytics';
+import { applyUsageChoice } from '../../app/usage';
 import { animalSvg } from '../art/animals';
 import { fpsCounterOn, setFpsCounter, showListeningCheck, startFarmCheck } from '../components/deviceChecks';
 import { ICON } from '../icons';
 
-type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'music' | 'ambientMusic' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d';
+type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'music' | 'ambientMusic' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d' | 'shareUsage';
 
 function sw(key: BoolKey, label: string, help = ''): string {
   const on = app.settings[key];
@@ -147,7 +149,11 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
               }</small></span>${ICON.chevron}</button>`
             : ''
         }
-        <div class="row"><span class="row__label">Analytics<small>PawTyk sends no analytics. Gameplay events stay in memory on your device and are never linked to you.</small></span></div>
+        ${
+          analyticsAvailable()
+            ? sw('shareUsage', 'Share anonymous usage stats', 'Off unless you turn it on. Which screens and features get used, never who you are: no account, no advertising id, nothing sold. Helps us make PawTyk better.')
+            : '<div class="row"><span class="row__label">Analytics<small>PawTyk sends no analytics. Gameplay events stay in memory on your device and are never linked to you.</small></span></div>'
+        }
         <div class="row"><span class="row__label">${ads.available ? 'Reward videos' : 'Ads'}<small>${ads.available ? (ads.isStub ? 'Test videos only, clearly labeled.' : 'Only when you choose one, for an extra life, a hint or a video token. Never between boards, never in Paw Cup.') : 'PawTyk shows no ads.'}</small></span></div>
         ${ads.available && !ads.isStub ? `<button class="row" data-act="ad-privacy"><span class="row__label">Ad privacy choices<small>Change what the video network may use</small></span>${ICON.chevron}</button>` : ''}
         <button class="row" data-act="privacy"><span class="row__label">Privacy policy<small>What PawTyk keeps, and what it never asks for</small></span>${ICON.chevron}</button>
@@ -245,6 +251,12 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       if (v && key === 'sound') sfx('hello', { style: 'playful' });
       if (v && key === 'music') playCue('triumph');
       if (v && key === 'haptics') haptic('light');
+      // D47 PR 6: usage stats start (or stop at once) with the switch; answering here answers the one-time ask too.
+      if (key === 'shareUsage') {
+        app.save.onboarding.usageAsked = true;
+        app.persist();
+        void applyUsageChoice(app.save);
+      }
       return;
     }
     const ch = t.closest('[data-choice]') as HTMLElement | null;

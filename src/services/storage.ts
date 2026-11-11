@@ -89,6 +89,11 @@ export interface Settings {
   explainMoves: boolean;
   /** The pet tool the player last picked, so the next board opens with it selected. */
   lastSpecies: 'cat' | 'dog';
+  /**
+   * Share anonymous usage statistics (D47 PR 6). Off until the player turns it on (Settings, or the one-time ask): the
+   * privacy policy promises that anything new that is collected stays off until chosen.
+   */
+  shareUsage: boolean;
 }
 
 export interface LevelClear {
@@ -200,6 +205,11 @@ export interface SaveV2 {
   /** Reward videos watched today (all placements share one gentle daily cap). */
   ads: { day: string | null; rewarded: number };
   /**
+   * Usage-statistics bookkeeping (D47 PR 6), kept on the device: the last day the app was opened and on how many days
+   * it has been, and which first-time moments have been counted (first puzzle, first visit…), so each is counted once.
+   */
+  usage?: { lastDay: string | null; daysActive: number; firsts: Record<string, boolean> };
+  /**
    * The world map: which sanctuary you're building, how much each has grown (puzzles solved for it), the last day each
    * was visited, and credit receipts (board id → the sanctuary its solve grew, or `none`) so a board is credited once.
    */
@@ -260,6 +270,8 @@ export interface SaveV2 {
     decorTipSeen: boolean;
     /** The one-time line after a first placement explaining the controls (tap ✕, double-tap places; Settings) has been shown (D38). */
     controlsTipSeen: boolean;
+    /** The one-time "share anonymous usage stats?" card has been answered or dismissed (D47 PR 6). */
+    usageAsked?: boolean;
     /** The one-time card explaining the loop (solve → the home grows → animals come home) has been dismissed (D39). */
     loopTipSeen: boolean;
     /** How many moves have been explained ("only one spot was left in row 3") without the setting on; the first few always are (D39). */
@@ -375,6 +387,7 @@ export function defaultSettings(): Settings {
     ambientMusic: false,
     explainMoves: false,
     lastSpecies: 'cat',
+    shareUsage: false,
   };
 }
 
@@ -455,6 +468,7 @@ export function defaultSave(now = new Date()): SaveV2 {
     inventory: { ledger: [], pets: {}, accents: {}, equippedAccent: {}, favorites: {}, decor: {}, items: [], companions: {}, tricks: {} },
     sanctuary: { hidden: {}, visits: 0, affection: {}, patted: {}, fed: {}, greeted: {}, bestSince: {} },
     ads: { day: null, rewarded: 0 },
+    usage: { lastDay: null, daysActive: 0, firsts: {} },
     world: { active: null, growth: {}, visited: {}, credits: {}, unseen: {}, grown: {}, policy: 2 },
     leaderboard: defaultLeaderboard(),
     missions: { dayKey: null, weekKey: null, progress: {}, claimed: {} },
@@ -477,6 +491,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       sceneTapTipSeen: false,
       decorTipSeen: false,
       controlsTipSeen: false,
+      usageAsked: false,
       loopTipSeen: false,
       whyShown: 0,
       twoStepOffered: false,
@@ -533,6 +548,7 @@ function normSettings(x: unknown): Settings {
     ambientMusic: bool(x.ambientMusic, d.ambientMusic),
     explainMoves: bool(x.explainMoves, d.explainMoves),
     lastSpecies: oneOf(x.lastSpecies, ['cat', 'dog'] as const, d.lastSpecies),
+    shareUsage: bool(x.shareUsage, d.shareUsage),
   };
 }
 
@@ -737,6 +753,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       bestSince: rec(san.bestSince, strItem),
     },
     ads: { day: isObj(x.ads) ? strOrNull(x.ads.day) : null, rewarded: isObj(x.ads) ? int(x.ads.rewarded, 0, 0, 1000) : 0 },
+    usage: isObj(x.usage) ? { lastDay: strOrNull(x.usage.lastDay), daysActive: int(x.usage.daysActive, 0, 0, 100000), firsts: rec(x.usage.firsts, boolItem) } : { lastDay: null, daysActive: 0, firsts: {} },
     world: {
       active: isObj(x.world) ? strOrNull(x.world.active) : null,
       growth: isObj(x.world) ? rec(x.world.growth, numItem) : {},
@@ -801,6 +818,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       sceneTapTipSeen: bool(ob.sceneTapTipSeen, false),
       decorTipSeen: bool(ob.decorTipSeen, false),
       controlsTipSeen: bool(ob.controlsTipSeen, false),
+      usageAsked: bool(ob.usageAsked, false),
       loopTipSeen: bool(ob.loopTipSeen, false),
       whyShown: int(ob.whyShown, 0, 0),
       twoStepOffered: bool(ob.twoStepOffered, false),

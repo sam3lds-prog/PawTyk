@@ -9,8 +9,8 @@
 import { PUBLISHER } from '../config/legal';
 
 /** Shown as "Last updated". Change it whenever the text below changes. */
-export const POLICY_UPDATED = '2026-11-09';
-export const POLICY_UPDATED_TEXT = 'November 9, 2026';
+export const POLICY_UPDATED = '2026-11-10';
+export const POLICY_UPDATED_TEXT = 'November 10, 2026';
 
 export interface PolicyBlock {
   h: string;
@@ -25,7 +25,7 @@ export function privacyPolicy(contact: string | null): PolicyBlock[] {
       h: 'The short version',
       p: [
         `PawTyk is a puzzle game made by ${PUBLISHER} (“we”). It plays fully offline. Your progress is saved on your device, and we can’t see it.`,
-        'PawTyk has no accounts and never asks for your email, contacts, location, photos or microphone. We don’t sell data and we don’t send analytics. Unless your version of PawTyk has one of the optional features below, nothing leaves your device.',
+        'PawTyk has no accounts and never asks for your email, contacts, location or microphone. We don’t sell data, and we send usage statistics only if you turn them on. Unless you use one of the optional features below, nothing leaves your device.',
       ],
     },
     {
@@ -38,12 +38,14 @@ export function privacyPolicy(contact: string | null): PolicyBlock[] {
     {
       h: 'Optional features',
       p: [
-        'Some versions of PawTyk include the features below, and each is described here before it ships. The leaderboard and reward videos stay off until you choose to use them. In a version that sells gems, PawTyk checks your purchases each time it starts. If a feature isn’t in your version of the app, nothing in this section applies to you.',
+        'Some versions of PawTyk include the features below, and each is described here before it ships. The leaderboard, reward videos and usage statistics stay off until you choose to use them. In a version that sells gems, PawTyk checks your purchases each time it starts. If a feature isn’t in your version of the app, nothing in this section applies to you.',
       ],
       ul: [
         'Leaderboard (Google Firebase). Only if you tap Join. We keep a random player id, the nickname and picture you choose (one of your animals), your leaderboard points, and, for each board you solve after joining, which board it was and your moves, so our server can check the score. Other players see your nickname, picture and points. Leave any time in Challenges → Leaderboard, and all of it is deleted; entries with no activity for a year are deleted automatically. [Firebase privacy](https://firebase.google.com/support/privacy).',
         'Purchases (Apple and RevenueCat). Only in a version that sells gems. Apple handles payment; we never see your card or Apple ID. Each time PawTyk starts, it asks RevenueCat, the service that confirms what you own, for your purchases, so anything you bought reaches you even if the app closed partway through. RevenueCat receives a random app user id and your purchase history (empty if you haven’t bought anything), plus what every internet connection carries, such as your IP address. [RevenueCat privacy](https://www.revenuecat.com/privacy).',
         'Reward videos (Google AdMob). Only when you choose to watch one, for an extra life, a hint or a video token. Google may collect information about your device to show and measure the video, and uses your device’s advertising identifier only if you allow tracking when your device asks. [Google privacy](https://policies.google.com/privacy).',
+        'Usage statistics (Google Analytics for Firebase). Off unless you turn on “Share anonymous usage stats” (in Settings, or when PawTyk asks once). Then PawTyk sends which screens and features get used and how play goes (for example: a puzzle started or finished and how long it took, a hint used, a home visited, a postcard made, the store opened), the day count since you started, and wide progress bands (such as “levels 21–40”). Google’s SDK adds an app instance id, a random number it makes for this install, plus your device model, iOS version, language and approximate region. We never send a user id, your name or nickname, your advertising identifier or anything you type, and we turn off Google’s advertising uses of this data. Turn it off any time in Settings and sending stops at once. Google keeps the statistics for at most 14 months. [Firebase privacy](https://firebase.google.com/support/privacy).',
+        'Postcards. A postcard you make stays on your device unless you share or save it yourself; PawTyk sends it nowhere. Saving to Photos asks for your permission the first time.',
       ],
     },
     {

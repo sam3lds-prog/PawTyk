@@ -13,6 +13,7 @@
  */
 
 import { app } from '../../app/app';
+import { noteBands, trackFirst } from '../../app/usage';
 import { playMode, restartGame } from '../../app/gameFlow';
 import { CAT, DOG, type Species } from '../../engine/types';
 import { fmtClock } from '../../game/dates';
@@ -1296,6 +1297,14 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     app.persist();
     cadence.boardsSinceLast++;
     track('puzzle_complete', { mode: mode.kind, size: n, seconds: result.seconds, mistakes: result.mistakes, hints: result.hintsUsed });
+    // D47 PR 6: the funnels' firsts (once each), and progress milestones on the Journey.
+    trackFirst(app.save, 'puzzle_complete', 'first_puzzle_complete', { mode: mode.kind, seconds: result.seconds });
+    if (mode.kind === 'level') {
+      if (mode.level === 1) trackFirst(app.save, 'tutorial', 'tutorial_complete', { seconds: result.seconds });
+      const reached = app.save.journey.nextLevel;
+      if (rec.firstClear && (reached <= 10 || reached === 21 || reached % 10 === 1)) track('level_reached', { level: reached });
+    }
+    noteBands(app.save);
     if (mode.kind === 'daily' && rec.newDaily) track('daily_complete', { streak: rec.streak ?? 0 });
     if (growth?.stageUp) track('region_stage', { region: growth.sanctuary, stage: stageOf(app.save, growth.sanctuary) });
     for (const c of growth?.arrived ?? []) track('animal_arrived', { animal: c, sanctuary: growth!.sanctuary });
