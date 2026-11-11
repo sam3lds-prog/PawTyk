@@ -92,13 +92,13 @@ export const regionScreen: ScreenDef = {
     const freshStage = route.fresh || news?.stage || 0;
     if (isOpen(app.save, id)) {
       app.save.world.visited[id] = today;
+      // D49 PR E: home visits, for "fed within the first few visits" (saved with the visit itself).
+      noteHomeVisit(app.save);
       app.persist();
     } else if (news) app.persist();
     track('region_open', { region: id, stage: stageOf(app.save, id) });
     // D47 PR 6: home visits (the first to each home on its own) and how long the player stays.
     if (!trackFirst(app.save, `visit:${id}`, 'home_visit', { home: id, first: true })) track('home_visit', { home: id, first: false });
-    // D49 PR E: home visits, for "fed within the first few visits".
-    if (isOpen(app.save, id)) noteHomeVisit(app.save);
     const cameAt = Date.now();
     scope.onDispose(() => track('home_time', { home: id, seconds: Math.min(3600, Math.round((Date.now() - cameAt) / 1000)) }));
     // Who came home, just now (a win's Meet) or while the player was elsewhere (the "New" marker): their cards say New

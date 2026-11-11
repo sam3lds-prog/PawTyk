@@ -236,6 +236,8 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
       rerender();
       return;
     }
+    // A feast can be a player's first meal too (D49 PR E).
+    noteFirstMeal(app.save, 'card');
     app.persist();
     track('animal_fed', { food, favorite: true, feast: true, guests: r.fed.length });
     const feast: Feast = { home, food, fed: r.fed.map((x) => ({ ...x, before: before[x.animal] ?? 0 })) };
