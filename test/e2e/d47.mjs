@@ -268,8 +268,10 @@ export async function d47IntegratedChecks({ browser, URL, check, errors }) {
       JSON.stringify({ high, lite, back }),
     );
     check(
-      'an idle walk under reduced motion passes over frames and still draws about twice a second (D47)',
-      f1.skipped > f0.skipped && f1.drawn > f0.drawn && f1.drawn - f0.drawn <= 8,
+      // (On a machine whose own frames already come slower than twice a second there is nothing to pass over: then the
+      // rate itself is checked.)
+      'an idle walk under reduced motion draws about twice a second, passing over the frames in between, and keeps drawing (D47)',
+      f1.drawn > f0.drawn && f1.drawn - f0.drawn <= 8 && (f1.skipped > f0.skipped || f1.drawn - f0.drawn <= 7),
       JSON.stringify({ f0, f1 }),
     );
     // Opened and closed five times: one canvas, no errors, the director free.
