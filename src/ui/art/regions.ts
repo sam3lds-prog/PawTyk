@@ -28,6 +28,7 @@ export type RegionDecorId = Extract<
   | 'trough'
   | 'tireswing'
   | 'tractor'
+  | 'rescuewagon'
   | 'campfire'
   | 'windmill'
   | 'hammock'
@@ -113,6 +114,26 @@ export const REGION_DECOR_ART: Record<RegionDecorId, DecorArt> = {
       <g fill="#97c473"><circle cx="34" cy="62" r="10"/><circle cx="58" cy="74" r="8"/><circle cx="20" cy="80" r="7"/></g>
       <g fill="#e5546c"><circle cx="24" cy="94" r="2"/><circle cx="56" cy="88" r="2"/><circle cx="44" cy="78" r="1.8"/></g>
       <g class="sp-swing"><path d="M68 94 V168" stroke="#8a6a4f" stroke-width="1.2"/><ellipse class="sp-seat" cx="68" cy="176" rx="10" ry="9" fill="none" stroke="#3f3a36" stroke-width="5"/><ellipse cx="68" cy="176" rx="10" ry="9" fill="none" stroke="#5d5752" stroke-width="1.2"/><path class="sp-tire-front" d="M58 177 A10 9 0 0 0 78 177" fill="none" stroke="#3f3a36" stroke-width="5"/></g>`,
+  },
+  rescuewagon: {
+    // D47 PR 7, the Welcome Rescue Pack's own: a painted wagon up on the hill by the orchard, a flower box on its bed and
+    // a little pennant waving welcome. Original art.
+    base: 127,
+    box: [118, 96, 46, 34],
+    draw: () => `
+      <ellipse cx="140" cy="127" rx="19" ry="2.6" fill="${SHADOW}"/>
+      <g class="sp-wagon">
+      <path d="M124 116 L156 116 L154 122 L126 122 Z" fill="#4f8fb8" stroke="${OUT}" stroke-width="0.8"/>
+      <path d="M126 116 v6 M131 116 v6 M136 116 v6 M141 116 v6 M146 116 v6 M151 116 v6" stroke="#3d7aa3" stroke-width="0.6"/>
+      <path d="M124 116 L120 112" stroke="#8a6a4f" stroke-width="1.4" stroke-linecap="round"/><circle cx="119.5" cy="111.5" r="1.1" fill="#8a6a4f"/>
+      <path d="M128 112 h24 v4 h-24 Z" fill="#b98a5e" stroke="${OUT}" stroke-width="0.6"/>
+      <g class="sp-sway"><path d="M131 112 q-1 -4 -3 -6 M136 112 q0 -5 1 -7 M141 112 q1 -4 3 -6 M147 112 q0 -4 -1 -6" stroke="#6f9a4a" stroke-width="0.8" fill="none"/>
+      <circle cx="128" cy="106" r="2" fill="#f4a6c4"/><circle cx="137" cy="105" r="2.2" fill="#ffffff"/><circle cx="137" cy="105" r="0.8" fill="#f6c430"/><circle cx="144" cy="106" r="2" fill="#f6d27a"/><circle cx="146.5" cy="105.5" r="1.8" fill="#b49ae0"/></g>
+      <path d="M154 116 V98" stroke="#8a6a4f" stroke-width="0.9"/>
+      <g class="sp-sway"><path d="M154 98.5 L163 101 L154 103.6 Z" fill="#e5546c" stroke="${OUT}" stroke-width="0.5"/><path d="M156 100.6 h3" stroke="#fff3f6" stroke-width="0.6"/></g>
+      <circle cx="129" cy="123.5" r="3.6" fill="#5b4a3a" stroke="${OUT}" stroke-width="0.6"/><circle cx="129" cy="123.5" r="1.3" fill="#f6c430"/>
+      <circle cx="151" cy="123.5" r="3.6" fill="#5b4a3a" stroke="${OUT}" stroke-width="0.6"/><circle cx="151" cy="123.5" r="1.3" fill="#f6c430"/>
+      </g>`,
   },
   tractor: {
     base: 286,

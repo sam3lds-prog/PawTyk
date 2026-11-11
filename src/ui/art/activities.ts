@@ -64,6 +64,17 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
     seat: '.sp-tractor',
     extras: `<g class="sp-act-puffs" fill="#e8e4dc" opacity="0">${[0, 1, 2].map((i) => `<circle cx="${252 + i * 3}" cy="${244 - i * 6}" r="${2.4 + i}"/>`).join('')}</g>`,
   },
+  rescuewagon: {
+    decor: 'rescuewagon',
+    name: 'Wagon rides',
+    line: (who) => `${who} is riding in the Rescue Wagon!`,
+    ms: 5800,
+    x: 139,
+    y: 116,
+    H: 13,
+    mood: 'happy',
+    seat: '.sp-wagon',
+  },
   balloon: {
     decor: 'balloon',
     name: 'Balloon rides',

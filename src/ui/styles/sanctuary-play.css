@@ -105,6 +105,32 @@
   transform-origin: 50% 100%;
 }
 
+/* ------------------------------------------------------------------ Rescue Wagon: a gentle roll along the hill and back */
+.sanctuary__scene.is-live [data-decor].is-act-rescuewagon .sp-wagon {
+  animation: sp-act-wagon 5800ms ease-in-out;
+}
+@keyframes sp-act-wagon {
+  0%,
+  100% {
+    transform: none;
+  }
+  12% {
+    transform: translate(0, -0.6px);
+  }
+  42% {
+    transform: translate(-22px, 1px);
+  }
+  52% {
+    transform: translate(-23px, 0.4px);
+  }
+  82% {
+    transform: translate(6px, -0.4px);
+  }
+  92% {
+    transform: translate(2px, 0);
+  }
+}
+
 /* ------------------------------------------------------------------ Hot-air balloon: a ride across the sky */
 .sanctuary__scene.is-live [data-decor].is-act-balloon .sp-balloon {
   animation: sp-act-balloon 6200ms ease-in-out;

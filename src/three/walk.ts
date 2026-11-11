@@ -899,6 +899,34 @@ export class FarmWalk {
       const tire = this.add(this.geo(new THREE.TorusGeometry(0.42, 0.15, 10, 22)), this.mat('#3d3a3a', 0.95), 1.7, 0.85, 0, g);
       tire.rotation.y = Math.PI / 2;
       for (let i = 0; i < 5; i++) ball(0.13, '#d8342c', Math.cos(i * 1.3) * 1.7, 4 + Math.sin(i * 2.1) * 0.6, Math.sin(i * 1.3) * 1.7);
+    } else if (id === 'rescuewagon') {
+      // D47 PR 7: the Rescue Wagon: a blue-painted bed on four spoked wheels, a box of flowers, a welcome pennant.
+      const boards = this.mat('#4f8fb8');
+      boards.map = this.wood;
+      const bed = this.add(this.geo(new THREE.BoxGeometry(1.7, 0.4, 0.95)), boards, 0, 0.62, 0, g);
+      void bed;
+      box(1.5, 0.22, 0.78, '#b98a5e', 0, 0.92, 0);
+      for (const sx of [-0.6, 0.6]) for (const sz of [-0.5, 0.5]) wheel(0.3, sx, 0.3, sz);
+      cyl(0.03, 0.03, 0.9, '#8a6a4f', -1.2, 0.55, 0, 6).rotation.z = Math.PI / 2 - 0.4;
+      const cols = ['#f4a6c4', '#ffffff', '#f6d27a', '#b49ae0', '#ffffff', '#f4a6c4', '#f6d27a', '#ffffff'];
+      cols.forEach((c, i) => {
+        const fx = -0.6 + (i % 4) * 0.4;
+        const fz = i < 4 ? -0.18 : 0.18;
+        cyl(0.012, 0.012, 0.28, '#6f9a4a', fx, 1.15, fz, 5);
+        ball(0.085, c, fx, 1.3, fz);
+      });
+      cyl(0.025, 0.025, 1.4, '#8a6a4f', 0.78, 1.4, 0.38, 6);
+      const flag = new THREE.Shape();
+      flag.moveTo(0, 0);
+      flag.lineTo(0.5, -0.12);
+      flag.lineTo(0, -0.26);
+      const fm = this.mat('#e5546c', 0.8);
+      fm.side = THREE.DoubleSide;
+      const pennant = this.add(this.geo(new THREE.ShapeGeometry(flag)), fm, 0.78, 2.08, 0.38, g);
+      const phase = 1.3;
+      this.tickers.push((t, still) => {
+        pennant.rotation.y = still ? 0 : Math.sin(t * 2.2 + phase) * 0.35;
+      });
     } else {
       // The little red tractor.
       box(1.9, 0.7, 1.0, '#d6453a', 0.25, 0.95, 0);

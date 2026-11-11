@@ -1,8 +1,10 @@
 /**
  * In-app purchases. The game talks to `IapService` only.
  *
- * What can be bought: gem packs (consumables, for premium decorations) and "Remove interruptions" (the non-consumable
- * v1 players may already own). Nothing sold affects puzzles, hearts, hints or rankings, and nothing is random.
+ * What can be bought: gem packs (consumables, for premium decorations), the Welcome Rescue Pack (D47 PR 7, a
+ * non-consumable: 180 gems and the Rescue Wagon, once) and "Remove interruptions" (the non-consumable v1 players may
+ * already own; never sold or advertised now). Nothing sold affects puzzles, hearts, hints or rankings, and nothing is
+ * random.
  *
  * Which service runs:
  *  - iOS app with `VITE_REVENUECAT_IOS_KEY` set → `RevenueCatIapService` (App Store through RevenueCat).
@@ -15,7 +17,7 @@ import { Capacitor } from '@capacitor/core';
 import { REVENUECAT, STORE_PRODUCTS, TEST_BUILD } from '../config/services';
 
 export type ProductId = keyof typeof STORE_PRODUCTS;
-export type GemPackId = Exclude<ProductId, 'remove_ads'>;
+export type GemPackId = Exclude<ProductId, 'remove_ads' | 'welcome_pack'>;
 
 export interface ProductInfo {
   id: ProductId;
@@ -44,6 +46,11 @@ export interface IapService {
   restore(): Promise<{ ok: boolean; owned: ProductId[]; source: 'store' | 'dev' | null }>;
   /** Every consumable transaction the store has on record for this player (empty when unknown). */
   consumableTransactions(): Promise<StoreTransaction[]>;
+  /**
+   * What the store has on record (D47 PR 7): every non-subscription transaction and the active entitlements; null when
+   * the store couldn't be asked (offline, not set up). Unknown is never read as "not owned".
+   */
+  purchaseRecord(): Promise<{ transactions: StoreTransaction[]; entitlements: string[] } | null>;
 }
 
 /** Gems in each pack. */
@@ -55,6 +62,7 @@ export const PRODUCT_CATALOG: Array<Omit<ProductInfo, 'price'>> = [
   { id: 'gems_160', title: 'Satchel of Gems', description: '160 gems for premium decorations.' },
   { id: 'gems_420', title: 'Chest of Gems', description: '420 gems for premium decorations.' },
   { id: 'remove_ads', title: 'Remove interruptions', description: 'For players from the first version who already own it. PawTyk shows no forced ads.' },
+  { id: 'welcome_pack', title: 'Welcome Rescue Pack', description: '180 gems and the Rescue Wagon, a Farm decoration only in this pack. Once per player.' },
 ];
 
 const productIdOf = (storeId: string): ProductId | null =>
@@ -75,6 +83,9 @@ export class UnavailableIapService implements IapService {
   async consumableTransactions(): Promise<StoreTransaction[]> {
     return [];
   }
+  async purchaseRecord() {
+    return null;
+  }
 }
 
 /** Test builds only. Everything is free and labeled; nothing it grants counts in a release build. */
@@ -86,8 +97,15 @@ export class TestStoreIapService implements IapService {
   async products(): Promise<ProductInfo[]> {
     return PRODUCT_CATALOG.map((p) => ({ ...p, price: 'Test' }));
   }
+  /** The test store's one record of the pack (a non-consumable: bought once, the same transaction after). */
+  private packTx: string | null = null;
   async purchase(id: ProductId): Promise<PurchaseResult> {
     if (id === 'remove_ads') this.owned.add(id);
+    if (id === 'welcome_pack') {
+      this.owned.add(id);
+      this.packTx ??= `test-pack-${Date.now().toString(36)}`;
+      return { ok: true, id, source: 'dev', transactionId: this.packTx };
+    }
     return { ok: true, id, source: 'dev', transactionId: `test-${Date.now().toString(36)}-${(this.n++).toString(36)}` };
   }
   async restore() {
@@ -95,6 +113,9 @@ export class TestStoreIapService implements IapService {
   }
   async consumableTransactions(): Promise<StoreTransaction[]> {
     return [];
+  }
+  async purchaseRecord() {
+    return { transactions: this.packTx ? [{ transactionId: this.packTx, productId: 'welcome_pack' as ProductId }] : [], entitlements: this.packTx ? ['welcome_pack'] : [] };
   }
 }
 
@@ -157,6 +178,8 @@ export class RevenueCatIapService implements IapService {
       const { Purchases } = await import('@revenuecat/purchases-capacitor');
       const { customerInfo } = await Purchases.restorePurchases();
       const owned: ProductId[] = customerInfo.entitlements.active[REVENUECAT.removeAdsEntitlement] ? ['remove_ads'] : [];
+      // D47 PR 7: the pack restores as the transaction the store keeps for it (its gems and wagon, granted once).
+      if (customerInfo.entitlements.active[REVENUECAT.welcomePackEntitlement] || customerInfo.nonSubscriptionTransactions.some((t) => productIdOf(t.productIdentifier) === 'welcome_pack')) owned.push('welcome_pack');
       return { ok: true, owned, source: 'store' as const };
     } catch {
       return { ok: false, owned: [] as ProductId[], source: null };
@@ -171,11 +194,27 @@ export class RevenueCatIapService implements IapService {
       const out: StoreTransaction[] = [];
       for (const t of customerInfo.nonSubscriptionTransactions) {
         const id = productIdOf(t.productIdentifier);
-        if (id && id !== 'remove_ads') out.push({ transactionId: t.transactionIdentifier, productId: id });
+        if (id && id !== 'remove_ads' && id !== 'welcome_pack') out.push({ transactionId: t.transactionIdentifier, productId: id });
       }
       return out;
     } catch {
       return [];
+    }
+  }
+
+  async purchaseRecord() {
+    if (!(await this.start())) return null;
+    try {
+      const { Purchases } = await import('@revenuecat/purchases-capacitor');
+      const { customerInfo } = await Purchases.getCustomerInfo();
+      const transactions: StoreTransaction[] = [];
+      for (const t of customerInfo.nonSubscriptionTransactions) {
+        const id = productIdOf(t.productIdentifier);
+        if (id) transactions.push({ transactionId: t.transactionIdentifier, productId: id });
+      }
+      return { transactions, entitlements: Object.keys(customerInfo.entitlements.active) };
+    } catch {
+      return null;
     }
   }
 }

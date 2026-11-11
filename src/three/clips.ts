@@ -559,6 +559,27 @@ export const ACTIVITY_CLIPS: Record<string, Clip> = {
       };
     },
   },
+  rescuewagon: {
+    ms: 5800,
+    frame: (t) => {
+      const w = hold(t, 0.03, 0.97, 0.08);
+      // Sitting among the flowers, paws on the side, a wave back at the barn while it rolls.
+      const wave = hold(t, 0.5, 0.7, 0.05);
+      return {
+        pose: {
+          armL: 0.9 * w,
+          armR: (0.9 - 0.9 * wave) * w,
+          armROut: 2.2 * wave + wiggle(t, 0.52, 0.68, 3, 0.35),
+          legL: 0.8 * w,
+          legR: 0.8 * w,
+          py: wiggle(t, 0.1, 0.9, 10, 0.01) * w,
+          headYaw: wiggle(t, 0.1, 0.9, 2, 0.3),
+          tail: wiggle(t, 0, 1, 6, 0.4),
+        },
+        face: wave > 0.3 ? 'laugh' : 'happy',
+      };
+    },
+  },
   balloon: {
     ms: 6200,
     frame: (t) => {

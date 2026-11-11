@@ -34,6 +34,7 @@ export type DecorId =
   | 'trough'
   | 'tireswing'
   | 'tractor'
+  | 'rescuewagon'
   // Outback
   | 'campfire'
   | 'windmill'
@@ -55,7 +56,8 @@ export type DecorId =
   | 'fireflyjars'
   | 'waterfall';
 
-export type DecorUnlock = { kind: 'shop' } | { kind: 'chapter'; chapter: number };
+/** D47 PR 7: `pack`: only in an App Store bundle (the Welcome Rescue Pack), never sold on its own. */
+export type DecorUnlock = { kind: 'shop' } | { kind: 'chapter'; chapter: number } | { kind: 'pack'; pack: 'welcome' };
 
 /** How a decoration is paid for: Paw Coins (earned), video tokens (only from reward videos), gems (App Store). */
 export type DecorTier = 'coins' | 'video' | 'premium' | 'gift';
@@ -253,6 +255,16 @@ export const DECOR: readonly DecorDefinition[] = [
     layer: 6,
     season: 'any',
   },
+  {
+    id: 'rescuewagon',
+    sanctuary: 'farm',
+    name: 'Rescue Wagon',
+    blurb: 'Only in the Welcome Rescue Pack: a painted wagon with a flower box and a welcome pennant, up by the orchard, for every animal you bring home.',
+    cost: null,
+    unlock: { kind: 'pack', pack: 'welcome' },
+    layer: 2,
+    season: 'any',
+  },
   // Outback Sanctuary
   {
     id: 'campfire',
@@ -432,7 +444,7 @@ export const DECOR_BY_ID: Record<DecorId, DecorDefinition> = Object.fromEntries(
 export const STARTER_DECOR: DecorId[] = DECOR.filter((d) => d.starter).map((d) => d.id);
 
 export function decorTier(d: DecorDefinition): DecorTier {
-  if (d.gems) return 'premium';
+  if (d.gems || d.unlock.kind === 'pack') return 'premium';
   if (d.tokens) return 'video';
   if (d.unlock.kind === 'chapter') return 'gift';
   return 'coins';
