@@ -435,6 +435,16 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] Reduce Motion: still happy faces; the hearts ring and the finish shown still; 3D toys off: the same, drawn
 - [ ] On a phone speaker: the three new tunes about as loud as Barnyard Bounce
 
+**PR F — the whole of D48 on a device**
+- [ ] An older build's save (TestFlight before D48) updated in place: everything as it was, nothing new owned but the
+      two free tricks
+- [ ] VoiceOver: the tray's tabs, a trick card, a food card, a decoration's card and the Replay the welcome button
+      are all read with their names
+- [ ] iPhone SE and a Pro Max, 3D toys on: a welcome celebration, a feast and a group act stay smooth (Settings →
+      Performance check while one plays)
+- [ ] A week of normal play (a few levels a day): coins buy a trick or a decoration every few days; nothing feels
+      out of reach or too cheap
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

@@ -2042,3 +2042,20 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
   3D entrances and rest for every body; the tunes' form, band and motif; each played with its tune, ids, finish and
   clean end; Skip and reduced motion; Meet, Replay and the card on the Farm paying nothing); `celebrate`, `pacing`,
   `music` and `deviceChecks` updated (an animal's welcome may be any of the four).
+
+### PR F — integration and release checks
+- **Economy, in levels played** (a new level pays 35 coins; `d48Release.test`): a day's meals to the limit for any
+  kind of animal with its cheapest coin favorite ≤ 2 levels; a coin trick ≤ 3; a coin decoration 2–8; the patchwork
+  bowl ≤ 5; everything D48 sells for coins together 40–100 levels (about 70 now): a long goal, not a wall. Video-token
+  prices ≤ 4 (under half a day's videos); gem prices ≤ the middle pack, and the smallest pack buys a premium trick or
+  bowl. Coins stay the main way: most foods and new decorations, and seven of the eighteen tricks (two free). Five at
+  once cost less than five and never less than four. No price needed changing.
+- **Saves**: a save from before D48 loads untouched and gains none of D48's records (bowls, the chosen bowl,
+  celebrations); a save with everything D48 round-trips exactly, every purchase charged once (retries included); ids a
+  newer build might write (a decoration, a trick, a bowl, a celebration) are kept and never used.
+- **Browser checks** (`test/e2e/d48.mjs`, run by the smoke suite): feeding on the Farm and the Get food round trip; a
+  decoration's card with its preview and Show me; the tray's four groups and Again, a group act's preview with its
+  partner, a coin trick learned once for three quick taps; each new welcome with its own tune (the circle's ring of
+  hearts), Skip, the replay from the animal's card, and nothing in the save changed; every new control has a name; no
+  stalls during a drawn celebration (with 3D toys the test browser renders in software, so it is only reported).
+- The music checks now count 44 cues and hold the three new welcomes to the signature cues' loudness (e2e).
