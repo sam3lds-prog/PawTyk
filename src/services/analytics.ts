@@ -67,7 +67,12 @@ export type AnalyticsEvent =
   // D48 PR B
   | 'bowl_bought'
   // M1: a trick played as a preview in a home (never learned by it).
-  | 'trick_tried';
+  | 'trick_tried'
+  // M3: a share card shown, the player choosing to share it, and what the platform reported (never who to, or where).
+  | 'share_opened'
+  | 'share_started'
+  | 'share_result'
+  | 'photo_memory_claimed';
 
 export type EventProps = Record<string, string | number | boolean>;
 

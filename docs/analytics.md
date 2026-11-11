@@ -43,12 +43,17 @@ Parameters are game facts only: numbers or short text; booleans arrive as 1/0.
 | | `home_time` | leaving a home | `home`, `seconds` (≤ 3600) |
 | | `animal_arrived`, `region_stage`, `trick_played`, `decor_bought` | as before | as before |
 | | `walk_start` | the 3D Farm walk opens | `stage` |
-| | `photo_mode_open` / `postcard_created` / `postcard_shared` | photo mode | `home`, `kind`, `orientation`, `signed`, `frame` / `result` |
+| | `photo_mode_open` / `postcard_created` / `postcard_shared` | photo mode | `home`, `kind`, `orientation`, `signed`, `frame`, `keepsake` / `result` |
+| Sharing (M3) | `share_opened` | a share card shown (a Daily result, a postcard, an arrival keepsake) | `surface` |
+| | `share_started` | the player chose Share | `surface` |
+| | `share_result` | what the platform reported: `shared` (the share sheet finished, not proof of a post), `downloaded`, `copied`, `cancelled`, `failed` | `surface`, `result` |
+| | `photo_memory_claimed` | the week's first postcard earned its coins | `coins` |
+| Shop (M1) | `trick_tried` | a trick played as a preview in a home (never learned by it) | `trick` |
 | Monetization | `store_open` | the Shop opens | `tab` |
 | | `product_view` / `starter_pack_view` / `starter_pack_offer` | a product's details; the Welcome Rescue Pack shown | `product`, `where` |
 | | `iap_started` / `iap_success` / `iap_cancelled` / `iap_failed` | a purchase | `product`, `reason` |
-| | `rewarded_ad_offer` / `rewarded_ad_start` / `rewarded_ad_complete` | a chosen video | `placement` |
-| | `reward_grant` | the video's reward recorded (or refused: the day's cap) | `placement`, `ok` |
+| | `rewarded_ad_offer` / `rewarded_ad_start` / `rewarded_ad_complete` | a chosen video | `placement`, `surface` (M2: `decor:<id>`, `trick:<id>`, `food:<id>`, `shop`) |
+| | `reward_grant` | the video's reward recorded (or refused: the day's cap) | `placement`, `ok`, `surface` |
 
 **User properties** (bands only): `journey_band` (1-20, 21-40, …), `homes_band` (0, 1, 2-3, 4-6, 7+),
 `install_week` (ISO week of first play), `paid` (yes/no).
@@ -67,4 +72,10 @@ Parameters are game facts only: numbers or short text; booleans arrive as 1/0.
   `reward_grant{ok=1}`.
 - Sessions per returning user: Firebase's engagement reports (`session_start` is automatic).
 
-Aggregate only: there is no way (and no need) to look up one player.
+- **Sharing (M3)**: `share_opened` → `share_started` → `share_result{result=shared}` per `surface`. `shared` only
+  means the system sheet finished: it never proves a post was made, seen, or led to an install. Visits that came from
+  a shared card are counted on the landing page's own hosting logs, by the `?s=` on the link (no player id), not here.
+- **Shop discovery (M1/M2)**: `product_view{surface=try_on}`, `trick_tried`, `reward_grant{surface=decor:…}`.
+
+Aggregate only: there is no way (and no need) to look up one player. No share event carries a recipient, a contact,
+an account or the app the player shared to.

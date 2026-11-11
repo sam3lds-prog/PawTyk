@@ -139,3 +139,40 @@
 .token-need .btn[aria-busy='true'] {
   opacity: 0.7;
 }
+
+/* ------------------------------------------------------------------ M3: shareable moments */
+.result-sheet__img {
+  aspect-ratio: 1;
+  width: auto;
+  max-width: 100%;
+}
+.photo-mode__memory {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: var(--t-sm);
+}
+.photo-mode__memory .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.postcard-sheet__memory {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--brand-tint);
+}
+.postcard-sheet__memory .ico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.scene-share .ico {
+  width: 18px;
+  height: 18px;
+}

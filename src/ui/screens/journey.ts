@@ -21,6 +21,7 @@ import { liveStreak } from '../../meta/progression';
 import { openSheet, toast } from '../components/sheet';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { claimMissionDetailed, missionStates, type MissionDef } from '../../meta/missions';
+import { PHOTO_MEMORY_COINS, photoMemoryDone } from '../../meta/photoMemory';
 import { CASUAL_HEARTS, FIRST_PAIR_LEVEL, dailyFor, modeKey, playsSolo, type ModeRef } from '../../game/modes';
 import { MAX_NEW_BOARD_SIZE } from '../../game/specs';
 import { itemBalance } from '../../meta/items';
@@ -380,7 +381,22 @@ function mountHub(root: HTMLElement, scope: Scope): void {
             </li>`,
           )
           .join('')}
+        ${photoMemoryRow()}
       </ul>`;
+  }
+  /**
+   * M3: the week's optional Photo Memory, beside the weekly errand: earned by making a postcard (Photo, in any home's
+   * scene), whatever is done with it. Nothing to claim; nothing lost by skipping it.
+   */
+  function photoMemoryRow(): string {
+    if (!isOpen(app.save, 'farm') || !app.save.onboarding.tutorialDone) return '';
+    const done = photoMemoryDone(app.save);
+    return `<li class="mission ${done ? 'is-claimed' : ''}" data-photo-memory-row>
+      <span class="mission__check" aria-hidden="true">${done ? ICON.check : ''}</span>
+      <span class="mission__body"><span class="mission__title">Capture a memory <span class="chip">This week</span></span>
+      <span class="muted">${done ? 'Done for this week.' : 'Make a postcard in any home: tap Photo in its scene. Sharing it is up to you.'}</span></span>
+      <span class="mission__reward ${done ? 'is-claimed' : ''}">${ICON.coin}<span class="num">${PHOTO_MEMORY_COINS}</span></span>
+    </li>`;
   }
   renderMissions();
 
