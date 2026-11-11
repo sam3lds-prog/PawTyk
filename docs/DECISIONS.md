@@ -2405,6 +2405,17 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
     it) was updated; the win's coin pill had no space between the amount and *Paw Coins* for screen readers.
   - PR A: Cotton's welcome snack is a meal, so the old *feeding adds two hearts* check counts from after it.
   - The try-on banner's Back is quiet when Buy is there, so Buy is the one strong button.
+  - PR D: an in-progress Daily is resumed from its row under the hero (the Daily card itself is folded into *More to
+    play*), so the old smoke check that tapped the card now taps the row. The D44 regression page switches animal
+    moments off too, so a moment starting by itself is never counted as a figure left mid-trick.
+- **Found and fixed in code review** (Codex on the PRs):
+  - PR A: the first arrival's automatic welcome snack is a *pending* scene moment. A Photo, the Tour, the Walk or a
+    trick the player starts during its lead-in keeps going, and the welcome card offers the snack instead.
+  - PR B: a bought decoration's arrival stays waiting until it actually plays (a piece not drawn yet, like the Duck Pond
+    Fountain before the pond, a busy scene, or a visit left early, keeps it for the next eligible visit).
+  - PR C: the player's trick or meal ends an animal moment *before* checking whether the animal is free
+    (`director.end('moment')`; the tray's `beforePlay`), so the player's pick plays instead of being turned away.
+  - PR E: the home-visit count is saved with the visit itself, and a feast as the first meal records `first_meal`.
 - **Before and after** (`docs/screenshots/d49/`, against `docs/screenshots/m/`): Featured (`a1`, was `m1-featured`), a
   decoration's card (`a2`, was `m1-decor-card`), the try-on banner with Buy (`a3`), the welcome card before and after
   the snack (`a4`, `a5`, was `m3-keepsake`), a win at 320 (`b1`), a quick meal and an animal moment (`c1`, `c2`), the
