@@ -42,7 +42,7 @@ import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
 import { openPhotoMode, type PhotoMode, type PhotoTarget } from '../components/photoMode';
-import { trackFirst } from '../../app/usage';
+import { noteHomeVisit, trackFirst } from '../../app/usage';
 import { captureScene } from '../components/sceneCapture';
 import { photoButtonMarkup, photoFrames } from '../components/photoFrames';
 import { HOME_SCENERY } from '../art/homeScenery';
@@ -97,6 +97,8 @@ export const regionScreen: ScreenDef = {
     track('region_open', { region: id, stage: stageOf(app.save, id) });
     // D47 PR 6: home visits (the first to each home on its own) and how long the player stays.
     if (!trackFirst(app.save, `visit:${id}`, 'home_visit', { home: id, first: true })) track('home_visit', { home: id, first: false });
+    // D49 PR E: home visits, for "fed within the first few visits".
+    if (isOpen(app.save, id)) noteHomeVisit(app.save);
     const cameAt = Date.now();
     scope.onDispose(() => track('home_time', { home: id, seconds: Math.min(3600, Math.round((Date.now() - cameAt) / 1000)) }));
     // Who came home, just now (a win's Meet) or while the player was elsewhere (the "New" marker): their cards say New

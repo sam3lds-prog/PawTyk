@@ -480,6 +480,57 @@ postcard earns its 30 coins again, and the 30 are taken back).
 - [ ] `featureFlags.friends` is still `false`; no Friends & Invites row anywhere; the go-live gate in
       `docs/referrals.md` §7 is not started until Sam approves §9
 
+### D49 — attention, delight and retention
+
+Run on a recent iPhone and an older, small one (an SE-sized screen if there is one), sound on, the silent switch both
+ways, haptics on. Where a line says *observe*, watch a player who hasn't seen the build and don't help them.
+
+**First session** (Settings → Erase progress, or a fresh install)
+- [ ] Observe: the first animal is placed without help (the double tap); the first board is finished without help
+- [ ] Cotton's arrival ends on **Give Cotton a welcome snack** (*Your first treat is on us*) and **Continue to level 2**;
+      the snack opens the Farm and she eats it at once (in 3D too), her parade waits under the scene
+- [ ] The card then says she loved it, with one button; the starter gift comes after the snack, with no second
+      "Ready for the next puzzle?"
+- [ ] Observe after level 2: ask "what made the Farm grow?" (target: they say the puzzles)
+- [ ] Time from a win sheet to the next tap feels immediate (the `win_next_action` events in DebugView agree)
+
+**Attention** (PR A)
+- [ ] Shop → Decor: one large Featured pick and two small ones; the large one is affordable when anything is; See all
+      lands on the catalog; nothing runs past the screen at 320 pt
+- [ ] A decoration's card: one **Try it in my Farm** (no second preview button); in the Farm an animal uses it at once;
+      Again; **Buy** on the banner charges once (tap it twice fast), the piece stays out and arrives with sparkles
+- [ ] After any later welcome: one card (snack, Continue, the next goal), the resident's line on its own line, every
+      button inside the screen; VoiceOver reads the card's title and both buttons in order
+
+**Micro-rewards** (PR B; feel these on the device, the browser can't)
+- [ ] A correct placement: a quick ring and the firm tap; a finished row ripples outward in well under half a second,
+      with the line's tone; nothing on the board moves (only the tiles' glow)
+- [ ] A win shows **+N Paw Coins** under the stars, and *Errand done … +20 Paw Coins* when a solve finishes one
+- [ ] One puzzle from an arrival: the portrait beams with a halo and *Almost home!* on the win sheet
+- [ ] A decoration bought on its card: *It's yours!* and **See it in the Meadow Farm**; the Farm plays the arrival once,
+      an animal uses it; a second visit plays nothing
+
+**Feeding and animal life** (PR C)
+- [ ] A first meal plays in full (the camera comes close); the same food again is quick (about a second), in 3D too;
+      a new favorite plays in full; a meal reaching a friendship level beams with hearts and names the level
+- [ ] Feeding three animals in a row takes a few seconds, not ten; a feast is one short scene
+- [ ] Settings → Meals → Full plays every meal in full
+- [ ] Wait in the Farm doing nothing: an animal moment comes after about 15 s (New the first time), then rarely; at most
+      four a visit; none while a sheet, the tray, a meal, the Tour or the Walk is open; Tour, a trick or Walk ends it
+      at once; nobody is left mid-trick; with Reduce Motion on, none
+- [ ] Five minutes in the Farm with the frame-rate counter on: no drop when a moment or a quick meal plays
+
+**A focused return** (PR D)
+- [ ] Journey: *Today at your Farm*, Play/Resume above the fold on the small phone; *Also today* has at most two rows,
+      the rest is in **More to play** (its summary says what it holds)
+- [ ] A friend one or two hearts from a gift is suggested; a hello there and it's gone from Today
+- [ ] No row ever says "missed", counts down or warns about a streak; there are no notifications
+- [ ] An errand pays the moment it's done (the win sheet says how much); the Errands list shows it claimed; nothing is
+      credited twice (relaunch, check the coin total)
+
+**Tester shortcuts for D49**: *Show an animal moment* (the Farm, one in 2.5 s), *Forget first meals* (every next meal
+plays in full again).
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

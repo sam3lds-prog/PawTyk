@@ -12,6 +12,7 @@ import { d46Checks, forceCloseChecks } from './d46.mjs';
 import { d47Checks, d47IntegratedChecks } from './d47.mjs';
 import { d48Checks } from './d48.mjs';
 import { mChecks } from './m.mjs';
+import { d49Checks } from './d49.mjs';
 
 let chromium;
 try {
@@ -1413,6 +1414,7 @@ try {
   await d47IntegratedChecks({ browser, URL, check, errors });
   await d48Checks({ browser, URL, check, errors });
   await mChecks({ browser, URL, check, errors });
+  await d49Checks({ browser, URL, check, errors });
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {

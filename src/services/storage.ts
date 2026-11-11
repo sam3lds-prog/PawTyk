@@ -224,7 +224,7 @@ export interface SaveV2 {
    * Usage-statistics bookkeeping (D47 PR 6), kept on the device: the last day the app was opened and on how many days
    * it has been, and which first-time moments have been counted (first puzzle, first visit…), so each is counted once.
    */
-  usage?: { lastDay: string | null; daysActive: number; firsts: Record<string, boolean> };
+  usage?: { lastDay: string | null; daysActive: number; firsts: Record<string, boolean>; /** D49 PR E: visits to any home, for "fed within the first few visits". */ homeVisits?: number };
   /**
    * The world map: which sanctuary you're building, how much each has grown (puzzles solved for it), the last day each
    * was visited, and credit receipts (board id → the sanctuary its solve grew, or `none`) so a board is credited once.
@@ -789,7 +789,9 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       ...(isObj(san.moments) ? { moments: rec(san.moments, strItem) } : {}),
     },
     ads: { day: isObj(x.ads) ? strOrNull(x.ads.day) : null, rewarded: isObj(x.ads) ? int(x.ads.rewarded, 0, 0, 1000) : 0 },
-    usage: isObj(x.usage) ? { lastDay: strOrNull(x.usage.lastDay), daysActive: int(x.usage.daysActive, 0, 0, 100000), firsts: rec(x.usage.firsts, boolItem) } : { lastDay: null, daysActive: 0, firsts: {} },
+    usage: isObj(x.usage)
+      ? { lastDay: strOrNull(x.usage.lastDay), daysActive: int(x.usage.daysActive, 0, 0, 100000), firsts: rec(x.usage.firsts, boolItem), ...(x.usage.homeVisits !== undefined ? { homeVisits: int(x.usage.homeVisits, 0, 0, 1_000_000) } : {}) }
+      : { lastDay: null, daysActive: 0, firsts: {} },
     world: {
       active: isObj(x.world) ? strOrNull(x.world.active) : null,
       growth: isObj(x.world) ? rec(x.world.growth, numItem) : {},

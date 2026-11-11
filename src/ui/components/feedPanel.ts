@@ -10,6 +10,7 @@
  */
 
 import { app } from '../../app/app';
+import { noteFirstMeal } from '../../app/usage';
 import { FOODS, FOOD_BY_ID, isFavorite, isFeast, type FoodId } from '../../meta/catalogs/foods';
 import { animalKindOf, favoriteFoods, feastGuests, feedAnimal, foodCount, fedToday, FOOD_AFFECTION_PER_DAY, friendship, serveFeast, suggestedFood } from '../../meta/feeding';
 import { patFriend, pattedToday } from '../../meta/sanctuary';
@@ -207,6 +208,7 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
       rerender();
       return;
     }
+    noteFirstMeal(app.save, 'card');
     app.persist();
     track('animal_fed', { food, favorite: r.favorite });
     ev.onFed?.(food, r.favorite);

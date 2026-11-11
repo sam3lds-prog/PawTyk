@@ -151,3 +151,18 @@ export function noteUsageAsked(save: SaveV2): void {
 export function closeUsageAsk(): void {
   askOpen = false;
 }
+
+/** D49 PR E: counts a visit to a home (any), for the first-meal measure. Returns the count so far. */
+export function noteHomeVisit(save: SaveV2): number {
+  const u = usage(save);
+  u.homeVisits = Math.min(1_000_000, (u.homeVisits ?? 0) + 1);
+  return u.homeVisits;
+}
+
+/**
+ * D49 PR E: the first meal a player ever gives (once), with how many home visits it took to find feeding and where it
+ * came from (an animal's card, or a newcomer's welcome snack). Opt-in like every event.
+ */
+export function noteFirstMeal(save: SaveV2, from: 'card' | 'welcome'): void {
+  trackFirst(save, 'meal', 'first_meal', { from, visits: Math.min(usage(save).homeVisits ?? 0, 99) });
+}

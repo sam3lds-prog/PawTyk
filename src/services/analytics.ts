@@ -82,7 +82,10 @@ export type AnalyticsEvent =
   | 'meal_played'
   | 'animal_moment'
   // D49 PR D: which of Today's optional things was tapped (a board in progress, the Daily, a friend, a home's news).
-  | 'today_tap';
+  | 'today_tap'
+  // D49 PR E: how long after a win (or the first arrival) the player chose what to do next, and the first meal ever.
+  | 'win_next_action'
+  | 'first_meal';
 
 export type EventProps = Record<string, string | number | boolean>;
 

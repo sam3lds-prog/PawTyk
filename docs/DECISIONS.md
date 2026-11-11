@@ -2375,3 +2375,40 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
   when there's nothing; the hub's order, rows, wording with no pressure, the fold closed with its summary, a solved
   Daily with tomorrow, the fold remembered; auto-claim once by the same ids as Claim; a solve reports what it paid).
   Updated: the Journey hub test (*Today at your Farm*).
+
+### PR E — validation and measurement (`d49/e-validation`)
+- **Browser checks** (`test/e2e/d49.mjs`, run by `npm run e2e`), mostly on a 320×568 phone:
+  - a returning player's Journey: *Today at your Farm*, Play above the fold, at most two rows under it, the rest
+    folded, nothing scrolling sideways; the friend nudge opens the Farm and goes once Cotton has had her hello;
+  - Featured as one large and two small, See all landing on the catalog;
+  - Try it in my Farm → Buy on the banner: charged once (tapped twice), out for good, sparkles in, an animal uses it;
+  - after a welcome, one card in the phone's width with the resident's line on its own line; the snack plays, then
+    Continue alone;
+  - an ordinary repeat meal in a real browser takes about a second, and the toy nibbles;
+  - an animal moment comes by itself (New the first time) and the Tour takes over at once, nobody left mid-trick;
+  - a win at 320×568: the coins beside the success, its errand already paid, Play next on screen without scrolling;
+  - quick back-and-forth between Journey, the Farm and the Shop leaves the scene at rest.
+- **Measurement** (opt-in, `docs/analytics.md` → D49): `win_next_action` (how long after a win, or the first
+  arrival, the player chose what's next) and `first_meal` (once, with the home visits it took: `usage.homeVisits`, an
+  additive count). With PR A–D's events, the review's pilot measures are listed there with their proposed targets and
+  the caveat that opt-in players are not a fair sample: pair them with observed TestFlight sessions.
+- **TestFlight scenarios** (`docs/release-checklist.md` → D49): the first session observed, attention, micro-rewards,
+  feeding and animal life (incl. five minutes with the frame-rate counter), the focused return, VoiceOver on the
+  welcome card.
+- **Found and fixed by the checks**:
+  - PR C: animal moments draw emote bubbles in 3D by themselves, and three.js's one shared sprite geometry kept every
+    scene renderer that ever drew one alive (D46's renderer check: 7 left after 7 walks). `three/release.ts` now
+    disposes it with each renderer, as D46 did for the shared lookup texture. (A tray trick before a walk would have
+    done the same; it just never happened in the checks.) D46's browser checks switch moments off
+    (`setMomentsEnabled`), since they need the scene exactly at rest for minutes.
+  - PR B: a bought decoration's card stays open now, so the old purchase check (which tapped the Shop's card under
+    it) was updated; the win's coin pill had no space between the amount and *Paw Coins* for screen readers.
+  - PR A: Cotton's welcome snack is a meal, so the old *feeding adds two hearts* check counts from after it.
+  - The try-on banner's Back is quiet when Buy is there, so Buy is the one strong button.
+- **Before and after** (`docs/screenshots/d49/`, against `docs/screenshots/m/`): Featured (`a1`, was `m1-featured`), a
+  decoration's card (`a2`, was `m1-decor-card`), the try-on banner with Buy (`a3`), the welcome card before and after
+  the snack (`a4`, `a5`, was `m3-keepsake`), a win at 320 (`b1`), a quick meal and an animal moment (`c1`, `c2`), the
+  returning player's Journey at 320 and 390 (`d1`, `d2`).
+- **Not established here**: real iPhones (haptics, the ripple's feel, speaker sound, 3D frame rate during moments and
+  quick meals, VoiceOver), and real players: none of the pilot targets has been measured. The review recommends a
+  real-player beta before more development; the checklist and the events are ready for it.
