@@ -157,6 +157,20 @@ describe('Cotton’s first visit, straight from the first arrival', () => {
     expect(welcomeSnack(app.save, 'cotton')).toBeNull();
   });
 
+  it('D49 PR A: the Tour tapped during the snack’s lead-in keeps going; the card offers the snack instead of playing it', async () => {
+    home('cotton');
+    app.save.world.growth.farm = 1;
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton' as never], met: true, snack: true });
+    await vi.advanceTimersByTimeAsync(100);
+    document.querySelector<HTMLElement>('[data-act="tour"]')!.click();
+    await vi.advanceTimersByTimeAsync(2200);
+    expect(document.querySelector('.is-touring')).not.toBeNull();
+    expect(document.querySelector('[data-friend="cotton"]')!.getAttribute('data-trick')).not.toBe('feed');
+    expect(document.querySelector('[data-welcome-card="offer"] [data-act="welcome-snack"]')).not.toBeNull();
+    expect(app.save.sanctuary.affection.cotton ?? 0).toBe(0);
+  });
+
   it('a later Meet (not from the arrival scene) still announces who came home', async () => {
     home('cotton', 'truffle');
     const router = mount();
