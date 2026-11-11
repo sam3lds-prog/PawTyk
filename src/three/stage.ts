@@ -10,6 +10,7 @@
 
 import * as THREE from 'three';
 import { noteSharedTextures, releaseRenderer } from './release';
+import { copyCanvas } from './capture';
 import { Actor } from './actor';
 import { activityClip, ambientClip } from './clips';
 import { Effects } from './effects';
@@ -520,6 +521,16 @@ export class SceneStage {
   private renderNow(): void {
     if (this.disposed || this.lost) return;
     this.frame(this.now(), this.o.reducedMotion());
+  }
+
+  /**
+   * The toys as they are this moment (D47 PR 5): a fresh frame, copied before the browser can clear it (so the
+   * renderer needs no kept drawing buffer). Null if the context is gone or there is no 2D canvas.
+   */
+  snapshot(): HTMLCanvasElement | null {
+    if (this.disposed || this.lost) return null;
+    this.renderNow();
+    return copyCanvas(this.canvas);
   }
 
   dispose(): void {

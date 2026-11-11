@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
+import { copyCanvas } from './capture';
 import { buildMeadow, type Meadow } from './meadow';
 import {
   Shadows,
@@ -1254,6 +1255,13 @@ export class FarmWalk {
   renderNow(): void {
     if (this.disposed || this.lostContext) return;
     this.render(performance.now());
+  }
+
+  /** The view as the player sees it this moment (D47 PR 5: postcards): a fresh frame, copied at once. */
+  snapshot(): HTMLCanvasElement | null {
+    if (this.disposed || this.lostContext) return null;
+    this.render(performance.now());
+    return copyCanvas(this.canvas);
   }
 
   // ---------------------------------------------------------------- input

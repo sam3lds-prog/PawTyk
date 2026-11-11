@@ -35,6 +35,7 @@ export const ICON = {
   calendar: wrap('<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5"/><circle cx="12" cy="14.8" r="1.6" fill="currentColor" stroke="none"/>'),
   flame: wrap('<path d="M12 20.5c3.6 0 6-2.4 6-5.8 0-3.9-3.3-6-3.9-10.2-2.3 1.7-3.4 3.8-3.4 6.1-1.1-.7-1.8-1.8-2-3-1.7 1.6-2.7 3.9-2.7 6.9 0 3.6 2.4 6 6 6Z"/>'),
   leaf: wrap('<path d="M5 19c0-8 5-13.5 14-14-.3 9-5.6 14-13 14H5Z"/><path d="M5 19c3-4 6-6.5 9.5-8.5"/>'),
+  camera: wrap('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.4-2h5.8l1.4 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z"/><circle cx="12" cy="13" r="3.6"/>'),
   share: wrap('<path d="M12 15V4M8 7.5 12 3.5l4 4"/><path d="M6 11v7.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V11"/>'),
   help: wrap('<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.4"/><circle cx="12" cy="16.9" r="1" fill="currentColor" stroke="none"/>'),
   mark: wrap('<path d="M7 7l10 10M17 7 7 17"/>'),

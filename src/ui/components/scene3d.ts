@@ -28,6 +28,11 @@ export interface Scene3D {
   resume(): void;
   /** Whether toys are on screen right now: a stage exists and its context is there (tests and QA). */
   readonly drawing: boolean;
+  /**
+   * A picture of the toys as they are now (D47 PR 5: postcards): a fresh frame, copied at once. Null when no toys are
+   * showing (the drawn animals are in the picture then).
+   */
+  snapshot(): HTMLCanvasElement | null;
   /** Where it is: `off` (stays drawn), `loading`, `drawing`, `suspended`, `lost` (context gone), `failed`. */
   readonly state: Scene3DState;
   dispose(): void;
@@ -274,6 +279,9 @@ export function createScene3D(): Scene3D {
     },
     get drawing() {
       return !!stage && !stage.contextLost;
+    },
+    snapshot() {
+      return stage && !stage.contextLost && !suspended ? stage.snapshot() : null;
     },
     get state(): Scene3DState {
       if (disposed) return 'disposed';

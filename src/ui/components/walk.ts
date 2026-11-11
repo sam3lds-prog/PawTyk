@@ -21,6 +21,7 @@ import { cameraQuality } from './camera';
 import { wants3D } from './scene3d';
 import { esc, h } from '../dom';
 import { ICON } from '../icons';
+import { openPhotoMode, type PhotoMode } from './photoMode';
 import type { Scope } from '../router';
 import { animalName } from './activities';
 
@@ -60,6 +61,7 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
       <header class="walk__top">
         <button class="walk__back" data-act="walk-close" aria-label="Return to the Farm overview">${ICON.back}<span>Overview</span></button>
         <h2 class="walk__title">Meadow Farm</h2>
+        <button class="walk__photo" data-act="walk-photo" aria-label="Take a photo of the Farm" hidden>${ICON.camera}<span>Photo</span></button>
       </header>
       <p class="walk__place" data-walk-place hidden></p>
       <p class="walk__hint" data-walk-hint>Drag to look around · Tap the ground to walk · Tap a friend to say hello</p>
@@ -191,6 +193,8 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
       }
       current = walk;
       view.replaceChildren(walk.canvas);
+      // The walk is drawing: a picture can be taken.
+      el.querySelector<HTMLElement>('[data-act="walk-photo"]')?.removeAttribute('hidden');
       const fit = () => walk?.fit(view.clientWidth, view.clientHeight);
       fit();
       const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
@@ -270,8 +274,21 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     });
   }
 
+  // Photo mode (D47 PR 5): a postcard of the Farm as the player sees it (they look round to frame it).
+  let photo: PhotoMode | null = null;
   scope.on(el, 'click', (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest('.photo-mode')) return;
+    if (t.closest('[data-act="walk-photo"]') && walk && !walk.contextLost) {
+      const w = walk;
+      w.hold(0, 0);
+      photo = openPhotoMode(scope, el, { place: 'Meadow Farm', home: 'farm', kind: 'walk', frames: [], capture: async () => w.snapshot() });
+      void photo.done.then(() => {
+        photo = null;
+        if (scope.alive) el.querySelector<HTMLElement>('[data-act="walk-photo"]')?.focus({ preventScroll: true });
+      });
+      return;
+    }
     if (t.closest('[data-act="walk-close"]')) close();
     const go = t.closest<HTMLElement>('[data-goto]');
     if (go && walk) {
@@ -283,7 +300,9 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     const ke = e as KeyboardEvent;
     if (ke.key === 'Escape') {
       e.preventDefault();
-      close();
+      // Escape leaves photo mode first, then the walk.
+      if (photo?.open) photo.close();
+      else close();
     } else if (ke.key === 'Tab') {
       // Focus stays inside the walk view.
       const items = [...el.querySelectorAll<HTMLElement>('button:not([disabled])')];
