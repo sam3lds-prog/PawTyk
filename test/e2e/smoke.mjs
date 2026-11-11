@@ -410,8 +410,19 @@ try {
       () => false,
     );
   check('the animals say hello when you arrive', greeted);
-  await page.waitForSelector('.sanctuary__scene.has-3d > canvas.scene3d', { timeout: 15000 }).catch(() => {});
-  check('the Farm animals appear as 3D toys over the drawn scene', await page.evaluate(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d') && getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity === '0'));
+  // The drawn animals fade out (260 ms) as the toys arrive: wait for the fade to finish, not just for the canvas (on a
+  // slow CI runner the check used to land mid-fade).
+  const toysShown = await page
+    .waitForFunction(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d') && getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity === '0', null, { timeout: 15000 })
+    .then(
+      () => true,
+      () => false,
+    );
+  check(
+    'the Farm animals appear as 3D toys over the drawn scene',
+    toysShown,
+    await page.evaluate(() => JSON.stringify({ has3d: !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d'), opacity: getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity })),
+  );
   // D44 PR C: the camera moves the drawing and the toys together. A figure's ground point, drawn (through the SVG) and
   // in 3D (through the stage's camera), lands on the same screen pixel at the whole scene and in a 2× close-up.
   const aligned = await page.evaluate(() => {
