@@ -84,6 +84,16 @@
 }
 
 /* ---------- PR C: the Daily said once on Journey ---------- */
+/* Today's Daily is a row above: the fold keeps the week on its own small card (the strip no longer sits in a card's
+   padding, so it flows under the line). */
+.daily-block--week {
+  padding: var(--s3) var(--s4);
+}
+.daily-block--week .week-strip {
+  position: static;
+  margin: 0;
+  padding: 0;
+}
 .daily-block__note {
   margin: 0 0 var(--s2);
   display: flex;

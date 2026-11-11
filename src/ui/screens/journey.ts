@@ -381,7 +381,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
       <details class="more-play" data-more-play ${morePlayOpen ? 'open' : ''}>
         <summary class="more-play__summary"><span class="more-play__text"><b>More to play</b><small data-more-summary>${esc(moreSummary())}</small></span>${ICON.chevron}</summary>
         <div class="more-play__body">
-          <div class="daily-block">
+          <div class="daily-block${dailyAbove ? ' daily-block--week card' : ''}">
             ${
               dailyAbove
                 ? `<p class="daily-block__note" data-daily-above>${ICON.calendar}<span>This week’s Daily Puzzles. Today’s is in <b>Also today</b>, above.</span></p>`
