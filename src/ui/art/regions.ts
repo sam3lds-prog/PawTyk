@@ -17,7 +17,8 @@ import { companionFigure, figureTop, kitSpeciesOf, type CompanionMood, type Frie
 import { OUT, SHADOW, dusk, heartAbove, type DecorArt } from './sceneKit';
 import { LANDSCAPE_ART, LANDSCAPE_SPOTS, type NewBiome } from './landscapes';
 import { HOME_SCENERY, eveningLights, sunlight } from './homeScenery';
-import { botanyDefs, butterfliesAt, flowerFor, meadow, memoMeadow, stripMeadow, tuft as botanyTuft } from './botany';
+import { botanyDefs, butterfliesAt, fineDetail, flowerFor, meadow, memoMeadow, stripMeadow, tuft as botanyTuft } from './botany';
+import { appleTree, barnDetail, fenceDetail, henHouseDetail, pathPebbles, pondBank, roundBale, squareBales, sunflower } from './farmArt';
 import { seedOf } from '../../art/botany';
 
 export type RegionDecorId = Extract<
@@ -438,19 +439,10 @@ const ARCTIC_STARS: Array<[number, number, number]> = [
   [120, 52, 1.4],
 ];
 
-const sunflower = (x: number, y: number, h = 30) =>
-  `<g><path d="M${x} ${y} V${y - h}" stroke="#6f9a4a" stroke-width="1.8"/><path d="M${x} ${y - h * 0.4} c-6 -3 -9 -1 -10 2 c4 1 7 0 10 -2z M${x} ${y - h * 0.6} c6 -3 9 -1 10 2 c-4 1 -7 0 -10 -2z" fill="#7fb35d"/>
-   <g fill="#f6c430">${Array.from({ length: 10 }, (_, i) => `<ellipse cx="${x}" cy="${y - h - 6}" rx="1.8" ry="3.6" transform="rotate(${i * 36} ${x} ${y - h})"/>`).join('')}</g><circle cx="${x}" cy="${y - h}" r="3.6" fill="#7a4a2a"/></g>`;
-
-const appleTree = (x: number, y: number, s = 1) =>
-  `<g><ellipse cx="${x}" cy="${y + 0.5}" rx="${10 * s}" ry="${2 * s}" fill="${SHADOW}"/><path d="M${x} ${y} V${y - 14 * s}" stroke="#8a6a4f" stroke-width="${2.4 * s}" stroke-linecap="round"/>
-   <g fill="#86bd62"><circle cx="${x - 6 * s}" cy="${y - 18 * s}" r="${7 * s}"/><circle cx="${x + 6 * s}" cy="${y - 18 * s}" r="${7 * s}"/><circle cx="${x}" cy="${y - 25 * s}" r="${8 * s}"/></g>
-   <g fill="#e5546c"><circle cx="${x - 5 * s}" cy="${y - 16 * s}" r="${1.4 * s}"/><circle cx="${x + 4 * s}" cy="${y - 22 * s}" r="${1.4 * s}"/><circle cx="${x + 7 * s}" cy="${y - 15 * s}" r="${1.3 * s}"/></g></g>`;
-
 const FARM_FENCE = (() => {
   const posts = [8, 36, 64, 92, 148, 176];
   const y = (x: number) => 186 - x * 0.02;
-  return `<g>${posts.map((x) => `<rect x="${x - 2}" y="${y(x) - 26}" width="4" height="28" rx="1.4" fill="#b98a5e" stroke="${OUT}" stroke-width="0.7"/>`).join('')}
+  return `<g>${posts.map((x) => `<ellipse cx="${x}" cy="${y(x) + 2}" rx="4" ry="1" fill="${SHADOW}"/><rect x="${x - 2}" y="${y(x) - 26}" width="4" height="28" rx="1.4" fill="#b98a5e" stroke="${OUT}" stroke-width="0.7"/>`).join('')}${fenceDetail(posts, y)}
     <path d="M6 ${y(6) - 20} L96 ${y(96) - 20} M6 ${y(6) - 9} L96 ${y(96) - 9} M146 ${y(146) - 20} L180 ${y(180) - 20} M146 ${y(146) - 9} L180 ${y(180) - 9}" stroke="#c99a6c" stroke-width="3.2" stroke-linecap="round"/>
     <g stroke="#d9b07f" stroke-width="2.2" stroke-linecap="round"><path d="M98 ${y(98) - 22} H144 M98 ${y(98) - 6} H144 M98 ${y(98) - 22} L144 ${y(144) - 6}"/></g>
     <path d="M98 ${y(98) - 24} V${y(98)} M144 ${y(144) - 24} V${y(144)}" stroke="#b98a5e" stroke-width="2.6" stroke-linecap="round"/></g>`;
@@ -493,6 +485,10 @@ const FARM_MEADOW = (id: string) =>
     swaying: 12,
   }).svg);
 
+/** Pebbles along the path's edges (D47 PR 2). */
+const FARM_PEBBLES = pathPebbles(FARM_PATH, (y) => 9 + (y - 186) * 0.05);
+const POND_BANK = pondBank(62, 274, 50, 11);
+
 function distToSeg(x: number, y: number, [ax, ay]: [number, number], [bx, by]: [number, number]): number {
   const dx = bx - ax;
   const dy = by - ay;
@@ -518,13 +514,13 @@ const REGION_ART: Record<BaseRegionId, RegionArt> = {
       <path d="M0 132 C90 124 200 130 280 126 C320 124 345 128 360 126 V300 H0Z" fill="url(#${id}-grass)"/>
       <g stroke="#c0e39a" stroke-width="10" opacity="0.32" fill="none"><path d="M0 196 C120 188 240 194 360 186"/><path d="M0 252 C120 244 250 250 360 242"/></g>
       <path d="M128 300 C150 274 188 254 220 236 C246 222 270 204 282 186 L292 186 C284 208 262 228 236 244 C204 262 170 280 158 300Z" fill="#e6cfa2" opacity="0.85"/>
-      ${botanyDefs(id)}${FARM_MEADOW(id)}`,
+      ${fineDetail(FARM_PEBBLES)}${botanyDefs(id)}${FARM_MEADOW(id)}`,
     stages: {
       1: [
         { base: 187, svg: FARM_FENCE },
         {
           base: 204,
-          svg: `<ellipse cx="160" cy="204" rx="15" ry="3" fill="${SHADOW}"/><ellipse cx="160" cy="194" rx="13" ry="11" fill="#e8c76a" stroke="${OUT}" stroke-width="0.9"/><ellipse cx="160" cy="194" rx="7" ry="6" fill="none" stroke="#d1a94a" stroke-width="1.1"/><ellipse cx="160" cy="194" rx="2.6" ry="2.2" fill="#d1a94a"/>`,
+          svg: roundBale(160, 194),
         },
         {
           base: 258,
@@ -542,19 +538,18 @@ const REGION_ART: Record<BaseRegionId, RegionArt> = {
           <rect x="266" y="140" width="40" height="42" fill="#a9372c" stroke="#f3efe6" stroke-width="3"/>
           <path d="M268 142 L304 180 M304 142 L268 180" stroke="#f3efe6" stroke-width="2.4"/>
           <path d="M276 112 H296 V128 H276 Z" fill="#7a2f26" stroke="#f3efe6" stroke-width="2.2"/>
-          <rect x="246" y="146" width="12" height="12" fill="#f8e6b8" stroke="#f3efe6" stroke-width="2"/><rect x="314" y="146" width="12" height="12" fill="#f8e6b8" stroke="#f3efe6" stroke-width="2"/>`,
+          <rect x="246" y="146" width="12" height="12" fill="#f8e6b8" stroke="#f3efe6" stroke-width="2"/><rect x="314" y="146" width="12" height="12" fill="#f8e6b8" stroke="#f3efe6" stroke-width="2"/>
+          ${barnDetail()}`,
         },
         {
           base: 189,
-          svg: `<ellipse cx="214" cy="189" rx="22" ry="3" fill="${SHADOW}"/>
-          <g fill="#e8c76a" stroke="${OUT}" stroke-width="0.8"><rect x="194" y="174" width="20" height="14" rx="2"/><rect x="214" y="174" width="20" height="14" rx="2"/><rect x="204" y="161" width="20" height="13" rx="2"/></g>
-          <g stroke="#d1a94a" stroke-width="0.8"><path d="M198 178 h12 M218 178 h12 M208 165 h12 M198 184 h12 M218 184 h12 M208 170 h12"/></g>`,
+          svg: squareBales(),
         },
       ],
       3: [
         {
           base: 276,
-          svg: `<ellipse cx="62" cy="276" rx="56" ry="14" fill="#8dbf74" opacity="0.6"/><ellipse cx="62" cy="274" rx="50" ry="11" fill="#9fd3e0"/>
+          svg: `<ellipse cx="62" cy="276" rx="56" ry="14" fill="#8dbf74" opacity="0.6"/>${POND_BANK.under}<ellipse cx="62" cy="274" rx="50" ry="11" fill="#9fd3e0"/><ellipse cx="62" cy="275" rx="30" ry="6" fill="#7fbfd6" opacity="0.6"/>${POND_BANK.over}
           <g class="sp-water" stroke="#fff" stroke-width="1.3" fill="none" opacity="0.8" stroke-linecap="round"><path d="M30 272 q7 2 13 0"/><path d="M72 278 q7 2 13 0"/><path d="M90 268 q4 1.2 8 0"/></g>
           ${[14, 20, 104, 110].map((x, i) => `<path d="M${x} ${272 - (i % 2) * 2} V${254 - (i % 2) * 4}" stroke="#6f9a4a" stroke-width="1.4"/><rect x="${x - 1.6}" y="${252 - (i % 2) * 4}" width="3.2" height="8" rx="1.6" fill="#8a5a3a"/>`).join('')}
           <g><ellipse cx="54" cy="272" rx="6" ry="3.4" fill="#fff"/><circle cx="58" cy="268" r="2.8" fill="#fff"/><path d="M60.4 268 l3 .8 -3 .8z" fill="#f2a23a"/><circle cx="58.6" cy="267.4" r=".6" fill="#2f2a27"/></g>
@@ -567,7 +562,7 @@ const REGION_ART: Record<BaseRegionId, RegionArt> = {
           <path d="M88 204 L108 188 L128 204 Z" fill="#c9483b" stroke="${OUT}" stroke-width="0.9"/>
           <path d="M104 226 V212 C104 208 112 208 112 212 V226 Z" fill="#7a4a2a"/>
           <path d="M112 226 L124 238" stroke="#b98a5e" stroke-width="2.2" stroke-linecap="round"/><path d="M114 230 h3 M117 233 h3" stroke="#b98a5e" stroke-width="1"/>
-          <circle cx="100" cy="210" r="2.4" fill="#f8e6b8" stroke="${OUT}" stroke-width="0.6"/>`,
+          <circle cx="100" cy="210" r="2.4" fill="#f8e6b8" stroke="${OUT}" stroke-width="0.6"/>${henHouseDetail()}`,
         },
       ],
       4: [
