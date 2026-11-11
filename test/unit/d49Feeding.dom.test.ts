@@ -15,7 +15,7 @@ import { grant } from '../../src/meta/ledger';
 import { buyFood, feedAnimal, mealStyle, serveFeast } from '../../src/meta/feeding';
 import { grantItem } from '../../src/meta/items';
 import { MOMENTS, noteMoment, pickMoment, type MomentCast } from '../../src/meta/moments';
-import { MOMENT_FIRST_MS, MOMENT_GAP_MS, MOMENT_MAX, MOMENT_RETRY_MS, sceneMoments } from '../../src/ui/components/animalMoments';
+import { MOMENT_FIRST_MS, MOMENT_GAP_MS, MOMENT_MAX, MOMENT_RETRY_MS, MOMENT_SOON_MS, requestMomentSoon, sceneMoments } from '../../src/ui/components/animalMoments';
 import { createSceneDirector } from '../../src/ui/components/sceneDirector';
 import { FEED_MS, QUICK_FEED_MS, QUICK_STILL_MS, playFeeding } from '../../src/ui/components/feeding';
 import { startTrick } from '../../src/ui/components/trickPlay';
@@ -151,6 +151,32 @@ describe('meals on the Farm: full when it means something, quick after', () => {
     vi.advanceTimersByTime(QUICK_FEED_MS + 1500);
     // Oats are a sheep's favorite too, never tasted: full.
     expect(feed('oats')).toBe('feed');
+  });
+
+  it('an animal moment never stands in the way: feeding, or a trick from the tray, ends it and plays', async () => {
+    app.settings.reducedMotion = 'full';
+    delete app.save.inventory.companions.truffle;
+    buyFood(app.save, 'hay', { offer: 'five', now: NOW });
+    const busy = async () => {
+      requestMomentSoon();
+      mountApp().go({ screen: 'region', id: 'farm' });
+      for (let t = 0; t < MOMENT_SOON_MS + 3000 && !document.querySelector('.sanctuary__scene [data-friend="cotton"][data-trick]'); t += 100) await vi.advanceTimersByTimeAsync(100);
+      return document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.getAttribute('data-trick');
+    };
+    const moment = await busy();
+    expect(moment).toBeTruthy();
+    expect(feed('hay')).toBe('feed');
+    expect(app.save.sanctuary.affection.cotton ?? 0).toBeGreaterThan(0);
+    // A trick from the tray, picked during a moment, plays too.
+    const again = await busy();
+    expect(again).toBeTruthy();
+    (document.querySelector('[data-act="tricks"]') as HTMLElement).click();
+    (document.querySelector('.trick-tray [data-who="friend:cotton"]') as HTMLElement)?.click();
+    (document.querySelector('.trick-tray .trick-chip:not(.is-locked)[data-trick]') as HTMLElement).click();
+    const now = document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.getAttribute('data-trick');
+    expect(now).toBeTruthy();
+    expect(document.querySelector('[data-tray-status]')?.textContent).not.toMatch(/still finishing/);
+    app.settings.reducedMotion = 'system';
   });
 
   it('Meals → Full: every meal plays in full', () => {

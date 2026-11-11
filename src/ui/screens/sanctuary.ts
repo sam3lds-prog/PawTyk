@@ -115,6 +115,8 @@ export const sanctuaryScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // An animal moment ends before the player's trick is checked, so their pick wins (D49 PR C).
+      beforePlay: () => director.end('moment'),
       // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
       onFeed: (id) => openCard(id),
     });
