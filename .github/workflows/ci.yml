@@ -56,7 +56,10 @@ jobs:
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save playwright
-          npx playwright install --with-deps chromium
+          # The system libraries come from Ubuntu's mirrors. When those can't be reached (as on 2026-11-11, when the
+          # runners couldn't resolve security.ubuntu.com), the runner image's own libraries are normally enough, so
+          # fall back to the browser alone instead of failing the run; a real missing library still fails the tests.
+          timeout 300 npx playwright install --with-deps chromium || npx playwright install chromium
 
       - name: Browser tests (iPhone-sized)
         run: |
