@@ -159,7 +159,7 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
   if (ev.welcome)
     root
       .querySelector('[data-friend-panel]')
-      ?.insertAdjacentHTML('afterend', `<button class="btn btn--secondary btn--block pet-sheet__welcome" data-act="replay-welcome">${ICON.sparkle}<span>${esc(ev.welcome.label)}</span></button>`);
+      ?.insertAdjacentHTML('afterend', `<button class="btn btn--secondary btn--block pet-sheet__replay" data-act="replay-welcome">${ICON.sparkle}<span>${esc(ev.welcome.label)}</span></button>`);
   scope.on(root, 'click', (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-act="replay-welcome"]') && ev.welcome) {
