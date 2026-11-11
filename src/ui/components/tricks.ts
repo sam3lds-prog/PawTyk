@@ -141,6 +141,11 @@ export interface TrickTrayOptions {
   onToggle?: (open: boolean) => void;
   /** Told when a trick starts on a figure (the scene camera's close-up, D44 PR F). */
   onPlayed?: (fig: SVGGElement, id: TrickId) => void;
+  /**
+   * D49 PR C: told just before the player's trick starts, so an animal moment that has the figure busy ends first and
+   * the player's pick wins.
+   */
+  beforePlay?: () => void;
   /** D48 PR B: the tray's Feed button (the animal's card, at its food). Without it there is no Feed button. */
   onFeed?: (id: string) => void;
 }
@@ -247,6 +252,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
         tryHere: {
           name: animalName(who),
           play: () => {
+            opts.beforePlay?.();
             const s = svg();
             const fig = s?.querySelector<SVGGElement>(`.sanctuary__pet[data-pet="${who}"], .sanctuary__pet[data-friend="${who}"]`);
             if (!s || !fig || !performTrick(s, fig, id, app.reducedMotion)) {
@@ -265,6 +271,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
       });
       return;
     }
+    opts.beforePlay?.();
     const s = svg();
     const fig = figure();
     const status = host.querySelector('[data-tray-status]');

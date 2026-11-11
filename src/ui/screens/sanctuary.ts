@@ -13,7 +13,7 @@ import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
 import { sayClaimed } from '../components/errands';
 import { sceneMoments } from '../components/animalMoments';
-import { playReveals, takeReveals, type RevealHost } from '../components/decorReveal';
+import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
@@ -120,6 +120,8 @@ export const sanctuaryScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // An animal moment ends before the player's trick is checked, so their pick wins (D49 PR C).
+      beforePlay: () => director.end('moment'),
       // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
       onFeed: (id) => openCard(id),
     });
@@ -386,7 +388,7 @@ export const sanctuaryScreen: ScreenDef = {
       timeout: (fn, ms) => scope.timeout(() => scope.alive && fn(), ms),
     };
     if (!tryOn && !welcome.length) {
-      const ids = takeReveals('harmony');
+      const ids = waitingReveals('harmony');
       if (ids.length) void Promise.race([s3d.ready, scope.wait(1500)]).then(() => scope.timeout(() => scope.alive && director.owner === null && playReveals(revealHost, ids), app.reducedMotion ? 200 : 700));
     }
 

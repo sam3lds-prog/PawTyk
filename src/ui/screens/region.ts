@@ -65,7 +65,7 @@ import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
 import { sceneMoments } from '../components/animalMoments';
-import { playReveals, takeReveals, type RevealHost } from '../components/decorReveal';
+import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 
 /** How long a stage that just appeared glows (D40). */
@@ -126,6 +126,8 @@ export const regionScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // An animal moment ends before the player's trick is checked, so their pick wins (D49 PR C).
+      beforePlay: () => director.end('moment'),
       // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
       onFeed: (fid) => openCard(fid as FriendId),
     });
@@ -483,12 +485,24 @@ export const regionScreen: ScreenDef = {
     // D49 PR A: straight from the first arrival's "Give Cotton a welcome snack": the snack is the welcome (the
     // arrival already showed Cotton coming home), and the Welcome Parade waits under the scene for whenever the
     // player would like it.
+    // What the player chose wins (D46 PR A): the snack is a pending moment, so a Photo, the Tour, the Walk or a trick
+    // started during its lead-in is kept, and the card then offers the snack instead of playing it by itself.
     if (route.snack && welcoming && newcomers.length) {
       const who = newcomers[0];
       parades.offer(who);
+      let offered = false;
+      const offerInstead = () => {
+        if (offered || !scope.alive || !isHome(app.save, who)) return;
+        offered = true;
+        welcomes.show(who);
+        offerKeepsake(who);
+      };
+      const snack = director.pending('feed', offerInstead);
       void toysReady().then(() =>
         scope.timeout(() => {
-          if (!scope.alive || !isHome(app.save, who)) return;
+          if (!scope.alive || !isHome(app.save, who) || !snack.begin()) return;
+          if (director.owner !== null || document.hidden) return offerInstead();
+          offered = true;
           welcomes.show(who);
           welcomes.snack(who, 'arrival');
           offerKeepsake(who);
@@ -515,7 +529,7 @@ export const regionScreen: ScreenDef = {
       timeout: (fn, ms) => scope.timeout(() => scope.alive && fn(), ms),
     };
     if (!welcoming && !groupDance && !tryOn && isOpen(app.save, id)) {
-      const ids = takeReveals(id);
+      const ids = waitingReveals(id);
       if (ids.length) void toysReady().then(() => scope.timeout(() => scope.alive && director.owner === null && playReveals(revealHost, ids), app.reducedMotion ? 200 : 700));
     }
     // Back from the Shop with food for someone here (D48 PR B): their card again, to feed them.

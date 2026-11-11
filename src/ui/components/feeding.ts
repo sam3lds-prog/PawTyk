@@ -288,6 +288,8 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
 
   /** Plays meals (one, or a feast's), then gives the scene back. */
   function play(meals: Array<Omit<FeedingOptions, 'svg' | 'host' | 'camera' | 'reducedMotion' | 'bowl'>>, closeUp: boolean): Promise<boolean> | null {
+    // An animal moment never stands in the way of the player's meal: it ends before the check (D49 PR C).
+    h.director.end('moment');
     const { host, svg } = scene();
     if (!host || !svg || !meals.some((m) => canFeedInScene(svg, m.animal))) return null;
     h.director.claim('feed');

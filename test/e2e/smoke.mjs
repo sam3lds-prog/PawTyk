@@ -804,7 +804,9 @@ try {
   await page.waitForTimeout(200);
   await solveActive({ stopAfter: 1 }).catch(() => {});
   await page.evaluate(() => window.__pt.go({ screen: 'home' }));
-  await page.click('[data-act="daily"]');
+  // D49 PR D: a Daily left in progress is a Resume row under the hero, in view without opening More to play.
+  check('a Daily in progress is offered to resume under the hero (D49)', /Daily/.test((await page.textContent('[data-today="resume"]').catch(() => '')) ?? ''));
+  await page.click('[data-today="resume"]');
   await page.waitForTimeout(200);
   const dPlaced = await page.evaluate(() => window.__pt.app.active.session.placedCount());
   const dGivens = await page.evaluate(() => window.__pt.app.active.session.puzzle.givens.length);
@@ -1164,6 +1166,9 @@ try {
   qa.on('pageerror', (e) => errors.push(`[qa] ${e}`));
   await qa.goto(URL);
   await qa.waitForFunction(() => window.__pt);
+  // D49 PR C: animal moments come by themselves after a while (their own checks are in d49.mjs); this regression list
+  // checks that every moment the player starts ends cleanly, so the scene must not start one of its own meanwhile.
+  await qa.evaluate(async () => (await import('/src/ui/components/animalMoments.ts')).setMomentsEnabled(false));
   const qaHome = async (opts = {}) => {
     await qa.evaluate(async (o) => {
       const a = window.__pt.app;
@@ -1239,11 +1244,12 @@ try {
   await qa.evaluate(() => document.querySelector('[data-act="tour-stop"]')?.click());
   await qa.waitForTimeout(600);
   const save1 = await qa.evaluate(() => JSON.stringify({ c: window.__pt.app.coins(), inv: window.__pt.app.save.inventory, affection: window.__pt.app.save.sanctuary.affection, growth: window.__pt.app.save.world.growth }));
-  const stuck = await qa.evaluate(() => document.querySelectorAll('.sanctuary__scene [data-trick], .sanctuary__scene .is-dancing').length);
+  const stuckList = await qa.evaluate(() => [...document.querySelectorAll('.sanctuary__scene [data-trick], .sanctuary__scene .is-dancing')].map((g) => `${g.dataset.friend ?? g.dataset.pet ?? '?'}:${g.dataset.trick ?? 'dancing'}`));
+  const stuck = stuckList.length;
   check(
     'replaying the parade and the tour pays nothing twice (coins, inventory, affection, growth), and nobody is left mid-trick (D44)',
     save0 === save1 && stuck === 0 && /"affection":\{/.test(save0),
-    `${stuck} stuck`,
+    `${stuck} stuck ${stuckList.join(' ')}`,
   );
 
   // 3D off: the drawn animals dance, tour and open the barn; no Walk button, no WebGL.
