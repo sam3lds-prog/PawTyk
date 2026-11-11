@@ -18,6 +18,7 @@
 
 import { app } from '../../app/app';
 import { playMode } from '../../app/gameFlow';
+import { noteFirstMeal } from '../../app/usage';
 import { animalInfo, isHome, type AnimalId } from '../../meta/animals';
 import { FOOD_BY_ID } from '../../meta/catalogs/foods';
 import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
@@ -136,6 +137,7 @@ export function welcomeFlow(scope: Scope, host: WelcomeFlowHost): WelcomeFlow {
         draw();
         return;
       }
+      noteFirstMeal(app.save, 'welcome');
       app.persist();
       track('welcome_snack', { home: host.home, gift: r.gift, favorite: r.favorite, from });
       track('animal_fed', { food: r.food, favorite: r.favorite, welcome: true });

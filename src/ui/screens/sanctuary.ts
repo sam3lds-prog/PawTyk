@@ -5,6 +5,7 @@
  * player picks one of two free starter gifts (here or on the Farm, whichever they visit first).
  */
 
+import { noteHomeVisit } from '../../app/usage';
 import { arrivalPortrait } from '../components/eager';
 import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
@@ -95,6 +96,8 @@ export const sanctuaryScreen: ScreenDef = {
     const welcome = [...new Set([...(route.screen === 'sanctuary' ? (route.welcome ?? []) : []), ...((unseen?.animals ?? []) as AnimalId[])])];
     track('sanctuary_open', { pets: unlockedPets(app.save).length, decor: shownDecor().length });
     app.save.sanctuary.visits++;
+    // D49 PR E: home visits, for "fed within the first few visits".
+    noteHomeVisit(app.save);
     const news = afterSanctuaryVisit();
     app.persist();
     for (const a of news.achievements) toast(`Badge unlocked: ${a.name}`);

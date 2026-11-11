@@ -1727,7 +1727,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           </div>`;
     // D49 PR B: what this solve earned, next to the success itself (not only in the fold): the coins, an errand done,
     // and after a Daily, a warm word about tomorrow's.
-    const coinLine = rewards.coins && mode.kind !== 'cup' ? `<p class="win-coins" data-win-coins>${ICON.coin}<b class="num">+${rewards.coins}</b><span>Paw Coins</span></p>` : '';
+    const coinLine = rewards.coins && mode.kind !== 'cup' ? `<p class="win-coins" data-win-coins>${ICON.coin}<b class="num">+${rewards.coins}</b> <span>Paw Coins</span></p>` : '';
     // D49 PR D: an errand finished by this solve has already paid (claimed by itself): it says what it gave.
     const paid = claimedLine(news.claimed);
     const errandLine = news.claimed.length
@@ -1801,6 +1801,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     });
     const ws = sheet;
     let leaving = false;
+    // D49 PR E: how long the player takes to choose what's next (the review's target: under five seconds).
+    const openedAt = performance.now();
     // D40: a new animal has a sound of its own, a beat after the success melody, as its portrait comes up.
     // (Unless the spotlight just played it, D44 PR E.)
     if (milestone && hero?.kind === 'arrived' && !step.spotlit) ws.scope.timeout(() => feel('arrival'), app.reducedMotion ? 300 : 900);
@@ -1847,6 +1849,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       }
       leaving = true;
       ws.close();
+      if (a.act === 'next' || a.act === 'meet' || a.act === 'sanctuary' || a.act === 'region')
+        track('win_next_action', { action: a.act, ms: Math.min(600_000, Math.round(performance.now() - openedAt)), milestone, mode: mode.kind });
       if (a.act === 'meet' || a.act === 'sanctuary' || a.act === 'region') {
         // The sanctuary the news is about: a newcomer's home, the region that opened (or the one that grew), or the one being built.
         const where: SanctuaryId =

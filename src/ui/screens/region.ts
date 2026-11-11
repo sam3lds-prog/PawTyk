@@ -42,7 +42,7 @@ import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
 import { openPhotoMode, type PhotoMode, type PhotoTarget } from '../components/photoMode';
-import { trackFirst } from '../../app/usage';
+import { noteHomeVisit, trackFirst } from '../../app/usage';
 import { captureScene } from '../components/sceneCapture';
 import { photoButtonMarkup, photoFrames } from '../components/photoFrames';
 import { HOME_SCENERY } from '../art/homeScenery';
@@ -92,6 +92,8 @@ export const regionScreen: ScreenDef = {
     const freshStage = route.fresh || news?.stage || 0;
     if (isOpen(app.save, id)) {
       app.save.world.visited[id] = today;
+      // D49 PR E: home visits, for "fed within the first few visits" (saved with the visit itself).
+      noteHomeVisit(app.save);
       app.persist();
     } else if (news) app.persist();
     track('region_open', { region: id, stage: stageOf(app.save, id) });

@@ -124,6 +124,8 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
   const goal = el.querySelector<HTMLElement>('[data-arrival-goal]')!;
   let step = 0;
   let chimed = false;
+  /** D49 PR E: when the goal (and its buttons) came up, for the time it takes to choose what's next. */
+  let goalAt = 0;
   const caption = (tt: string, ll: string) => {
     title.textContent = tt;
     line.textContent = ll;
@@ -161,6 +163,7 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     fig?.classList.remove('is-waiting', 'is-arriving');
     arrivedCaption();
     goal.hidden = false;
+    goalAt = performance.now();
     el.classList.add('is-done');
     // On a short phone the goal is below the scene: bring its buttons into view.
     if (typeof goal.scrollIntoView === 'function') goal.scrollIntoView({ block: 'nearest', behavior: app.reducedMotion ? 'auto' : 'smooth' });
@@ -199,7 +202,8 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     track('onboarding_step', { step: 'first_arrival_skipped' });
     toGoal();
   };
-  const close = (then: () => void) => {
+  const close = (then: () => void, action: string) => {
+    track('win_next_action', { action, ms: goalAt ? Math.min(600_000, Math.round(performance.now() - goalAt)) : 0, first_arrival: true });
     sc.dispose();
     el.remove();
     then();
@@ -210,9 +214,9 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     if (act.dataset.act === 'skip') skip();
     else if (act.dataset.act === 'play') {
       track('welcome_card', { home: o.where, action: 'continue', from: 'first_arrival' });
-      close(o.onPlay);
-    } else if (act.dataset.act === 'snack') close(o.onSnack);
-    else if (act.dataset.act === 'visit') close(o.onVisit);
+      close(o.onPlay, 'play');
+    } else if (act.dataset.act === 'snack') close(o.onSnack, 'snack');
+    else if (act.dataset.act === 'visit') close(o.onVisit, 'visit');
   });
   sc.on(document, 'keydown', (e) => {
     const ke = e as KeyboardEvent;

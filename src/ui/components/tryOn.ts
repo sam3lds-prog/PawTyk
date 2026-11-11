@@ -105,7 +105,7 @@ export function tryBannerMarkup(t: TryOn, home: SanctuaryId): string {
     ${tag}
     <span class="try-banner__actions">
       ${again ? `<button class="btn btn--quiet btn--small" data-act="try-again">${ICON.restart}Again</button>` : ''}
-      <button class="btn btn--small ${buy ? 'btn--secondary' : ''}" data-act="try-back">${ICON.back}Back to ${esc(f.name)}</button>
+      <button class="btn btn--small ${buy ? 'btn--quiet' : ''}" data-act="try-back">${ICON.back}Back to ${esc(f.name)}</button>
       ${buy}
     </span>
   </div>`;

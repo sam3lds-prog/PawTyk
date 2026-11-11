@@ -79,3 +79,38 @@ Parameters are game facts only: numbers or short text; booleans arrive as 1/0.
 
 Aggregate only: there is no way (and no need) to look up one player. No share event carries a recipient, a contact,
 an account or the app the player shared to.
+
+## D49 — attention, delight and retention: what to measure
+
+New events (opt-in like every other; game facts only):
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `featured_tap` / `featured_see_all` | a Featured pick opened; See all | `kind` (decor, trick, food), `pos` (0 = the large one) / `home` |
+| `welcome_card` | the arrival's card shown, Continue, a hello | `home`, `action` (shown, continue, hello), `state` (offer, fed), `from` (first_arrival) |
+| `welcome_snack` | a newcomer's welcome snack | `home`, `gift` (the free first one), `favorite`, `from` (card, arrival) |
+| `meal_played` | a meal starts in a scene | `style` (full, quick), `feast` |
+| `animal_moment` | an animal moment plays | `moment`, `first` |
+| `today_tap` | one of Journey's *Also today* rows | `kind` (resume, daily, friend, news) |
+| `win_next_action` | the player picks what's next after a win (or the first arrival) | `action` (next, meet, region, sanctuary; snack, play, visit), `ms`, `milestone`, `mode`, `first_arrival` |
+| `first_meal` | the first meal a player ever gives (once) | `from` (card, welcome), `visits` (home visits so far, capped at 99) |
+| `mission_claimed` | now also when an errand pays by itself | `coins`, `auto` |
+| `decor_bought` / `trick_bought` | now also from the try-on banner | `surface: try_on` |
+
+**The pilot measures** (the review's proposed thresholds; not results, and not industry benchmarks). Because these
+events are opt-in, the consenting players are not a fair sample of everyone: pair them with observed TestFlight
+sessions (`docs/release-checklist.md` → D49) before trusting any number.
+
+| Question | How | Pilot target |
+| --- | --- | --- |
+| First animal placed without help | `onboarding_controls{first_try=1}` share; observed sessions | 80%+ |
+| First puzzle completed without help | `first_puzzle_complete` ÷ `first_puzzle_start`; observed | 85%+ |
+| Players understand why the sanctuary grows | observed sessions (ask after level 2: "what made the Farm grow?") | 85%+ |
+| Time to choose what's next after a win | `win_next_action.ms`, median and 80th percentile, by `milestone` | under 5 s |
+| Feeding found within the first few visits | `first_meal.visits` ≤ 3, as a share of players with `home_visit{first=1}` | 70%+ |
+| Day-1 return | `retention_day{day=1}` (and Firebase's cohort report) | 30%+ |
+| Day-7 return | `retention_day{day=7}` | 10–15%+ |
+
+Supporting reads: `welcome_snack` ÷ `welcome_card{action=shown}` (does the snack get used?), `today_tap` by kind
+(which nudge helps), `meal_played{style=quick}` share over time, `animal_moment{first=1}` per player (how many
+moments are discovered), `featured_tap{pos=0}` against the small ones.
