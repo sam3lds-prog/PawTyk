@@ -2207,3 +2207,27 @@ The proposal:
 Measurement gates G0–G2 use the existing opt-in events. Their thresholds are proposals for Sam.
 
 Ruled out: loot boxes, timers, limited pieces, gem-only collections, power and new IAP products.
+
+### M — integration and release checks (`monetization/m-integration`)
+
+- **Browser checks** (`test/e2e/m.mjs`, run by `npm run e2e`):
+  - **M1:** Featured for your Farm (1–4 picks, priced, none owned); a featured decoration tried on in the real scene
+    and Back to it, with nothing changed; an unlearned trick played in the home, Again, Back, still unlearned.
+  - **M2:** a token decoration's card offers a video, and the test video adds one token on the same card.
+  - **M3:**
+    - a solved Daily → Share opens the result card, never the board;
+    - after a welcome, the keepsake sits under the scene, never on a win sheet, and opens photo mode framed on the
+      newcomer;
+    - the week's first postcard earns 30 coins once, and a second postcard and a reload earn nothing.
+- **Constraint guards** (`test/unit/mIntegration.test.ts`):
+  - the IAP product ids are unchanged, with no new products;
+  - `featureFlags.friends` is off;
+  - no interstitial, even in test builds.
+- **Tester shortcuts** (QA builds): Video tokens to 0, Use up today's videos (a toggle), Forget this week's Photo
+  Memory. The last is the one tester tool that takes a coin-ledger entry back out, and its coins go with it.
+- **Found by the browser checks:** at 390 points wide, the arrival keepsake button pushed the row under the scene
+  (chat, Watch the parade, Tricks) past the screen, and the page scrolled sideways. The keepsake now gets a line of
+  its own, the row wraps instead, and `m.mjs` checks the button sits within the phone's width.
+- **Not established by any of this:** an iPhone's share sheet (each app reports its own result), AdMob's real videos
+  and their failures, Photos permission, and VoiceOver. The M sections of the release checklist cover them on
+  TestFlight.

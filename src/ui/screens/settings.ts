@@ -3,7 +3,8 @@
 import { app } from '../../app/app';
 import { clearSessions, resetProgress, type Settings } from '../../services/storage';
 import { ITEM_CAP, grantStarterItems } from '../../meta/items';
-import { finishOpenHomes, giveCoins, growActive, nextWelcome, setPantry, skipToLevel } from '../../app/qaTools';
+import { finishOpenHomes, forgetPhotoMemory, giveCoins, growActive, nextWelcome, setPantry, skipToLevel, setVideosUsed, zeroTokens } from '../../app/qaTools';
+import { REWARDED_DAILY_CAP, videosLeftToday } from '../../app/rewarded';
 import { iap } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
@@ -177,6 +178,9 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="empty"><span class="row__label">Empty extra lives and hints<small>See "no hints left" and the loss sheet without extra lives</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="fill"><span class="row__label">Fill extra lives and hints to 10<small>Earning more turns into coins</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="coins:500"><span class="row__label">Add 500 Paw Coins<small>To try the new tricks, foods, bowls and decorations</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="tokens0"><span class="row__label">Video tokens to 0<small>See "Watch a video: +1 token" on a token decoration, trick or treat (M2)</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="videos"><span class="row__label">Use up today's videos<small>See the daily limit line instead of the video button; tap again to give them back (M2)</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="memory"><span class="row__label">Forget this week's Photo Memory<small>The next postcard earns its 30 Paw Coins again; takes the 30 back (M3)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="welcome"><span class="row__label">Watch a welcome celebration<small>Each tap plays the next of the four on the Farm: Boogie, Meadow Hop, Sparkle Surprise, Friendship Circle</small></span>${ICON.chevron}</button>
       </div>
       <div class="rows-title">Device checks</div>
@@ -230,6 +234,19 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         giveCoins(app.save, Number(arg));
         app.persist();
         toast(`+${arg} Paw Coins (tester gift).`, ICON.coin);
+      } else if (what === 'tokens0') {
+        zeroTokens(app.save);
+        app.persist();
+        toast('Video tokens: 0.');
+      } else if (what === 'videos') {
+        const usedUp = videosLeftToday(app.save) > 0;
+        setVideosUsed(app.save, usedUp ? REWARDED_DAILY_CAP : 0);
+        app.persist();
+        toast(usedUp ? "Today's videos are used up." : "Today's videos are back.");
+      } else if (what === 'memory') {
+        const forgot = forgetPhotoMemory(app.save);
+        app.persist();
+        toast(forgot ? "This week's Photo Memory is open again." : "This week's Photo Memory hasn't been earned yet.");
       } else if (what === 'welcome') {
         const w = nextWelcome(app.save);
         if (!w) {
