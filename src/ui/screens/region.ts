@@ -65,7 +65,7 @@ import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
 import { sceneMoments } from '../components/animalMoments';
-import { playReveals, takeReveals, type RevealHost } from '../components/decorReveal';
+import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 
 /** How long a stage that just appeared glows (D40). */
@@ -525,7 +525,7 @@ export const regionScreen: ScreenDef = {
       timeout: (fn, ms) => scope.timeout(() => scope.alive && fn(), ms),
     };
     if (!welcoming && !groupDance && !tryOn && isOpen(app.save, id)) {
-      const ids = takeReveals(id);
+      const ids = waitingReveals(id);
       if (ids.length) void toysReady().then(() => scope.timeout(() => scope.alive && director.owner === null && playReveals(revealHost, ids), app.reducedMotion ? 200 : 700));
     }
     // Back from the Shop with food for someone here (D48 PR B): their card again, to feed them.
