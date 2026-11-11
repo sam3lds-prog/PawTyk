@@ -85,6 +85,11 @@ export interface Settings {
   celebrations: 'smart' | 'full' | 'short';
   /** A gentle tune while visiting a home (D45 PR D). Off unless the player turns it on; it needs Music on too. */
   ambientMusic: boolean;
+  /**
+   * How a meal plays (D49 PR C): 'smart' (in full the first time an animal eats, the first time it has a favorite, and
+   * when a friendship grows a level; a quick one otherwise) or always 'full'.
+   */
+  meals: 'smart' | 'full';
   /** After a move that finishes a line or color, light the line that left it one spot and say so (D39). Off: only the first few. */
   explainMoves: boolean;
   /** The pet tool the player last picked, so the next board opens with it selected. */
@@ -205,6 +210,13 @@ export interface SaveV2 {
     bestSince: Record<string, string>;
     /** The feeding bowl meals are served in (D48 PR B); missing = the wooden one. */
     bowl?: string;
+    /**
+     * Animal id → the foods it has eaten (D49 PR C), so a first meal and a first taste of a favorite play in full and
+     * later meals are quick. Missing for an animal = never fed since D49 (its next meal plays in full once).
+     */
+    tasted?: Record<string, string[]>;
+    /** Animal moment id → the local date it was first seen (D49 PR C): the first time is a small discovery. */
+    moments?: Record<string, string>;
   };
   /** Reward videos watched today (all placements share one gentle daily cap). */
   ads: { day: string | null; rewarded: number };
@@ -402,6 +414,7 @@ export function defaultSettings(): Settings {
     toys3d: true,
     celebrations: 'smart',
     ambientMusic: false,
+    meals: 'smart',
     explainMoves: false,
     lastSpecies: 'cat',
     shareUsage: false,
@@ -564,6 +577,7 @@ function normSettings(x: unknown): Settings {
     toys3d: bool(x.toys3d, d.toys3d),
     celebrations: oneOf(x.celebrations, ['smart', 'full', 'short'] as const, d.celebrations),
     ambientMusic: bool(x.ambientMusic, d.ambientMusic),
+    meals: oneOf(x.meals, ['smart', 'full'] as const, d.meals),
     explainMoves: bool(x.explainMoves, d.explainMoves),
     lastSpecies: oneOf(x.lastSpecies, ['cat', 'dog'] as const, d.lastSpecies),
     shareUsage: bool(x.shareUsage, d.shareUsage),
@@ -771,6 +785,8 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       greeted: rec(san.greeted, strItem),
       bestSince: rec(san.bestSince, strItem),
       ...(typeof san.bowl === 'string' ? { bowl: san.bowl } : {}),
+      ...(isObj(san.tasted) ? { tasted: rec(san.tasted, (v) => (Array.isArray(v) ? [...new Set(v.filter((f): f is string => typeof f === 'string'))].slice(0, 64) : undefined)) } : {}),
+      ...(isObj(san.moments) ? { moments: rec(san.moments, strItem) } : {}),
     },
     ads: { day: isObj(x.ads) ? strOrNull(x.ads.day) : null, rewarded: isObj(x.ads) ? int(x.ads.rewarded, 0, 0, 1000) : 0 },
     usage: isObj(x.usage) ? { lastDay: strOrNull(x.usage.lastDay), daysActive: int(x.usage.daysActive, 0, 0, 100000), firsts: rec(x.usage.firsts, boolItem) } : { lastDay: null, daysActive: 0, firsts: {} },

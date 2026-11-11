@@ -112,3 +112,8 @@ export function forgetPhotoMemory(save: SaveV2, now = new Date()): boolean {
   save.inventory.ledger.splice(i, 1);
   return true;
 }
+
+/** D49 PR C: forgets which foods every animal has tasted, so each one's next meal plays in full again. */
+export function forgetMeals(save: SaveV2): void {
+  delete save.sanctuary.tasted;
+}

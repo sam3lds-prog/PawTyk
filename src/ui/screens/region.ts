@@ -64,6 +64,7 @@ import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
+import { sceneMoments } from '../components/animalMoments';
 import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 
@@ -123,6 +124,8 @@ export const regionScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // An animal moment ends before the player's trick is checked, so their pick wins (D49 PR C).
+      beforePlay: () => director.end('moment'),
       // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
       onFeed: (fid) => openCard(fid as FriendId),
     });
@@ -227,6 +230,18 @@ export const regionScreen: ScreenDef = {
     // Photo mode (D47 PR 5): a postcard of this home.
     let photo: PhotoMode | null = null;
     director.register('photo', { cancel: () => photo?.close(), active: () => !!photo?.open });
+    // D49 PR C: now and then, an animal does something small on its own (only while nothing else is happening).
+    const moments = isOpen(app.save, id)
+      ? sceneMoments({
+          svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+          chat: () => el.querySelector<HTMLElement>('[data-chat]'),
+          director,
+          reducedMotion: () => app.reducedMotion,
+          busy: () => !!tryOn || tray.isOpen || meals.active || parades.active || !!document.querySelector('.overlay') || !!acts?.busy,
+        })
+      : null;
+    scope.onDispose(() => moments?.dispose());
+    if (import.meta.env.DEV) (window as unknown as { __moments?: unknown }).__moments = moments;
     if (import.meta.env.DEV) (window as unknown as { __director?: unknown }).__director = director;
     // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
     if (app.settings.ambientMusic && isOpen(app.save, id)) scope.timeout(() => scope.alive && startAmbient(id), 1800);

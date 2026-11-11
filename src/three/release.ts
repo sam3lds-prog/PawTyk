@@ -10,11 +10,23 @@
  * Disposing the shared texture after a renderer goes calls every renderer's listener once: each releases its copy and
  * forgets the texture. A renderer still drawing simply uploads it again on its next frame (three.js re-uploads a
  * disposed texture the next time it's used), so this is safe while another scene is live.
+ *
+ * D49 PR C: the same holds for the one geometry every `THREE.Sprite` shares (made once, at module level, by three.js):
+ * every renderer that ever drew an emote bubble added a `dispose` listener to it and was kept alive by it. Animal
+ * moments draw bubbles on their own, so a few walks after one kept every earlier scene renderer (found by D46's
+ * renderer check). It is disposed with the renderer too; a live renderer uploads it again when it next draws a sprite.
  */
 
 import type * as THREE from 'three';
 
 let shared: THREE.Texture | null = null;
+/** three.js's one geometry for every sprite (D49 PR C), once a sprite has been made. */
+let spriteGeometry: THREE.BufferGeometry | null = null;
+
+/** Notes the geometry every sprite shares (it is the same object for every `THREE.Sprite`). */
+export function noteSprite(s: THREE.Sprite): void {
+  spriteGeometry ??= s.geometry;
+}
 /** Frames looked at per renderer: a scene with no physically based material yet is looked at a few times, not forever. */
 const looks = new WeakMap<THREE.WebGLRenderer, number>();
 const MAX_LOOKS = 60;
@@ -44,4 +56,5 @@ export function releaseRenderer(renderer: THREE.WebGLRenderer): void {
   renderer.dispose();
   renderer.forceContextLoss?.();
   shared?.dispose();
+  spriteGeometry?.dispose();
 }

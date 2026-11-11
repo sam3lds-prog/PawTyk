@@ -20,8 +20,12 @@
  * holds nothing and owns nothing: it is only a promise to start if nothing else happens first.
  */
 
-/** D47 PR 5: `photo`, photo mode, owns the camera too (the player framing a postcard). D48 PR B: `feed`, a meal. */
-export type SceneAct = 'parade' | 'closeup' | 'tour' | 'walk' | 'photo' | 'feed';
+/**
+ * D47 PR 5: `photo`, photo mode, owns the camera too (the player framing a postcard). D48 PR B: `feed`, a meal.
+ * D49 PR C: `moment`, an animal moment: it never claims the camera or holds anything, it only starts while the scene
+ * is free, and anything the player starts (any `claim`) ends it.
+ */
+export type SceneAct = 'parade' | 'closeup' | 'tour' | 'walk' | 'photo' | 'feed' | 'moment';
 
 /** Why a pending moment never started: the player started `by`, or everything was ended (`null`: a re-render, leaving). */
 export type MissedBy = SceneAct | null;
@@ -57,6 +61,8 @@ export interface SceneDirector {
   readonly paused: boolean;
   /** Applies the current state again (the app shown or hidden, a new scene drawn). */
   refresh(): void;
+  /** Ends one moment, if it is running (D49 PR C: the player's trick or meal ends an animal moment before it starts). */
+  end(kind: SceneAct): void;
   /** Ends every moment (and drops every pending one, telling each it was missed). */
   cancelAll(): void;
   /**
@@ -101,6 +107,10 @@ export function createSceneDirector(apply: (live: boolean) => void): SceneDirect
       return holds.size > 0;
     },
     refresh,
+    end(kind) {
+      const m = moments.get(kind);
+      if (m?.active()) m.cancel();
+    },
     cancelAll() {
       miss(null);
       for (const m of moments.values()) m.cancel();

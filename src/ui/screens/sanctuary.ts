@@ -10,6 +10,7 @@ import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
+import { sceneMoments } from '../components/animalMoments';
 import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 import { app } from '../../app/app';
@@ -114,6 +115,8 @@ export const sanctuaryScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // An animal moment ends before the player's trick is checked, so their pick wins (D49 PR C).
+      beforePlay: () => director.end('moment'),
       // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
       onFeed: (id) => openCard(id),
     });
@@ -172,6 +175,15 @@ export const sanctuaryScreen: ScreenDef = {
       hello: (animal) => sayHello(animal),
       bowl: () => bowlInUse(app.save),
     });
+    // D49 PR C: now and then, an animal does something small on its own (only while nothing else is happening).
+    const moments = sceneMoments({
+      svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+      chat: () => el.querySelector<HTMLElement>('[data-chat]'),
+      director,
+      reducedMotion: () => app.reducedMotion,
+      busy: () => !!tryOn || tray.isOpen || meals.active || parades.active || !!document.querySelector('.overlay') || !!acts?.busy,
+    });
+    scope.onDispose(() => moments.dispose());
     // D49 PR A: the arrival's follow-up card (a welcome snack, then the Journey); the starter gift waits for the snack.
     const welcomes = welcomeFlow(scope, { el, home: 'harmony', meals, life: () => life, afterSnack: () => offerStarterGift(scope, 'harmony', render, { askNext: false }) });
     /** An animal's card (a resident's or a friend's), its feeding played out in the garden. */

@@ -347,3 +347,72 @@
   margin-top: 2px;
   color: var(--gold, #d5a04b);
 }
+
+/* ------------------------------------------------------------------ D49 PR C: smart feeding, animal moments */
+
+/* A quick meal (an ordinary repeat): about a second, no camera move. */
+.sanctuary__scene.is-live .sanctuary__pet.is-trick-nibble {
+  animation: sp-nibble 1100ms ease-in-out;
+}
+@keyframes sp-nibble {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(calc(var(--feed-dx, 6px) * 0.2)) rotate(calc(var(--trick-dir, 1) * 5deg));
+  }
+  40% {
+    transform: translateX(calc(var(--feed-dx, 6px) * 0.2)) translateY(1.5px) rotate(calc(var(--trick-dir, 1) * 8deg));
+  }
+  62% {
+    transform: translateY(-3px);
+  }
+  78% {
+    transform: none;
+  }
+}
+.sanctuary__scene .sp-feed.is-quick .sp-bowl {
+  animation-duration: 1100ms;
+}
+.sanctuary__scene .sp-feed-hearts.is-quick.is-on .sp-feed-heart {
+  animation-duration: 560ms;
+}
+.feed-bond.is-quick {
+  animation-duration: 200ms;
+}
+
+/* A meal that reaches a new friendship level: the animal beams in a ring of hearts, and the card names the level. */
+.sanctuary__scene .sanctuary__pet.is-bond-up {
+  filter: drop-shadow(0 0 4px rgba(232, 85, 106, 0.55));
+}
+.sanctuary__scene .sp-feed-hearts.is-level .sp-feed-heart {
+  animation-duration: 1500ms;
+}
+.feed-bond.is-level {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--coral, #e5546c) 55%, transparent), var(--shadow-1);
+}
+.feed-bond__level {
+  color: var(--coral, #e5546c);
+}
+.feed-bond small .ico {
+  width: 12px;
+  height: 12px;
+  vertical-align: -1px;
+  color: var(--coral, #e5546c);
+}
+
+/* An animal moment's line under the scene, with New the first time. */
+.sanctuary__chat.is-moment {
+  color: var(--ink);
+}
+.moment-new {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
