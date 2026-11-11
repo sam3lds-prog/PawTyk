@@ -15,6 +15,7 @@
 import { app } from '../../app/app';
 import { DECOR, DECOR_BY_ID, DECOR_SETS, DECOR_SET_BY_ID, SPOT_NAMES, decorHome, decorTier, isDecorId, setPieces, type DecorId, type DecorSetId, type DecorTier } from '../../meta/catalogs/decor';
 import { bindPreview, previewMarkup } from '../components/decorPreview';
+import { noteReveal } from '../components/decorReveal';
 import { BOWLS, FOODS, FOOD_BY_ID, foodOffers, foodsOf, isFeast, isFoodId, mainOffer, type BowlId, type FoodId, type FoodOffer } from '../../meta/catalogs/foods';
 import { chapterAt } from '../../meta/chapters';
 import { buyDecor, decorPrice, decorUnlocked, isShown, owns, setProgress, setShown, showSet, shownInSpot, walletBalance } from '../../meta/sanctuary';
@@ -752,8 +753,12 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     const have = walletBalance(app.save, price.currency);
     return `<p class="price-line">${CURRENCY_ICON[price.currency]}<span><b class="num">${price.amount}</b> ${CURRENCY_NAME[price.currency]} · <span class="num">you have ${have}</span></span></p>`;
   };
+  /** D49 PR B: just bought here: the card says so and offers the one thing to do next, see it arrive at home. */
+  let justBought = false;
   const actions = () => {
     const have = owns(app.save, id);
+    if (have && justBought)
+      return `<p class="bought-line" role="status">${ICON.sparkle}<span><b>It’s yours!</b> It’s out in ${esc(whereText(id))}, and your animals can’t wait to try it.</span></p><button class="btn btn--block" data-act="visit" data-autofocus>${ICON.home}See it in ${esc(whereText(id))}</button><button class="btn btn--quiet btn--block" data-act="close">Done</button>`;
     if (have) {
       const out = isShown(app.save, id);
       return `${out ? `<button class="btn btn--secondary btn--block" data-act="hide">Tuck it away</button>` : `<button class="btn btn--block" data-act="show" data-autofocus>Put it out</button>`}<button class="btn btn--quiet btn--block" data-act="visit">See it in ${esc(whereText(id))}</button>`;
@@ -803,7 +808,7 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
   if (bindPreview(sh.scope, sh.el, id) && !canTry()) sh.el.querySelector<HTMLElement>('[data-act="preview-play"]')?.removeAttribute('hidden');
   const refresh = () => {
     const a = sh.el.querySelector('[data-actions]');
-    if (a) a.innerHTML = `${actions()}${tryButton()}<button class="btn btn--quiet" data-act="close">Not now</button>`;
+    if (a) a.innerHTML = `${actions()}${tryButton()}${justBought ? '' : `<button class="btn btn--quiet" data-act="close">Not now</button>`}`;
     const pl = sh.el.querySelector('[data-place-line]');
     if (pl) pl.innerHTML = placeLine();
     const pr = sh.el.querySelector('[data-price-line]');
@@ -850,10 +855,15 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
         app.persist();
         feel('buy');
         track('decor_bought', { item: id, tier, amount: price?.amount ?? 0 });
-        sh.close();
-        toast(
-          news.achievements.length ? `${d.name} is in ${whereText(id)}. Badge unlocked: ${news.achievements[0].name}!` : `${d.name} is in ${whereText(id)}.`,
-        );
+        // D49 PR B: not a "purchase successful" toast: the card says it's theirs and offers to see it arrive (its home
+        // plays the arrival whenever the player next looks, now or later).
+        noteReveal(id);
+        justBought = true;
+        busy = false;
+        refresh();
+        rerender();
+        sh.el.querySelector<HTMLElement>('[data-act="visit"]')?.focus({ preventScroll: true });
+        if (news.achievements.length) toast(`Badge unlocked: ${news.achievements[0].name}!`);
       } else {
         busy = false;
         toast(

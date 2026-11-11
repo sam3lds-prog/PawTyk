@@ -91,6 +91,13 @@ export function cellsBetween(a: readonly [number, number], b: readonly [number, 
 const SEL_CORNERS = 'M3 28V11Q3 3 11 3H28M72 3H89Q97 3 97 11V28M97 72V89Q97 97 89 97H72M28 97H11Q3 97 3 89V72';
 const SEL_SVG = `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="board__sel-halo" d="${SEL_CORNERS}"/><path class="board__sel-ink" d="${SEL_CORNERS}"/></svg>`;
 
+/** D49 PR B: a finished line's ripple — how far apart its tiles light up, the latest a tile starts, and each glow. */
+export const RIPPLE_STEP_MS = 30;
+export const RIPPLE_MAX_DELAY_MS = 150;
+export const RIPPLE_GLOW_MS = 300;
+/** D49 PR B: a correct placement's ring pops out and fades in this long (was 720 ms). */
+export const PLACE_RING_MS = 480;
+
 export class Board {
   readonly el: HTMLElement;
   private selectionDone = false;
@@ -311,6 +318,33 @@ export class Board {
     this.scope.timeout(() => {
       for (const [r, c] of cells) this.cellEls[r][c].classList.remove(cls);
     }, ms);
+  }
+
+  /**
+   * D49 PR B: a finished row, column or color answers in a quick ripple instead of one long wash: each of its tiles
+   * glows for a moment, starting from the tile just placed and spreading outward (`RIPPLE_STEP_MS` per tile of
+   * distance), the whole line done in about 0.4 s. Overlay only (the tiles' `::before`): the animals never move (D11).
+   * Under reduced motion every tile glows at once, without the spread.
+   */
+  ripple(cells: Array<[number, number]>, from: [number, number] | null, reduced: boolean): void {
+    let longest = 0;
+    for (const [r, c] of cells) {
+      const el = this.cellEls[r][c];
+      const d = from && !reduced ? Math.max(Math.abs(r - from[0]), Math.abs(c - from[1])) : 0;
+      const delay = Math.min(RIPPLE_MAX_DELAY_MS, d * RIPPLE_STEP_MS);
+      longest = Math.max(longest, delay);
+      el.classList.remove('is-ripple');
+      void el.offsetWidth; // restart the overlay animation
+      el.style.setProperty('--ripple-delay', `${delay}ms`);
+      el.classList.add('is-ripple');
+    }
+    this.scope.timeout(() => {
+      for (const [r, c] of cells) {
+        const el = this.cellEls[r][c];
+        el.classList.remove('is-ripple');
+        el.style.removeProperty('--ripple-delay');
+      }
+    }, longest + RIPPLE_GLOW_MS + 40);
   }
 
   /**

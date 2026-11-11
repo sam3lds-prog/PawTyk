@@ -5,10 +5,12 @@
  * player picks one of two free starter gifts (here or on the Farm, whichever they visit first).
  */
 
+import { arrivalPortrait } from '../components/eager';
 import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
+import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
@@ -29,7 +31,7 @@ import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { animalInfo, animalsOf, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
 import { activeSanctuary, arrivalLine, arrivalProgress, markSeen, setActive } from '../../meta/world';
 import { isPetId } from '../../meta/catalogs/pets';
-import { animalPortrait, animalTint } from '../art/animals';
+import { animalTint } from '../art/animals';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray, partnersFor } from '../components/tricks';
@@ -300,7 +302,7 @@ export const sanctuaryScreen: ScreenDef = {
       return `<section class="card region-progress" aria-labelledby="gp-title">
         <div class="region-progress__head"><h2 id="gp-title">Coming home</h2>${building ? `<span class="chip chip--brand">${ICON.sprout}Building now</span>` : ''}</div>
         <div class="coming-home">
-          <span class="coming-home__art portrait is-shy">${animalPortrait(coming.next.id, 'idle')}</span>
+          ${arrivalPortrait(coming.next.id, coming.left, 'coming-home__art portrait')}
           <span class="coming-home__body"><span><b>${esc(a.name)} the ${esc(a.noun)}</b> is on the way${building ? ' and is on your boards' : ''}.</span>
             <span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${coming.from}" aria-valuemax="${coming.need}" aria-valuenow="${coming.have}"><span style="width:${pct}%"></span></span>
             <small class="num">${plural(coming.left, 'more puzzle')}${building ? '' : ' while you build here'}</small></span>
@@ -356,7 +358,21 @@ export const sanctuaryScreen: ScreenDef = {
       afterTryBuy(t);
     }
     function afterTryBuy(t: NonNullable<typeof tryOn>): void {
-      if (t.kind === 'decor') scope.timeout(() => scope.alive && acts && !acts.busy && acts.play(t.id), app.reducedMotion ? 200 : 600);
+      // D49 PR B: bought where it stands: it arrives properly (sparkles, then an animal goes and uses it).
+      if (t.kind === 'decor') scope.timeout(() => scope.alive && playReveals(revealHost, [t.id]), app.reducedMotion ? 100 : 300);
+    }
+    // D49 PR B: a decoration bought since the last look here arrives now, once the garden has settled (never over a
+    // welcome or a try-on).
+    const revealHost: RevealHost = {
+      svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+      reducedMotion: () => app.reducedMotion,
+      playActivity: (d) => !!acts && !acts.busy && !!acts.play(d),
+      notice: (fid) => void life?.play(fid, 'look'),
+      timeout: (fn, ms) => scope.timeout(() => scope.alive && fn(), ms),
+    };
+    if (!tryOn && !welcome.length) {
+      const ids = waitingReveals('harmony');
+      if (ids.length) void Promise.race([s3d.ready, scope.wait(1500)]).then(() => scope.timeout(() => scope.alive && director.owner === null && playReveals(revealHost, ids), app.reducedMotion ? 200 : 700));
     }
 
     scope.on(el, 'click', (e) => {

@@ -547,15 +547,19 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       expect(first.querySelector('.win-stars--small')).not.toBeNull();
       expect(first.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
       expect(first.textContent).toMatch(/One puzzle closer to Truffle!/);
-      // Time, badges, points and coins are not in the first view…
+      // Time, badges, points and the coins' breakdown are not in the first view…
       for (const sel of ['.stats', '.win-points', '.win-rewards', '.win-skill', '[data-act="share"]']) expect(first.querySelector(sel), sel).toBeNull();
+      // …but what the solve earned is, beside the success (D49 PR B).
+      expect(first.querySelector('[data-win-coins]')?.textContent).toMatch(/\+\d+\s*Paw Coins/);
       // …they are one tap away, and the fold's summary says what it holds.
       const more = w.querySelector<HTMLDetailsElement>('[data-win-more]')!;
       expect(more.open).toBe(false);
       expect(more.querySelector('.stats')).not.toBeNull();
       expect(more.querySelector('.win-points')).not.toBeNull();
       expect(more.querySelector('[data-act="share"]')).not.toBeNull();
-      expect(more.querySelector('summary')?.textContent).toMatch(/More rewards.*\+\d+ coins.*Paw Points/);
+      // The fold lists what it alone holds: the coins are already in view.
+      expect(more.querySelector('summary')?.textContent).toMatch(/More rewards.*Paw Points/);
+      expect(more.querySelector('summary')?.textContent).not.toMatch(/coins/);
       // The buttons come before the fold.
       const order = [...w.querySelectorAll('.win-stage-1, .sheet__actions, [data-win-more]')].map((x) => (x.matches('[data-win-more]') ? 'more' : x.matches('.sheet__actions') ? 'actions' : 'first'));
       expect(order).toEqual(['first', 'actions', 'more']);
