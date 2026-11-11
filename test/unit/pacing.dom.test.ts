@@ -5,6 +5,8 @@
  * later ones a shorter one, with the full parade on Replay; Settings can ask for always full or always short.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CELEBRATION_CUE } from '../../src/ui/components/parade';
+import { celebrationFor } from '../../src/meta/celebrations';
 import { app } from '../../src/app/app';
 import { Router, Scope, type CanonicalRoute, type ScreenDef } from '../../src/ui/router';
 import { regionScreen } from '../../src/ui/screens/region';
@@ -159,16 +161,18 @@ describe('the short welcome, and the full parade on Replay', () => {
     expect(replay.textContent).toMatch(/Play the full parade/);
     replay.click();
     await vi.advanceTimersByTimeAsync(600);
-    expect(nowPlaying()?.id).toBe('bounce');
-    await vi.advanceTimersByTimeAsync(cueMs(SCORES.bounce) + 800);
+    // The full one is Hazel's own welcome celebration (D48 PR E).
+    const full = CELEBRATION_CUE[celebrationFor(app.save, 'hazel')];
+    expect(nowPlaying()?.id).toBe(full);
+    await vi.advanceTimersByTimeAsync(cueMs(SCORES[full]) + 800);
     expect(document.querySelector<HTMLElement>('[data-act="parade-replay"]')!.textContent).toMatch(/Replay the parade/);
   });
 
-  it('always full: the fourth animal gets Barnyard Bounce; always short: even the second gets the Jig', async () => {
+  it('always full: the fourth animal gets its full welcome; always short: even the second gets the Jig', async () => {
     home('cotton', 'truffle', 'juniper', 'hazel');
     app.settings.celebrations = 'full';
     await meet('hazel');
-    expect(nowPlaying()?.id).toBe('bounce');
+    expect(nowPlaying()?.id).toBe(CELEBRATION_CUE[celebrationFor(app.save, 'hazel')]);
     stopMusic(0);
     app.replaceSave(defaultSave(new Date(2026, 9, 31, 12)));
     Object.assign(app.save.onboarding, { tutorialDone: true, seenRules: true, soloRulesSeen: true, starterDecorChosen: true, sceneTapTipSeen: true, decorTipSeen: true });

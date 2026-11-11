@@ -76,7 +76,7 @@ export interface Score {
   level?: number;
 }
 
-export type CueId = 'triumph' | 'welcome' | 'bounce' | 'jig' | 'meadow' | `trick:${TrickId}`;
+export type CueId = 'triumph' | 'welcome' | 'bounce' | 'jig' | 'meadow' | 'hopalong' | 'sparkle' | 'circle' | `trick:${TrickId}`;
 
 const NAMES: Record<string, number> = {
   C: 0,
@@ -352,6 +352,223 @@ const jig: Score = {
       [6.25, 'C7', 1.5, 0.22],
     ]),
     part('cymbal', [[6, null, 2, 0.45]]),
+  ],
+};
+
+// ------------------------------------------------------------------ the welcome celebrations (D48 PR E)
+
+/*
+ * Three more welcomes beside Barnyard Bounce, each 16 beats with the same parts (a 4-beat entrance, the dance, the
+ * finish from beat 12, the poses on 14), so the choreographer and the camera treat them alike. Each has its own band
+ * and feel, and each carries PawTyk's motif (C–E–G, up to the C) in its entrance and its finish.
+ */
+
+/** Meadow Hop: a skipping kalimba tune over an oom-pah tuba, a wood block on every hop. */
+const hopalong: Score = {
+  id: 'hopalong',
+  title: 'Meadow Hop',
+  bpm: 138,
+  beats: 16,
+  accents: [0, 4, 14],
+  sections: { intro: [0, 4], dance: [4, 12], finish: [12, 16] },
+  parts: [
+    // The three hops in, and every hop after: a block on the landing.
+    hits('block', [0.75, 1.75, 2.75, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], 0.55),
+    hits('shaker', [4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5], 0.35),
+    hits('clap', [7, 11, 13.5], 0.6),
+    part('swoop', [
+      [0, 'C5', 0.7, 0.4, 'G5'],
+      [1, 'D5', 0.7, 0.4, 'A5'],
+      [2, 'E5', 0.7, 0.4, 'B5'],
+    ]),
+    part('tuba', [
+      [4, 'C3', 0.4],
+      [5, 'G2', 0.4],
+      [6, 'C3', 0.4],
+      [7, 'G2', 0.4],
+      [8, 'F2', 0.4],
+      [9, 'C3', 0.4],
+      [10, 'G2', 0.4],
+      [11, 'D3', 0.4],
+      [12, 'C3', 0.4],
+      [13, 'G2', 0.4],
+      [14, 'C3', 1.6, 0.85],
+    ]),
+    part('kalimba', [
+      // The motif, skipping: the entrance.
+      [2.5, 'C5', 0.25],
+      [2.75, 'E5', 0.25],
+      [3, 'G5', 0.5],
+      [3.5, 'C6', 0.5],
+      // The tune: a skip up and a skip down, twice, then higher.
+      [4, 'E5', 0.33],
+      [4.33, 'G5', 0.17],
+      [4.5, 'A5', 0.5],
+      [5, 'G5', 0.33],
+      [5.33, 'E5', 0.17],
+      [5.5, 'D5', 0.5],
+      [6, 'C5', 0.33],
+      [6.33, 'D5', 0.17],
+      [6.5, 'E5', 0.5],
+      [7, 'G5', 1],
+      [8, 'F5', 0.33],
+      [8.33, 'A5', 0.17],
+      [8.5, 'C6', 0.5],
+      [9, 'A5', 0.33],
+      [9.33, 'F5', 0.17],
+      [9.5, 'E5', 0.5],
+      [10, 'D5', 0.33],
+      [10.33, 'E5', 0.17],
+      [10.5, 'F5', 0.5],
+      [11, 'G5', 1],
+      [12, 'C5', 0.5, 0.85],
+      [12.5, 'E5', 0.5, 0.85],
+      [13, 'G5', 0.5, 0.9],
+      [13.5, 'B5', 0.5, 0.9],
+      [14, 'C6', 1.8, 1],
+    ]),
+    part('whistle', [
+      [8, 'C6', 1, 0.3],
+      [9, 'A5', 1, 0.3],
+      [10, 'B5', 1, 0.3],
+      [11, 'D6', 1, 0.3],
+    ]),
+    part('glock', [
+      [14, 'E6', 1.4, 0.35],
+      [14.25, 'G6', 1.4, 0.3],
+      [14.5, 'C7', 1.4, 0.28],
+    ]),
+  ],
+};
+
+/** Sparkle Surprise: a hush, a glittering rise and a pop; glockenspiel arpeggios over held chords. */
+const sparkle: Score = {
+  id: 'sparkle',
+  title: 'Sparkle Surprise',
+  bpm: 124,
+  beats: 16,
+  accents: [0, 4, 14],
+  sections: { intro: [0, 4], dance: [4, 12], finish: [12, 16] },
+  parts: [
+    // The hush and the rise (the newcomer crouches, springs and twirls).
+    part('swoop', [[0.5, 'G4', 2.5, 0.4, 'G6']]),
+    part('bell', [
+      [0, 'C6', 0.5, 0.35],
+      [0.5, 'E6', 0.5, 0.35],
+      [1, 'G6', 0.5, 0.38],
+      [1.5, 'C7', 1.5, 0.4],
+      [14, ['C6', 'E6', 'G6', 'C7'], 2, 0.45],
+    ]),
+    part('cymbal', [
+      [3, null, 1, 0.35],
+      [14, null, 2, 0.4],
+    ]),
+    part('pad', [
+      [4, Cmaj7, 2, 0.4],
+      [6, Am7, 2, 0.4],
+      [8, Fmaj7, 2, 0.4],
+      [10, G, 2, 0.42],
+      [12, Cmaj7, 2, 0.42],
+    ]),
+    part('bass', [
+      [4, 'C3', 1.5, 0.5],
+      [6, 'A2', 1.5, 0.5],
+      [8, 'F2', 1.5, 0.5],
+      [10, 'G2', 1.5, 0.5],
+      [12, 'C3', 1, 0.5],
+      [14, 'C3', 1.8, 0.6],
+    ]),
+    hits('shaker', [4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5], 0.3),
+    hits('clap', [5, 7, 9, 11, 13], 0.5),
+    part('glock', [
+      // Rising arpeggios, one per chord, each a little higher.
+      [4, 'C6', 0.25],
+      [4.25, 'E6', 0.25],
+      [4.5, 'G6', 0.25],
+      [4.75, 'B6', 0.75],
+      [6, 'A5', 0.25],
+      [6.25, 'C6', 0.25],
+      [6.5, 'E6', 0.25],
+      [6.75, 'G6', 0.75],
+      [8, 'F5', 0.25],
+      [8.25, 'A5', 0.25],
+      [8.5, 'C6', 0.25],
+      [8.75, 'E6', 0.75],
+      [10, 'G5', 0.25],
+      [10.25, 'B5', 0.25],
+      [10.5, 'D6', 0.25],
+      [10.75, 'G6', 0.75],
+      // The motif, sparkling, into the pop.
+      [12, 'C6', 0.5, 0.85],
+      [12.5, 'E6', 0.5, 0.85],
+      [13, 'G6', 0.5, 0.9],
+      [13.5, 'B6', 0.5, 0.9],
+      [14, 'C7', 1.8, 1],
+    ]),
+  ],
+};
+
+/** Friendship Circle: a warm sway on accordion and whistle, everyone together. */
+const circle: Score = {
+  id: 'circle',
+  title: 'Friendship Circle',
+  bpm: 116,
+  beats: 16,
+  level: 1.15,
+  accents: [0, 4, 14],
+  sections: { intro: [0, 4], dance: [4, 12], finish: [12, 16] },
+  parts: [
+    // A shy hello: the motif alone, softly, on whistle.
+    part('whistle', [
+      [0, 'C5', 0.5, 0.4],
+      [0.5, 'E5', 0.5, 0.4],
+      [1, 'G5', 1, 0.42],
+      [2.5, 'E5', 0.5, 0.4],
+      [3, 'G5', 0.5, 0.42],
+      [3.5, 'C6', 0.5, 0.45],
+      // Then the tune, warm and swaying.
+      [4, 'E5', 1, 0.5],
+      [5, 'D5', 0.5, 0.48],
+      [5.5, 'C5', 0.5, 0.48],
+      [6, 'A4', 1.5, 0.5],
+      [7.5, 'C5', 0.5, 0.48],
+      [8, 'F5', 1, 0.5],
+      [9, 'E5', 0.5, 0.48],
+      [9.5, 'D5', 0.5, 0.48],
+      [10, 'G5', 1.5, 0.52],
+      [11.5, 'F5', 0.5, 0.48],
+      [12, 'E5', 0.5, 0.5],
+      [12.5, 'G5', 0.5, 0.5],
+      [13, 'C6', 1, 0.55],
+      [14, 'E6', 1.8, 0.55],
+    ]),
+    part('accordion', [
+      [4, C, 0.9, 0.5],
+      [5, C, 0.9, 0.42],
+      [6, Am, 0.9, 0.5],
+      [7, Am, 0.9, 0.42],
+      [8, F, 0.9, 0.5],
+      [9, F, 0.9, 0.42],
+      [10, G, 0.9, 0.5],
+      [11, G, 0.9, 0.42],
+      [12, F, 0.9, 0.5],
+      [13, G, 0.9, 0.5],
+      [14, ['C4', 'E4', 'G4', 'C5'], 1.8, 0.55],
+    ]),
+    part('bass', [
+      [4, 'C3', 1, 0.55],
+      [6, 'A2', 1, 0.55],
+      [8, 'F2', 1, 0.55],
+      [10, 'G2', 1, 0.55],
+      [12, 'F2', 1, 0.55],
+      [13, 'G2', 1, 0.55],
+      [14, 'C3', 1.8, 0.65],
+    ]),
+    hits('clap', [5, 7, 9, 11, 13], 0.45),
+    part('kalimba', [
+      [14, 'G5', 0.5, 0.45],
+      [14.5, 'C6', 1.4, 0.45],
+    ]),
   ],
 };
 
@@ -1518,7 +1735,7 @@ const meadow: Score = {
   ],
 };
 
-export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, welcome, bounce, jig, meadow, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
+export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, welcome, bounce, jig, meadow, hopalong, sparkle, circle, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
 
 export function scoreFor(id: CueId): Score | undefined {
   return SCORES[id];

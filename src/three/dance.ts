@@ -26,6 +26,13 @@ export type DanceStyle = (typeof DANCE_STYLES)[number];
 /** Finishing poses: hooray (paws up and a little jump), a lean, a twirl that stops in a pose, a star leap. */
 export const FINISH_POSES = ['hooray', 'lean', 'twirl', 'leap'] as const;
 
+/**
+ * The welcome celebrations (D48 PR E) other than the Boogie (the D44 parade, which has no preset in its id): each
+ * brings its own entrance and finish. The same names as `meta/celebrations.ts`.
+ */
+export const DANCE_PRESETS = ['meadowhop', 'sparkle', 'circle'] as const;
+export type DancePreset = (typeof DANCE_PRESETS)[number];
+
 export interface DanceSpec {
   role: DanceRole;
   style: DanceStyle;
@@ -34,15 +41,18 @@ export interface DanceSpec {
   side: 'L' | 'R';
   bpm: number;
   beats: number;
+  /** D48 PR E: the celebration it belongs to (none: the Barnyard Boogie, or a group dance). */
+  preset?: DancePreset;
 }
 
 export function danceId(d: DanceSpec): string {
-  return `dance:${d.role}:${d.style}:${d.variant % FINISH_POSES.length}:${d.side}:${d.bpm}:${d.beats}`;
+  return `dance:${d.role}:${d.style}:${d.variant % FINISH_POSES.length}:${d.side}:${d.bpm}:${d.beats}${d.preset ? `:${d.preset}` : ''}`;
 }
 
 export function parseDanceId(id: string): DanceSpec | null {
-  const m = /^dance:(newcomer|guest|group):([a-z]+):(\d):([LR]):(\d+(?:\.\d+)?):(\d+)$/.exec(id);
+  const m = /^dance:(newcomer|guest|group):([a-z]+):(\d):([LR]):(\d+(?:\.\d+)?):(\d+)(?::([a-z]+))?$/.exec(id);
   if (!m || !(DANCE_STYLES as readonly string[]).includes(m[2])) return null;
+  if (m[7] && !(DANCE_PRESETS as readonly string[]).includes(m[7])) return null;
   const bpm = Number(m[5]);
   const beats = Number(m[6]);
   if (!(bpm >= 40 && bpm <= 240 && beats >= 4 && beats <= 32)) return null;
@@ -53,6 +63,7 @@ export function parseDanceId(id: string): DanceSpec | null {
     side: m[4] as 'L' | 'R',
     bpm,
     beats,
+    ...(m[7] ? { preset: m[7] as DancePreset } : {}),
   };
 }
 
@@ -268,9 +279,57 @@ function finishPose(variant: number, b: number, side: number, lift: number): { p
   }
 }
 
-/** The intro: a newcomer leaps for joy and says hello; a guest turns toward it and gives a little hop. */
-function intro(role: DanceRole, b: number, n: number, side: number, lift: number): { pose: PoseDelta; face: Expr } {
+/**
+ * The intro: a newcomer leaps for joy and says hello; a guest turns toward it and gives a little hop. Each celebration
+ * (D48 PR E) has its own entrance: three hops in for the Meadow Hop, a crouch and a spring into a double twirl for the
+ * Sparkle Surprise, a shy look round and a happy bounce for the Friendship Circle (whose guests lean in close).
+ */
+function intro(role: DanceRole, b: number, n: number, side: number, lift: number, preset?: DancePreset): { pose: PoseDelta; face: Expr } {
   const x = b / n;
+  if (role === 'newcomer' && preset === 'meadowhop') {
+    const hops = arc(x, 0.04, 0.2, 0.32 * lift) + arc(x, 0.24, 0.4, 0.26 * lift) + arc(x, 0.44, 0.6, 0.2 * lift);
+    const lands = [0.2, 0.4, 0.6].reduce((a, at) => a + bump(x, at - 0.02, at + 0.02, at + 0.09) * 0.12, 0);
+    const wave = hold(x, 0.66, 0.95, 0.06);
+    return {
+      pose: { py: hops, squash: lands, px: -side * 0.18 * bump(x, 0, 0.04, 0.6), armR: 2.4 * wave, armROut: 0.4 * wave, ears: 0.3 * seg(x, 0, 0.06) },
+      face: x < 0.6 ? 'laugh' : 'happy',
+    };
+  }
+  if (role === 'newcomer' && preset === 'sparkle') {
+    const crouch = bump(x, 0, 0.12, 0.2) * 0.2;
+    const up = arc(x, 0.18, 0.62, 0.55 * lift);
+    const spin = TAU * 2 * easeInOut(seg(x, 0.2, 0.62));
+    const land = bump(x, 0.6, 0.64, 0.74) * 0.16;
+    return {
+      pose: { py: up, squash: crouch + land, yaw: spin, armLOut: 1.4 * hold(x, 0.2, 0.9, 0.1), armROut: 1.4 * hold(x, 0.2, 0.9, 0.1), ears: 0.4 * seg(x, 0.18, 0.3) },
+      face: x < 0.2 ? 'shy' : 'stars',
+    };
+  }
+  if (role === 'newcomer' && preset === 'circle') {
+    const look = Math.sin(seg(x, 0.06, 0.56) * TAU) * 0.5;
+    const bounce = arc(x, 0.62, 0.78, 0.14 * lift);
+    return {
+      pose: { headYaw: look, headTilt: 0.15 * bump(x, 0.1, 0.3, 0.56), py: bounce, armLOut: 0.8 * bump(x, 0.62, 0.72, 0.95), armROut: 0.8 * bump(x, 0.62, 0.72, 0.95) },
+      face: x < 0.56 ? 'shy' : 'love',
+    };
+  }
+  if (role === 'guest' && preset === 'circle') {
+    // Leans in toward the newcomer, close, and stays turned to it.
+    const lean = hold(x, 0.2, 0.98, 0.25);
+    return {
+      pose: { headYaw: side * 0.5 * lean, yaw: side * 0.6 * lean, px: side * 0.1 * lean, tilt: side * 0.08 * lean, ears: 0.3 * lean },
+      face: lean > 0.3 ? 'love' : 'happy',
+    };
+  }
+  if (role === 'guest' && preset === 'sparkle') {
+    // A gasp: a little start backward, then a cheer.
+    const gasp = bump(x, 0.15, 0.25, 0.5);
+    const cheer = hold(x, 0.6, 0.95, 0.08);
+    return {
+      pose: { lean: -0.1 * gasp, py: arc(x, 0.6, 0.78, 0.1 * lift), armLOut: 1.2 * cheer, armROut: 1.2 * cheer, headYaw: side * 0.4 * hold(x, 0.1, 0.98, 0.2) },
+      face: x < 0.55 ? 'surprised' : 'laugh',
+    };
+  }
   if (role === 'newcomer') {
     // A big leap of joy (crouch, launch, a high arc, a squash on landing by the second beat), a bounce, a hello spin.
     const crouch = bump(x, 0, 0.03, 0.06) * 0.16;
@@ -322,7 +381,7 @@ export function danceClip(id: string): Clip | null {
       const lift = LIFT[c.body] ?? 1;
       const side = d.side === 'R' ? 1 : -1;
       if (b < n) {
-        const f = intro(d.role, b, n, side, lift);
+        const f = intro(d.role, b, n, side, lift, d.preset);
         // The intro hands over to the dance smoothly.
         return { pose: settle(f.pose, 1 - seg(b, n - 0.3, n)), face: f.face };
       }

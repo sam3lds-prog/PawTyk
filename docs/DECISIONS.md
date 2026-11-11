@@ -2012,3 +2012,33 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
 - Tests: `tricksD48.dom.test` (catalog and tiers, groups and partners, coins once through the ledger, drawn and 3D
   length and rest, body versions, props and reduced motion, tunes, the tray's tabs and Again row, the Shop's groups and
   buying with coins); `tricks.test` and `releaseBuild` updated for the new tiers.
+
+### PR E — four welcome celebrations
+- **Barnyard Boogie** (the D44 Welcome Parade, unchanged), **Meadow Hop** (the newcomer hops in three hops and
+  waves; everyone hops; one big leap; petals and flowers), **Sparkle Surprise** (a crouch and a spring into a double
+  twirl; the others start back, then cheer and bob; a fan and a shower of stars), **Friendship Circle** (a shy look
+  round and a happy bounce; the others lean in close and everyone sways; a ring of hearts on the ground; hearts rise).
+- **Which one**: decided the first time an animal's welcome plays, from its id (`meta/celebrations.ts`: FNV-1a mixed,
+  so the four come round evenly across the game's animals), and never the same as the welcome before it
+  (`world.celebrations.last`). Kept per animal (`world.celebrations.by`), so a replay is the same celebration; a
+  replay never moves `last`. Deterministic: the same arrivals in the same order give the same celebrations (test).
+- **Its own music**: Meadow Hop (kalimba over an oom-pah tuba, a wood block on every hop), Sparkle Surprise
+  (glockenspiel arpeggios over held major-seventh chords, a swoop and a pop), Friendship Circle (whistle and
+  accordion, warm and swaying). Each is 16 beats with the parade's parts (entrance 0–4, finish from 12, poses on 14),
+  in C major, with its own band, and carries PawTyk's motif (C–E–G) into its entrance and its finish; on a phone
+  speaker they sit with the signature cues (e2e).
+- **The same machinery**: the choreographer takes a `preset` (the dance id carries it: `…:<beats>:<preset>`; the
+  Boogie's and group dances' ids are exactly as before), which sets the steps, the poses, the entrance (drawn and
+  3D) and the finish (drawn overlay and 3D props). The camera, Skip, Escape, leaving the app, reduced motion (still
+  faces, the ring and finish still) and the short welcome (the Jig, with the celebration's steps and finish) all work
+  as for the D44 parade.
+- **Replay**: the button under the scene, as before, and now **the animal's card** (*Replay the welcome: Meadow Hop*),
+  on the Farm and in the Pet Garden, for an animal in the scene: the card makes way and it plays there.
+- **No double rewards**: a celebration grants nothing; playing, replaying and skipping change only the record of which
+  one it was (test: everything else in the save as it was).
+- Saves: `world.celebrations` is optional; ids are kept as they are (a newer build's unknown id is kept, not used), so
+  saves round-trip both ways.
+- Tests: `celebrations.dom.test` (assignment, consecutive arrivals, replays, saves; ids, steps and poses per preset;
+  3D entrances and rest for every body; the tunes' form, band and motif; each played with its tune, ids, finish and
+  clean end; Skip and reduced motion; Meet, Replay and the card on the Farm paying nothing); `celebrate`, `pacing`,
+  `music` and `deviceChecks` updated (an animal's welcome may be any of the four).

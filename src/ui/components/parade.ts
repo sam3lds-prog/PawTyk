@@ -1,6 +1,7 @@
 /**
  * The Welcome Parade (D44 PR E, celebration level 3): a new animal's arrival, played out in its home when the player
- * taps Meet. The camera glides in on the newcomer as it leaps into the scene to Barnyard Bounce, pulls back as everyone
+ * taps Meet. Since D48 PR E it is one of four welcome celebrations (`meta/celebrations.ts`): the Barnyard Boogie
+ * described here, the Meadow Hop, the Sparkle Surprise and the Friendship Circle, each with its own tune and moves. The camera glides in on the newcomer as it leaps into the scene to Barnyard Bounce, pulls back as everyone
  * dances, holds on the finish (confetti, stars, poses), and gives the whole scene back. About 7 s; a Skip button ends
  * it at once, and a Replay button plays it again afterwards (it grants nothing, so replays and skips can't double up).
  *
@@ -15,6 +16,7 @@ import { playCue, type Playback } from '../../services/music';
 import { rhythmFor, scoreFor, type CueId } from '../../audio/scores';
 import { animalInfo, isAnimalId } from '../../meta/animals';
 import { planDance, startDance, type DanceHandle, type Dancer } from './dance';
+import type { CelebrationId } from '../../meta/celebrations';
 import { clampView, scenePoint, viewAt, type SceneCamera, type View } from './camera';
 import type { MissedBy, SceneDirector } from './sceneDirector';
 import type { Scope } from '../router';
@@ -29,8 +31,13 @@ export interface ParadeOptions {
   /** The animal being welcomed; none for a group celebration. */
   newcomer?: string;
   reducedMotion: boolean;
-  /** The tune whose beats everyone follows (default: Barnyard Bounce, or the Jig for a group celebration). */
+  /** The tune whose beats everyone follows (default: the celebration's own, or the Jig for a group celebration). */
   cue?: CueId;
+  /**
+   * D48 PR E: which welcome celebration this is (default the Barnyard Boogie, D44's parade). Each has its own tune,
+   * entrance, steps and finish; a short welcome (the Jig) keeps the steps and the finish.
+   */
+  preset?: CelebrationId;
   /** The home it plays in (D45 PR D): each home's band plays the theme its own way. */
   home?: string;
   /** Told as each part starts (tests and the screen follow along). */
@@ -94,9 +101,13 @@ export function heroView(full: View, dancers: Dancer[]): View {
   return clampView(full, viewAt(full, (x0 + x1) / 2, ground - (full.h / zoom) * 0.17, zoom));
 }
 
+/** Each welcome celebration's own tune (D48 PR E). */
+export const CELEBRATION_CUE: Record<CelebrationId, CueId> = { boogie: 'bounce', meadowhop: 'hopalong', sparkle: 'sparkle', circle: 'circle' };
+
 export function startParade(o: ParadeOptions): ParadeHandle {
-  const cue: CueId = o.cue ?? (o.newcomer ? 'bounce' : 'jig');
+  const cue: CueId = o.cue ?? (o.newcomer ? CELEBRATION_CUE[o.preset ?? 'boogie'] : 'jig');
   const score = scoreFor(cue);
+  const preset = o.newcomer && o.preset && o.preset !== 'boogie' ? o.preset : undefined;
   let pb: Playback | null = null;
   let resolve!: (e: ParadeEnd) => void;
   const done = new Promise<ParadeEnd>((r) => (resolve = r));
@@ -105,7 +116,7 @@ export function startParade(o: ParadeOptions): ParadeHandle {
   let skipBtn: HTMLButtonElement | null = null;
   let startTimer: ReturnType<typeof setTimeout> | null = null;
   let punchTimer: ReturnType<typeof setTimeout> | null = null;
-  const dancers = score ? planDance(o.svg, { bpm: score.bpm, beats: score.beats, newcomer: o.newcomer }) : [];
+  const dancers = score ? planDance(o.svg, { bpm: score.bpm, beats: score.beats, newcomer: o.newcomer, preset }) : [];
   const lead = o.newcomer ? dancers.find((d) => d.spec.role === 'newcomer') : undefined;
 
   const end = (how: ParadeEnd) => {
@@ -204,6 +215,11 @@ export interface SceneParadeHost {
   toysReady?: () => Promise<unknown>;
   /** D48 PR C: told as a parade starts (the Farm's Barn Bell rings for a newcomer). */
   onStart?: (newcomer: string | undefined) => void;
+  /**
+   * D48 PR E: the newcomer's welcome celebration (settled the first time it plays and kept, so a replay is the same).
+   * Without it, every welcome is the Barnyard Boogie.
+   */
+  celebration?: (newcomer: string) => CelebrationId;
 }
 
 /** The longest a parade waits for the scene's toys before it dances with whatever is showing (D46 PR B). */
@@ -223,6 +239,8 @@ export interface SceneParades {
   readonly active: boolean;
   /** The Replay button, for the row under the scene (hidden until a parade has played). */
   replayMarkup(): string;
+  /** The celebration playing now, or the last one played (D48 PR E; tests and QA). */
+  readonly preset: CelebrationId | null;
   /** A click on the screen: true if the parade handled it (Skip, Replay, or a tap on the scene while it plays). */
   onClick(t: HTMLElement): boolean;
 }
@@ -261,6 +279,7 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
     showButton();
   };
   let replay: { newcomer?: string; unplayed?: boolean } | null = null;
+  let lastPreset: CelebrationId | null = null;
   /** The last one played was the short welcome: Replay offers the full parade by name. */
   let wasShort = false;
   const label = () => (replay?.unplayed ? unplayedLabel(replay.newcomer) : wasShort ? 'Play the full parade' : replay?.newcomer ? 'Replay the parade' : 'Dance again');
@@ -332,7 +351,10 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
         }
       }
       // The short welcome (D45 PR B): the same parade to the shorter Barnyard Jig. Replay plays the full one.
-      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined, home: host.home });
+      // D48 PR E: the newcomer's own celebration, the same one every time it plays.
+      const preset = newcomer ? (host.celebration?.(newcomer) ?? 'boogie') : null;
+      lastPreset = preset;
+      const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined, home: host.home, preset: preset ?? undefined });
       current = p;
       if (p.active) host.onStart?.(newcomer);
       await p.done;
@@ -366,6 +388,9 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       return !!current?.active || !!starting;
     },
     replayMarkup: () => `<button class="scene-replay" data-act="parade-replay" ${replay ? '' : 'hidden'}>${REPLAY_ICON}${label()}</button>`,
+    get preset() {
+      return lastPreset;
+    },
     onClick(t) {
       if (t.closest('[data-act="parade-skip"]')) {
         current?.skip();

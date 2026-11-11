@@ -29,6 +29,7 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
+import { CELEBRATION_BY_ID, assignCelebration, celebrationFor, celebrationOf } from '../../meta/celebrations';
 import { createSceneDirector } from '../components/sceneDirector';
 import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
@@ -141,6 +142,13 @@ export const regionScreen: ScreenDef = {
       reducedMotion: () => app.reducedMotion,
       // D46 PR B: a parade waits for the toys of the renderer there is now (rebuilt after the walk, say).
       toysReady: () => s3d.ready,
+      // D48 PR E: the newcomer's welcome celebration, settled the first time it plays.
+      celebration: (newcomer) => {
+        const had = celebrationOf(app.save, newcomer);
+        const c = assignCelebration(app.save, newcomer);
+        if (!had) app.persist();
+        return c;
+      },
       // D48 PR C: the Barn Bell rings for every newcomer.
       onStart: (newcomer) => {
         const bell = newcomer ? el.querySelector<SVGGElement>('.sanctuary__scene [data-decor="barnbell"]') : null;
@@ -188,7 +196,16 @@ export const regionScreen: ScreenDef = {
     });
     /** A friend's card, its feeding played out in the scene. */
     function openCard(cid: FriendId): void {
-      showFriendSheet(scope, cid, meals.events(cid, animalInfo(cid).name));
+      showFriendSheet(scope, cid, { ...meals.events(cid, animalInfo(cid).name), welcome: welcomeFor(cid) });
+    }
+    /**
+     * D48 PR E: an animal's card replays its welcome celebration here (it grants nothing, so as often as the player
+     * likes), when it is in this scene and nothing else is playing.
+     */
+    function welcomeFor(animal: string): { label: string; play: () => void } | undefined {
+      if (!el.querySelector(`.sanctuary__scene [data-friend="${animal}"], .sanctuary__scene [data-pet="${animal}"]`)) return undefined;
+      const c = CELEBRATION_BY_ID[celebrationFor(app.save, animal)];
+      return { label: `Replay the welcome: ${c.name}`, play: () => void parades.play(animal) };
     }
     let walking: WalkHandle | null = null;
     director.register('walk', { cancel: () => walking?.close(), active: () => !!walking });

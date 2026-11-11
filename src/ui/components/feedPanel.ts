@@ -60,6 +60,11 @@ export interface FeedEvents {
   feast?: (f: Feast) => boolean;
   /** Closes the card (given by the sheet that holds the panel). */
   close?: () => void;
+  /**
+   * D48 PR E: replays this animal's welcome celebration in the scene behind the card (it grants nothing). The card
+   * shows a button for it when given.
+   */
+  welcome?: { label: string; play: () => void };
 }
 
 /**
@@ -150,8 +155,19 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
     const p = root.querySelector('[data-friend-panel]');
     if (p) p.outerHTML = friendPanelMarkup(animal, name);
   };
+  // Outside the panel, so feeding and patting (which redraw the panel) leave it be.
+  if (ev.welcome)
+    root
+      .querySelector('[data-friend-panel]')
+      ?.insertAdjacentHTML('afterend', `<button class="btn btn--secondary btn--block pet-sheet__replay" data-act="replay-welcome">${ICON.sparkle}<span>${esc(ev.welcome.label)}</span></button>`);
   scope.on(root, 'click', (e) => {
     const t = e.target as HTMLElement;
+    if (t.closest('[data-act="replay-welcome"]') && ev.welcome) {
+      // The card makes way and the welcome plays in the scene behind it.
+      ev.close?.();
+      ev.welcome.play();
+      return;
+    }
     const pat = t.closest('[data-act="pat"]') as HTMLButtonElement | null;
     if (pat && !pat.disabled) {
       const before = app.save.sanctuary.affection[animal] ?? 0;

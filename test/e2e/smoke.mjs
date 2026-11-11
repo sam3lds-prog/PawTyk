@@ -1114,10 +1114,11 @@ try {
     return { out, arranged };
   });
   const badLevels = [...levels.out, ...levels.arranged].filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
-  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 41 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
+  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 44 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
   const span = (ls) => Math.max(...ls.map((l) => l.phone)) - Math.min(...ls.map((l) => l.phone));
   const trickLv = levels.out.filter((l) => l.id.startsWith('trick:') && l.id !== 'trick:party');
-  const bigLv = levels.out.filter((l) => ['triumph', 'welcome', 'bounce', 'jig', 'trick:party'].includes(l.id));
+  // D48 PR E: the three new welcomes are signature cues too.
+  const bigLv = levels.out.filter((l) => ['triumph', 'welcome', 'bounce', 'jig', 'trick:party', 'hopalong', 'sparkle', 'circle'].includes(l.id));
   const meadowLv = levels.out.find((l) => l.id === 'meadow');
   const avg = (ls) => ls.reduce((a, l) => a + l.phone, 0) / ls.length;
   check(
