@@ -2314,3 +2314,38 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
 - Tests: `test/unit/d49Rewards.dom.test.ts` (the ripple's order, timing and reduced-motion form, overlay-only CSS;
   eager portraits and the Farm's Almost home!; the bought card, See it, the arrival once, nothing on a second visit;
   reduced motion). Updated: the D40 first-view test (coins in view, not in the fold's summary).
+
+### PR C — smart feeding and animal moments (`d49/c-feeding-moments`)
+- **Smart feeding** (`meta/feeding.ts::mealStyle`, `components/feeding.ts`): D48's meal (camera close, bowl, three
+  bites, the reaction: 3.6 s) is lovely once and slow the fifth time. It now plays **in full** when the meal means
+  something: the animal's **first meal**, its **first taste of a favorite**, or a meal that **lifts the friendship a
+  level**; otherwise it is **quick** (1.1 s: no camera move, the bowl, one bite, hearts, the friendship card), and the
+  3D toy plays a matching 1.1 s `nibble` clip (`three/clips.ts`, at rest at both ends like every clip). Feeding three
+  animals in a row now takes about 3 s, not 11. A **feast** is one short group scene (every guest quick, 90 ms apart).
+  **Settings → Meals → Full** plays every meal in full. Under reduced motion a quick meal is still, 0.9 s.
+  - What an animal has eaten is kept in the save (`sanctuary.tasted`: animal → foods, additive, ignored by older
+    builds). A save from before D49 has no record, so each animal's next meal plays in full once.
+  - **A new friendship level** in a meal: the animal beams in a ring of hearts as it reacts, and the card names the
+    level (*Friend!*). The level's own news (the warmer hello, a beaming smile, the album portrait) follows as before.
+- **Animal moments** (`meta/moments.ts`, `components/animalMoments.ts`): eight curated moments, each an existing trick
+  or emote (no new animation system): *spots a butterfly* (Head Tilt), *sneezed in the flowers* (Little Sneeze), *dozed
+  off* (Sleepy), *two friends say hello to each other* (Wave, answered with Love), *a big stretch*, *a happy wiggle*,
+  *chased its own tail*, *peekaboo in the grass*. A temperament that suits it does it when one is home (a sleepy one
+  dozes, a shy one plays peekaboo); a fish, frog or crab sits them out.
+  - **Occasional, never constant**: the first after the scene has been calm for 14 s, then one every 32–52 s, at most
+    four a visit. Only while nothing else is going on (no parade, tour, close-up, walk, meal, photo, try-on, open
+    sheet or trick tray), the app showing and motion allowed; otherwise it waits and looks again 5 s later.
+  - **The scene director's `moment`**: it never claims the camera or holds ambient life; anything the player starts
+    ends it at once (`startTrick` gives tricks a handle, and a trick ending clears only what it put there, so it can
+    never wipe a parade's dance off a figure it shared).
+  - **A small discovery, nothing more**: the line under the scene says what happened (*Truffle is watching a
+    butterfly.*), with **New** the first time the player sees that moment (`sanctuary.moments`: moment → the date first
+    seen). Moments the player hasn't seen come first, so the first visits show different ones. Nothing is granted, and
+    nothing about them is a chore.
+- Tester shortcuts: **Show an animal moment** (opens the Farm; one comes after 2.5 s), **Forget first meals**.
+- Analytics (opt-in): `meal_played` (full or quick, feast), `animal_moment` (which, first time or not).
+- Tests: `test/unit/d49Feeding.dom.test.ts` (which meals are full; tastes kept and normalized; a quick meal's timing,
+  no camera, the nibble clip, reduced motion; a level-up's reaction and card; first, repeat and new-favorite meals on
+  the Farm; Meals → Full; the moments catalog, unseen first, temperaments, pairs, no repeats; first-seen noted once;
+  the schedule, the cap, waiting while busy, hidden or reduced, ended by any claim with its line restored; a trick never
+  clearing another's). Updated: the market feeding test (the result carries the new flags).

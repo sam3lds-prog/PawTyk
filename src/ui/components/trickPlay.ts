@@ -26,7 +26,22 @@ const KEEP = /^is-(away|live|trick-)/;
  * it follows the lead a beat behind, with no bubble of its own.
  */
 export function performTrick(svg: SVGSVGElement, fig: SVGGElement, id: TrickId, reducedMotion: boolean, partner = 0): boolean {
-  if (fig.dataset.trick || fig.classList.contains('is-away')) return false;
+  return !!startTrick(svg, fig, id, reducedMotion, partner);
+}
+
+/** D49 PR C: a trick in progress, which can be ended early (an animal moment when the player starts something). */
+export interface TrickHandle {
+  /** Ends it now (its emote and motion go); safe to call after it ended by itself. */
+  stop(): void;
+  readonly active: boolean;
+}
+
+/**
+ * `performTrick`, with a handle. Ending (by itself or by `stop`) clears only what this trick put there: if something
+ * else has since taken the figure (a parade's dance), its own `data-trick` is left alone.
+ */
+export function startTrick(svg: SVGSVGElement, fig: SVGGElement, id: TrickId, reducedMotion: boolean, partner = 0): TrickHandle | null {
+  if (fig.dataset.trick || fig.classList.contains('is-away')) return null;
   const t = TRICK_BY_ID[id];
   // The trick replaces whatever small ambient motion the animal was in the middle of (a greeting, a stroll).
   for (const c of [...fig.classList]) if (c.startsWith('is-') && !KEEP.test(c)) fig.classList.remove(c);
@@ -60,15 +75,28 @@ export function performTrick(svg: SVGSVGElement, fig: SVGGElement, id: TrickId, 
     fig.style.setProperty('--trick-delay', `${partner * 160}ms`);
   }
   if (!reducedMotion) fig.classList.add(`is-trick-${id}`);
-  window.setTimeout(() => {
+  let over = false;
+  const end = () => {
+    if (over) return;
+    over = true;
     overlay?.remove();
     fig.classList.remove(`is-trick-${id}`);
+    if (fig.dataset.trick !== id) return;
     fig.style.removeProperty('--trick-dir');
     fig.style.removeProperty('--trick-delay');
     delete fig.dataset.trick;
     delete fig.dataset.trickBody;
     delete fig.dataset.trickPartner;
-    // A partner started a beat late (in 3D it plays the whole trick from there): it ends that much later too.
-  }, (reducedMotion ? Math.max(1800, t.ms) : t.ms) + (reducedMotion ? 0 : partner * 160));
-  return true;
+  };
+  // A partner started a beat late (in 3D it plays the whole trick from there): it ends that much later too.
+  const timer = window.setTimeout(end, (reducedMotion ? Math.max(1800, t.ms) : t.ms) + (reducedMotion ? 0 : partner * 160));
+  return {
+    stop: () => {
+      clearTimeout(timer);
+      end();
+    },
+    get active() {
+      return !over;
+    },
+  };
 }

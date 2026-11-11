@@ -152,7 +152,7 @@ export function welcomeFlow(scope: Scope, host: WelcomeFlowHost): WelcomeFlow {
         el?.querySelector<HTMLElement>('[data-act="welcome-play"]')?.focus({ preventScroll: true });
         scope.timeout(() => scope.alive && host.afterSnack?.(), 700);
       };
-      const playing = host.meals.feed({ animal: who, name: animalInfo(who).name, food: r.food, favorite: r.favorite, before, after: before + r.gained });
+      const playing = host.meals.feed({ animal: who, name: animalInfo(who).name, food: r.food, favorite: r.favorite, before, after: before + r.gained, firstMeal: r.firstMeal, firstTaste: r.firstTaste });
       if (playing) void playing.then(finish);
       else {
         // The scene couldn't show it (the animal is busy): said in words, and the hearts as after any meal.

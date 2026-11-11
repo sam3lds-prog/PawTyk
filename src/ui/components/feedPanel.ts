@@ -36,6 +36,9 @@ export interface Meal {
   /** Affection before and after. */
   before: number;
   after: number;
+  /** D49 PR C: its first meal, and its first taste of this food (a full meal; quick otherwise). Missing = unknown. */
+  firstMeal?: boolean;
+  firstTaste?: boolean;
 }
 
 /** A feast just served to a whole home (D48 PR B). */
@@ -207,7 +210,7 @@ export function bindFriendPanel(scope: Scope, root: HTMLElement, animal: string,
     app.persist();
     track('animal_fed', { food, favorite: r.favorite });
     ev.onFed?.(food, r.favorite);
-    const meal: Meal = { animal, name, food, favorite: r.favorite, before, after: before + r.gained };
+    const meal: Meal = { animal, name, food, favorite: r.favorite, before, after: before + r.gained, firstMeal: r.firstMeal, firstTaste: r.firstTaste };
     // In a scene: the card makes way and the meal is played out there (its friendship news comes after it).
     if (ev.meal?.(meal)) {
       ev.close?.();

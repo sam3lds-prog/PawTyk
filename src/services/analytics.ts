@@ -77,7 +77,10 @@ export type AnalyticsEvent =
   | 'featured_tap'
   | 'featured_see_all'
   | 'welcome_card'
-  | 'welcome_snack';
+  | 'welcome_snack'
+  // D49 PR C: how a meal played (full or quick, and why), and an animal moment seen (the first time each).
+  | 'meal_played'
+  | 'animal_moment';
 
 export type EventProps = Record<string, string | number | boolean>;
 

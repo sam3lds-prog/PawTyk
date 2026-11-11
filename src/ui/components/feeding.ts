@@ -15,11 +15,19 @@
  * the animal stay still: the bowl, the hearts and the card show, then go.
  *
  * Nothing is decided here: the meal has already been counted (`meta/feeding.ts`) when this starts.
+ *
+ * D49 PR C, smart feeding: that full meal is for the moments that mean something (`meta/feeding.ts::mealStyle`): an
+ * animal's first meal, its first taste of a favorite, a meal that lifts the friendship a level, or always with
+ * Settings → Meals → Full. An ordinary repeat meal is **quick** (about 1.1 s): no camera move, the bowl, one bite,
+ * hearts and the card; the toy plays its short `nibble`. A meal that reaches a new friendship level ends with the
+ * animal beaming in a ring of hearts, and the card says the level. A feast is one short scene for the whole home.
  */
 
+import { app } from '../../app/app';
 import type { BowlId, FoodId } from '../../meta/catalogs/foods';
-import { friendship } from '../../meta/feeding';
+import { friendship, mealStyle } from '../../meta/feeding';
 import { sfx } from '../../services/audio';
+import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
 import { bowlArt } from '../art/foods';
 import { esc } from '../dom';
@@ -34,6 +42,12 @@ export const FEED_STILL_MS = 2400;
 export const BITE_AT = [1250, 1750, 2250] as const;
 /** When the animal reacts (hearts, its hello). */
 const REACT_AT = 2650;
+/** D49 PR C: a quick meal, start to finish (the 3D clip `nibble` is the same length), its one bite and its reaction. */
+export const QUICK_FEED_MS = 1100;
+const QUICK_BITE_AT = 320;
+const QUICK_REACT_AT = 560;
+/** Under reduced motion, a quick meal's bowl and hearts stay this long. */
+export const QUICK_STILL_MS = 900;
 
 export interface FeedingOptions {
   svg: SVGSVGElement;
@@ -55,6 +69,8 @@ export interface FeedingOptions {
   quiet?: boolean;
   /** The card's line instead of "<name> loved it" (a feast: who it fed). */
   line?: string;
+  /** D49 PR C: 'quick' for an ordinary repeat meal (about a second); 'full' (the default) for one that means something. */
+  style?: import('../../meta/feeding').MealStyle;
 }
 
 export interface FeedingHandle {
@@ -99,6 +115,7 @@ export function playFeeding(o: FeedingOptions): FeedingHandle {
   const width = Number((o.svg.getAttribute('data-vb') ?? '').split(/\s+/)[2]) || o.svg.viewBox?.baseVal?.width || 360;
   const spot = bowlSpot(gx, gy, gh, width);
   const still = o.reducedMotion;
+  const quick = o.style === 'quick';
   const timers: ReturnType<typeof setTimeout>[] = [];
   const at = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
   let over = false;
@@ -120,12 +137,14 @@ export function playFeeding(o: FeedingOptions): FeedingHandle {
   o.svg.insertAdjacentHTML('beforeend', `<g class="sp-feed-hearts${still ? ' is-still' : ''}" aria-hidden="true">${hearts}</g>`);
   const heartsEl = o.svg.lastElementChild;
 
-  // The animal eats: the same protocol as a trick, so the 3D toy plays its `feed` clip.
-  fig.dataset.trick = 'feed';
+  // The animal eats: the same protocol as a trick, so the 3D toy plays its `feed` clip (a quick meal: `nibble`).
+  fig.dataset.trick = quick ? 'nibble' : 'feed';
   fig.style.setProperty('--feed-dx', `${(spot.dir * gh * 0.2).toFixed(1)}px`);
   fig.style.setProperty('--trick-dir', String(spot.dir));
-  if (!still) fig.classList.add('is-trick-feed');
+  if (!still) fig.classList.add(quick ? 'is-trick-nibble' : 'is-trick-feed');
   fig.classList.add('is-eating');
+  if (quick) bowlEl?.classList.add('is-quick');
+  if (quick) heartsEl?.classList.add('is-quick');
 
   // The friendship card: the bar moves by what the meal gave.
   const card = document.createElement('div');
@@ -133,21 +152,43 @@ export function playFeeding(o: FeedingOptions): FeedingHandle {
   card.setAttribute('role', 'status');
   const gained = Math.max(0, o.after - o.before);
   const level = friendship(o.after);
+  // A level reached fills the old bar first, then starts the new one (D49 PR C: and the card names the new level).
+  const levelled = friendship(o.before).level !== level.level;
   card.innerHTML = `<span class="feed-bond__name">${ICON.heart}${o.line ? `<b>${esc(o.line)}</b>` : `<b>${esc(o.name)}</b> ${o.favorite ? 'loved it' : 'enjoyed it'}${gained ? ` <span class="num">+${gained}</span>` : ''}`}</span>
-    ${o.line ? '' : `<span class="rank-bar feed-bond__bar" aria-hidden="true"><span style="width:${friendshipPct(o.before)}%"></span></span><small>${esc(level.name)}</small>`}`;
+    ${o.line ? '' : `<span class="rank-bar feed-bond__bar" aria-hidden="true"><span style="width:${friendshipPct(o.before)}%"></span></span><small>${levelled ? `${ICON.sparkle}<b class="feed-bond__level">${esc(level.name)}!</b>` : esc(level.name)}</small>`}`;
+  if (quick) card.classList.add('is-quick');
+  if (levelled) card.classList.add('is-level');
   if (!o.quiet) o.host.appendChild(card);
   const fill = card.querySelector<HTMLElement>('.feed-bond__bar span');
   const sound = (fn: () => void) => !o.quiet && fn();
-  // A level reached fills the old bar first, then starts the new one.
-  const levelled = friendship(o.before).level !== level.level;
 
-  const cam = still ? null : o.camera;
+  const cam = still || quick ? null : o.camera;
   if (cam) void cam.focus(fig, 1.75, 520, { dy: -3 });
 
+  /** D49 PR C: a new friendship level: the animal beams in a ring of hearts as it reacts. */
+  const celebrateLevel = () => {
+    if (!levelled || o.quiet) return;
+    fig.classList.add('is-bond-up');
+    heartsEl?.classList.add('is-level');
+    sound(() => feel('line'));
+  };
   if (still) {
     if (fill) fill.style.width = `${levelled ? 100 : friendshipPct(o.after)}%`;
     sound(() => feel('treat'));
-    at(FEED_STILL_MS, () => finish(true));
+    if (levelled) heartsEl?.classList.add('is-level');
+    at(quick ? QUICK_STILL_MS : FEED_STILL_MS, () => finish(true));
+  } else if (quick) {
+    at(QUICK_BITE_AT, () => {
+      bowlEl?.querySelector('.sp-feed-food')?.setAttribute('data-bites', '3');
+      sound(() => feel('treat'));
+    });
+    at(QUICK_REACT_AT, () => {
+      heartsEl?.classList.add('is-on');
+      sound(() => o.hello?.());
+      if (fill) fill.style.width = `${levelled ? 100 : friendshipPct(o.after)}%`;
+      celebrateLevel();
+    });
+    at(QUICK_FEED_MS, () => finish(true));
   } else {
     BITE_AT.forEach((ms, i) =>
       at(ms, () => {
@@ -159,6 +200,7 @@ export function playFeeding(o: FeedingOptions): FeedingHandle {
       heartsEl?.classList.add('is-on');
       sound(() => o.hello?.());
       if (fill) fill.style.width = `${levelled ? 100 : friendshipPct(o.after)}%`;
+      celebrateLevel();
     });
     if (levelled) at(REACT_AT + 500, () => fill && (fill.style.transition = 'none', (fill.style.width = '0%'), void fill.offsetWidth, (fill.style.transition = ''), (fill.style.width = `${friendshipPct(o.after)}%`)));
     at(FEED_MS, () => finish(true));
@@ -171,13 +213,13 @@ export function playFeeding(o: FeedingOptions): FeedingHandle {
     bowlEl?.remove();
     heartsEl?.remove();
     if (fig) {
-      if (fig.dataset.trick === 'feed') delete fig.dataset.trick;
-      fig.classList.remove('is-trick-feed', 'is-eating');
+      if (fig.dataset.trick === 'feed' || fig.dataset.trick === 'nibble') delete fig.dataset.trick;
+      fig.classList.remove('is-trick-feed', 'is-trick-nibble', 'is-eating', 'is-bond-up');
       fig.style.removeProperty('--feed-dx');
       fig.style.removeProperty('--trick-dir');
     }
-    // The card stays a moment after a meal that played out, so the bar can be read.
-    if (natural) setTimeout(() => card.remove(), 900);
+    // The card stays a moment after a meal that played out, so the bar can be read (a new level a little longer).
+    if (natural) setTimeout(() => card.remove(), levelled ? 1600 : quick ? 700 : 900);
     else card.remove();
     if (cam) void cam.reset(natural ? 600 : 300);
     resolve(natural);
@@ -223,8 +265,8 @@ export interface SceneMeals {
   stop(): void;
 }
 
-/** How long apart a feast's guests start eating (a ripple across the home, not all at once). */
-export const FEAST_STAGGER_MS = 160;
+/** How long apart a feast's guests start eating (a ripple across the home, not all at once; D49 PR C: quicker). */
+export const FEAST_STAGGER_MS = 90;
 
 /**
  * Meals on a home's screen (D48 PR B): the director's `feed` moment. A meal claims the camera (a tour, a close-up or
@@ -238,6 +280,9 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
     for (const r of now) r.stop();
   };
   h.director.register('feed', { cancel: stop, active: () => running.some((r) => r.active) });
+  /** D49 PR C: full for a first meal, a first taste of a favorite or a new friendship level; quick otherwise. */
+  const styleOf = (m: import('./feedPanel').Meal) =>
+    mealStyle(app.settings.meals, { firstMeal: m.firstMeal ?? true, firstTaste: m.firstTaste ?? true, favorite: m.favorite, levelUp: friendship(m.before).level !== friendship(m.after).level });
   scope.onDispose(stop);
   const scene = () => ({ host: h.el.querySelector<HTMLElement>('.sanctuary__scene'), svg: h.el.querySelector<SVGSVGElement>('.sanctuary__scene svg') });
 
@@ -247,6 +292,7 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
     if (!host || !svg || !meals.some((m) => canFeedInScene(svg, m.animal))) return null;
     h.director.claim('feed');
     h.director.hold('feed', true);
+    track('meal_played', { style: meals[0].style ?? 'full', feast: meals.length > 1 || !!meals[0].line });
     const handles = meals.map((m, i) => {
       const go = () =>
         playFeeding({
@@ -297,7 +343,7 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
       return {
         onPat: () => (patted = true),
         meal: (m) => {
-          const ok = !!play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after }], true);
+          const ok = !!play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after, style: styleOf(m) }], true);
           if (!ok) fedOffstage = true;
           return ok;
         },
@@ -313,6 +359,8 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
               after: x.before + x.gained,
               quiet: i > 0,
               line: i === 0 ? `A feast for ${f.fed.length === 1 ? 'one' : `all ${f.fed.length}`}: +${total} ♥` : undefined,
+              // D49 PR C: one short group scene (in full only with Settings → Meals → Full).
+              style: app.settings.meals === 'full' ? ('full' as const) : ('quick' as const),
             })),
             false,
           );
@@ -324,7 +372,7 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
         },
       };
     },
-    feed: (m) => play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after }], true),
+    feed: (m) => play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after, style: styleOf(m) }], true),
     get active() {
       return running.some((r) => r.active);
     },

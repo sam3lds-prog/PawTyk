@@ -136,9 +136,9 @@ describe('food and feeding', () => {
     for (let i = 0; i < 3; i++) buyFood(s, 'fishbites', NOW);
     buyFood(s, 'kibble', NOW);
     const fav = feedAnimal(s, 'mochi', 'fishbites', NOW);
-    expect(fav).toEqual({ ok: true, gained: 2, favorite: true });
+    expect(fav).toMatchObject({ ok: true, gained: 2, favorite: true });
     const plain = feedAnimal(s, 'mochi', 'kibble', NOW);
-    expect(plain).toEqual({ ok: true, gained: 1, favorite: false });
+    expect(plain).toMatchObject({ ok: true, gained: 1, favorite: false });
     feedAnimal(s, 'mochi', 'fishbites', NOW); // 5
     const capped = feedAnimal(s, 'mochi', 'fishbites', NOW); // 1 left today
     expect(capped.ok && capped.gained).toBe(FOOD_AFFECTION_PER_DAY - 5);

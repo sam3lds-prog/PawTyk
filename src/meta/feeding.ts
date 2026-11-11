@@ -81,7 +81,33 @@ export function animalKindOf(id: string): AnimalKind | null {
   return null;
 }
 
-export type FeedResult = { ok: true; gained: number; favorite: boolean } | { ok: false; reason: 'no-food' | 'full' | 'unknown' | 'feast' };
+/**
+ * D49 PR C: `firstMeal`: the animal had never eaten before (since D49 kept track); `firstTaste`: never this food.
+ */
+export type FeedResult = { ok: true; gained: number; favorite: boolean; firstMeal: boolean; firstTaste: boolean } | { ok: false; reason: 'no-food' | 'full' | 'unknown' | 'feast' };
+
+/** D49 PR C: notes that `animal` has eaten `food`; returns whether that was its first meal, and its first of this food. */
+function noteTaste(save: SaveV2, animal: string, food: FoodId): { firstMeal: boolean; firstTaste: boolean } {
+  const tasted = (save.sanctuary.tasted ??= {});
+  const had = tasted[animal];
+  const firstMeal = !had?.length;
+  const firstTaste = !had?.includes(food);
+  if (firstTaste) tasted[animal] = [...(had ?? []), food];
+  return { firstMeal, firstTaste };
+}
+
+export type MealStyle = 'full' | 'quick';
+
+/**
+ * D49 PR C, smart feeding: how a meal plays. In full (about 3.6 s: the camera comes close, three bites, the reaction)
+ * when it means something: an animal's first meal, its first taste of a favorite, or a meal that lifts the friendship
+ * a level; a quick one (about a second: the bowl, a bite, hearts) for an ordinary repeat. `pref` 'full' (Settings →
+ * Meals) always plays it in full.
+ */
+export function mealStyle(pref: 'smart' | 'full', m: { firstMeal: boolean; firstTaste: boolean; favorite: boolean; levelUp: boolean }): MealStyle {
+  if (pref === 'full') return 'full';
+  return m.firstMeal || m.levelUp || (m.favorite && m.firstTaste) ? 'full' : 'quick';
+}
 
 /** Affection gained from food today by one animal. */
 export function fedToday(save: Pick<SaveV2, 'sanctuary'>, animal: string, now = new Date()): number {
@@ -109,7 +135,7 @@ export function feedAnimal(save: SaveV2, animal: string, food: FoodId, now = new
   const prev = save.sanctuary.fed[animal];
   save.sanctuary.fed[animal] = { day, n: (prev && prev.day === day ? prev.n : 0) + gained };
   save.sanctuary.affection[animal] = (save.sanctuary.affection[animal] ?? 0) + gained;
-  return { ok: true, gained, favorite };
+  return { ok: true, gained, favorite, ...noteTaste(save, animal, food) };
 }
 
 /** Adds food affection for today, within the daily limit. Returns what was added. */
@@ -147,7 +173,13 @@ export function serveFeast(save: SaveV2, home: SanctuaryId, food: FoodId, now = 
   if (guests.every((g) => fedToday(save, g, now) >= FOOD_AFFECTION_PER_DAY)) return { ok: false, reason: 'full' };
   if (foodCount(save, food) < 1) return { ok: false, reason: 'no-food' };
   if (spendItem(save, `feast:${home}:${uid(now)}`, 'food', 1, now, f.name, food) !== 'ok') return { ok: false, reason: 'no-food' };
-  return { ok: true, fed: guests.map((g) => ({ animal: g, gained: addFoodAffection(save, g, f.affection, now) })) };
+  return {
+    ok: true,
+    fed: guests.map((g) => {
+      noteTaste(save, g, food);
+      return { animal: g, gained: addFoodAffection(save, g, f.affection, now) };
+    }),
+  };
 }
 
 /** An animal's favorite foods (not the treats everyone loves), in catalog order. */

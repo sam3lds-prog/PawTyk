@@ -1049,6 +1049,31 @@ export const MOMENT_CLIPS: Record<string, Clip> = {
       };
     },
   },
+  /**
+   * D49 PR C: a quick meal (1.1 s, `components/feeding.ts::QUICK_FEED_MS`): a lean toward the bowl, one bite, a small
+   * happy bounce, back at rest. No steps: the animal eats where it stands.
+   */
+  nibble: {
+    ms: 1100,
+    frame: (t, c) => {
+      const lean = hold(t, 0.05, 0.62, 0.12);
+      const bite = bump(t, 0.24, 0.32, 0.42);
+      const happy = hold(t, 0.55, 0.9, 0.08);
+      const birdy = c.body === 'bird';
+      return {
+        pose: sum(jump(t, 0.58, 0.8, 0.06), {
+          px: c.dir * 0.06 * lean,
+          headYaw: c.dir * 0.3 * lean,
+          headPitch: (birdy ? 0.7 : 0.45) * bite,
+          lean: 0.12 * bite,
+          mouth: bite,
+          tail: wiggle(t, 0.5, 0.95, 3, 0.6),
+          tailUp: 0.25 * happy,
+        }),
+        face: t > 0.52 && t < 0.92 ? 'happy' : bite > 0.3 ? 'blink' : undefined,
+      };
+    },
+  },
 };
 
 /** A decoration activity's clip for the rider. */
