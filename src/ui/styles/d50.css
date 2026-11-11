@@ -1,0 +1,84 @@
+/* D50: reward clarity, the welcome in focus, short-visit delight, a focused return. */
+
+/* ---------- PR A: one coin headline for the whole win, and where it came from ---------- */
+.win-coins {
+  margin: 4px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  animation: none;
+}
+.win-coins__total {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gold, #d5a04b) 16%, var(--surface));
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--t-sm);
+  animation: coin-pop 420ms var(--ease) 260ms both;
+}
+.win-coins__total .ico {
+  width: 20px;
+  height: 20px;
+}
+.win-coins__total b {
+  font-size: var(--t-md);
+}
+.win-coins__total span {
+  color: var(--muted-ink);
+  font-weight: 700;
+}
+.win-coins__parts {
+  max-width: 30ch;
+  text-align: center;
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  line-height: 1.35;
+}
+:root[data-motion='reduce'] .win-coins__total {
+  animation: none;
+}
+
+/* ---------- PR A: while a welcome card offers the snack, the scene's other controls step back ---------- */
+.is-welcoming .sanctuary__scene > .scene-tour,
+.is-welcoming .sanctuary__scene > .scene-walk,
+.is-welcoming .sanctuary__scene > .scene-photo,
+.is-welcoming .sanctuary__under > .scene-replay,
+.is-welcoming .sanctuary__under > .scene-share,
+.is-welcoming .sanctuary__under > .scene-tricks,
+.is-welcoming [data-stage-news],
+.is-welcoming .region-progress > .btn,
+.is-welcoming .region-progress > .region-progress__note {
+  display: none !important;
+}
+.welcome-card__actions .btn:disabled {
+  opacity: 0.55;
+}
+.welcome-card__look {
+  align-self: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--muted-ink);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.welcome-card__look:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

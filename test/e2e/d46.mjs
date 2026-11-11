@@ -170,6 +170,8 @@ export async function d46Checks({ browser, URL, check, errors }) {
   await waitFor(qa, '.sanctuary__scene.is-parading', 8000);
   await tapAt(qa, '.parade-skip');
   await qa.waitForTimeout(800);
+  // D50 PR A: the welcome card then holds the focus (the scene's buttons step back) until the player looks around.
+  await tapAt(qa, '[data-act="welcome-look"]');
   const start = {
     parade: () => tapAt(qa, '[data-act="parade-replay"]'),
     trick: async () => {

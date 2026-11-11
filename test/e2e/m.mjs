@@ -218,7 +218,10 @@ export async function mChecks({ browser, URL, check, errors }) {
     const qa = await page(browser, URL, errors);
     await setUp(qa, { route: { screen: 'region', id: 'farm', welcome: ['cotton'] } });
     await atRest(qa);
-    const offered = await waitFor(qa, '[data-act="share-arrival"]', 20000);
+    // D50 PR A: after the welcome, its card holds the focus; Share comes back once the player looks around.
+    await waitFor(qa, '[data-act="welcome-look"]', 20000);
+    await qa.evaluate(() => document.querySelector('[data-act="welcome-look"]').click());
+    const offered = await until(qa, () => { const b = document.querySelector('[data-act="share-arrival"]'); return !!b && b.getBoundingClientRect().width > 0; }, null, 20000);
     const label = await qa.evaluate(() => document.querySelector('[data-act="share-arrival"]')?.textContent?.trim() ?? '');
     const winSheet = await qa.evaluate(() => !!document.querySelector('.win-sheet [data-act="share-arrival"]'));
     const fits = await qa.evaluate(() => {
