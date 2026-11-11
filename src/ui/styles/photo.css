@@ -1,0 +1,287 @@
+/* Photo mode and postcards (D47 PR 5). The scene stays alive under a light frame: the postcard's shape is clear, the
+   rest of the scene dims, and the controls sit in a panel at the bottom. The home's own buttons step aside. */
+
+.scene-photo {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 6;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 252, 244, 0.88);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: var(--t-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px -2px rgba(40, 52, 52, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.scene-photo[hidden] {
+  display: none;
+}
+.scene-photo svg,
+.walk__photo svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.scene-photo:focus-visible,
+.walk__photo:focus-visible,
+.photo-chip:focus-visible,
+.photo-shutter:focus-visible,
+.photo-mode__done:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.sanctuary__scene.is-parading .scene-photo,
+.sanctuary__scene.is-starting .scene-photo,
+.sanctuary__scene.is-touring .scene-photo,
+.sanctuary__scene.is-photo .scene-photo,
+.sanctuary__scene.is-photo .scene-tour,
+.sanctuary__scene.is-photo .scene-walk,
+.sanctuary__scene.is-photo .tour-caption {
+  display: none;
+}
+.walk__photo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 6px 14px 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 252, 244, 0.94);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--t-sm);
+  box-shadow: 0 3px 10px -3px rgba(40, 52, 52, 0.35);
+}
+.walk__photo[hidden] {
+  display: none;
+}
+.walk.is-photo .walk__top,
+.walk.is-photo .walk__pad,
+.walk.is-photo .walk__goto,
+.walk.is-photo .walk__map,
+.walk.is-photo .walk__hint,
+.walk.is-photo .walk__place {
+  display: none;
+}
+
+.photo-mode {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.photo-mode > * {
+  pointer-events: auto;
+}
+.photo-mode__guide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* Everything outside the postcard's picture is dimmed (one big shadow round the window). */
+.photo-mode__window {
+  position: absolute;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 2px rgba(255, 252, 244, 0.95),
+    0 0 0 9999px rgba(30, 36, 34, 0.32);
+  transition:
+    left 220ms ease,
+    top 220ms ease,
+    width 220ms ease,
+    height 220ms ease;
+}
+.photo-mode__top {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.walk .photo-mode__top {
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(14px, env(safe-area-inset-left, 0px));
+  right: max(14px, env(safe-area-inset-right, 0px));
+}
+.photo-mode__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 999px;
+  background: rgba(40, 52, 52, 0.62);
+  color: #fffaf0;
+  font-weight: 800;
+  font-size: var(--t-sm);
+}
+.photo-mode__title svg {
+  width: 18px;
+  height: 18px;
+}
+.photo-mode__done {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 252, 244, 0.94);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--t-sm);
+  box-shadow: 0 3px 10px -3px rgba(40, 52, 52, 0.35);
+}
+.photo-mode__panel {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(255, 252, 244, 0.9);
+  box-shadow: 0 6px 18px -8px rgba(40, 52, 52, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.walk .photo-mode__panel {
+  left: max(14px, env(safe-area-inset-left, 0px));
+  right: max(14px, env(safe-area-inset-right, 0px));
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+}
+.photo-mode__frames {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.photo-mode__frames::-webkit-scrollbar {
+  display: none;
+}
+.photo-mode__row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.photo-seg {
+  display: inline-flex;
+  gap: 4px;
+  justify-self: start;
+}
+.photo-chip {
+  flex: none;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(40, 52, 52, 0.18);
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--t-xs, 12px);
+  white-space: nowrap;
+}
+.photo-chip[aria-checked='true'] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.photo-shutter {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 0;
+  background: #fff;
+  color: var(--brand);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 0 0 3px rgba(40, 52, 52, 0.12),
+    0 4px 12px -4px rgba(40, 52, 52, 0.45);
+}
+.photo-shutter:active {
+  transform: scale(0.94);
+}
+.photo-sign {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-xs, 12px);
+  font-weight: 700;
+  color: var(--ink-2, var(--ink));
+  text-align: right;
+  line-height: 1.15;
+}
+.photo-sign input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}
+.photo-mode__flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.photo-mode__flash.is-on {
+  animation: photo-flash 360ms ease-out;
+}
+@keyframes photo-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+:root[data-motion='reduce'] .photo-mode__flash.is-on {
+  animation: none;
+}
+:root[data-motion='reduce'] .photo-mode__window {
+  transition: none;
+}
+
+.postcard-sheet__img {
+  display: block;
+  width: 100%;
+  max-height: 52vh;
+  object-fit: contain;
+  margin: 0 auto 12px;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px -12px rgba(40, 52, 52, 0.5);
+}
+.postcard-sheet__img.is-portrait {
+  width: auto;
+  max-width: 100%;
+}
+/* Under a home's scene: the controls in the page, the picture uncovered. */
+.photo-dock {
+  margin: 8px 0 4px;
+}
+.photo-mode__panel.is-docked {
+  position: static;
+  box-shadow: 0 4px 14px -8px rgba(40, 52, 52, 0.4);
+}
+/* On the 3D walk (a full-screen layer of its own) the postcard's sheet and its messages come in front of it. */
+body.has-walk .overlay {
+  z-index: 70;
+}
+body.has-walk .toast-host {
+  z-index: 71;
+}

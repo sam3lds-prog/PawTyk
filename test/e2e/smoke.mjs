@@ -9,6 +9,7 @@
 
 import { createRequire } from 'node:module';
 import { d46Checks, forceCloseChecks } from './d46.mjs';
+import { d47Checks } from './d47.mjs';
 
 let chromium;
 try {
@@ -1374,6 +1375,7 @@ try {
   // D46: transitions between farm interactions, and the 3D layer's lifecycle.
   await d46Checks({ browser, URL, check, errors });
   await forceCloseChecks({ browser, URL, check, errors });
+  await d47Checks({ browser, URL, check, errors });
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {

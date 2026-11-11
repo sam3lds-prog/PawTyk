@@ -37,6 +37,13 @@ Progress is kept in the app's own storage on a device (`@capacitor/preferences` 
 in the WebView's localStorage, so iOS can't evict it and it rides along in device backups. `npx cap sync ios` adds
 the plugin; nothing else to configure. The first launch of this build copies an existing player's save over.
 
+**Postcards** (D47 PR 5): sharing uses `@capacitor/share` and `@capacitor/filesystem` (a postcard is written to the
+app's cache, handed to the share sheet, and deleted after). `npx cap sync ios` adds both. The share sheet's *Save
+Image* writes to Photos, which iOS allows only with a reason in `ios/App/App/Info.plist`:
+`NSPhotoLibraryAddUsageDescription` = "PawTyk saves the postcards you choose to keep to your Photos." Without the key
+iOS stops the app the first time a player taps Save Image, so add it before a TestFlight build. Nothing else is
+needed: no permission is asked until a player saves a postcard themselves.
+
 ## 1. Reward videos — Google AdMob (`@capacitor-community/admob`)
 
 PawTyk only shows **reward videos the player asks for** (an extra life, a hint, a video token). No banners, no

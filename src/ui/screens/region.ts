@@ -35,6 +35,9 @@ import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
+import { openPhotoMode, type PhotoMode } from '../components/photoMode';
+import { captureScene } from '../components/sceneCapture';
+import { photoButtonMarkup, photoFrames } from '../components/photoFrames';
 import { HOME_SCENERY } from '../art/homeScenery';
 import { figureId } from '../components/sceneLife';
 import { trickBadge } from '../art/tricks';
@@ -152,6 +155,9 @@ export const regionScreen: ScreenDef = {
     director.register('tour', { cancel: () => tour.stop(), active: () => tour.active });
     let walking: WalkHandle | null = null;
     director.register('walk', { cancel: () => walking?.close(), active: () => !!walking });
+    // Photo mode (D47 PR 5): a postcard of this home.
+    let photo: PhotoMode | null = null;
+    director.register('photo', { cancel: () => photo?.close(), active: () => !!photo?.open });
     if (import.meta.env.DEV) (window as unknown as { __director?: unknown }).__director = director;
     // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
     if (app.settings.ambientMusic && isOpen(app.save, id)) scope.timeout(() => scope.alive && startAmbient(id), 1800);
@@ -256,6 +262,7 @@ export const regionScreen: ScreenDef = {
           <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: state.evening }, `rg-${id}`)}</svg>
           ${tourButtonMarkup(open && welcomed.length > 0)}
           ${id === 'farm' ? walkButtonMarkup(open && stage >= 1 && canWalk()) : ''}
+          ${photoButtonMarkup(open)}
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
@@ -390,6 +397,43 @@ export const regionScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      // Photo mode's own controls; and while framing, a tap on an animal only says hello (a pose for the picture).
+      if (t.closest('.photo-mode')) return;
+      if (photo?.open) {
+        const svgP = t.closest('.sanctuary__scene svg') as SVGSVGElement | null;
+        const figP = (t.closest('.sanctuary__scene .sanctuary__pet') as HTMLElement | null) ?? (svgP ? figureNear(svgP, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
+        if (figP) life?.tap(figP);
+        return;
+      }
+      if (t.closest('[data-act="photo"]')) {
+        const figure = el.querySelector<HTMLElement>('.sanctuary__scene');
+        const svgEl = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
+        if (!figure || !svgEl) return;
+        director.claim('photo');
+        if (tray.isOpen) tray.close();
+        const was = camera.view;
+        const toys = s3d.drawing;
+        // The controls sit just under the scene, so the whole picture stays in view.
+        const dock = document.createElement('div');
+        dock.className = 'photo-dock';
+        figure.after(dock);
+        const p = openPhotoMode(scope, figure, {
+          place: def.name,
+          home: id,
+          kind: toys ? '3d' : '2d',
+          accent: def.accent,
+          frames: photoFrames(camera, svgEl),
+          capture: () => captureScene(svgEl, { width: 2160, toys: s3d.drawing ? () => s3d.snapshot() : null }),
+        }, { dock });
+        photo = p;
+        void p.done.then(() => {
+          dock.remove();
+          if (photo === p) photo = null;
+          if (scope.alive) void camera.moveTo(was, 500);
+          el.querySelector<HTMLElement>('[data-act="photo"]')?.focus({ preventScroll: true });
+        });
+        return;
+      }
       if (parades.onClick(t)) return;
       // Walk round the Farm in 3D (D44 PR I): the scene's own 3D layer rests meanwhile.
       if (t.closest('[data-act="walk"]')) {
