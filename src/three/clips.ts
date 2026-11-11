@@ -760,6 +760,39 @@ export const ACTIVITY_CLIPS: Record<string, Clip> = {
   },
 };
 
+// ------------------------------------------------------------------ a meal (D48 PR B)
+
+/**
+ * Eating from a bowl (`components/feeding.ts`, the same 3.6 s): notices the bowl on its side (toward the middle of the
+ * scene), steps up to it, three bites, a happy hop, and back to where it stood.
+ */
+export const MOMENT_CLIPS: Record<string, Clip> = {
+  feed: {
+    ms: 3600,
+    frame: (t, c) => {
+      const notice = hold(t, 0.02, 0.32, 0.1);
+      const near = easeInOut(seg(t, 0.14, 0.3)) * (1 - easeInOut(seg(t, 0.88, 0.99)));
+      const bite = (a: number) => bump(t, a - 0.04, a, a + 0.06);
+      const bites = bite(0.35) + bite(0.49) + bite(0.63);
+      const happy = hold(t, 0.72, 0.92, 0.06);
+      const birdy = c.body === 'bird';
+      return {
+        pose: sum(steps(t, 0.14, 0.3, 2), jump(t, 0.74, 0.84, 0.12), {
+          px: c.dir * 0.24 * near,
+          headYaw: c.dir * 0.45 * notice,
+          ears: 0.3 * notice + 0.2 * happy,
+          headPitch: (birdy ? 0.75 : 0.5) * bites,
+          lean: 0.18 * bites,
+          mouth: bites,
+          tail: wiggle(t, 0.66, 0.96, 4, 0.7),
+          tailUp: 0.3 * happy,
+        }),
+        face: t > 0.7 && t < 0.95 ? 'happy' : bites > 0.3 ? 'blink' : notice > 0.3 ? (c.dir > 0 ? 'lookR' : 'lookL') : undefined,
+      };
+    },
+  },
+};
+
 /** A decoration activity's clip for the rider. */
 export function activityClip(decor: string): Clip | null {
   return ACTIVITY_CLIPS[decor] ?? null;
@@ -767,7 +800,7 @@ export function activityClip(decor: string): Clip | null {
 
 /** A trick's or an emote's clip (they share the catalog's ids; D33/D34), or a group dance's (D44 PR D). */
 export function performClip(id: string): Clip | null {
-  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? (id.startsWith('dance:') ? danceClip(id) : null);
+  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? MOMENT_CLIPS[id] ?? (id.startsWith('dance:') ? danceClip(id) : null);
 }
 
 /** An everyday move's clip (the ambient director's action names). */

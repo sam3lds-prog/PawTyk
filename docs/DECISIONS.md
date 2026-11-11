@@ -1914,3 +1914,37 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
   double tap and how many single taps came before; the five-player script should watch the same moment.
 - Tests: `d48polish.dom.test` (grid walk, tick spacing and silence, safe framing for groups, tall and edge animals in
   both shapes, the warm-up and two-step), smoke e2e updated for the warm-up.
+
+### PR B — feeding: a moment, more food, a choice of currency
+- **A meal is played out.** Choosing a food on an animal's card counts the meal (as before, `meta/feeding.ts`), then the
+  card makes way and the scene plays it (`components/feeding.ts`, the director's new `feed` moment): the camera moves
+  gently closer, the player's bowl appears beside the animal toward the middle of the scene, the animal notices it,
+  steps up, takes three bites (the heap goes down each time, a munch each time), reacts (more hearts for a favorite),
+  and a small card under the scene shows the friendship bar moving. ~3.6 s; the 3D toy plays the same moment from
+  its `feed` clip (with rising hearts). Anything the player starts (Photo, Walk, Tour, a trick) ends it; leaving ends
+  it. Reduced motion: no camera, no movement; bowl, hearts and card shown still. Friendship news (a level reached)
+  comes after the meal, not over it. Where there's no scene (the Pets tab) the card says what happened, as before.
+- **The card shows what the animal loves** (its favorites' icons, bought or not), the pantry favorites-first and
+  starred, the home's feast, and **Get food** (or *More food*), which opens the Shop's Food tab on that home with the
+  animal's favorite picked out and a *Shopping for Cotton* banner; after a purchase it reads **Feed Cotton**, which goes
+  back and reopens her card (`setFeedReturn` / `takeFeedReturn`). Leaving the Shop any other way forgets the errand.
+  The trick tray has a **Feed** button too.
+- **Thirty foods** (15 new): pumpkin cubes, rolled oats, seed mix (Farm); leafy lettuce, pup biscuits, herb basket (Pet
+  Garden); saltbush (Outback); watermelon (Savanna); little sprats (Arctic); papaya boats (Amazon); and everywhere the
+  **Harvest Basket** (coins, loved by all), Rainbow Fruit Bowl and Party Treat Platter (tokens or gems), the **Golden
+  Picnic Basket** (gems) and the **Festival Feast** (tokens or gems), which one serving feeds a whole home at once.
+  Storybook treats, species-appropriate favorites; nothing reads as real-world feeding advice.
+- **Currencies: coins first.** `foodOffers`: one portion; a bundle of five for 90% of five (coins); special treats keep
+  their video-token price and gain a gem one; the premium treat is gems only. Gem foods give nothing more than coin
+  ones can (a favorite is 2 a portion, the daily limit stays 6): every animal can reach the day's limit with coins alone
+  (test). Offers follow D43: nothing priced in a currency the build can't sell, unless the player holds some.
+- **Exactly once.** A purchase's spend and grant share one id (`buy:food:<food>:<offer>:<n>`); a bundle that wouldn't
+  fit the pantry (30 each) isn't sold, so nothing is charged for food that can't be kept; quick taps buy as often as
+  tapped, each charged once and granted once (test: every grant has its own spend). A feast uses its portion only if
+  someone there has room for more today.
+- **Bowls, kept for good**: wooden (everyone's), patchwork (150 coins), flower (35 gems), golden (60 gems). A bowl
+  changes how a meal looks, never what it gives. Ownership is the purchase in the ledger (`buy:bowl:<id>`), so a bowl
+  survives a rollback to a build that doesn't know bowls (`inventory.bowls` is a cache; test).
+- Prices are starting points for the economy check in PR F (a new level pays 35 coins).
+- Tests: `feeding.dom.test` (catalog, offers, bundles, quick taps, feasts, bowls and rollback, coins-only friendship,
+  the meal in the scene incl. stop and reduced motion, the Farm's card → meal, the Shop round trip, the tray's Feed).

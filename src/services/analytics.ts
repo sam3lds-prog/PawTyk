@@ -63,7 +63,9 @@ export type AnalyticsEvent =
   | 'starter_pack_view'
   | 'starter_pack_offer'
   // D48 PR A: did the first animal land on the first double tap (the controls' usability check)?
-  | 'onboarding_controls';
+  | 'onboarding_controls'
+  // D48 PR B
+  | 'bowl_bought';
 
 export type EventProps = Record<string, string | number | boolean>;
 

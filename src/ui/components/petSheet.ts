@@ -65,7 +65,7 @@ export function showPetSheet(scope: Scope, id: PetId, opts: { onChange?: () => v
         ${owned && opts.showVisit !== false ? `<button class="btn btn--quiet" data-act="visit">See ${esc(p.name)} in the sanctuary</button>` : ''}
       </div>`,
   });
-  if (owned) bindFriendPanel(sh.scope, sh.el, id, p.name, opts);
+  if (owned) bindFriendPanel(sh.scope, sh.el, id, p.name, { ...opts, close: () => sh.close() });
   sh.scope.on(sh.el, 'click', (e) => {
     const t = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
     if (!t) return;

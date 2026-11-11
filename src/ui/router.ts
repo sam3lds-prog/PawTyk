@@ -102,7 +102,11 @@ export type Route =
   | { screen: 'journey'; view?: 'path'; chapter?: number }
   | { screen: 'pets' }
   | { screen: 'challenges'; tab?: 'leaderboard' | 'week' | 'daily' }
-  | { screen: 'shop'; sanctuary?: SanctuaryId; tab?: 'decor' | 'tricks' | 'food' | 'gems' }
+  /**
+   * D48 PR B: `food` picks a food out on the Food tab; `feedFor` is the animal the player is shopping for (the Shop
+   * offers the way back to feed it). D48 PR C: `decor` opens a decoration's card.
+   */
+  | { screen: 'shop'; sanctuary?: SanctuaryId; tab?: 'decor' | 'tricks' | 'food' | 'gems'; food?: string; feedFor?: string; decor?: string }
   | { screen: 'sanctuary'; welcome?: AnimalId[] }
   | { screen: 'world' }
   /** `met`: the newcomer was already introduced on the way here (the first arrival's own scene), so no "came home" news again. */

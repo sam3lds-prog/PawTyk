@@ -48,6 +48,11 @@ import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { Route, ScreenDef } from '../router';
 import { friendPortrait, offerStarterGift, showFriendSheet } from './sanctuary';
+import { takeFeedReturn } from '../components/feedPanel';
+import { sceneMeals } from '../components/feeding';
+import { afterHearts } from '../components/bonding';
+import { sayHello } from '../components/hello';
+import { bowlInUse } from '../../meta/feeding';
 import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
@@ -103,6 +108,8 @@ export const regionScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
+      onFeed: (fid) => openCard(fid as FriendId),
     });
     let life: SceneLife | null = null;
     let acts: ActivityRunner | null = null;
@@ -158,6 +165,21 @@ export const regionScreen: ScreenDef = {
     director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
     director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
     director.register('tour', { cancel: () => tour.stop(), active: () => tour.active });
+    // Meals, played out in the scene (D48 PR B).
+    const meals = sceneMeals(scope, {
+      el,
+      camera,
+      director,
+      reducedMotion: () => app.reducedMotion,
+      react: (animal, action) => life?.play(`friend:${animal}`, action),
+      afterHearts: (animal, before) => afterHearts(scope, animal, before),
+      hello: (animal) => sayHello(animal),
+      bowl: () => bowlInUse(app.save),
+    });
+    /** A friend's card, its feeding played out in the scene. */
+    function openCard(cid: FriendId): void {
+      showFriendSheet(scope, cid, meals.events(cid, animalInfo(cid).name));
+    }
     let walking: WalkHandle | null = null;
     director.register('walk', { cancel: () => walking?.close(), active: () => !!walking });
     // Photo mode (D47 PR 5): a postcard of this home.
@@ -397,6 +419,9 @@ export const regionScreen: ScreenDef = {
       welcome = scheduleParade(scope, director, parades, { delay: app.reducedMotion ? 400 : 1100, waitFor: toysReady, after: offerOwed });
     else offerOwed();
     if (import.meta.env.DEV) (window as unknown as { __welcome?: unknown }).__welcome = welcome;
+    // Back from the Shop with food for someone here (D48 PR B): their card again, to feed them.
+    const feedBack = takeFeedReturn(id);
+    if (feedBack && isHome(app.save, feedBack as AnimalId)) scope.timeout(() => scope.alive && openCard(feedBack as FriendId), 350);
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
 
@@ -440,6 +465,8 @@ export const regionScreen: ScreenDef = {
         return;
       }
       if (parades.onClick(t)) return;
+      // A meal is playing: the scene is its stage until it's eaten (anything else the player starts ends it).
+      if (meals.active && t.closest('.sanctuary__scene') && !t.closest('[data-act="photo"], [data-act="walk"], [data-act="tour"]')) return;
       // Walk round the Farm in 3D (D44 PR I): the scene's own 3D layer rests meanwhile.
       if (t.closest('[data-act="walk"]')) {
         director.claim('walk');
@@ -500,17 +527,7 @@ export const regionScreen: ScreenDef = {
       }
       const friendBtn = t.closest('[data-friend-card]') as HTMLElement | null;
       if (friendBtn) {
-        const cid = friendBtn.dataset.friendCard as FriendId;
-        let fed = false;
-        let patted = false;
-        showFriendSheet(scope, cid, {
-          onFed: () => (fed = true),
-          onPat: () => (patted = true),
-          // React in the scene once the card is out of the way.
-          onClose: () => {
-            if (fed || patted) scope.timeout(() => life?.play(`friend:${cid}`, fed ? 'greet' : 'love'), 220);
-          },
-        });
+        openCard(friendBtn.dataset.friendCard as FriendId);
         return;
       }
       const tog = t.closest('[data-toggle]') as HTMLElement | null;

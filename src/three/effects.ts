@@ -578,6 +578,20 @@ defineEffect('perform:love', (c) =>
   ),
 );
 
+// D48 PR B: after the last bite of a meal, hearts rise (the bowl itself is drawn in the scene, on the ground).
+defineEffect('perform:feed', (c) =>
+  floaters(
+    c,
+    (i) => {
+      const m = new THREE.Mesh(c.fx.shape('heart', heartGeometry), c.fx.shiny(i % 2 ? '#F28BA0' : '#E8556A', 0.3));
+      c.fx.scene.add(m);
+      return m;
+    },
+    3,
+    { from: 0.72, every: 0.06, life: 0.26, spread: 0.26, rise: 0.4, size: 0.075, spin: true },
+  ),
+);
+
 defineEffect('perform:laugh', (c) =>
   floaters(c, (i) => c.fx.sprite(textTexture(c.fx, i % 2 ? 'hee' : 'ha!', '#C98A2A')), 4, { from: 0.06, every: 0.2, life: 0.34, spread: 0.42, rise: 0.3, size: 0.34, sway: 0.03 }),
 );
