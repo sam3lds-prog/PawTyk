@@ -10,6 +10,7 @@
  */
 
 import * as THREE from 'three';
+import { buildD48Decor } from './decorModels';
 import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
 import { copyCanvas } from './capture';
@@ -848,6 +849,18 @@ export class FarmWalk {
     // Its soft shadow (D47 PR 2), the size of its footprint.
     const span = p.r !== undefined ? p.r * 2.6 : Math.max(p.hw ?? 1, p.hd ?? 1) * 2.4;
     this.shadows.add(p.x, p.z, span, span, groundY(p.x, p.z), p.rot);
+    // D48 PR C: the four spots' pieces, built in their own module.
+    if (
+      buildD48Decor(id, {
+        group: g,
+        mat: (c, r) => this.mat(c, r),
+        geo: (x) => this.geo(x),
+        add: (geo, m, x, y, z, parent = g) => this.add(geo, m, x, y, z, parent),
+        tick: (fn) => this.tickers.push(fn),
+        own: (d) => this.track(d),
+      })
+    )
+      return;
     const box = (w: number, h: number, d: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.BoxGeometry(w, h, d)), this.mat(c), x, y, z, g);
     const cyl = (r0: number, r1: number, h: number, c: string, x: number, y: number, z: number, seg = 14) => this.add(this.geo(new THREE.CylinderGeometry(r0, r1, h, seg)), this.mat(c), x, y, z, g);
     const ball = (r: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.SphereGeometry(r, 14, 10)), this.mat(c), x, y, z, g);

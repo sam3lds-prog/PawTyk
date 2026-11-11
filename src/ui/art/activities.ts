@@ -14,6 +14,7 @@ import { isWildId } from '../../meta/catalogs/places';
 import { isPetId } from '../../meta/catalogs/pets';
 import { companionFigure, type CompanionMood } from './companions';
 import { residentFigure } from './sanctuary';
+import { DECOR_MOTIONS, type Motion } from '../../three/motions';
 
 export interface ActivityDef {
   decor: DecorId;
@@ -31,6 +32,10 @@ export interface ActivityDef {
   seat?: string;
   /** Props and particles drawn with the rider. */
   extras?: string;
+  /** D48 PR C: one of the shared motions (`three/motions.ts`), played by `styles/decor-d48.css` and the 3D clip. */
+  motion?: Motion;
+  /** D48 PR C: CSS variables for the motion (how far a slide goes, where a walk comes from). */
+  vars?: Record<string, string>;
 }
 
 const star = (x: number, y: number, r: number, c = '#fff7c2') =>
@@ -220,6 +225,132 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
   },
 };
 
+// ------------------------------------------------------------------ D48 PR C: the new pieces
+
+const petal = (x: number, y: number, c: string, i: number) =>
+  `<ellipse class="sp-act-petal sp-act-petal--${i}" cx="${x}" cy="${y}" rx="1.4" ry="0.9" fill="${c}"/>`;
+const bub = (x: number, y: number, r: number, i: number) =>
+  `<g class="sp-act-bub sp-act-bub--${i}"><circle cx="${x}" cy="${y}" r="${r}" fill="#cfeaf7" fill-opacity="0.35" stroke="#fff" stroke-width="0.6"/></g>`;
+const m = (decor: keyof typeof DECOR_MOTIONS) => ({ motion: DECOR_MOTIONS[decor].motion, ms: DECOR_MOTIONS[decor].ms });
+
+const D48_ACTIVITIES: Record<string, ActivityDef> = {
+  flowerarch: {
+    decor: 'flowerarch',
+    name: 'Gathering under the arch',
+    line: (who) => `${who} is standing under the flower arch. Petals!`,
+    ...m('flowerarch'),
+    x: 223,
+    y: 233,
+    H: 22,
+    mood: 'happy',
+    vars: { '--from': '-24px' },
+    extras: `<g class="sp-act-petals">${[0, 1, 2, 3, 4, 5].map((i) => petal(210 + i * 5, 196 + (i % 2) * 3, i % 2 ? '#F4A6C4' : '#ffffff', i)).join('')}</g>`,
+  },
+  applecart: { decor: 'applecart', name: 'Apple peeking', line: (who) => `${who} is peeking into the apple cart.`, ...m('applecart'), x: 226, y: 236, H: 20, mood: 'happy' },
+  bench: { decor: 'bench', name: 'Bench naps', line: (who) => `${who} is resting on the bench.`, ...m('bench'), x: 228, y: 217, H: 18, mood: 'sleepy' },
+  festivalstage: {
+    decor: 'festivalstage',
+    name: 'Shows on the stage',
+    line: (who) => `${who} is putting on a show!`,
+    ...m('festivalstage'),
+    x: 223,
+    y: 221,
+    H: 20,
+    mood: 'happy',
+    extras: `<g class="sp-act-dnotes">${note(206, 204)}${note(240, 200, '#C9628E')}</g>`,
+  },
+  carousel: { decor: 'carousel', name: 'Carousel rides', line: (who) => `${who} is riding the carousel!`, ...m('carousel'), x: 223, y: 211, H: 13, mood: 'happy', seat: '.sp-pony--2' },
+  rainbowslide: {
+    decor: 'rainbowslide',
+    name: 'Rainbow slides',
+    line: (who) => `${who} is sliding down the rainbow!`,
+    ...m('rainbowslide'),
+    x: 240,
+    y: 202,
+    H: 15,
+    mood: 'happy',
+    vars: { '--dx': '-34px', '--dy': '28px' },
+    extras: `<g class="sp-act-slidestars">${star(204, 226, 2.6)}${star(198, 220, 1.8, '#F4A6D0')}${star(210, 219, 2, '#9FE0E6')}</g>`,
+  },
+  butterflygarden: { decor: 'butterflygarden', name: 'Butterfly chasing', line: (who) => `${who} is chasing butterflies.`, ...m('butterflygarden'), x: 188, y: 141, H: 12, mood: 'happy', vars: { '--span': '16px' } },
+  pumpkinpatch: { decor: 'pumpkinpatch', name: 'Pumpkin peeking', line: (who) => `${who} is investigating the pumpkins.`, ...m('pumpkinpatch'), x: 205, y: 141, H: 12, mood: 'happy' },
+  camptent: { decor: 'camptent', name: 'Tent peeking', line: (who) => `${who} is peeking out of the tent.`, ...m('camptent'), x: 200, y: 140, H: 11, mood: 'happy' },
+  partytable: {
+    decor: 'partytable',
+    name: 'Table parties',
+    line: (who) => `${who} came to the party table!`,
+    ...m('partytable'),
+    x: 214,
+    y: 142,
+    H: 12,
+    mood: 'happy',
+    vars: { '--from': '14px' },
+  },
+  whirligig: {
+    decor: 'whirligig',
+    name: 'Windmill dances',
+    line: (who) => `${who} is dancing to the windmill's tune.`,
+    ...m('whirligig'),
+    x: 30,
+    y: 259,
+    H: 18,
+    mood: 'happy',
+    extras: `<g class="sp-act-dnotes">${note(10, 228, '#287b70')}${note(36, 222)}</g>`,
+  },
+  cornshocks: { decor: 'cornshocks', name: 'Hide-and-seek', line: (who) => `${who} is playing hide-and-seek in the corn.`, ...m('cornshocks'), x: 20, y: 259, H: 18, mood: 'happy' },
+  starlanterns: { decor: 'starlanterns', name: 'Lantern gazing', line: (who) => `${who} is gazing up at the lanterns.`, ...m('starlanterns'), x: 24, y: 259, H: 18, mood: 'happy' },
+  barnbell: { decor: 'barnbell', name: 'Bell ringing', line: (who) => `${who} rang the barn bell!`, ...m('barnbell'), x: 20, y: 259, H: 16, mood: 'happy' },
+  bubblemachine: {
+    decor: 'bubblemachine',
+    name: 'Bubble chasing',
+    line: (who) => `${who} is chasing bubbles!`,
+    ...m('bubblemachine'),
+    x: 24,
+    y: 259,
+    H: 16,
+    mood: 'happy',
+    vars: { '--span': '12px' },
+    extras: `<g class="sp-act-bubs">${bub(30, 228, 2.4, 0)}${bub(18, 222, 1.8, 1)}${bub(34, 216, 2, 2)}${bub(12, 232, 1.6, 3)}</g>`,
+  },
+  duckfountain: {
+    decor: 'duckfountain',
+    name: 'Fountain splashes',
+    line: (who) => `${who} is splashing by the fountain.`,
+    ...m('duckfountain'),
+    x: 122,
+    y: 268,
+    H: 18,
+    mood: 'happy',
+    extras: `<g class="sp-act-fsplash" fill="none" stroke="#fff" stroke-width="1" opacity="0"><ellipse cx="112" cy="272" rx="5" ry="1.4"/><ellipse cx="112" cy="272" rx="9" ry="2.4"/></g>`,
+  },
+  windchimes: { decor: 'windchimes', name: 'Chime ringing', line: (who) => `${who} made the wind chimes sing!`, ...m('windchimes'), x: 293, y: 146, H: 18, mood: 'happy' },
+  redrockslide: {
+    decor: 'redrockslide',
+    name: 'Rock slides',
+    line: (who) => `${who} is sliding down the red rock!`,
+    ...m('redrockslide'),
+    x: 344,
+    y: 204,
+    H: 18,
+    mood: 'happy',
+    vars: { '--dx': '-40px', '--dy': '40px' },
+  },
+  drumcircle: {
+    decor: 'drumcircle',
+    name: 'Drumming',
+    line: (who) => `${who} is drumming a little beat.`,
+    ...m('drumcircle'),
+    x: 141,
+    y: 240,
+    H: 20,
+    mood: 'happy',
+    extras: `<g class="sp-act-dnotes">${note(118, 214, '#9a5a3a')}${note(164, 210)}</g>`,
+  },
+  sledhill: { decor: 'sledhill', name: 'Sledding', line: (who) => `${who} is sledding down the hill!`, ...m('sledhill'), x: 147, y: 205, H: 13, mood: 'happy', seat: '.sp-sled' },
+  vineswing: { decor: 'vineswing', name: 'Vine swinging', line: (who) => `${who} is swinging on the vine!`, ...m('vineswing'), x: 122, y: 186, H: 14, mood: 'happy', seat: '.sp-vine' },
+};
+Object.assign(ACTIVITIES, D48_ACTIVITIES);
+
 export function activityFor(decor: string): ActivityDef | null {
   return ACTIVITIES[decor] ?? null;
 }
@@ -241,5 +372,7 @@ export function riderFigure(id: string, x: number, y: number, H: number, mood: C
 
 /** The rider and its props, ready to insert. */
 export function activityMarkup(def: ActivityDef, riderId: string): string {
-  return `<g class="sp-act" data-activity="${def.decor}" aria-hidden="true"><g class="sp-act-rider">${riderFigure(riderId, def.x, def.y, def.H, def.mood)}</g>${def.extras ?? ''}</g>`;
+  // D48 PR C: a motion's own class and timing (and its variables) ride on the activity's group.
+  const vars = def.motion ? Object.entries({ '--act-ms': `${def.ms}ms`, ...(def.vars ?? {}) }).map(([k, v]) => `${k}:${v}`).join(';') : '';
+  return `<g class="sp-act${def.motion ? ` is-act-m-${def.motion}` : ''}" data-activity="${def.decor}" aria-hidden="true"${vars ? ` style="${vars}"` : ''}><g class="sp-act-rider">${riderFigure(riderId, def.x, def.y, def.H, def.mood)}</g>${def.extras ?? ''}</g>`;
 }

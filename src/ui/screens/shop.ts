@@ -11,10 +11,12 @@
  */
 
 import { app } from '../../app/app';
-import { DECOR, DECOR_BY_ID, decorHome, decorTier, type DecorId, type DecorTier } from '../../meta/catalogs/decor';
+import { DECOR, DECOR_BY_ID, DECOR_SETS, DECOR_SET_BY_ID, SPOT_NAMES, decorHome, decorTier, isDecorId, setPieces, type DecorId, type DecorSetId, type DecorTier } from '../../meta/catalogs/decor';
+import { bindPreview, previewMarkup } from '../components/decorPreview';
 import { BOWLS, FOODS, FOOD_BY_ID, foodOffers, foodsOf, isFeast, isFoodId, mainOffer, type BowlId, type FoodId, type FoodOffer } from '../../meta/catalogs/foods';
 import { chapterAt } from '../../meta/chapters';
-import { buyDecor, decorPrice, decorUnlocked, owns, walletBalance } from '../../meta/sanctuary';
+import { buyDecor, decorPrice, decorUnlocked, isShown, owns, setProgress, setShown, showSet, shownInSpot, walletBalance } from '../../meta/sanctuary';
+import { stageOf } from '../../meta/world';
 import { biomeOfRegion, sanctuaryDef, SANCTUARIES, isBaseSanctuaryId, isRegionId, type BaseSanctuaryId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { activeSanctuary, isOpen } from '../../meta/world';
 import { BIOMES } from '../../meta/catalogs/places';
@@ -192,6 +194,25 @@ export const shopScreen: ScreenDef = {
       }).join('')}</div>`;
     }
 
+    /** D48 PR C: the Farm's themed sets: what each has, what's owned, and putting a whole set out at once. */
+    function setsSection(): string {
+      if (place !== 'farm') return '';
+      return `<section class="shop-section" aria-labelledby="sets-title">
+        <div class="section-head"><h2 id="sets-title">Themed sets</h2></div>
+        <p class="muted shop__note">Each set has one piece for each of the Farm's spots, so a whole set can be out together.</p>
+        <ul class="rows">${DECOR_SETS.map((st) => {
+          const p = setProgress(app.save, st.id);
+          const pieces = setPieces(st.id);
+          return `<li class="card set-card" style="--set:${st.accent}" data-set="${st.id}">
+            <div class="section-head"><b>${esc(st.name)}</b><span class="set-chip num">${p.owned} of ${p.total}</span></div>
+            <small class="muted">${esc(st.blurb)}</small>
+            <div class="set-card__pieces">${pieces.map((d) => `<button class="set-card__piece ${owns(app.save, d.id) ? 'is-owned' : ''}" data-decor="${d.id}" aria-label="${esc(`${d.name}${owns(app.save, d.id) ? ', owned' : ''}`)}">${decorIcon(d.id)}</button>`).join('')}</div>
+            ${p.together ? `<span class="shop-card__state">${ICON.check}Out together on your Farm</span>` : p.complete ? `<button class="btn btn--small btn--secondary" data-act="show-set" data-set-id="${st.id}">Put the whole set out</button>` : ''}
+          </li>`;
+        }).join('')}</ul>
+      </section>`;
+    }
+
     function decorTab(): string {
       const regionLocked = !isOpen(app.save, place);
       return `
@@ -199,7 +220,8 @@ export const shopScreen: ScreenDef = {
         ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(sanctuaryDef(place).name)} opens after level ${sanctuaryDef(place).opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
         ${decorSection('everyday', `${placeShort(place)} decor`, 'Paid for with Paw Coins, which you earn by solving puzzles.')}
         ${decorSection('video', 'Special decor', 'Only for video tokens.', videoTokenCard())}
-        ${decorSection('premium', 'Premium decor', 'For gems.', place === 'farm' ? packHighlight() : '')}`;
+        ${decorSection('premium', 'Premium decor', 'For gems.', place === 'farm' ? packHighlight() : '')}
+        ${setsSection()}`;
     }
 
     /** D47 PR 7: whether the Welcome Rescue Pack is for sale here and now (sold in this build, the player ready). */
@@ -430,6 +452,8 @@ export const shopScreen: ScreenDef = {
         <div class="shop__body">${tab === 'decor' ? decorTab() : tab === 'food' ? foodTab() : tab === 'tricks' ? tricksTab() : gemsTab()}</div>`;
     }
     render();
+    // D48 PR C: opened on a decoration (a home's "see it in the Shop").
+    if (route.screen === 'shop' && isDecorId(route.decor) && tab === 'decor') decorSheet(scope, route.decor, render);
     // Shopping for an animal: its favorite in view.
     if (wanted && tab === 'food') el.querySelector<HTMLElement>('.food-card.is-wanted')?.scrollIntoView?.({ block: 'center' });
 
@@ -461,6 +485,17 @@ export const shopScreen: ScreenDef = {
       if (tb && tb.closest('.seg')) {
         tab = lastTab = tb.dataset.tab as Tab;
         render();
+        return;
+      }
+      const ss = t.closest('[data-act="show-set"]') as HTMLElement | null;
+      if (ss) {
+        const set = ss.dataset.setId as DecorSetId;
+        showSet(app.save, set);
+        const news = afterDecorChange();
+        app.persist();
+        feel('tap');
+        render();
+        toast(news.achievements.length ? `${DECOR_SET_BY_ID[set].name} is out on your Farm. Badge unlocked: ${news.achievements[0].name}!` : `${DECOR_SET_BY_ID[set].name} is out on your Farm.`);
         return;
       }
       const card = t.closest('[data-decor]') as HTMLElement | null;
@@ -565,20 +600,39 @@ export const shopScreen: ScreenDef = {
 
 function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
   const d = DECOR_BY_ID[id];
-  const have = owns(app.save, id);
   const price = decorPrice(id);
   const tier = decorTier(d);
-  let actions: string;
-  if (have) actions = `<button class="btn btn--block" data-act="visit">See it in ${esc(whereText(id))}</button>`;
-  else if (!decorUnlocked(app.save, id)) {
-    const sd = sanctuaryDef(decorHome(d));
-    actions = `<p class="muted">For the ${esc(sd.name)}, which opens after level ${sd.opensAfterLevel}. You can buy it once it opens.</p>`;
-  } else if (d.unlock.kind === 'chapter')
-    actions = `<p class="muted">A gift for finishing ${esc(chapterAt(d.unlock.chapter - 1).name)} (level ${d.unlock.chapter * 20}).</p>`;
-  else if (d.unlock.kind === 'pack')
+  const home = decorHome(d);
+  /** Where it stands, what it shares its spot with, and what it needs (D48 PR C). */
+  const placeLine = () => {
+    const bits: string[] = [];
+    if (d.slot && SPOT_NAMES[d.slot]) {
+      const now = shownInSpot(app.save, id);
+      bits.push(`Stands in ${SPOT_NAMES[d.slot]}${now ? `, in place of the ${DECOR_BY_ID[now].name} (one piece per spot; you can swap back any time)` : ', one piece per spot'}.`);
+    }
+    if (d.stage && isRegionId(home) && stageOf(app.save, home) < d.stage) bits.push(`It appears once the ${sanctuaryDef(home).short} reaches stage ${d.stage} (the pond).`);
+    return bits.length ? `<p class="muted decor-preview__note">${esc(bits.join(' '))}</p>` : '';
+  };
+  const setLine = () => {
+    if (!d.set) return '';
+    const st = DECOR_SET_BY_ID[d.set];
+    const p = setProgress(app.save, d.set);
+    return `<p><span class="set-chip" style="--set:${st.accent}">${esc(st.name)} · <span class="num">${p.owned} of ${p.total}</span></span></p>`;
+  };
+  const actions = () => {
+    const have = owns(app.save, id);
+    if (have) {
+      const out = isShown(app.save, id);
+      return `${out ? `<button class="btn btn--secondary btn--block" data-act="hide">Tuck it away</button>` : `<button class="btn btn--block" data-act="show" data-autofocus>Put it out</button>`}<button class="btn btn--quiet btn--block" data-act="visit">See it in ${esc(whereText(id))}</button>`;
+    }
+    if (!decorUnlocked(app.save, id)) {
+      const sd = sanctuaryDef(home);
+      return `<p class="muted">For the ${esc(sd.name)}, which opens after level ${sd.opensAfterLevel}. You can buy it once it opens.</p>`;
+    }
+    if (d.unlock.kind === 'chapter') return `<p class="muted">A gift for finishing ${esc(chapterAt(d.unlock.chapter - 1).name)} (level ${d.unlock.chapter * 20}).</p>`;
     // D47 PR 7: only in the Welcome Rescue Pack (never sold on its own).
-    actions = `<p class="muted">Only in the Welcome Rescue Pack, with ${WELCOME_PACK.gems} gems. Once per player.</p><button class="btn btn--block" data-act="see-pack" data-autofocus>${ICON.gift}See the Welcome Rescue Pack</button>`;
-  else if (price) {
+    if (d.unlock.kind === 'pack') return `<p class="muted">Only in the Welcome Rescue Pack, with ${WELCOME_PACK.gems} gems. Once per player.</p><button class="btn btn--block" data-act="see-pack" data-autofocus>${ICON.gift}See the Welcome Rescue Pack</button>`;
+    if (!price) return '';
     const short = price.amount - walletBalance(app.save, price.currency);
     const how =
       price.currency === 'coins'
@@ -590,21 +644,32 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
           : iap.available
             ? 'Gem packs are in the Gems tab.'
             : '';
-    actions =
-      short > 0
-        ? `<button class="btn btn--block" disabled>${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button><p class="muted">You need ${short} more ${CURRENCY_NAME[price.currency]}. ${how}</p>`
-        : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button>`;
-  } else actions = '';
+    return short > 0
+      ? `<button class="btn btn--block" disabled>${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button><p class="muted">You need ${short} more ${CURRENCY_NAME[price.currency]}. ${how}</p>`
+      : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button>`;
+  };
+  const play = activityFor(id);
   const sh = openSheet(scope, {
     title: d.name,
     className: 'decor-sheet',
     body: `
       ${tier === 'video' || tier === 'premium' ? `<span class="chip ${tier === 'premium' ? 'chip--gem' : 'chip--video'}">${tier === 'premium' ? `${ICON.gem}Premium` : `${ICON.videoToken}Special`}</span>` : ''}
-      <div class="decor-sheet__art">${decorIcon(id, d.name)}</div>
+      ${previewMarkup(id) || `<div class="decor-sheet__art">${decorIcon(id, d.name)}</div>`}
+      <div data-place-line>${placeLine()}</div>
       <p class="sheet__lead">${esc(d.blurb)}</p>
-      ${activityFor(id) ? `<p class="decor-sheet__play">${ICON.sparkle}<span><b>${esc(activityFor(id)!.name)}.</b> Your animals take turns with it, and you can tap it in the sanctuary to start one.</span></p>` : ''}
-      <div class="sheet__actions">${actions}<button class="btn btn--quiet" data-act="close">Not now</button></div>`,
+      ${setLine()}
+      ${play ? `<p class="decor-sheet__play">${ICON.sparkle}<span><b>${esc(play.name)}.</b> ${esc(d.play ?? 'Your animals take turns with it, and you can tap it in the sanctuary to start one.')}</span></p><button class="btn btn--quiet btn--small" data-act="preview-play" hidden>${ICON.restart}Show me</button>` : ''}
+      <div class="sheet__actions" data-actions>${actions()}<button class="btn btn--quiet" data-act="close">Not now</button></div>`,
+    onClose: rerender,
   });
+  // Show me: the animals use it, in the preview (only when someone lives there to do it).
+  if (bindPreview(sh.scope, sh.el, id)) sh.el.querySelector<HTMLElement>('[data-act="preview-play"]')?.removeAttribute('hidden');
+  const refresh = () => {
+    const a = sh.el.querySelector('[data-actions]');
+    if (a) a.innerHTML = `${actions()}<button class="btn btn--quiet" data-act="close">Not now</button>`;
+    const pl = sh.el.querySelector('[data-place-line]');
+    if (pl) pl.innerHTML = placeLine();
+  };
   let busy = false;
   sh.scope.on(sh.el, 'click', (e) => {
     const a = actionOf(e);
@@ -616,6 +681,14 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     } else if (a.act === 'visit') {
       sh.close();
       goSee(id);
+    } else if (a.act === 'show' || a.act === 'hide') {
+      // Owned: out or away (D48 PR C), straight from its card; putting it out tucks away whatever shares its spot.
+      setShown(app.save, id, a.act === 'show');
+      const news = afterDecorChange();
+      app.persist();
+      feel('tap');
+      refresh();
+      toast(a.act === 'show' ? (news.achievements.length ? `${d.name} is out. Badge unlocked: ${news.achievements[0].name}!` : `${d.name} is out in ${whereText(id)}.`) : `${d.name} is tucked away.`);
     } else if (a.act === 'buy') {
       busy = true;
       const r = buyDecor(app.save, id);
@@ -625,7 +698,6 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
         feel('buy');
         track('decor_bought', { item: id, tier, amount: price?.amount ?? 0 });
         sh.close();
-        rerender();
         toast(
           news.achievements.length ? `${d.name} is in ${whereText(id)}. Badge unlocked: ${news.achievements[0].name}!` : `${d.name} is in ${whereText(id)}.`,
         );

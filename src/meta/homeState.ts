@@ -6,7 +6,7 @@
 
 import type { SaveV2 } from '../services/storage';
 import { isHome, type AnimalId } from './animals';
-import type { DecorId } from './catalogs/decor';
+import { DECOR_BY_ID, type DecorId } from './catalogs/decor';
 import { sanctuaryDef, type RegionId } from './catalogs/sanctuaries';
 import { shownDecorIds } from './sanctuary';
 import { isOpen, stageOf } from './world';
@@ -32,14 +32,16 @@ export function isEveningAt(d: Date): boolean {
 
 export function homeState(save: SaveV2, id: RegionId, now: Date = new Date()): HomeState {
   const open = isOpen(save, id);
+  const stage = open ? stageOf(save, id) : 0;
   return {
     id,
     open,
-    stage: open ? stageOf(save, id) : 0,
+    stage,
     residents: sanctuaryDef(id)
       .arrivals.map((a) => a.id as string)
       .filter((a) => isHome(save, a as AnimalId)),
-    decor: shownDecorIds(save, id),
+    // A piece that needs its home to have grown first (D48 PR C: the duck fountain needs the pond) waits for it.
+    decor: shownDecorIds(save, id).filter((d) => (DECOR_BY_ID[d]?.stage ?? 0) <= stage),
     evening: isEveningAt(now),
   };
 }

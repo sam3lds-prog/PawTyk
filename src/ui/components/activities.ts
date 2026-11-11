@@ -9,6 +9,7 @@ import { activityFor, activityMarkup, type ActivityDef } from '../art/activities
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { isWildId, wildDef } from '../../meta/catalogs/places';
 import { PET_BY_ID, type PetId } from '../../meta/catalogs/pets';
+import { sfx, type Sfx } from '../../services/audio';
 
 export interface ActivityRunnerOptions {
   /** Read each time, so a change to the motion setting applies without leaving the screen. */
@@ -20,6 +21,8 @@ export interface ActivityRunnerOptions {
   caption: (text: string | null, announce: boolean) => void;
   /** Deterministic choice in tests; Math.random otherwise. */
   random?: () => number;
+  /** D48 PR C: told when an activity starts (`auto` when it started by itself), for its sound. */
+  onStart?: (decor: string, rider: string, auto: boolean) => void;
 }
 
 export const AUTO_FIRST_MS: readonly [number, number] = [5000, 9000];
@@ -68,6 +71,7 @@ export class ActivityRunner {
     const rider = who && cast.includes(who) ? who : cast[Math.floor(this.rand() * cast.length) % cast.length];
     this.running = { decor, ...this.mount(def, host, rider) };
     this.o.caption(def.line(this.o.nameOf(rider)), !auto);
+    this.o.onStart?.(decor, rider, auto);
     return rider;
   }
 
@@ -142,6 +146,9 @@ export class ActivityRunner {
  * Wires a runner to a live scene: the cast is every animal drawn in it, names come from the catalogs, and the
  * caption borrows the line under the scene (`[data-chat]`), putting the small talk back afterwards.
  */
+/** D48 PR C: the sound a decoration makes when an animal uses it (the bell rings, the chimes sing, the windmill plays). */
+const DECOR_SOUND: Record<string, Sfx> = { barnbell: 'bell', windchimes: 'chimes', whirligig: 'whirl' };
+
 export function startSceneActivities(svg: SVGSVGElement, chat: HTMLElement | null, reducedMotion: boolean | (() => boolean), nameOf: (id: string) => string): ActivityRunner {
   const span = chat?.querySelector('span') ?? null;
   const base = span?.textContent ?? '';
@@ -153,6 +160,11 @@ export function startSceneActivities(svg: SVGSVGElement, chat: HTMLElement | nul
       ...[...svg.querySelectorAll<SVGGElement>('.sanctuary__friend[data-friend]:not([data-trick])')].map((g) => g.dataset.friend!),
     ],
     nameOf,
+    // Only when the player started it: nothing rings by itself every minute.
+    onStart: (decor, _rider, auto) => {
+      const s = DECOR_SOUND[decor];
+      if (s && !auto) sfx(s);
+    },
     caption: (text, announce) => {
       if (!chat || !span) return;
       // Only what the player started is announced; activities that start by themselves, and the small talk coming

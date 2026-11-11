@@ -14,7 +14,7 @@
  *  - coin / treat / tap: a purchase, a treat eaten, a plain button tick
  */
 
-export type Sfx = 'tick' | 'untick' | 'pop' | 'line' | 'lines' | 'miss' | 'solved' | 'arrival' | 'hello' | 'coin' | 'treat' | 'tap';
+export type Sfx = 'tick' | 'untick' | 'pop' | 'line' | 'lines' | 'miss' | 'solved' | 'arrival' | 'hello' | 'coin' | 'treat' | 'tap' | 'bell' | 'chimes' | 'whirl';
 
 /** How an animal says hello (D40 PR B gives every animal one). */
 export type HelloStyle = 'playful' | 'sleepy' | 'shy' | 'proud' | 'energetic' | 'gentle';
@@ -30,7 +30,7 @@ export interface SfxOptions {
 export const MASTER_GAIN = 0.42;
 
 /** The shortest gap between two of the same sound, so a drag across many tiles never becomes a buzz. */
-const MIN_GAP_MS: Partial<Record<Sfx, number>> = { tick: 45, untick: 45, pop: 40, hello: 140, tap: 40 };
+const MIN_GAP_MS: Partial<Record<Sfx, number>> = { tick: 45, untick: 45, pop: 40, hello: 140, tap: 40, bell: 600, chimes: 600, whirl: 900 };
 
 let enabled = true;
 let ctx: AudioContext | null = null;
@@ -243,6 +243,20 @@ export function sfx(kind: Sfx, o: SfxOptions = {}): void {
         tone(a, t, { freq: 392, to: 340, dur: 0.06, gain: 0.1 });
         tone(a, t + 0.09, { freq: 440, to: 380, dur: 0.06, gain: 0.09 });
         bell(a, 988, t + 0.18, 0.28, 0.05);
+        break;
+      // D48 PR C: the Barn Bell (a low, round ding-dong), the wind chimes (a few glassy tings), the musical windmill
+      // (its little C-major turn, the PawTyk motif's C–E–G going up).
+      case 'bell':
+        bell(a, 523, t, 1.2, 0.11, 0.01);
+        bell(a, 1046, t, 0.9, 0.035, 0.01);
+        bell(a, 440, t + 0.42, 1.3, 0.1, 0.01);
+        bell(a, 880, t + 0.42, 1, 0.03, 0.01);
+        break;
+      case 'chimes':
+        [1568, 1760, 2093, 1319, 1976].forEach((f, i) => bell(a, f, t + i * 0.11 + (i % 2) * 0.03, 0.7, 0.04, 0.005));
+        break;
+      case 'whirl':
+        [523, 659, 784, 880, 784, 1047].forEach((f, i) => bell(a, f, t + i * 0.16, 0.36, 0.06, 0.008));
         break;
     }
   } catch {

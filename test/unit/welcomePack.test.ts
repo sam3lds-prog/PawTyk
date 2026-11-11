@@ -22,7 +22,7 @@ import {
 } from '../../src/meta/welcomePack';
 import { itemBalance, spendItem } from '../../src/meta/items';
 import { decorPrice, isShown, owns } from '../../src/meta/sanctuary';
-import { DECOR_BY_ID, decorTier } from '../../src/meta/catalogs/decor';
+import { DECOR_BY_ID, decorTier, PRE_D48_DECOR } from '../../src/meta/catalogs/decor';
 import { defaultSave, normalizeSave, type SaveV2 } from '../../src/services/storage';
 import { PRODUCT_CATALOG, TestStoreIapService, UnavailableIapService } from '../../src/services/iap';
 import { STORE_PRODUCTS, REVENUECAT } from '../../src/config/services';
@@ -67,11 +67,13 @@ describe('nothing else asks for it', () => {
   it('"In Full Bloom" counts every decoration except the pack’s own, so it never needs a purchase', () => {
     const bloom = ACHIEVEMENTS.find((a) => a.id === 'full_garden')!;
     const s = ready();
-    for (const d of DECOR) if (d.unlock.kind !== 'pack') s.inventory.decor[d.id] = { ownedAt: NOW.toISOString() } as never;
+    // D48 PR C: the collection it was set for (the pieces before D48), so new pieces never move the goal.
+    const garden = DECOR.filter((d) => d.unlock.kind !== 'pack' && PRE_D48_DECOR.includes(d.id));
+    for (const d of garden) s.inventory.decor[d.id] = { ownedAt: NOW.toISOString() } as never;
     const [cur, target] = bloom.progress(s);
-    expect(target).toBe(DECOR.length - 1);
+    expect(target).toBe(PRE_D48_DECOR.length - 1);
     expect(cur).toBe(target);
-    expect(bloom.description).toBe(`Own all ${DECOR.length - 1} decorations.`);
+    expect(bloom.description).toBe(`Own all ${PRE_D48_DECOR.length - 1} decorations.`);
   });
 });
 

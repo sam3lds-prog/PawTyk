@@ -4,7 +4,7 @@ import { balance, grant, spend } from '../../src/meta/ledger';
 import { reconcileRewards, rewardsForWin, unlockedPets } from '../../src/meta/rewards';
 import { recordWin, type BoardResult } from '../../src/meta/progression';
 import { buyDecor, chooseStarter, isShown, setShown } from '../../src/meta/sanctuary';
-import { DECOR, STARTER_DECOR, decorHome, decorTier } from '../../src/meta/catalogs/decor';
+import { DECOR, STARTER_DECOR, decorHome, decorTier, PRE_D48_DECOR } from '../../src/meta/catalogs/decor';
 import { ECONOMY } from '../../src/config/economy';
 
 const clean: BoardResult = { size: 5, seconds: 60, mistakes: 0, hintsUsed: 0, revives: 0, hearts: true };
@@ -107,18 +107,22 @@ describe('v1 players', () => {
 
 describe('sanctuary decor', () => {
   it('prices each item in exactly one currency, coin prices stay sensible, and there are three chapter gifts', () => {
+    // The collection before D48 (D48 PR C adds pieces of its own, checked in decorations.dom.test).
+    const OLD = DECOR.filter((d) => PRE_D48_DECOR.includes(d.id));
     // Harmony: 15 original coin / gift items, plus special (video-token) and premium (gem) items from D27.
-    expect(DECOR.filter((d) => decorHome(d) === 'harmony' && !d.tokens && !d.gems)).toHaveLength(15);
+    expect(OLD.filter((d) => decorHome(d) === 'harmony' && !d.tokens && !d.gems)).toHaveLength(15);
     // Each region: two coin items, one video-token item, one gem item (D28); the Farm has three coin items (D35).
     for (const r of ['outback', 'savanna', 'arctic', 'amazon'] as const) {
-      const here = DECOR.filter((d) => decorHome(d) === r);
+      const here = OLD.filter((d) => decorHome(d) === r);
       expect(here.map(decorTier).sort(), r).toEqual(['coins', 'coins', 'premium', 'video']);
     }
     expect(
-      DECOR.filter((d) => decorHome(d) === 'farm')
+      OLD.filter((d) => decorHome(d) === 'farm')
         .map(decorTier)
         .sort(),
     ).toEqual(['coins', 'coins', 'coins', 'premium', 'premium', 'video']); // + the Welcome Pack's Rescue Wagon (D47)
+    // D48 PR C: one more for every other home, mostly for coins.
+    for (const r of ['harmony', 'outback', 'savanna', 'arctic', 'amazon'] as const) expect(DECOR.filter((d) => decorHome(d) === r && !PRE_D48_DECOR.includes(d.id)), r).toHaveLength(1);
     for (const d of DECOR) {
       const currencies = [d.cost !== null, !!d.tokens, !!d.gems].filter(Boolean).length;
       if (d.unlock.kind === 'shop') {

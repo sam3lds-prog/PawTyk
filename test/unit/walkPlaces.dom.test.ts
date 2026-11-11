@@ -40,8 +40,10 @@ describe('the player’s decorations stand on the 3D Farm', () => {
   it('they are solid: the player walks round them, and only the ones that are out', () => {
     const none = obstaclesAt(4);
     const all = obstaclesAt(4, ALL_DECOR);
-    expect(all.length).toBe(none.length + ALL_DECOR.length);
-    for (const id of ALL_DECOR) {
+    // D48 PR C: the pond's fountain stands in the pond, which is solid already.
+    const solid = ALL_DECOR.filter((id) => DECOR_PLACES[id as keyof typeof DECOR_PLACES].solid !== false);
+    expect(all.length).toBe(none.length + solid.length);
+    for (const id of solid) {
       const p = DECOR_PLACES[id as keyof typeof DECOR_PLACES];
       expect(isFree(p.x, p.z, none), id).toBe(true);
       expect(isFree(p.x, p.z, all), id).toBe(false);
@@ -56,12 +58,18 @@ describe('the player’s decorations stand on the 3D Farm', () => {
     const built = obstaclesAt(4);
     for (const id of ALL_DECOR) {
       const p = DECOR_PLACES[id as keyof typeof DECOR_PLACES];
-      expect(isFree(p.x, p.z, built, 1), id).toBe(true);
+      // D48 PR C: the pond's fountain stands in the pond's water, on purpose.
+      if (p.solid !== false) expect(isFree(p.x, p.z, built, 1), id).toBe(true);
       expect(Math.abs(p.x) < BOUNDS - 4 && Math.abs(p.z) < BOUNDS - 4, id).toBe(true);
       for (const [ax, az] of ANIMAL_SPOTS) expect(Math.hypot(ax - p.x, az - p.z), `${id} vs spot`).toBeGreaterThan(2);
       for (const other of ALL_DECOR) {
         if (other === id) continue;
         const q = DECOR_PLACES[other as keyof typeof DECOR_PLACES];
+        // Pieces of one spot share it (only one is ever out); everything else keeps its distance.
+        if (p.spot && p.spot === q.spot) {
+          expect([q.x, q.z], `${id} and ${other} share their spot`).toEqual([p.x, p.z]);
+          continue;
+        }
         expect(Math.hypot(q.x - p.x, q.z - p.z), `${id} vs ${other}`).toBeGreaterThan(4);
       }
     }

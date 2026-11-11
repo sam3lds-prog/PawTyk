@@ -1,15 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DECOR, decorTier } from '../../src/meta/catalogs/decor';
+import { DECOR, decorTier, PRE_D48_DECOR } from '../../src/meta/catalogs/decor';
 import { ACTIVITIES, activityFor, activityMarkup, riderFigure } from '../../src/ui/art/activities';
 import { regionScene } from '../../src/ui/art/regions';
 import { sanctuaryScene } from '../../src/ui/art/sanctuary';
 import { decorHome } from '../../src/meta/catalogs/decor';
 
 describe('decoration activities', () => {
-  it('every special and premium decoration has one, and only those', () => {
+  it('every special and premium decoration has one, and only those (D48 PR C: and every new piece, coins too)', () => {
     for (const d of DECOR) {
-      const special = decorTier(d) === 'video' || decorTier(d) === 'premium';
+      const special = decorTier(d) === 'video' || decorTier(d) === 'premium' || !PRE_D48_DECOR.includes(d.id);
       expect(!!activityFor(d.id), d.id).toBe(special);
     }
     for (const a of Object.values(ACTIVITIES)) {
@@ -34,7 +34,7 @@ describe('decoration activities', () => {
     for (const a of Object.values(ACTIVITIES).filter((x) => x.seat)) {
       const home = decorHome(DECOR.find((d) => d.id === a.decor)!);
       const svg = home === 'harmony' ? sanctuaryScene({ decor: [a.decor], pets: [] }) : regionScene(home as never, { stage: 4, companions: [], decor: [a.decor] });
-      for (const cls of a.seat!.split(' ').map((c) => c.slice(1))) expect(svg, a.decor).toContain(`class="${cls}"`);
+      for (const cls of a.seat!.split(' ').map((c) => c.slice(1))) expect(svg, a.decor).toMatch(new RegExp(`class="([^"]* )?${cls}( [^"]*)?"`));
     }
   });
 });

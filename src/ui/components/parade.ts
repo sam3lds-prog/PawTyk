@@ -202,6 +202,8 @@ export interface SceneParadeHost {
    * before its first beat, so toys being rebuilt just after the walk closes don't pop in mid-dance.
    */
   toysReady?: () => Promise<unknown>;
+  /** D48 PR C: told as a parade starts (the Farm's Barn Bell rings for a newcomer). */
+  onStart?: (newcomer: string | undefined) => void;
 }
 
 /** The longest a parade waits for the scene's toys before it dances with whatever is showing (D46 PR B). */
@@ -332,6 +334,7 @@ export function sceneParades(scope: { on(t: EventTarget, type: string, fn: (e: E
       // The short welcome (D45 PR B): the same parade to the shorter Barnyard Jig. Replay plays the full one.
       const p = startParade({ svg, host: fig, camera: host.camera, newcomer, reducedMotion: host.reducedMotion(), cue: newcomer && opts.short ? 'jig' : undefined, home: host.home });
       current = p;
+      if (p.active) host.onStart?.(newcomer);
       await p.done;
       // Replayed before it ended: the newer parade owns the scene's pause now, so this one leaves it be (D45 PR A).
       if (current !== p) return false;

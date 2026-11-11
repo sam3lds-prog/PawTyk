@@ -407,6 +407,17 @@ build is ready on an iPhone. Everything below is for a real device.
       tapped, coins and pantry agree
 - [ ] Festival Feast on the Farm: everyone eats together, one card
 
+**PR C — decorations**
+- [ ] Shop → Farm decor: open a few pieces' cards: the preview is the player's own Farm with the piece in its spot;
+      *Show me* plays it with one of the Farm's animals; the card names the spot and what it replaces
+- [ ] Buy two pieces for one spot: the second replaces the first; *Put it out* swaps back; nothing overlaps an animal
+- [ ] Tap each piece on the Farm (3D on and off): the animal does its thing, the part moves (carousel, sled, vine,
+      bell), sounds only for the bell, chimes and windmill; Reduce Motion: still
+- [ ] Walk the 3D Farm with a piece in each spot: they stand where the drawing has them and are solid
+- [ ] Own a whole set → *Put the whole set out* → all four spots change; the Set Dresser badge
+- [ ] Buy the Barn Bell, then bring an animal home: the bell rings as the welcome starts; tap the Festival Stage:
+      everyone dances
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

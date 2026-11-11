@@ -1,0 +1,616 @@
+/* D48 PR C: the new decorations' activities. One set of motions (three/motions.ts) for all of them: the rider's
+   animation follows its motion class, the decoration's own moving part follows `.is-act-<decor>` on its group. Every
+   motion starts and ends where the rider stands, lasts the activity's own length (`--act-ms`), and stops under reduced
+   motion (`.is-act-still`, and the global reduced-motion rule in sanctuary-play.css). Nothing here loops on its own. */
+
+.sanctuary__scene .sp-act[class*='is-act-m-']:not(.is-act-still) .sp-act-rider {
+  animation-duration: var(--act-ms, 5000ms);
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+.sanctuary__scene .sp-act.is-act-m-gather:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-gather;
+}
+.sanctuary__scene .sp-act.is-act-m-peek:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-peek;
+}
+.sanctuary__scene .sp-act.is-act-m-peekout:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-peekout;
+}
+.sanctuary__scene .sp-act.is-act-m-rest:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-rest;
+}
+.sanctuary__scene .sp-act.is-act-m-stage:not(.is-act-still) .sp-act-rider,
+.sanctuary__scene .sp-act.is-act-m-dance:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-dance;
+}
+.sanctuary__scene .sp-act.is-act-m-slide:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-slide;
+}
+.sanctuary__scene .sp-act.is-act-m-chase:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-chase;
+}
+.sanctuary__scene .sp-act.is-act-m-splash:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-splash;
+}
+.sanctuary__scene .sp-act.is-act-m-gaze:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-gaze;
+}
+.sanctuary__scene .sp-act.is-act-m-ring:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-ring;
+}
+.sanctuary__scene .sp-act.is-act-m-drum:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-drum;
+}
+/* Riding a moving part (the carousel's pony, the sled, the vine): the part moves; the rider bobs a little with it. */
+.sanctuary__scene .sp-act.is-act-m-ride:not(.is-act-still) .sp-act-rider,
+.sanctuary__scene .sp-act.is-act-m-sled:not(.is-act-still) .sp-act-rider,
+.sanctuary__scene .sp-act.is-act-m-swing:not(.is-act-still) .sp-act-rider {
+  animation-name: sp-m-bob;
+}
+.sanctuary__scene .sp-act[class*='is-act-m-'] .sp-act-rider {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+@keyframes sp-m-gather {
+  0% {
+    transform: translateX(var(--from, -20px));
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  10%,
+  14%,
+  18% {
+    transform: translateX(calc(var(--from, -20px) * 0.6)) translateY(-2px);
+  }
+  12%,
+  16%,
+  22% {
+    transform: translateX(calc(var(--from, -20px) * 0.4));
+  }
+  28%,
+  72% {
+    transform: none;
+  }
+  38%,
+  58% {
+    transform: rotate(-6deg) translateY(-1px);
+  }
+  48% {
+    transform: rotate(6deg) translateY(-3px);
+  }
+  90% {
+    transform: translateX(calc(var(--from, -20px) * 0.6));
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(var(--from, -20px));
+    opacity: 0;
+  }
+}
+@keyframes sp-m-peek {
+  0%,
+  100% {
+    transform: translateY(40%);
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  20%,
+  80% {
+    transform: none;
+  }
+  35%,
+  42% {
+    transform: rotate(-10deg);
+  }
+  55%,
+  62% {
+    transform: rotate(10deg);
+  }
+  70% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes sp-m-peekout {
+  0%,
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  25%,
+  75% {
+    transform: none;
+  }
+  40% {
+    transform: rotate(-8deg);
+  }
+  55% {
+    transform: rotate(8deg) translateY(-2px);
+  }
+}
+@keyframes sp-m-rest {
+  0%,
+  100% {
+    transform: none;
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: scale(1.02, 0.97);
+  }
+  30%,
+  50%,
+  70% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes sp-m-dance {
+  0%,
+  100% {
+    transform: none;
+  }
+  10%,
+  50% {
+    transform: rotate(-9deg) translateY(-3px);
+  }
+  20%,
+  60% {
+    transform: none;
+  }
+  30%,
+  70% {
+    transform: rotate(9deg) translateY(-3px);
+  }
+  80% {
+    transform: translateY(-6px) scale(1.05);
+  }
+  88% {
+    transform: scale(1.05, 0.95);
+  }
+}
+@keyframes sp-m-slide {
+  0%,
+  12% {
+    transform: none;
+  }
+  18% {
+    transform: rotate(-8deg);
+  }
+  55% {
+    transform: translate(var(--dx, -30px), var(--dy, 24px)) rotate(-14deg);
+  }
+  62% {
+    transform: translate(calc(var(--dx, -30px) * 1.08), calc(var(--dy, 24px) - 6px));
+  }
+  70% {
+    transform: translate(calc(var(--dx, -30px) * 1.1), var(--dy, 24px)) scale(1.06, 0.92);
+  }
+  85% {
+    transform: translate(calc(var(--dx, -30px) * 1.1), var(--dy, 24px));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--dx, -30px) * 1.1), var(--dy, 24px));
+    opacity: 0;
+  }
+}
+@keyframes sp-m-chase {
+  0%,
+  100% {
+    transform: none;
+  }
+  12% {
+    transform: translate(calc(var(--span, 14px) * 0.5), -4px);
+  }
+  25% {
+    transform: translateX(var(--span, 14px));
+  }
+  37% {
+    transform: translate(calc(var(--span, 14px) * 0.5), -5px) scaleX(-1);
+  }
+  50% {
+    transform: scaleX(-1);
+  }
+  62% {
+    transform: translate(calc(var(--span, 14px) * -0.5), -4px) scaleX(-1);
+  }
+  75% {
+    transform: translateX(calc(var(--span, 14px) * -1)) scaleX(-1);
+  }
+  88% {
+    transform: translate(calc(var(--span, 14px) * -0.5), -3px);
+  }
+}
+@keyframes sp-m-splash {
+  0%,
+  100% {
+    transform: none;
+  }
+  15%,
+  35%,
+  55% {
+    transform: rotate(-12deg) translateY(2px);
+  }
+  25%,
+  45%,
+  65% {
+    transform: rotate(4deg);
+  }
+  80% {
+    transform: translateY(-4px) rotate(-4deg);
+  }
+}
+@keyframes sp-m-gaze {
+  0%,
+  100% {
+    transform: none;
+  }
+  20%,
+  80% {
+    transform: rotate(-10deg) translateY(-1px);
+  }
+  40% {
+    transform: rotate(-12deg) translateY(-2px);
+  }
+  60% {
+    transform: rotate(-6deg);
+  }
+}
+@keyframes sp-m-ring {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: scale(1.06, 0.9);
+  }
+  30% {
+    transform: translateY(-10px) scale(0.96, 1.06);
+  }
+  45% {
+    transform: none;
+  }
+  55% {
+    transform: scale(1.04, 0.94);
+  }
+  65% {
+    transform: translateY(-7px);
+  }
+  78% {
+    transform: none;
+  }
+}
+@keyframes sp-m-drum {
+  0%,
+  100% {
+    transform: none;
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: scale(1.04, 0.94) translateY(1px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes sp-m-bob {
+  0%,
+  100% {
+    transform: none;
+  }
+  25%,
+  75% {
+    transform: translateY(-1.5px);
+  }
+  50% {
+    transform: translateY(0.5px);
+  }
+}
+
+/* ---------------------------------------------------------------- the decorations' own moving parts */
+.sanctuary__scene [data-decor] .sp-carousel-ride,
+.sanctuary__scene [data-decor] .sp-sled,
+.sanctuary__scene [data-decor] .sp-whirl,
+.sanctuary__scene [data-decor] .sp-bell,
+.sanctuary__scene [data-decor] .sp-chimes,
+.sanctuary__scene [data-decor] .sp-drum,
+.sanctuary__scene [data-decor] .sp-pony {
+  transform-box: view-box;
+}
+/* The carousel turns: its ponies glide round (side to side, bigger in front) and bob. */
+.sanctuary__scene .is-act-carousel .sp-pony {
+  animation: sp-pony-round 2066ms ease-in-out 3;
+}
+.sanctuary__scene .is-act-carousel .sp-pony--1 {
+  animation-delay: -689ms;
+}
+.sanctuary__scene .is-act-carousel .sp-pony--0 {
+  animation-delay: -1377ms;
+}
+@keyframes sp-pony-round {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(9px, -2px);
+  }
+  50% {
+    transform: translate(0, -3px);
+  }
+  75% {
+    transform: translate(-9px, -1px);
+  }
+}
+/* The sled goes down the hill (the rider rides inside it). */
+.sanctuary__scene .is-act-sledhill .sp-sled {
+  animation: sp-sled-down 4400ms cubic-bezier(0.5, 0, 0.6, 1) both;
+}
+@keyframes sp-sled-down {
+  0%,
+  12% {
+    transform: none;
+  }
+  70%,
+  88% {
+    transform: translate(38px, 40px) rotate(38deg);
+  }
+  100% {
+    transform: translate(38px, 40px) rotate(38deg);
+    opacity: 0;
+  }
+}
+/* The vine swings from its knot. */
+.sanctuary__scene .is-act-vineswing .sp-vine {
+  animation: sp-vine-swing 1866ms ease-in-out 3;
+}
+@keyframes sp-vine-swing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(14deg);
+  }
+  75% {
+    transform: rotate(-14deg);
+  }
+}
+/* The musical windmill spins and sings; the bell and the chimes swing when rung. */
+.sanctuary__scene .is-act-whirligig .sp-whirl {
+  animation: sp-whirl-spin 800ms linear 6;
+}
+.sanctuary__scene .is-act-whirligig .sp-whirl-notes {
+  animation: sp-act-float 1200ms ease-out 4;
+}
+@keyframes sp-whirl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.sanctuary__scene .is-act-barnbell .sp-bell,
+.sanctuary__scene .is-ringing .sp-bell {
+  animation: sp-bell-swing 900ms ease-in-out 3;
+}
+.sanctuary__scene .is-act-windchimes .sp-chimes {
+  animation: sp-bell-swing 1100ms ease-in-out 3;
+}
+@keyframes sp-bell-swing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(-18deg);
+  }
+}
+/* Drums bounce on the beat. */
+.sanctuary__scene .is-act-drumcircle .sp-drum--1 {
+  animation: sp-drum-hit 500ms ease-out 10;
+}
+.sanctuary__scene .is-act-drumcircle .sp-drum--0,
+.sanctuary__scene .is-act-drumcircle .sp-drum--2 {
+  animation: sp-drum-hit 500ms ease-out 250ms 9;
+}
+@keyframes sp-drum-hit {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(1px) scale(1.02, 0.97);
+  }
+}
+/* The festival stage's lights chase while it hosts a show, and during any celebration in its home. */
+.sanctuary__scene .is-act-festivalstage .sp-stage-light,
+.sanctuary__scene.is-parading .sp-stage-light {
+  animation: sp-stage-chase 600ms ease-in-out infinite;
+}
+.sanctuary__scene .sp-stage-light--1 {
+  animation-delay: 200ms !important;
+}
+.sanctuary__scene .sp-stage-light--2 {
+  animation-delay: 400ms !important;
+}
+@keyframes sp-stage-chase {
+  50% {
+    fill: #ffd04d;
+    opacity: 0.45;
+  }
+}
+/* Butterflies rise from the garden; bubbles drift up from the machine; petals fall under the arch. */
+.sanctuary__scene .is-act-butterflygarden .sp-bfly,
+.sanctuary__scene .sp-act .sp-act-bub,
+.sanctuary__scene .is-act-bubblemachine .sp-bubble {
+  animation: sp-drift-up 2600ms ease-out 2;
+}
+.sanctuary__scene .is-act-butterflygarden .sp-bfly--1,
+.sanctuary__scene .sp-act .sp-act-bub--1,
+.sanctuary__scene .is-act-bubblemachine .sp-bubble--1 {
+  animation-delay: 400ms;
+}
+.sanctuary__scene .is-act-butterflygarden .sp-bfly--2,
+.sanctuary__scene .sp-act .sp-act-bub--2,
+.sanctuary__scene .is-act-bubblemachine .sp-bubble--2 {
+  animation-delay: 800ms;
+}
+.sanctuary__scene .sp-act .sp-act-bub--3,
+.sanctuary__scene .is-act-bubblemachine .sp-bubble--3 {
+  animation-delay: 1200ms;
+}
+@keyframes sp-drift-up {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: translate(6px, -22px);
+    opacity: 0;
+  }
+}
+.sanctuary__scene .sp-act .sp-act-petal {
+  animation: sp-petal-fall 2400ms ease-in 2;
+}
+.sanctuary__scene .sp-act .sp-act-petal--1,
+.sanctuary__scene .sp-act .sp-act-petal--4 {
+  animation-delay: 500ms;
+}
+.sanctuary__scene .sp-act .sp-act-petal--2,
+.sanctuary__scene .sp-act .sp-act-petal--5 {
+  animation-delay: 1000ms;
+}
+@keyframes sp-petal-fall {
+  0% {
+    transform: none;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(3px, 34px) rotate(160deg);
+    opacity: 0;
+  }
+}
+.sanctuary__scene .sp-act .sp-act-dnotes {
+  animation: sp-act-float 1200ms ease-out 3;
+}
+.sanctuary__scene .sp-act .sp-act-slidestars {
+  opacity: 0;
+  animation: sp-slide-stars var(--act-ms, 4200ms) ease-out both;
+}
+@keyframes sp-slide-stars {
+  0%,
+  60% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.sanctuary__scene .sp-act .sp-act-fsplash {
+  animation: sp-act-ring 1200ms ease-out 3;
+}
+@keyframes sp-act-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+.sanctuary__scene .sp-act .sp-act-petal,
+.sanctuary__scene .sp-act .sp-act-bub,
+.sanctuary__scene .sp-act .sp-act-fsplash,
+.sanctuary__scene .sp-act .sp-act-slidestars {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+/* ---------------------------------------------------------------- the decoration card's preview (D48 PR C) */
+.decor-preview {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 360 / 220;
+  background: #e6f2df;
+}
+.decor-preview svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.decor-preview .sp-preview-ring {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+.decor-preview__note {
+  font-size: 13px;
+  margin-top: 6px;
+}
+.set-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--set, #7fb35d) 18%, #fff);
+  color: color-mix(in srgb, var(--set, #7fb35d) 70%, #222);
+}
+.set-card {
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.set-card__pieces {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.set-card__piece {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-2, #f3efe6);
+  display: grid;
+  place-items: center;
+  opacity: 0.55;
+}
+.set-card__piece.is-owned {
+  opacity: 1;
+}
+.set-card__piece .decor-icon {
+  width: 36px;
+  height: 36px;
+}
