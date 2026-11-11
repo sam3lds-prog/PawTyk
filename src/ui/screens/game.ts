@@ -29,7 +29,7 @@ import { recordLoss, recordWin, type WinRecord } from '../../meta/progression';
 import { rewardsForWin, type RewardSummary } from '../../meta/rewards';
 import { finishAttempt } from '../../competitions/localCup';
 import type { ScoreBreakdown } from '../../competitions/scoring';
-import { afterSolve, type MetaNews } from '../../app/events';
+import { afterSolve, claimedLine, type MetaNews } from '../../app/events';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { showFirstArrival } from '../components/arrival';
@@ -1572,16 +1572,18 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   }
 
   function newsMarkup(nw: MetaNews): string {
-    if (!nw.achievements.length && !nw.missions.length) return '';
+    if (!nw.achievements.length && !nw.missions.length && !nw.claimed.length) return '';
     const badges = nw.achievements
       .map(
         (a) =>
           `<div class="reward-item"><span class="reward-item__art reward-item__art--badge">${ICON[a.icon]}</span><span><b>Badge: ${esc(a.name)}</b><small>${esc(a.description)} +${a.coins} coins</small></span></div>`,
       )
       .join('');
-    const missions = nw.missions.length
-      ? `<p class="win-missions">${ICON.check}${nw.missions.length === 1 ? `Mission done: ${esc(nw.missions[0].title)}` : `${nw.missions.length} missions done`}. Claim on Journey.</p>`
-      : '';
+    const missions = nw.claimed.length
+      ? `<p class="win-missions">${ICON.check}${nw.claimed.length === 1 ? `Errand done: ${esc(nw.claimed[0].def.title)}` : `${nw.claimed.length} errands done`}: ${esc(claimedLine(nw.claimed))}.</p>`
+      : nw.missions.length
+        ? `<p class="win-missions">${ICON.check}${nw.missions.length === 1 ? `Mission done: ${esc(nw.missions[0].title)}` : `${nw.missions.length} missions done`}. Claim on Journey.</p>`
+        : '';
     return `<div class="win-news">${badges}${missions}</div>`;
   }
 
@@ -1726,9 +1728,13 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // D49 PR B: what this solve earned, next to the success itself (not only in the fold): the coins, an errand done,
     // and after a Daily, a warm word about tomorrow's.
     const coinLine = rewards.coins && mode.kind !== 'cup' ? `<p class="win-coins" data-win-coins>${ICON.coin}<b class="num">+${rewards.coins}</b><span>Paw Coins</span></p>` : '';
-    const errandLine = news.missions.length
-      ? `<p class="win-errand" data-win-errand>${ICON.check}<span>${news.missions.length === 1 ? `Errand done: ${esc(news.missions[0].title)}. Claim it on Journey.` : `${news.missions.length} errands done. Claim them on Journey.`}</span></p>`
-      : '';
+    // D49 PR D: an errand finished by this solve has already paid (claimed by itself): it says what it gave.
+    const paid = claimedLine(news.claimed);
+    const errandLine = news.claimed.length
+      ? `<p class="win-errand" data-win-errand>${ICON.check}<span>${news.claimed.length === 1 ? `Errand done: ${esc(news.claimed[0].def.title)}` : `${news.claimed.length} errands done`}${paid ? ` · <b>${esc(paid)}</b>` : ''}</span></p>`
+      : news.missions.length
+        ? `<p class="win-errand" data-win-errand>${ICON.check}<span>${news.missions.length === 1 ? `Errand done: ${esc(news.missions[0].title)}. Claim it on Journey.` : `${news.missions.length} errands done. Claim them on Journey.`}</span></p>`
+        : '';
     const tomorrowLine = mode.kind === 'daily' && rec.newDaily ? dailyTomorrowMarkup(mode.dateKey) : '';
     // What the next puzzle brings closer: the step this solve took, or (a replay, a finished home) what's up next.
     const nextLine = growth?.growth ? nextFriendMarkup(growth.sanctuary, true, step.friendBefore) : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save));

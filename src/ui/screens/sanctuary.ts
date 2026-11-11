@@ -10,6 +10,7 @@ import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
+import { sayClaimed } from '../components/errands';
 import { sceneMoments } from '../components/animalMoments';
 import { playReveals, waitingReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
@@ -97,6 +98,7 @@ export const sanctuaryScreen: ScreenDef = {
     const news = afterSanctuaryVisit();
     app.persist();
     for (const a of news.achievements) toast(`Badge unlocked: ${a.name}`);
+    sayClaimed(news);
 
     const el = h(`<div class="sanctuary"></div>`);
     // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved. D49 PR A: until the

@@ -80,7 +80,9 @@ export type AnalyticsEvent =
   | 'welcome_snack'
   // D49 PR C: how a meal played (full or quick, and why), and an animal moment seen (the first time each).
   | 'meal_played'
-  | 'animal_moment';
+  | 'animal_moment'
+  // D49 PR D: which of Today's optional things was tapped (a board in progress, the Daily, a friend, a home's news).
+  | 'today_tap';
 
 export type EventProps = Record<string, string | number | boolean>;
 

@@ -2349,3 +2349,29 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
   the Farm; Meals → Full; the moments catalog, unseen first, temperaments, pairs, no repeats; first-seen noted once;
   the schedule, the cap, waiting while busy, hidden or reduced, ended by any claim with its line restored; a trick never
   clearing another's). Updated: the market feeding test (the result carries the new flags).
+
+### PR D — a focused return (`d49/d-today`)
+- **One goal, at most two things** (`meta/today.ts`, `screens/journey.ts`): the hero now reads **Today at your Farm**
+  (who is on the way, the bar, Level N and its one big Play or Resume, unchanged and still above the fold at
+  320×568). Under it, **Also today** shows at most two optional things, picked from what the save already holds:
+  a Daily or Zen board left in progress (the player's own work first); today's **Daily Puzzle** if it isn't solved; an
+  animal one or two hearts from what friendship brings next that hasn't had today's hello (*Cotton has a warmer hello
+  to share · One heart away: say hello in the Farm*); news in another home (*Something new at the Outback*). Nothing
+  else competes: the Daily with its week strip, the Zen Garden and the errands are in **More to play**, a fold closed
+  by default whose summary says what it holds (*Daily solved · Zen Garden · Errands 2 of 3*) and that stays open for
+  the session once opened. A solved Daily says so there with a warm word about tomorrow (*Tomorrow's: a 7×7,
+  Thursday.*).
+- **No pressure**: nothing says "missed", nothing counts down or expires, no streak warning, no notification. An
+  empty Also today is simply absent. Hearts still never decay (D40), so a friend nudge is an invitation, not a debt.
+- **Errands pay the moment they're done** (`meta/missions.ts::autoClaimMissions`, `app/events.ts`): evaluated as the
+  review asked, and adopted: a finished errand (today's or the week's) is claimed at once through the very same
+  once-only ledger ids as the Claim button (`mission:<key>`, `…:treat`, `…:hint`), so it can't be credited twice
+  whichever path runs; `MetaNews.claimed` says what each gave. The win sheet's line becomes *Errand done: Solve any
+  board · +20 Paw Coins* (D49 PR B had *Claim it on Journey*), and a Pet Garden visit that finishes *Visit the
+  sanctuary* says so in a toast. The Claim button stays for an errand finished before this build. (Visits to the Farm
+  and the regions still don't count for that errand, as before: a try-on there must change nothing.)
+- Analytics (opt-in): `today_tap` (which kind), `mission_claimed` now with `auto: true`.
+- Tests: `test/unit/d49Today.dom.test.ts` (the order and the cap, a friend only when close and not greeted, nothing
+  when there's nothing; the hub's order, rows, wording with no pressure, the fold closed with its summary, a solved
+  Daily with tomorrow, the fold remembered; auto-claim once by the same ids as Claim; a solve reports what it paid).
+  Updated: the Journey hub test (*Today at your Farm*).

@@ -6,9 +6,15 @@
  *
  * One rule for the big button: it continues the Journey, the next unfinished level or the Journey board already on the
  * table. A saved Daily or Zen board is offered on its own line, never as the Journey's Continue.
+ *
+ * D49 PR D: for a player back for a few minutes, **one goal** (the hero, *Today at your Farm*, with Play or Resume) and
+ * **at most two** optional things under it (`meta/today.ts`: a board in progress, today's Daily, an animal close to
+ * its next friendship gift, news in another home). Everything else (the Daily with its week, Zen, the errands) is one
+ * tap away in **More to play**. No chores, no missed-day warnings, nothing that expires.
  */
 
 import { arrivalPortrait, isEager } from '../components/eager';
+import { animalPortrait } from '../art/animals';
 import { app } from '../../app/app';
 import { applyUsageChoice, closeUsageAsk, noteUsageAsked, shouldAskUsage } from '../../app/usage';
 import { nextZenMode, playMode, resumableMode, resumableSessions, resumeGame, savedBoardLine, savedFor, startGame } from '../../app/gameFlow';
@@ -24,6 +30,7 @@ import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { claimMissionDetailed, missionStates, type MissionDef } from '../../meta/missions';
 import { PHOTO_MEMORY_COINS, photoMemoryDone } from '../../meta/photoMemory';
 import { CASUAL_HEARTS, FIRST_PAIR_LEVEL, dailyFor, modeKey, playsSolo, type ModeRef } from '../../game/modes';
+import { todayItems, type TodayItem } from '../../meta/today';
 import { MAX_NEW_BOARD_SIZE } from '../../game/specs';
 import { itemBalance } from '../../meta/items';
 import { feel } from '../../services/feel';
@@ -44,6 +51,8 @@ import { shownDecorIds } from '../../meta/sanctuary';
 import { isEvening, sceneMarkup } from './sanctuary';
 
 const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+/** D49 PR D: whether the player opened More to play (kept for this app session). */
+let morePlayOpen = false;
 /** Zen offers every size up to the 8×8 cap. */
 const ZEN_SIZES = Array.from({ length: MAX_NEW_BOARD_SIZE - 4 }, (_, i) => i + 5);
 /** Node x positions along the path (percent of width): a gentle S-curve. */
@@ -117,7 +126,7 @@ function heroGoalMarkup(): { markup: string; accent: string; visit: string; sanc
           <svg viewBox="40 60 280 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${sanctuaryPicture(id, 'goal')}</svg>
         </button>
         <div class="hero__goal-body">
-          <p class="hero__eyebrow">${ICON.sprout}Building the <b>${esc(def.name)}</b>${unseenIn(save, id) ? `<span class="chip chip--coral chip--news">${ICON.sparkle}New</span>` : ''}</p>
+          <p class="hero__eyebrow">${ICON.sprout}Today at your <b>${esc(def.short)}</b>${unseenIn(save, id) ? `<span class="chip chip--coral chip--news">${ICON.sparkle}New</span>` : ''}</p>
           <p class="hero__next">${art}<span>${line}</span></p>
           ${bar}
         </div>
@@ -242,6 +251,71 @@ function mountHub(root: HTMLElement, scope: Scope): void {
   const weekday = WEEKDAY[new Date().getDay()];
 
   const goal = heroGoalMarkup();
+
+  /**
+   * D49 PR D: at most two optional things for today, under the one goal (`meta/today.ts`), each one tap: a board in
+   * progress, today's Daily, an animal close to its next friendship gift, news in another home.
+   */
+  function todayMarkup(): string {
+    const items = todayItems(save, { saved: otherSaved.map((s) => s.mode), dailyDone, heroHome: goal.sanctuary });
+    if (!items.length) return '';
+    const row = (it: TodayItem): string => {
+      switch (it.kind) {
+        case 'resume': {
+          const sv = otherSaved.find((x) => modeKey(x.mode) === modeKey(it.mode))!;
+          return `<button class="card card--tap today-row resume-other" data-today="resume" data-act="resume-other" data-resume="${esc(modeKey(sv.mode))}">
+            <span class="card__icon">${ICON.resume}</span>
+            <span class="card__body"><span class="card__title">${esc(modeTitle(sv.mode))} in progress</span><span class="card__sub">${esc(savedBoardLine(sv))}. Resume it any time.</span></span>
+            ${ICON.chevron}
+          </button>`;
+        }
+        case 'daily':
+          return `<button class="card card--tap today-row daily-card" data-today="daily" data-act="daily">
+            <span class="card__icon card__icon--coral">${ICON.calendar}</span>
+            <span class="card__body"><span class="card__title">Daily Puzzle</span><span class="card__sub">${weekday}: ${daily.size}×${daily.size}${daily.solo ? ', one animal' : ''}. Same board for everyone.</span></span>
+            ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ICON.chevron}
+          </button>`;
+        case 'friend': {
+          const a = animalInfo(it.animal);
+          const what = it.unlock.charAt(0).toLowerCase() + it.unlock.slice(1);
+          return `<button class="card card--tap today-row today-friend" data-act="visit" data-region="${esc(it.home)}" data-today="friend">
+            <span class="card__icon card__icon--portrait portrait">${animalPortrait(it.animal, 'happy')}</span>
+            <span class="card__body"><span class="card__title">${esc(a.name)} has ${esc(what)} to share</span><span class="card__sub">${it.hearts === 1 ? 'One heart away' : `${it.hearts} hearts away`}: say hello in the ${esc(sanctuaryDef(it.home).short)}.</span></span>
+            ${ICON.chevron}
+          </button>`;
+        }
+        case 'news':
+          return `<button class="card card--tap today-row today-news" data-act="visit" data-region="${esc(it.home)}" data-today="news" style="--accent:${sanctuaryDef(it.home).accent}">
+            <span class="card__icon">${ICON.sparkle}</span>
+            <span class="card__body"><span class="card__title">Something new at the ${esc(sanctuaryDef(it.home).short)}</span><span class="card__sub">Come and see what changed.</span></span>
+            ${ICON.chevron}
+          </button>`;
+      }
+    };
+    return `<section class="today" aria-label="Also today">
+      <h2 class="today__title">Also today</h2>
+      ${items.map(row).join('')}
+    </section>`;
+  }
+
+  /** What the More to play fold holds, in a few words (so nothing is hidden by surprise). */
+  function moreSummary(): string {
+    const ms = missionStates(app.save).filter((m) => !m.weekly);
+    const done = ms.filter((m) => m.claimed || m.done).length;
+    return `${dailyDone ? 'Daily solved' : 'Daily'} · Zen Garden · Errands ${done} of ${ms.length}`;
+  }
+
+  /** After the Daily: tomorrow's board in a few warm words. */
+  function tomorrowLine(): string {
+    const next = addDaysKey(todayKey, 1);
+    let size = 0;
+    try {
+      size = sizeFor(dailyFor(next, level));
+    } catch {
+      size = 0;
+    }
+    return `Tomorrow's${size ? `: a ${size}×${size}` : ' is new'}, ${WEEKDAY[new Date(`${next}T12:00:00`).getDay()]}.`;
+  }
   const curMode: ModeRef = resumeLevel ?? { kind: 'level', level };
   const curLevel = curMode.kind === 'level' ? curMode.level : level;
   const continueTitle = resumeLevel ? `Resume level ${curLevel}` : `Play level ${level}`;
@@ -281,36 +355,7 @@ function mountHub(root: HTMLElement, scope: Scope): void {
 
       ${shouldShowLoopCoach(save) ? loopCoachMarkup(save) : ''}
 
-      ${otherSaved
-        .map(
-          (sv) => `<button class="card card--tap resume-other" data-act="resume-other" data-resume="${esc(modeKey(sv.mode))}">
-          <span class="card__icon">${ICON.resume}</span>
-          <span class="card__body"><span class="card__title">${esc(modeTitle(sv.mode))} in progress</span><span class="card__sub">${esc(savedBoardLine(sv))}. Resume it any time.</span></span>
-          ${ICON.chevron}
-        </button>`,
-        )
-        .join('')}
-
-      <div class="daily-block">
-        <button class="card card--tap daily-card ${dailyDone ? 'is-done' : ''}" data-act="daily">
-          <span class="card__icon card__icon--coral">${dailyDone ? ICON.check : ICON.calendar}</span>
-          <span class="card__body">
-            <span class="card__title">Daily Puzzle</span>
-            <span class="card__sub">${dailyDone ? 'Solved today. A new one tomorrow.' : `${weekday}: ${daily.size}×${daily.size}${daily.solo ? ', one animal' : ''}. Same board for everyone.`}</span>
-          </span>
-          ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ''}
-        </button>
-        ${weekStrip()}
-      </div>
-
-      <div class="card mini-card zen-card zen-card--wide">
-        <span class="card__icon">${ICON.leaf}</span>
-        <span class="card__title">Zen Garden</span>
-        <span class="card__sub">No clock, no hearts. Pick a size.</span>
-        <div class="zen-sizes" role="group" aria-label="Zen board size">
-          ${ZEN_SIZES.map((sz) => `<button class="zen-size" data-zen="${sz}" aria-label="Zen ${sz} by ${sz}">${sz}</button>`).join('')}
-        </div>
-      </div>
+      ${todayMarkup()}
 
       ${
         !save.onboarding.seenPantryIntro && save.onboarding.tutorialDone && !shouldShowLoopCoach(save)
@@ -327,7 +372,33 @@ function mountHub(root: HTMLElement, scope: Scope): void {
           : ''
       }
       <div data-usage-ask></div>
-      <section class="missions card" aria-labelledby="missions-title" data-missions></section>
+      <details class="more-play" data-more-play ${morePlayOpen ? 'open' : ''}>
+        <summary class="more-play__summary"><span class="more-play__text"><b>More to play</b><small data-more-summary>${esc(moreSummary())}</small></span>${ICON.chevron}</summary>
+        <div class="more-play__body">
+          <div class="daily-block">
+            <button class="card card--tap daily-card ${dailyDone ? 'is-done' : ''}" data-act="daily">
+              <span class="card__icon card__icon--coral">${dailyDone ? ICON.check : ICON.calendar}</span>
+              <span class="card__body">
+                <span class="card__title">Daily Puzzle</span>
+                <span class="card__sub">${dailyDone ? `Solved today. ${esc(tomorrowLine())}` : `${weekday}: ${daily.size}×${daily.size}${daily.solo ? ', one animal' : ''}. Same board for everyone.`}</span>
+              </span>
+              ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ''}
+            </button>
+            ${weekStrip()}
+          </div>
+
+          <div class="card mini-card zen-card zen-card--wide">
+            <span class="card__icon">${ICON.leaf}</span>
+            <span class="card__title">Zen Garden</span>
+            <span class="card__sub">No clock, no hearts. Pick a size.</span>
+            <div class="zen-sizes" role="group" aria-label="Zen board size">
+              ${ZEN_SIZES.map((sz) => `<button class="zen-size" data-zen="${sz}" aria-label="Zen ${sz} by ${sz}">${sz}</button>`).join('')}
+            </div>
+          </div>
+
+          <section class="missions card" aria-labelledby="missions-title" data-missions></section>
+        </div>
+      </details>
     </div>`);
   root.appendChild(el);
   // D47 PR 6: once, in a build that can send them, after a few sessions: would the player share anonymous usage stats?
@@ -456,8 +527,14 @@ function mountHub(root: HTMLElement, scope: Scope): void {
     });
   }
 
+  // D49 PR D: the fold remembers being open, for this app session.
+  const fold = el.querySelector<HTMLDetailsElement>('[data-more-play]');
+  if (fold) scope.on(fold, 'toggle', () => (morePlayOpen = fold.open));
+
   scope.on(el, 'click', (e) => {
     const t = e.target as HTMLElement;
+    const today = t.closest('[data-today]') as HTMLElement | null;
+    if (today) track('today_tap', { kind: today.dataset.today ?? '' });
     const claim = t.closest('[data-claim]') as HTMLElement | null;
     if (claim) {
       const got = claimMissionDetailed(app.save, claim.dataset.claim!);
