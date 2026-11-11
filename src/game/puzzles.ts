@@ -196,7 +196,7 @@ export function modeTitle(mode: ModeRef): string {
     case 'level':
       return `Level ${mode.level}`;
     case 'daily':
-      return 'Daily Cozy Puzzle';
+      return 'Daily Puzzle';
     case 'zen':
       return 'Zen Garden';
     case 'cup':

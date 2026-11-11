@@ -387,6 +387,16 @@ build is ready on an iPhone. Everything below is for a real device.
   the walk falls below *Fine* on the oldest supported phone without dropping to the lite tier; analytics sends anything
   before the player says yes.
 
+### D48 — shop, feeding, tricks and celebrations
+**PR A — polish**
+- [ ] Haptics on: swipe slowly across a row: one soft tick per tile that changes, nothing while the finger rests in a
+      tile, nothing over tiles already marked; swipe fast across a 9×9 row: every tile marked, a few ticks (not a buzz)
+- [ ] Haptics off: no ticks at all; sound on: dragging makes no sound
+- [ ] Photo mode on the Farm (320 × 568 and a Pro Max): *Everyone* and each animal in landscape and portrait: nobody
+      touches the card's edge, the horse's ears and the ducks' feet included; switch the shape mid-way: it refits
+- [ ] Fresh install: the first board asks for one tap (✕) before any tile glows; the double tap then places Cotton
+- [ ] Five-player script: note who places Cotton on the first double tap without help
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

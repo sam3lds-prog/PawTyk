@@ -131,13 +131,13 @@ try {
 
   // Guided tutorial: a one-animal board with the sheep (D35)
   await page.click('[data-act="start"]');
-  await page.waitForSelector('.cell.is-guide');
-  check('tutorial highlights exactly one tile', (await page.$$('.cell.is-guide')).length === 1);
+  await page.waitForSelector('.game.is-guided [data-coach]');
+  // D48 PR A: the two moves one at a time: first a single tap for ✕, on any tile, before any tile glows.
+  check('the first board starts with one move: tap any tile once for ✕ (D48)', /tap any tile once/i.test((await page.textContent('[data-coach]')) ?? '') && !(await page.$('.cell.is-guide')));
   check('tutorial board is forgiving (no hearts shown)', !(await page.$('[data-hearts]')));
   check('the first board is a one-animal board', await page.evaluate(() => window.__pt.app.active.session.rule === 'solo'));
   check('a fresh install plays tap ✕ / double-tap', (await scheme()) === 'tap');
   check('a one-animal board has only Erase and Hint below it (no ✕ button)', !(await page.$('[data-tool]')) && (await page.$$('.controls--solo .act')).length === 2 && !(await page.$('.controls [data-act="undo"]')));
-  check('the coach says to double-tap the tile', /double-tap it/i.test((await page.textContent('[data-coach]')) ?? ''));
 
   // A tap marks ✕ and a second, slow tap clears it again; animals only come with a double tap.
   const free0 = await emptyTile();
@@ -151,6 +151,10 @@ try {
   check('a finger on a tile is acknowledged at once (D40)', await page.$eval(`.cell[data-r="${free0[0]}"][data-c="${free0[1]}"]`, (el) => el.classList.contains('is-press')));
   await page.mouse.up();
   check('a tap marks ✕', (await page.evaluate(([r, c]) => window.__pt.app.active.session.cells[r][c], free0)) === 3);
+  // Then the second move: one tile glows, and the coach says to double-tap it.
+  await page.waitForSelector('.cell.is-guide');
+  check('then the tutorial highlights exactly one tile', (await page.$$('.cell.is-guide')).length === 1);
+  check('the coach says to double-tap the tile', /double-tap it/i.test((await page.textContent('[data-coach]')) ?? ''));
   await page.waitForTimeout(500);
   await tapCell(free0[0], free0[1]);
   check('a second tap later clears the ✕', (await page.evaluate(([r, c]) => window.__pt.app.active.session.cells[r][c], free0)) === 0);
@@ -405,8 +409,19 @@ try {
       () => false,
     );
   check('the animals say hello when you arrive', greeted);
-  await page.waitForSelector('.sanctuary__scene.has-3d > canvas.scene3d', { timeout: 15000 }).catch(() => {});
-  check('the Farm animals appear as 3D toys over the drawn scene', await page.evaluate(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d') && getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity === '0'));
+  // The drawn animals fade out (260 ms) as the toys arrive: wait for the fade to finish, not just for the canvas (on a
+  // slow CI runner the check used to land mid-fade).
+  const toysShown = await page
+    .waitForFunction(() => !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d') && getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity === '0', null, { timeout: 15000 })
+    .then(
+      () => true,
+      () => false,
+    );
+  check(
+    'the Farm animals appear as 3D toys over the drawn scene',
+    toysShown,
+    await page.evaluate(() => JSON.stringify({ has3d: !!document.querySelector('.sanctuary__scene.has-3d > canvas.scene3d'), opacity: getComputedStyle(document.querySelector('.sanctuary__scene .sanctuary__pet')).opacity })),
+  );
   // D44 PR C: the camera moves the drawing and the toys together. A figure's ground point, drawn (through the SVG) and
   // in 3D (through the stage's camera), lands on the same screen pixel at the whole scene and in a 2× close-up.
   const aligned = await page.evaluate(() => {

@@ -26,8 +26,13 @@ import { openSheet, toast } from './sheet';
 export interface PhotoFrame {
   id: string;
   label: string;
-  /** Moves the camera there (resolves when it has arrived). */
-  go(): Promise<unknown> | void;
+  /**
+   * Moves the camera there (resolves when it has arrived). `shape` is the postcard window's share of the view (D48 PR
+   * A): the framing fits its animals inside it, with room to spare.
+   */
+  go(shape?: { w: number; h: number }): Promise<unknown> | void;
+  /** Where this framing's animals are in the view now (0–1 across and down), so the postcard's crop keeps them. */
+  focus?(): { x: number; y: number };
 }
 
 export interface PhotoTarget {
@@ -107,15 +112,30 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
   const guide = ui.querySelector<HTMLElement>('[data-photo-guide]')!;
   const win = guide.firstElementChild as HTMLElement;
 
-  /** The postcard's picture shape, over the scene: what will be on the card. */
+  /** The framing chosen now (its focus keeps the animals on the card). */
+  const current = () => t.frames.find((f) => f.id === frame) ?? null;
+  /** The postcard window's share of the scene (D48 PR A), for fitting a framing inside it. */
+  const shape = () => {
+    const b = host.getBoundingClientRect();
+    if (!b.width || !b.height) return { w: 1, h: 1 };
+    const L = postcardLayout(orientation, b.width, b.height, signed);
+    return { w: L.crop.w / b.width, h: L.crop.h / b.height };
+  };
+  /** The postcard's picture shape, over the scene: exactly what will be on the card (it follows the animals). */
   const placeGuide = () => {
     const b = host.getBoundingClientRect();
     if (!b.width || !b.height) return;
-    const L = postcardLayout(orientation, b.width, b.height, signed);
+    const L = postcardLayout(orientation, b.width, b.height, signed, current()?.focus?.());
     win.style.left = `${(L.crop.x / b.width) * 100}%`;
     win.style.top = `${(L.crop.y / b.height) * 100}%`;
     win.style.width = `${(L.crop.w / b.width) * 100}%`;
     win.style.height = `${(L.crop.h / b.height) * 100}%`;
+  };
+  /** Frames the chosen view for the card's shape now, and puts the guide over it once the camera is there. */
+  const reframe = () => {
+    placeGuide();
+    const go = current()?.go(shape());
+    void Promise.resolve(go).then(() => scope.alive && placeGuide());
   };
   placeGuide();
   scope.on(window, 'resize', placeGuide);
@@ -154,7 +174,7 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
         toast("This picture couldn't be taken. Try again in a moment.");
         return;
       }
-      const card = composePostcard(shot, { orientation, signed, place: t.place, logo, accent: t.accent });
+      const card = composePostcard(shot, { orientation, signed, place: t.place, logo, accent: t.accent, focus: current()?.focus?.() });
       shot.width = 0;
       if (!card) {
         toast("This picture couldn't be made on this device.");
@@ -226,14 +246,15 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
     if (fr && !busy) {
       frame = fr.dataset.frame!;
       choose('[data-frame]', 'data-frame', frame);
-      void t.frames.find((f) => f.id === frame)?.go();
+      reframe();
       return;
     }
     const or = el.closest<HTMLElement>('[data-orient]');
     if (or) {
       orientation = or.dataset.orient as Orientation;
       choose('[data-orient]', 'data-orient', orientation);
-      placeGuide();
+      // A new shape: the framing is fitted to it again, so nobody ends up on the card's edge.
+      reframe();
       return;
     }
     if (el.closest('[data-act="photo-take"]')) void take();
@@ -245,9 +266,9 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
     const box = (e.target as HTMLElement).closest<HTMLInputElement>('[data-photo-sign]');
     if (!box) return;
     signed = box.checked;
-    placeGuide();
+    reframe();
   });
-  void t.frames[0]?.go();
+  reframe();
   panel.querySelector<HTMLElement>('[data-act="photo-take"]')?.focus({ preventScroll: true });
 
   return {

@@ -54,6 +54,39 @@ export interface BoardOptions {
 
 const SPECIES_NAME: Record<number, string> = { [CAT]: 'cat', [DOG]: 'dog' };
 
+/**
+ * The tiles a finger passed over between two tiles (D48 PR A), in order, the first one left out (it was handled
+ * already) and the last one included. A fast swipe can report its first move a few tiles away; every tile on the way
+ * is marked too, so no tile in a swiped line is skipped. A line that steps diagonally passes through one of the two
+ * tiles beside the corner (a 4-connected path, as a finger on a grid does), never through a gap.
+ */
+export function cellsBetween(a: readonly [number, number], b: readonly [number, number]): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let [r, c] = a;
+  const [r1, c1] = b;
+  const dr = Math.abs(r1 - r);
+  const dc = Math.abs(c1 - c);
+  const sr = Math.sign(r1 - r);
+  const sc = Math.sign(c1 - c);
+  let ir = 0;
+  let ic = 0;
+  // A grid walk along the straight line from the middle of one tile to the middle of the other: the next step is
+  // whichever tile edge the line crosses first (a tie steps sideways first).
+  while (ir < dr || ic < dc) {
+    const tr = dr ? (ir + 0.5) / dr : Infinity;
+    const tc = dc ? (ic + 0.5) / dc : Infinity;
+    if (tr < tc) {
+      r += sr;
+      ir++;
+    } else {
+      c += sc;
+      ic++;
+    }
+    out.push([r, c]);
+  }
+  return out;
+}
+
 /** The selection's corner brackets: an ink stroke over a light halo, so they read on every color. */
 const SEL_CORNERS = 'M3 28V11Q3 3 11 3H28M72 3H89Q97 3 97 11V28M97 72V89Q97 97 89 97H72M28 97H11Q3 97 3 89V72';
 const SEL_SVG = `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="board__sel-halo" d="${SEL_CORNERS}"/><path class="board__sel-ink" d="${SEL_CORNERS}"/></svg>`;
@@ -359,12 +392,20 @@ export class Board {
       });
       s.on(this.el, 'pointermove', (e: PointerEvent) => {
         if (!this.drag || e.pointerId !== this.drag.id) return;
-        const cell = this.cellFromPoint(e.clientX, e.clientY);
-        if (!cell) return;
-        const key = `${cell[0]},${cell[1]}`;
-        if (key === this.drag.last) return;
-        this.drag.last = key;
-        this.handlers.onDrag?.(cell[0], cell[1], this.drag.mode);
+        // D48 PR A: every position the finger reported since the last frame (a fast swipe sends several at once), and
+        // every tile on the way between them, so no tile is skipped. A tile already handled in this drag is passed over.
+        const points = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+        for (const p of points.length ? points : [e]) {
+          const d = this.drag;
+          if (!d) return;
+          const cell = this.cellFromPoint(p.clientX, p.clientY);
+          if (!cell) continue;
+          const key = `${cell[0]},${cell[1]}`;
+          if (key === d.last) continue;
+          const [lr, lc] = d.last.split(',').map(Number);
+          d.last = key;
+          for (const [r, c] of cellsBetween([lr, lc], cell)) this.handlers.onDrag?.(r, c, d.mode);
+        }
       });
       const end = (e: PointerEvent) => {
         if (this.drag && e.pointerId === this.drag.id) this.drag = null;

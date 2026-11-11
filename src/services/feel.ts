@@ -24,6 +24,10 @@
  * | undo     | none                                   | the lightest tick      |
  * | lost     | none (the last miss already sounded)   | gentle warning         |
  *
+ * D48 PR A: a drag across tiles ticks once for each tile that changes, but never more often than every
+ * `DRAG_TICK_MS` (a fast swipe changing three tiles in one frame is one tick, not a buzz). Nothing ticks for a tile the
+ * finger only passes over without changing it (the board only reports changes), and a drag makes no sound.
+ *
  * D44 PR B: with Music on, three moments play a music cue instead of their sound effect (never both): a solve plays
  * *Tiny Triumph*, an arrival *Welcome Home*, a trick its own tune (`feel('trick', { cue: 'trick:<id>' })`). With Music
  * off they keep their sound effects. The haptic is the same either way.
@@ -75,6 +79,16 @@ export const FEEL: Record<FeelEvent, { sound: Sfx | null; haptic: HapticKind | n
   lost: { sound: null, haptic: 'warning' },
 };
 
+/** The least time between two drag ticks (D48 PR A): restrained, never a continuous buzz. */
+export const DRAG_TICK_MS = 40;
+let lastDragTick = -Infinity;
+const clock = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+/** Tests: forget the last drag tick. */
+export function resetDragTick(): void {
+  lastDragTick = -Infinity;
+}
+
 /** Plays an event's sound (or, with Music on, its music cue) and haptic, each only if its switch is on. */
 export function feel(event: FeelEvent, o?: SfxOptions & { cue?: CueId; rhythm?: RhythmFeel }): void {
   const f = FEEL[event];
@@ -82,5 +96,11 @@ export function feel(event: FeelEvent, o?: SfxOptions & { cue?: CueId; rhythm?: 
   if (cue && musicEnabled() && playCue(cue, { rhythm: o?.rhythm })) {
     /* the cue replaces the sound effect */
   } else if (f.sound) sfx(f.sound, o);
-  if (f.haptic) haptic(f.haptic);
+  if (!f.haptic) return;
+  if (event === 'drag') {
+    const t = clock();
+    if (t - lastDragTick < DRAG_TICK_MS) return;
+    lastDragTick = t;
+  }
+  haptic(f.haptic);
 }

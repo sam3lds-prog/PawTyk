@@ -293,8 +293,8 @@ function mountHub(root: HTMLElement, scope: Scope): void {
         <button class="card card--tap daily-card ${dailyDone ? 'is-done' : ''}" data-act="daily">
           <span class="card__icon card__icon--coral">${dailyDone ? ICON.check : ICON.calendar}</span>
           <span class="card__body">
-            <span class="card__title">Daily Cozy Puzzle</span>
-            <span class="card__sub">${dailyDone ? `Done for today. Back tomorrow for a new board.` : daily.solo ? `${weekday}'s one-animal ${daily.size}×${daily.size}, the same for everyone on one animal` : `${weekday}'s ${daily.size}×${daily.size}, the same board for everyone`}</span>
+            <span class="card__title">Daily Puzzle</span>
+            <span class="card__sub">${dailyDone ? 'Solved today. A new one tomorrow.' : `${weekday}: ${daily.size}×${daily.size}${daily.solo ? ', one animal' : ''}. Same board for everyone.`}</span>
           </span>
           ${streak > 0 ? `<span class="daily-card__streak" aria-label="${plural(streak, 'day')} streak">${ICON.flame}<b class="num">${streak}</b></span>` : ''}
         </button>

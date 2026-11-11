@@ -32,7 +32,7 @@ const solved = (e: MissionEvent) => (e.kind === 'solved' ? 1 : 0);
 export const DAILY_POOL: readonly MissionDef[] = [
   { id: 'solve1', title: 'Solve any board', target: 1, coins: 20, step: solved },
   { id: 'clean1', title: 'Solve a board with no mistakes', target: 1, coins: 25, items: { life: 1 }, step: (e) => (e.kind === 'solved' && e.mistakes === 0 ? 1 : 0) },
-  { id: 'daily', title: "Finish today's Daily Cozy Puzzle", target: 1, coins: 25, step: (e) => (e.kind === 'solved' && e.mode === 'daily' ? 1 : 0) },
+  { id: 'daily', title: "Solve today's Daily Puzzle", target: 1, coins: 25, step: (e) => (e.kind === 'solved' && e.mode === 'daily' ? 1 : 0) },
   { id: 'nohint7', title: 'Solve a 7×7 or larger without hints', target: 1, coins: 30, items: { hint: 1 }, step: (e) => (e.kind === 'solved' && e.size >= 7 && e.hints === 0 ? 1 : 0) },
   { id: 'zen1', title: 'Solve a board in the Zen Garden', target: 1, coins: 20, step: (e) => (e.kind === 'solved' && e.mode === 'zen' ? 1 : 0) },
   { id: 'visit', title: 'Visit the sanctuary', target: 1, coins: 15, step: (e) => (e.kind === 'sanctuary' ? 1 : 0) },
