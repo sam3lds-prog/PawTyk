@@ -455,6 +455,13 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] A trick's card → Try it in your Farm: an animal plays it (a group act with partners); Again; it stays unlearned
 - [ ] In a home's tray, a trick not learned: Try it on <animal> plays it there
 
+**M2 — video tokens from an item's card** (TestFlight with AdMob test ads)
+- [ ] A token decoration with too few tokens: the card says how many; Watch a video; after the video, +1 and the
+      same card, new balance; with enough, Buy
+- [ ] Close a video early: "No token this time", nothing charged, the same card
+- [ ] Airplane mode: the video can't load, the message says so, nothing charged
+- [ ] After ten videos in a day: no button, "more tomorrow"
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

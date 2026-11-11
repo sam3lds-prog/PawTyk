@@ -43,6 +43,7 @@ import { trickBadge } from '../art/tricks';
 import { TRICK_GROUP_NAME, TRICK_GROUPS, TRICKS, trickCurrency, trickGroup, type TrickGroup, type TrickId, type TrickTier } from '../../meta/catalogs/tricks';
 import { ownsTrick } from '../../meta/tricks';
 import { showTrickSheet } from '../components/tricks';
+import { earnMessage, earnToken, tokenNeedMarkup } from '../components/earnToken';
 import { shopRouteFor, trickHome, tryRoute, type TryOn } from '../components/tryOn';
 import { featuredFor, type Featured } from '../../meta/featured';
 import { isTrickId } from '../../meta/catalogs/tricks';
@@ -661,9 +662,14 @@ export const shopScreen: ScreenDef = {
       if (a?.act === 'watch-token') {
         const b = t.closest('button') as HTMLButtonElement;
         b.disabled = true;
-        const r = await watchVideoFor('vtoken');
-        if (r === 'granted') toast('+1 video token', ICON.videoToken);
-        else toast(r === 'cap' ? "That's all the videos for today. More tomorrow." : 'No video is available right now. Try again in a little while.');
+        let r: Awaited<ReturnType<typeof watchVideoFor>> = 'no-video';
+        try {
+          r = await watchVideoFor('vtoken', { surface: 'shop' });
+        } catch {
+          /* the ad service failed: nothing granted, nothing charged */
+        }
+        const msg = earnMessage(r);
+        if (msg) toast(msg, r === 'granted' ? ICON.videoToken : undefined);
         if (scope.alive) render();
       } else if (a?.act === 'restore') {
         const r = await iap.restore();
@@ -743,6 +749,9 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
           : iap.available
             ? 'Gem packs are in the Gems tab.'
             : '';
+    if (short > 0 && price.currency === 'vtoken')
+      // M2: short of video tokens: how many, and an optional video right here (the card stays open).
+      return `<button class="btn btn--block" disabled aria-label="${esc(`Costs ${price.amount} video tokens`)}">${CURRENCY_ICON.vtoken}<span class="num">${price.amount}</span></button>${tokenNeedMarkup(price.amount)}`;
     return short > 0
       ? `<button class="btn btn--block" disabled>${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button><p class="muted">You need ${short} more ${CURRENCY_NAME[price.currency]}. ${how}</p>`
       : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${CURRENCY_ICON[price.currency]}<span class="num">${price.amount}</span></button>`;
@@ -777,7 +786,18 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     const a = actionOf(e);
     if (!a || busy) return;
     if (a.act === 'close') sh.close();
-    else if (a.act === 'try') {
+    else if (a.act === 'earn-token') {
+      void earnToken(
+        (e.target as HTMLElement).closest('button'),
+        `decor:${id}`,
+        () => {
+          refresh();
+          rerender();
+          sh.el.querySelector<HTMLElement>('[data-act="buy"]')?.focus({ preventScroll: true });
+        },
+        () => sh.scope.alive,
+      );
+    } else if (a.act === 'try') {
       sh.close();
       goTry({ kind: 'decor', id }, home);
     } else if (a.act === 'see-pack') {
@@ -837,6 +857,11 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
           <button class="btn btn--small ${o.currency === 'gem' ? 'btn--secondary' : ''}" data-act="buy" data-offer="${o.id}" ${short || !room ? 'disabled' : ''} aria-label="${esc(`Buy ${o.qty === 1 ? 'one' : o.qty} for ${o.amount} ${CURRENCY_NAME[o.currency]}`)}">${CURRENCY_ICON[o.currency]}<span class="num">${o.amount}</span></button></div>`;
       })
       .join('');
+  /** M2: a video-token treat the player is short for: how many, and an optional video right here. */
+  const tokenSlot = () => {
+    const t = offers().filter((o) => o.currency === 'vtoken').sort((a, b) => a.amount - b.amount)[0];
+    return t ? tokenNeedMarkup(t.amount) : '';
+  };
   /** M1: what the player has in each currency this food is sold for. */
   const walletLine = () =>
     [...new Set(offers().map((o) => o.currency))].map((c) => `${walletBalance(app.save, c)} ${CURRENCY_NAME[c]}`).join(' · ');
@@ -853,14 +878,28 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
         <div><dt>You have</dt><dd class="num" data-wallet>${walletLine()}</dd></div>
       </dl>
       <div class="food-offers" data-offers>${offerRows()}</div>
+      <div data-token-slot>${tokenSlot()}</div>
       <div class="sheet__actions"><button class="btn btn--quiet" data-act="close" data-autofocus>Done</button></div>`,
     onClose: rerender,
   });
   sh.scope.on(sh.el, 'click', (e) => {
     const a = actionOf(e);
     if (!a) return;
+    const redraw = () => {
+      const rows = sh.el.querySelector('[data-offers]');
+      if (rows) rows.innerHTML = offerRows();
+      const w = sh.el.querySelector('[data-wallet]');
+      if (w) w.textContent = walletLine();
+      const tk = sh.el.querySelector('[data-token-slot]');
+      if (tk) tk.innerHTML = tokenSlot();
+    };
     if (a.act === 'close') sh.close();
-    else if (a.act === 'buy') {
+    else if (a.act === 'earn-token') {
+      void earnToken((e.target as HTMLElement).closest('button'), `food:${id}`, () => {
+        redraw();
+        rerender();
+      }, () => sh.scope.alive);
+    } else if (a.act === 'buy') {
       const offer = (e.target as HTMLElement).closest<HTMLElement>('[data-offer]')?.dataset.offer as FoodOffer['id'] | undefined;
       const o = foodOffers(f).find((x) => x.id === offer);
       const r = buyFood(app.save, id, { offer });
@@ -870,10 +909,7 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
         track('food_bought', { food: id, offer: offer ?? 'one', qty: o?.qty ?? 1, currency: o?.currency ?? 'coins' });
         const have = sh.el.querySelector('[data-have]');
         if (have) have.textContent = `${foodCount(app.save, id)} of ${FOOD_CAP_EACH}`;
-        const rows = sh.el.querySelector('[data-offers]');
-        if (rows) rows.innerHTML = offerRows();
-        const w = sh.el.querySelector('[data-wallet]');
-        if (w) w.textContent = walletLine();
+        redraw();
         toast(o && o.qty > 1 ? `${o.qty} ${f.name} added to your pantry.` : `${f.name} added to your pantry.`);
       } else toast(r === 'full' ? 'Your pantry has no room for that many.' : `Not enough ${o ? CURRENCY_NAME[o.currency] : 'coins'} yet.`);
     }
