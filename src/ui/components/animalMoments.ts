@@ -132,7 +132,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
     if (!chat || !span) return;
     span.textContent = base;
     chat.hidden = !base;
-    chat.classList.remove('is-activity', 'is-moment');
+    chat.classList.remove('is-activity', 'is-moment', 'is-greeting');
     chat.querySelector('.moment-new')?.remove();
   };
   let restore: (() => void) | null = null;
@@ -146,12 +146,13 @@ export function sceneMoments(host: MomentHost): SceneMoments {
   };
   host.director.register('moment', { cancel: stop, active });
 
-  const free = () => enabled && !disposed && !document.hidden && !host.reducedMotion() && host.director.owner === null && !host.director.paused && !host.busy();
+  // (Not while the visit's hello, D50 PR B, is still playing: one animal at a time.)
+  const free = () => enabled && !disposed && !document.hidden && !host.reducedMotion() && host.director.owner === null && !host.director.paused && !host.busy() && !active();
   /**
    * D50 PR B: free for the visit's hello: as for a moment, and nothing waiting to start (a welcome's or a new stage's
    * lead-in). Under reduced motion it still comes, as a still emote and its line.
    */
-  const freeToGreet = () => enabled && !disposed && !document.hidden && host.director.owner === null && !host.director.paused && host.director.waiting === 0 && !host.busy();
+  const freeToGreet = () => enabled && !disposed && !document.hidden && host.director.owner === null && !host.director.paused && host.director.waiting === 0 && !host.busy() && !active();
   let greeting: Greeting | null = null;
 
   function cast(svg: SVGSVGElement): Array<MomentCast & { fig: SVGGElement }> {
@@ -192,12 +193,12 @@ export function sceneMoments(host: MomentHost): SceneMoments {
     if (isNew) app.persist();
     track('animal_moment', { moment: pick.moment.id, first: isNew });
     // The line under the scene says it (New the first time), then gives the small talk back.
-    say(pick.moment.line(pick.who.name, pick.with?.name), isNew);
+    say(pick.moment.line(pick.who.name, pick.with?.name), 'is-moment', isNew);
     return pick;
   }
 
   /** The line under the scene says what happened (New the first time), then gives the small talk back. */
-  function say(text: string, isNew = false): void {
+  function say(text: string, kind: 'is-moment' | 'is-greeting', isNew = false): void {
     const chat = host.chat();
     const span = chat?.querySelector('span') ?? null;
     if (!chat || !span) return;
@@ -206,7 +207,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
     const base = span.textContent ?? '';
     span.textContent = text;
     chat.hidden = false;
-    chat.classList.add('is-activity', 'is-moment');
+    chat.classList.add('is-activity', kind);
     if (isNew) chat.insertAdjacentHTML('beforeend', '<b class="moment-new">New</b>');
     restore = () => restoreLine(span, base, chat);
     lineTimer = setTimeout(() => {
@@ -254,7 +255,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
     // Its own little hello sound (no haptic: the player didn't touch anything).
     if (isAnimalId(pick.who.id)) sfx('hello', helloOf(pick.who.id as AnimalId));
     track('animal_greeting', { reason: pick.reason, home: g.home });
-    say(pick.line);
+    say(pick.line, 'is-greeting');
     return pick;
   }
 
@@ -268,11 +269,13 @@ export function sceneMoments(host: MomentHost): SceneMoments {
       schedule(MOMENT_GAP_MS[0] + rand() * (MOMENT_GAP_MS[1] - MOMENT_GAP_MS[0]));
     }, ms);
   }
+  // A tester's requested moment is this visit's (no hello in front of it).
+  const asked = soon;
   schedule(soon ? MOMENT_SOON_MS : MOMENT_FIRST_MS);
   soon = false;
   // D50 PR B: a hello near the start of the visit, if the scene is calm then (else, a few more looks, then not at all).
   let greetTimer: ReturnType<typeof setTimeout> | undefined;
-  if (host.greet) {
+  if (host.greet && !asked) {
     const started = Date.now();
     const tryGreet = () => {
       if (disposed || greeting || Date.now() - started > GREET_WINDOW_MS) return;

@@ -241,7 +241,8 @@ export const regionScreen: ScreenDef = {
           reducedMotion: () => app.reducedMotion,
           busy: () => !!tryOn || tray.isOpen || meals.active || parades.active || !!document.querySelector('.overlay') || !!acts?.busy,
           // D50 PR B: someone says hello a couple of seconds into a calm visit (never over a welcome or anything else).
-          greet: { home: id, evening: () => isEveningAt(new Date()), welcoming: () => !!welcomes.animal || !!newcomers.length },
+          // (Not when a newcomer is the visit's news, or a welcome is owed: that is the hello.)
+          greet: { home: id, evening: () => isEveningAt(new Date()), welcoming: () => !!welcomes.animal || !!newcomers.length || !!parades.offered?.unplayed },
         })
       : null;
     scope.onDispose(() => moments?.dispose());

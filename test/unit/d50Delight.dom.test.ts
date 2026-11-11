@@ -276,3 +276,33 @@ describe('three turns of an ordinary win', () => {
     setMusicEnabled(false);
   });
 });
+
+describe('the hello and the moments share the scene', () => {
+  it('a moment never starts while the hello is playing, and the hello’s line isn’t a moment’s (no New, not counted)', () => {
+    document.body.innerHTML = `<p data-chat><span>Hi.</span></p><figure class="sanctuary__scene"><svg viewBox="0 0 360 300"><g class="sanctuary__pet sanctuary__friend" data-friend="cotton" data-gx="80" data-gy="240"></g><g class="sanctuary__pet sanctuary__friend" data-friend="truffle" data-gx="200" data-gy="240"></g></svg></figure>`;
+    const director = createSceneDirector(() => {});
+    const m = sceneMoments({ svg: () => document.querySelector('svg'), chat: () => document.querySelector('[data-chat]'), director, reducedMotion: () => false, busy: () => false, greet: { home: 'test2', evening: () => false } });
+    vi.advanceTimersByTime(GREET_AFTER_MS + 10);
+    expect(m.greeting).not.toBeNull();
+    expect(document.querySelector('[data-chat]')!.classList.contains('is-greeting')).toBe(true);
+    expect(document.querySelector('[data-chat]')!.classList.contains('is-moment')).toBe(false);
+    // A moment asked for now waits: one animal at a time.
+    expect(m.playNow()).toBeNull();
+    expect(document.querySelectorAll('[data-trick]')).toHaveLength(1);
+    vi.advanceTimersByTime(3000);
+    expect(m.playNow()).not.toBeNull();
+    m.dispose();
+  });
+
+  it('a welcome still owed (offered under the scene) is the visit’s hello: no greeting on top of it', async () => {
+    const router = mount();
+    // Leave during the welcome's lead-in: the next visit offers it.
+    router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
+    await vi.advanceTimersByTimeAsync(100);
+    router.go({ screen: 'shop', sanctuary: 'farm' });
+    router.go({ screen: 'region', id: 'farm' });
+    await vi.advanceTimersByTimeAsync(GREET_WINDOW_MS + 500);
+    expect(document.querySelector<HTMLElement>('[data-act="parade-replay"]')?.hidden).toBe(false);
+    expect(greetedRecently('farm')).toBe(false);
+  });
+});
