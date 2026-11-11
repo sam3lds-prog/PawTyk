@@ -2423,3 +2423,127 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
 - **Not established here**: real iPhones (haptics, the ripple's feel, speaker sound, 3D frame rate during moments and
   quick meals, VoiceOver), and real players: none of the pilot targets has been measured. The review recommends a
   real-player beta before more development; the checklist and the events are ready for it.
+
+## 2026-11-11 · D50 — Reward clarity, short-visit delight, a focused return; D51 audit and economy model
+
+From *PawTyk — Revised D50/D51 Implementation Plan* (shared by Sam): optimise for a player with two or three minutes.
+Four D50 PRs, and D51 as a validation sprint: the board-ergonomics audit (no control changes until real players show a
+problem) and a documented economy model (no economy changes until real data). D51-C (a cosmetic pilot) is not built:
+the plan holds it for after launch. Nothing here adds a currency, a chore, a claim button, a notification or a tab.
+Bundle id, product ids, save keys and the puzzle generator are unchanged. Sam asked for the stack to be merged and a
+tester page built (the plan itself says not to merge silently; his explicit request was followed).
+
+### PR A — reward clarity and arrival focus (`d50/a-rewards-arrival`)
+- **One coin headline per win** (`meta/winCoins.ts`, `screens/game.ts`): the first view says *+N Paw Coins* once,
+  where N is exactly what the wallet went up by. A small line says where it came from when there was more than one
+  source: *45 for the puzzle · 45 from 2 errands · 40 from 2 badges · 150 for finishing the Farm*. Before, the pill
+  said +45 and the errand line said +45 again, and the player had to add them up (or wonder if it was the same 45).
+  The errand line now names the errand and anything else it gave (a life, a hint), with no coin figure
+  (`claimedLine(…, { coins: false })`). The fold no longer repeats the errands. Its coin row says *For the puzzle*.
+  A finished home's coins are in the headline, not in the hero or the growth line. The first arrival's summary uses
+  the same total. Nothing is credited here: every part was already paid once, by its own ledger id.
+- **The welcome card in focus** (`components/welcomeCard.ts`, `styles/d50.css`): while the card offers the snack, the
+  scene's other controls step back. That means the parade's replay, Share, Tricks, Tour, Walk, Photo, the new stage's
+  line and the progress card's own Play (`.is-welcoming` on the screen). They come back when the snack has been eaten,
+  a hello is said, an animal is tapped in the scene, or the player taps **Look around first** (a quiet link on the
+  card). A welcome the player set aside for something of their own (parade offered instead, D46) never takes the focus.
+  Nor does a card with nothing to give (Continue and a hello).
+- **Guarded while the snack is eaten**: the card's buttons are `disabled`, not only dimmed. D49 used
+  `pointer-events: none`, which a keyboard, Switch Control or VoiceOver could still press. A status line says
+  *<Name> is having the snack…*, and focus waits on it, then moves to Continue. The progress card's Play is ignored
+  until the meal ends too. However the meal ends (eaten, stopped by something the player started, a redraw), the card
+  moves on to Continue. It can't get stuck, and a snack can't be given twice.
+- Tests: `test/unit/d50Rewards.dom.test.ts` (the pure total and its line; a first clear with errands where the
+  headline equals the wallet's rise, with *Paw Coins* said once and the fold not repeating; a win that finishes a home;
+  the focus rules; disabled buttons and dispatched clicks that change nothing; a meal cut short still reaches
+  Continue; no focus with nothing to give; leaving clears the class). D46's acceptance matrix and M3's keepsake browser
+  checks tap *Look around first* first.
+
+### PR B — short-session delight (`d50/b-farm-delight`)
+- **A hello at the start of a calm visit** (`meta/greeting.ts`, `components/animalMoments.ts`): about two seconds into
+  a visit where nothing else is happening, one animal comes over in its temperament's way (a playful wiggle, a shy
+  peekaboo, a gentle heart, a bouncy high five…). It comes for a reason its line says:
+  - a friendship one hello away (*Truffle is hoping you'll say hello.*, and a tap is that hello);
+  - a newcomer from the last day (*… is still settling in, and says hi.*);
+  - a win a moment ago (*… heard you solved a puzzle!*);
+  - the evening;
+  - or just its own hello.
+  
+  The animals take turns (never the same one twice running). It never plays over a welcome, an owed welcome, a new
+  stage's dance, a meal, the tour, a walk, a photo, a try-on or a sheet, and it is given up if the first six seconds
+  stay busy. A home says it at most once in three minutes, in memory only, so going Farm → Shop → Farm doesn't repeat
+  it. Under Reduce Motion it is a still emote with its line. Anything the player starts ends it, because it is the
+  director's `moment`. It plays the animal's hello sound with no haptic, since the player didn't touch anything.
+  Nothing is granted or saved, and D49's moments stay occasional discoveries. A D49 moment never starts while the
+  hello plays (one animal at a time), and the hello's line has its own class, so it isn't counted as a moment.
+- **Three turns of an ordinary win** (`meta/winFlavor.ts`, `audio/scores.ts`): ordinary wins rotate Tiny Triumph and
+  two turns of it, *A Little Skip* and *Bright Landing*. They share the motif, the length and the band, and only where
+  the melody lands changes. The win animal's face rotates too: proud, happy, beaming. It is never the same twice
+  running (by boards solved). A milestone keeps the original, because its spotlight answers Tiny Triumph, and the big
+  moments stay big by contrast. The phone-speaker check holds the new turns within the signature cues' 2.5 dB.
+- Tester shortcut: **Say hello again**. Analytics (opt-in): `animal_greeting` (`reason`, `home`).
+- Tests: `test/unit/d50Delight.dom.test.ts` (who and why, turns, tricks; in a home: timing and line, the cooldown,
+  never over a welcome, an owed welcome or a sheet, ended by the tour, still under Reduce Motion, the friend one hello
+  away comes first; one animal at a time; the flavors rotate, a milestone keeps the original, the scores' family; two
+  ordinary wins in a row differ in face and cue). D49's rapid-navigation check lets a playing hello finish before it
+  counts tricks left behind.
+
+### PR C — a focused return and relevant shopping (`d50/c-return-shop`)
+- **The Daily said once** (`screens/journey.ts`): when today's Daily (or today's Daily in progress) is a row in *Also
+  today*, *More to play* keeps only the week, on a small card with *Today's is in Also today, above*. Its summary
+  says *This week* instead of *Daily*. Yesterday's unfinished Daily is a different board, so today's keeps its card in
+  the fold.
+- **Friendship copy that says what the next thing does** (`meta/today.ts`, `components/feedPanel.ts`): the Today row
+  is *Say hello to Truffle · One hello at the Farm and you're friends: a warmer hello.* (or *A hello … and a pat on
+  Truffle's card …*). It appears only when today can get there: a hello is one heart and a pat another, each once a
+  day, so a friend two hearts away who was already patted today isn't promised. The friend card adds *A hello or a pat
+  today gets you there.* when that's true.
+- **Featured by what it would do here** (`meta/featured.ts`): affordable first, as D49 had it. Then, within the
+  decorations:
+  - a piece the player tried on and didn't buy (*You tried it on in your Farm*);
+  - then the next piece of a started set;
+  - then a piece the animals use (*Truffle and Cotton will play with it*, from the UI's activities);
+  - then price.
+  
+  A trick tried on and not learned comes back the same way. Gem and video-token things (special pieces, tricks,
+  foods) are featured only when the player has enough now, so a pick is never something they can't get today.
+  Deterministic, and every pick's line says why.
+- **The one bit of browsing kept** (`offers.tried`, `services/storage.ts`): the last six items tried on (`decor:<id>`,
+  `trick:<id>`), newest first, normalized on load. Older saves load as before, and nothing else about browsing is kept.
+- Tests: `test/unit/d50Return.dom.test.ts` (the Daily once, also in progress and when solved; the friend promise and
+  its words; the card's line; Featured's order and reasons, never an unaffordable gem or token thing, a tried trick, the
+  tries capped and normalized; in the Shop, Try it then back leads with it). D49's Today test moved to the new words.
+
+### PR D — validation and release; D51-A and D51-B (`d50/d-validation`)
+- **Browser checks** (`test/e2e/d50.mjs`, in `npm run e2e`), at 320×568 and 390×844:
+  - the coin headline equals the wallet's rise, said once, with Play on screen;
+  - two ordinary wins smile differently;
+  - the welcome card's focus and Look around first;
+  - the snack from the keyboard: Enter starts it, the buttons are disabled and hold focus, more keys and clicks change
+    nothing, then Enter on Continue goes on;
+  - a calm visit's hello, and not again straight after;
+  - the Journey's single Daily and the friend row;
+  - Featured after a try and a reload;
+  - a save from before D50 reloading unchanged.
+- **Release checks** (`test/unit/d50Validation.test.ts`): a pre-D50 save gains no record; `offers.tried` round-trips;
+  product ids, the bundle id and no interstitials are as they were.
+- **D51-A, board ergonomics** (`docs/board-ergonomics.md`): audited, nothing rebuilt. Drag-to-mark, drag haptics,
+  three hint tiers, region patterns, large boards, the level-21 lesson and the two-step scheme all exist. The doc
+  sets out a five-player small-iPhone test, with each task's threshold for a change, and how to evaluate an
+  animal-first scheme without changing the default. No Buddy Training levels.
+- **D51-B, the economy model** (`src/meta/economyModel.ts`, `npm run economy:model`, `docs/economy-model.md`): reads
+  the real numbers (economy config, catalogs, errand pool, pantry rules, homes' completion coins). It runs
+  conservative, base and higher-engagement play patterns, each field naming the opt-in event that will replace it. It
+  finds that:
+  - the first Farm piece the animals use is within a day's play;
+  - everything for coins is weeks (conservative) to days (engaged);
+  - lives and hints are earned well faster than used;
+  - food is about 5–6% of earnings.
+  
+  It changes nothing, and it records what the plan rules out: cutting free lives, paid streaks, a VIP pass, renaming
+  ids, demand-only gem sinks.
+- **D51-C** (cosmetic pilot): not built, by the plan. It waits for D51-B with real data.
+- Before and after: `docs/screenshots/d50/`, captured from `main` (`66df26f`) and the D50 stack: the win at 320, the
+  welcome card at 390, Journey's *Also today* and fold at 320, Featured at 390, and the hello at 390.
+- Not established here: real iPhones (haptics, speaker sound, VoiceOver, 3D frame rate, Reduce Motion), and real
+  players. The TestFlight gate is in `docs/release-checklist.md` → D50.

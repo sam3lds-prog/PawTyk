@@ -26,6 +26,7 @@
     "site:deploy": "npm run site && firebase deploy --only hosting",
     "release:check": "tsx scripts/release-check.ts && tsx scripts/release-bundle.ts",
     "release:bundle": "tsx scripts/release-bundle.ts",
+    "economy:model": "tsx scripts/economy-model.ts",
     "fb:build": "node scripts/build-functions.mjs",
     "fb:test": "firebase emulators:exec --only firestore --project demo-pawtyk \"FIREBASE_RULES_TEST=1 vitest run test/firebase\"",
     "fb:emulators": "npm run fb:build && firebase emulators:start --project demo-pawtyk",
