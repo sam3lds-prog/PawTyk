@@ -44,8 +44,58 @@ export const PLACES = {
  * Where the Farm's decorations stand when the player has them out (D45 PR C): the same five as the drawn Farm. Each
  * is solid (a circle's `r`, or a box's half sizes).
  */
-export type FarmDecor = 'scarecrow' | 'wheelbarrow' | 'trough' | 'tireswing' | 'tractor' | 'rescuewagon';
-export const DECOR_PLACES: Record<FarmDecor, { x: number; z: number; rot: number; r?: number; hw?: number; hd?: number }> = {
+export type FarmDecor =
+  | 'scarecrow'
+  | 'wheelbarrow'
+  | 'trough'
+  | 'tireswing'
+  | 'tractor'
+  | 'rescuewagon'
+  // D48 PR C: the four spots' pieces
+  | 'flowerarch'
+  | 'applecart'
+  | 'bench'
+  | 'festivalstage'
+  | 'carousel'
+  | 'rainbowslide'
+  | 'butterflygarden'
+  | 'pumpkinpatch'
+  | 'camptent'
+  | 'partytable'
+  | 'whirligig'
+  | 'cornshocks'
+  | 'starlanterns'
+  | 'barnbell'
+  | 'bubblemachine'
+  | 'duckfountain';
+
+/**
+ * D48 PR C: the Farm's four spots in 3D. A spot holds one piece at a time (the player picks which), so its pieces
+ * share a place: the meadow east of the pasture, the hill behind it, the corner by the tire-swing tree, the pond.
+ */
+export const SPOTS_3D = {
+  'farm-meadow': { x: 12.5, z: 8.5 },
+  'farm-hill': { x: -3.5, z: -18.5 },
+  'farm-corner': { x: -13.5, z: 18.5 },
+  'farm-pond': { x: -12, z: 6 },
+} as const;
+const at = (spot: keyof typeof SPOTS_3D, rot: number, size: { r?: number; hw?: number; hd?: number; solid?: false }) => ({ ...SPOTS_3D[spot], rot, ...size, spot });
+
+export interface DecorPlace {
+  x: number;
+  z: number;
+  rot: number;
+  /** A circle's radius, or a box's half sizes. */
+  r?: number;
+  hw?: number;
+  hd?: number;
+  /** D48 PR C: false for a piece standing in something solid already (the pond's fountain). */
+  solid?: false;
+  /** D48 PR C: the spot it shares with its alternatives. */
+  spot?: keyof typeof SPOTS_3D;
+}
+
+export const DECOR_PLACES: Record<FarmDecor, DecorPlace> = {
   scarecrow: { x: -6.2, z: -9.5, rot: 0.5, r: 0.45 },
   wheelbarrow: { x: 8.6, z: 10.2, rot: -0.7, r: 0.95 },
   trough: { x: 11.5, z: 2.6, rot: 0.25, hw: 1.3, hd: 0.55 },
@@ -53,6 +103,26 @@ export const DECOR_PLACES: Record<FarmDecor, { x: number; z: number; rot: number
   tractor: { x: -2.2, z: -12.5, rot: 0.9, hw: 1.5, hd: 1.0 },
   // D47 PR 7: the Welcome Rescue Pack's wagon, up by the orchard (as in the drawn Farm).
   rescuewagon: { x: -15.5, z: -13.5, rot: 0.6, hw: 1.1, hd: 0.7 },
+  // D48 PR C. The meadow by the path.
+  flowerarch: at('farm-meadow', -0.5, { hw: 1.3, hd: 0.35 }),
+  applecart: at('farm-meadow', -0.4, { hw: 1.3, hd: 0.8 }),
+  bench: at('farm-meadow', -0.6, { hw: 1.2, hd: 0.45 }),
+  festivalstage: at('farm-meadow', -0.5, { hw: 1.7, hd: 1.2 }),
+  carousel: at('farm-meadow', 0, { r: 1.7 }),
+  rainbowslide: at('farm-meadow', -0.7, { hw: 1.5, hd: 0.6 }),
+  // The hill behind the pasture.
+  butterflygarden: at('farm-hill', 0.2, { r: 1.7 }),
+  pumpkinpatch: at('farm-hill', 0.2, { r: 1.7 }),
+  camptent: at('farm-hill', 0.3, { hw: 1.2, hd: 1.3 }),
+  partytable: at('farm-hill', 0.2, { hw: 1.5, hd: 0.7 }),
+  // The corner by the tire-swing tree.
+  whirligig: at('farm-corner', 0.4, { r: 0.6 }),
+  cornshocks: at('farm-corner', 0.4, { r: 0.9 }),
+  starlanterns: at('farm-corner', 0.4, { r: 0.6 }),
+  barnbell: at('farm-corner', 0.4, { hw: 0.7, hd: 0.3 }),
+  bubblemachine: at('farm-corner', 0.4, { r: 0.6 }),
+  // In the pond: the pond is solid already.
+  duckfountain: at('farm-pond', 0, { r: 0.8, solid: false }),
 };
 export const isFarmDecor = (id: string): id is FarmDecor => id in DECOR_PLACES;
 
@@ -135,6 +205,7 @@ export function obstaclesAt(stage: number, decor: readonly string[] = []): Obsta
   for (const id of decor) {
     if (!isFarmDecor(id)) continue;
     const p = DECOR_PLACES[id];
+    if (p.solid === false) continue;
     out.push(p.r !== undefined ? { x: p.x, z: p.z, r: p.r } : { x: p.x, z: p.z, hw: p.hw, hd: p.hd, rot: p.rot });
   }
   return out;

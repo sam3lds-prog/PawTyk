@@ -20,6 +20,7 @@ import { HOME_SCENERY, eveningLights, sunlight } from './homeScenery';
 import { botanyDefs, butterfliesAt, fineDetail, flowerFor, meadow, memoMeadow, stripMeadow, tuft as botanyTuft } from './botany';
 import { appleTree, barnDetail, fenceDetail, henHouseDetail, pathPebbles, pondBank, roundBale, squareBales, sunflower } from './farmArt';
 import { seedOf } from '../../art/botany';
+import { D48_DECOR_ART } from './decorD48';
 
 export type RegionDecorId = Extract<
   DecorId,
@@ -391,7 +392,7 @@ type RegionalCompanion = Exclude<CompanionId, 'ember' | 'maple' | 'juniper'>;
 const SPOTS: Record<RegionalCompanion, Spot> = {
   cotton: { x: 60, y: 240, H: 34, mood: 'happy' },
   truffle: { x: 182, y: 262, H: 30, mood: 'happy' },
-  buttercup: { x: 262, y: 230, H: 38, mood: 'idle' },
+  buttercup: { x: 268, y: 230, H: 38, mood: 'idle' },
   pepper: { x: 214, y: 166, H: 24, mood: 'happy', base: 189 },
   marigold: { x: 134, y: 232, H: 20, mood: 'happy' },
   hazel: { x: 320, y: 270, H: 44, mood: 'idle' },
@@ -1160,8 +1161,10 @@ export function regionScene(region: RegionId, st: RegionSceneState, id = 'region
   // Decorations belong to their own hand-made sanctuary; the endless world's places have none (yet).
   if (!place)
     for (const d of st.decor) {
-      const a = (REGION_DECOR_ART as Record<string, DecorArt | undefined>)[d];
+      const a = (REGION_DECOR_ART as Record<string, DecorArt | undefined>)[d] ?? (D48_DECOR_ART as Record<string, DecorArt | undefined>)[d];
       if (!a || !DECOR_BY_ID[d] || decorHome(DECOR_BY_ID[d]) !== region) continue;
+      // A piece that needs its home to have grown (D48 PR C: the duck fountain needs the pond) waits for it.
+      if ((DECOR_BY_ID[d].stage ?? 0) > st.stage) continue;
       const g = `<g data-decor="${d}">${a.draw()}</g>`;
       if (a.base < 0) sky.push(g);
       else items.push({ base: a.base, svg: g });

@@ -12,6 +12,7 @@ import type { BodyKind } from './species';
 import type { Expr } from './face';
 import { arc, bump, easeInOut, easeOut, easeOutBack, hold, seg, wiggle, type PoseDelta } from './pose';
 import { danceClip } from './dance';
+import { DECOR_MOTIONS, type Motion } from './motions';
 
 export interface ClipCtx {
   body: BodyKind;
@@ -759,6 +760,73 @@ export const ACTIVITY_CLIPS: Record<string, Clip> = {
     },
   },
 };
+
+// ------------------------------------------------------------------ the new decorations' motions (D48 PR C)
+
+/**
+ * A 3D toy's part in one of the shared motions (`three/motions.ts`): where it goes is the drawn rider's business (the
+ * stage carries the toy to it); this is what its body does meanwhile. Every one starts and ends at rest.
+ */
+export function motionClip(motion: Motion, ms: number): Clip {
+  return {
+    ms,
+    frame: (t, c) => {
+      const w = hold(t, 0.04, 0.96, 0.08);
+      switch (motion) {
+        case 'gather':
+        case 'peek':
+        case 'peekout': {
+          const look = motion === 'gather' ? 0 : wiggle(t, 0.25, 0.75, 1, 0.5);
+          return {
+            pose: sum(steps(t, 0.04, 0.24, 3), steps(t, 0.76, 0.96, 3), {
+              headYaw: look,
+              tilt: motion === 'gather' ? wiggle(t, 0.3, 0.7, 2, 0.12) : 0,
+              ears: 0.25 * w,
+              tail: wiggle(t, 0, 1, 5, 0.5),
+            }),
+            face: motion === 'gather' ? 'happy' : Math.abs(look) > 0.25 ? (look > 0 ? 'lookR' : 'lookL') : 'happy',
+          };
+        }
+        case 'rest':
+          return { pose: { squash: 0.06 * w + wiggle(t, 0.1, 0.9, 4, 0.015), headPitch: 0.22 * w, ears: -0.2 * w, tail: 0.2 * w }, face: t > 0.25 && t < 0.85 ? 'sleepy' : 'happy' };
+        case 'stage':
+        case 'dance':
+        case 'drum':
+          return {
+            pose: {
+              tilt: wiggle(t, 0.05, 0.95, motion === 'drum' ? 10 : 4, 0.14),
+              py: Math.abs(wiggle(t, 0.05, 0.95, motion === 'drum' ? 10 : 4, 0.06)),
+              armL: (0.6 + wiggle(t, 0.05, 0.95, 8, 0.4)) * w,
+              armR: (0.6 - wiggle(t, 0.05, 0.95, 8, 0.4)) * w,
+              tail: wiggle(t, 0, 1, 8, 0.6),
+            },
+            face: t > 0.75 && t < 0.92 ? 'laugh' : 'happy',
+          };
+        case 'ride':
+        case 'sled':
+        case 'swing':
+          return {
+            pose: { armL: 1.2 * w, armR: 1.2 * w, legL: 0.5 * w, legR: 0.5 * w, py: wiggle(t, 0, 1, motion === 'ride' ? 6 : 3, 0.015) * w, tail: wiggle(t, 0, 1, 6, 0.4), roll: motion === 'swing' ? wiggle(t, 0.05, 0.95, 3, 0.15) : 0 },
+            face: 'laugh',
+          };
+        case 'slide': {
+          const down = hold(t, 0.14, 0.62, 0.06);
+          return { pose: sum(jump(t, 0.62, 0.72, 0.08), { lean: -0.2 * down, armL: 2 * down, armR: 2 * down, armLOut: 0.6 * down, armROut: 0.6 * down, legL: 0.6 * down, legR: 0.6 * down }), face: down > 0.3 ? 'laugh' : 'happy' };
+        }
+        case 'chase':
+          return { pose: sum(jump(t, 0.06, 0.2, 0.1), jump(t, 0.32, 0.46, 0.12), jump(t, 0.56, 0.68, 0.1), jump(t, 0.74, 0.84, 0.08), { yaw: c.dir * Math.PI * 0.35 * Math.sin(seg(t, 0, 1) * Math.PI * 2) * w, ears: 0.3 * w, tail: wiggle(t, 0, 1, 6, 0.6) }), face: 'happy' };
+        case 'splash':
+          return { pose: { lean: (0.2 + wiggle(t, 0.1, 0.7, 3, 0.15)) * w, armL: (0.8 + wiggle(t, 0.1, 0.7, 3, 0.5)) * w, armR: (0.8 - wiggle(t, 0.1, 0.7, 3, 0.5)) * w, headPitch: 0.25 * w }, face: t > 0.7 ? 'laugh' : 'happy' };
+        case 'gaze':
+          return { pose: { headPitch: -0.45 * w, tilt: wiggle(t, 0.2, 0.8, 2, 0.08), ears: 0.2 * w }, face: 'stars' };
+        case 'ring':
+          return { pose: sum(jump(t, 0.12, 0.42, 0.22), jump(t, 0.5, 0.74, 0.16), { armR: 2.2 * hold(t, 0.12, 0.8, 0.1), armROut: 0.3 * w, ears: 0.3 * w }), face: t > 0.4 ? 'laugh' : 'happy' };
+      }
+    },
+  };
+}
+
+for (const [decor, { motion, ms }] of Object.entries(DECOR_MOTIONS)) ACTIVITY_CLIPS[decor] ??= motionClip(motion, ms);
 
 // ------------------------------------------------------------------ a meal (D48 PR B)
 

@@ -10,7 +10,8 @@ import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { afterDecorChange } from '../../app/events';
 import { isPlaceId } from '../../meta/catalogs/places';
 import type { FriendId } from '../art/companions';
-import { decorOf, type DecorId } from '../../meta/catalogs/decor';
+import { DECOR_SETS, SPOT_NAMES, decorOf, type DecorId } from '../../meta/catalogs/decor';
+import { setProgress } from '../../meta/sanctuary';
 import { sanctuaryDef, type RegionId } from '../../meta/catalogs/sanctuaries';
 import { isShown, owns, setShown } from '../../meta/sanctuary';
 import { activeSanctuary, arrivalProgress, isComplete, isOpen, markSeen, nextStage, regionChat, setActive, stageOf } from '../../meta/world';
@@ -19,6 +20,7 @@ import { animalPortrait } from '../art/animals';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
+import { sfx } from '../../services/audio';
 import { regionScene } from '../art/regions';
 import { decorIcon, SCENE_VIEWBOX } from '../art/sanctuary';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
@@ -139,6 +141,14 @@ export const regionScreen: ScreenDef = {
       reducedMotion: () => app.reducedMotion,
       // D46 PR B: a parade waits for the toys of the renderer there is now (rebuilt after the walk, say).
       toysReady: () => s3d.ready,
+      // D48 PR C: the Barn Bell rings for every newcomer.
+      onStart: (newcomer) => {
+        const bell = newcomer ? el.querySelector<SVGGElement>('.sanctuary__scene [data-decor="barnbell"]') : null;
+        if (!bell) return;
+        if (!app.reducedMotion) bell.classList.add('is-ringing');
+        sfx('bell');
+        scope.timeout(() => bell.classList.remove('is-ringing'), 2800);
+      },
     });
     const closeups = sceneCloseUps({
       host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),
@@ -323,12 +333,20 @@ export const regionScreen: ScreenDef = {
                   .map(
                     (d) => `<button class="row decor-row" role="switch" aria-checked="${isShown(save, d.id)}" data-toggle="${d.id}">
                       <span class="decor-row__icon">${decorIcon(d.id)}</span>
-                      <span class="row__label">${esc(d.name)}<small>${isShown(save, d.id) ? 'Out in the sanctuary' : 'Tucked away'}</small></span>
+                      <span class="row__label">${esc(d.name)}<small>${isShown(save, d.id) ? (d.slot && SPOT_NAMES[d.slot] ? `Out in ${SPOT_NAMES[d.slot]}` : 'Out in the sanctuary') : d.slot ? 'Tucked away (one piece per spot)' : 'Tucked away'}</small></span>
                       <span class="switch" aria-hidden="true"></span>
                     </button>`,
                   )
                   .join('')}</div>`
               : `<p class="empty">${open ? `Decorations and treats for the ${esc(def.short)} are in the Shop.` : 'Its decorations can be bought once it opens.'}</p>`
+          }
+          ${
+            id === 'farm'
+              ? (() => {
+                  const up = DECOR_SETS.filter((st) => setProgress(save, st.id).together);
+                  return up.length ? `<p class="muted region-sets">${ICON.sparkle}${up.map((st) => `<span class="set-chip" style="--set:${st.accent}">${esc(st.name)} is set up</span>`).join(' ')}</p>` : '';
+                })()
+              : ''
           }
           <button class="btn btn--secondary btn--block" data-act="shop">${ICON.bag}${esc(def.short)} decorations and treats</button>
         </section>` : ''}`;
@@ -519,6 +537,12 @@ export const regionScreen: ScreenDef = {
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;
       if (dec) {
         if (!app.save.onboarding.decorTipSeen) dismissSceneCue(el, 'decor');
+        // D48 PR C: the Festival Stage hosts the Farm's big dance: everyone, together (a solo show with one animal).
+        if (dec.dataset.decor === 'festivalstage' && el.querySelectorAll('.sanctuary__scene .sanctuary__pet').length > 1 && !parades.active) {
+          acts?.stop();
+          void parades.play();
+          return;
+        }
         if (acts && !acts.busy && !acts.play(dec.dataset.decor!)) {
           const anyone = !!el.querySelector('.sanctuary__scene .sanctuary__pet');
           toast(anyone ? 'Everyone’s busy with a trick. Try again in a moment.' : 'Once an animal lives here, they’ll love this.');

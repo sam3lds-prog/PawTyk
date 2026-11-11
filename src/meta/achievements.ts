@@ -4,7 +4,7 @@
  */
 
 import type { SaveV2 } from '../services/storage';
-import { DECOR } from './catalogs/decor';
+import { DECOR, DECOR_SETS, PRE_D48_DECOR, setPieces } from './catalogs/decor';
 import { PETS } from './catalogs/pets';
 import { grant } from './ledger';
 import { liveStreak } from './progression';
@@ -24,8 +24,13 @@ const solvedSize = (s: SaveV2, min: number) => Object.entries(s.stats.bestBySize
 /** Levels 1–20 actually cleared (a save that moved up for D35 hasn't played its new first chapter yet). */
 const firstChapterClears = (s: SaveV2) => Array.from({ length: 20 }, (_, i) => s.journey.clears[`L${i + 1}`]).filter(Boolean).length;
 
-/** The decorations "In Full Bloom" counts: not the Welcome Rescue Pack's own (D47), so no purchase is ever required. */
-const GARDEN = DECOR.filter((d) => d.unlock.kind !== 'pack').map((d) => d.id);
+/**
+ * The decorations "In Full Bloom" counts: not the Welcome Rescue Pack's own (D47), so no purchase is ever required; and
+ * only the collection it was set for (D48 PR C), so twenty-one new pieces never move a goal a player was working on.
+ */
+const GARDEN = DECOR.filter((d) => d.unlock.kind !== 'pack' && PRE_D48_DECOR.includes(d.id)).map((d) => d.id);
+/** D48 PR C: a themed set whose every piece is out together. */
+const setsOut = (s: SaveV2) => DECOR_SETS.filter((x) => setPieces(x.id).every((d) => !!s.inventory.decor[d.id] && !s.sanctuary.hidden[d.id])).length;
 const gardenOwned = (s: SaveV2) => GARDEN.filter((id) => !!s.inventory.decor[id]).length;
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
@@ -41,6 +46,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'zen_gardener', name: 'Zen Gardener', description: 'Solve five Zen boards.', icon: 'leaf', coins: 20, progress: (s) => [Math.min(5, s.zen.solved), 5] },
   { id: 'grand_thinker', name: 'Grand Thinker', description: 'Solve a 9×9 board (Paw Cup\'s Grand Hall).', icon: 'sparkle', coins: 40, progress: (s) => [solvedSize(s, 9) ? 1 : 0, 1] },
   { id: 'full_garden', name: 'In Full Bloom', description: `Own all ${GARDEN.length} decorations.`, icon: 'trophy', coins: 100, progress: (s) => [gardenOwned(s), GARDEN.length] },
+  { id: 'set_dresser', name: 'Set Dresser', description: 'Put a whole themed set out together on the Farm.', icon: 'home', coins: 40, progress: (s) => [Math.min(1, setsOut(s)), 1] },
 ];
 
 export function isUnlocked(save: SaveV2, id: string): boolean {

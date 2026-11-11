@@ -1,4 +1,11 @@
 /**
+ * D48 PR C: twenty-one more, most of them on the Farm and most of them things the animals use (an arch to gather
+ * under, a bench to doze on, a carousel to ride). So the Farm doesn't fill up, the new Farm pieces share four
+ * **spots** (`slot`): one piece out per spot at a time, chosen by the player, so nothing ever overlaps and the scene
+ * stays readable. Four **themed sets** (Spring Meadow, Harvest Festival, Cozy Camp, Barnyard Party) have one piece in
+ * each spot they use, so a whole set can be out together. A piece may need its home to have grown first (`stage`: the
+ * duck fountain needs the pond). Premium pieces are more of a spectacle, never better for anything.
+ *
  * Sanctuary decorations (the Pet Garden's, the Farm's and each region's). Each belongs to one sanctuary and has a fixed home in its scene (no freeform placement, so
  * items can't overlap or end up in invalid combinations). Everyday items are bought with Paw Coins (earned by solving),
  * special ones with video tokens (earned only by watching reward videos), premium ones with gems (App Store); a few are
@@ -54,7 +61,58 @@ export type DecorId =
   | 'ropebridge'
   | 'orchids'
   | 'fireflyjars'
-  | 'waterfall';
+  | 'waterfall'
+  // D48 PR C: the Farm's four spots
+  | 'flowerarch'
+  | 'applecart'
+  | 'bench'
+  | 'festivalstage'
+  | 'carousel'
+  | 'rainbowslide'
+  | 'butterflygarden'
+  | 'pumpkinpatch'
+  | 'camptent'
+  | 'partytable'
+  | 'whirligig'
+  | 'cornshocks'
+  | 'starlanterns'
+  | 'barnbell'
+  | 'bubblemachine'
+  | 'duckfountain'
+  // D48 PR C: one more in each other home
+  | 'windchimes'
+  | 'redrockslide'
+  | 'drumcircle'
+  | 'sledhill'
+  | 'vineswing';
+
+/** D48 PR C: the themed sets. */
+export type DecorSetId = 'spring' | 'harvest' | 'camp' | 'party';
+
+export interface DecorSet {
+  id: DecorSetId;
+  name: string;
+  blurb: string;
+  /** Its colour, for its chip. */
+  accent: string;
+}
+
+export const DECOR_SETS: readonly DecorSet[] = [
+  { id: 'spring', name: 'Spring Meadow', blurb: 'Flowers, butterflies and a tune on the breeze.', accent: '#7FB35D' },
+  { id: 'harvest', name: 'Harvest Festival', blurb: 'Pumpkins, apples and corn, with the scarecrow keeping watch.', accent: '#E07A2E' },
+  { id: 'camp', name: 'Cozy Camp', blurb: 'A tent, a bench and lanterns for the evening.', accent: '#5B7FB8' },
+  { id: 'party', name: 'Barnyard Party', blurb: 'A stage, a party table and a bell to ring everyone in.', accent: '#C9628E' },
+] as const;
+
+export const DECOR_SET_BY_ID: Record<DecorSetId, DecorSet> = Object.fromEntries(DECOR_SETS.map((x) => [x.id, x])) as Record<DecorSetId, DecorSet>;
+
+/** D48 PR C: where on the Farm a spot is, for the decoration card ("in the meadow by the path"). */
+export const SPOT_NAMES: Record<string, string> = {
+  'farm-meadow': 'the meadow by the path',
+  'farm-hill': 'the hill by the orchard',
+  'farm-corner': 'the corner by the big tree',
+  'farm-pond': 'the pond',
+};
 
 /** D47 PR 7: `pack`: only in an App Store bundle (the Welcome Rescue Pack), never sold on its own. */
 export type DecorUnlock = { kind: 'shop' } | { kind: 'chapter'; chapter: number } | { kind: 'pack'; pack: 'welcome' };
@@ -82,6 +140,12 @@ export interface DecorDefinition {
   /** Draw order in the scene (back to front). */
   layer: number;
   season: 'any' | 'spring' | 'autumn';
+  /** D48 PR C: the themed set it belongs to. */
+  set?: DecorSetId;
+  /** D48 PR C: the stage its home must have reached for it to be out (the duck fountain needs the pond). */
+  stage?: number;
+  /** D48 PR C: what the animals do with it, for its card ("Animals gather underneath"). */
+  play?: string;
 }
 
 export const DECOR: readonly DecorDefinition[] = [
@@ -207,6 +271,8 @@ export const DECOR: readonly DecorDefinition[] = [
     name: 'Friendly Scarecrow',
     blurb: 'A straw-stuffed scarecrow with a patched shirt. The birds are not scared of him at all.',
     cost: 120,
+    // D48 PR C: he keeps watch over the Harvest Festival (he has his own place, not a spot).
+    set: 'harvest',
     unlock: { kind: 'shop' },
     layer: 3,
     season: 'any',
@@ -437,6 +503,33 @@ export const DECOR: readonly DecorDefinition[] = [
     layer: 2,
     season: 'any',
   },
+  // ---------------------------------------------------------------- D48 PR C: the Farm's spots
+  // The meadow by the path (the middle of the Farm): one of six.
+  { id: 'flowerarch', sanctuary: 'farm', name: 'Flower Arch', blurb: 'A wooden arch covered in climbing roses and sweet peas.', play: 'Animals gather underneath and the petals fall.', cost: 180, slot: 'farm-meadow', set: 'spring', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'applecart', sanctuary: 'farm', name: 'Apple Cart', blurb: 'A painted cart heaped with red and green apples.', play: 'Animals hop up to see what’s inside.', cost: 200, slot: 'farm-meadow', set: 'harvest', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'bench', sanctuary: 'farm', name: 'Wooden Bench', blurb: 'A long bench with a cushion, just right for two.', play: 'Animals rest on it together.', cost: 120, slot: 'farm-meadow', set: 'camp', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'festivalstage', sanctuary: 'farm', name: 'Festival Stage', blurb: 'A premium decoration: a little stage with lights and bunting for the Farm’s big dances.', play: 'Tap it and everyone dances; celebrations light it up.', cost: null, gems: 120, slot: 'farm-meadow', set: 'party', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'carousel', sanctuary: 'farm', name: 'Mini Carousel', blurb: 'A premium decoration: a striped carousel with three painted ponies.', play: 'Animals take a gentle ride.', cost: null, gems: 75, slot: 'farm-meadow', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'rainbowslide', sanctuary: 'farm', name: 'Rainbow Slide', blurb: 'A premium decoration: a slide in every colour, with a ladder up the back.', play: 'Animals slide down and cheer.', cost: null, gems: 90, slot: 'farm-meadow', unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  // The hill by the orchard (in the distance): one of four.
+  { id: 'butterflygarden', sanctuary: 'farm', name: 'Butterfly Garden', blurb: 'A bed of lavender and cosmos that butterflies can’t resist.', play: 'Butterflies rise, and animals chase them.', cost: 160, slot: 'farm-hill', set: 'spring', unlock: { kind: 'shop' }, layer: 2, season: 'any' },
+  { id: 'pumpkinpatch', sanctuary: 'farm', name: 'Pumpkin Patch', blurb: 'Fat orange pumpkins on curling vines.', play: 'The piglet (and everyone else) investigates.', cost: 150, slot: 'farm-hill', set: 'harvest', unlock: { kind: 'shop' }, layer: 2, season: 'any' },
+  { id: 'camptent', sanctuary: 'farm', name: 'Cozy Tent', blurb: 'A canvas tent with a striped flap and a little flag.', play: 'Animals peek out of it.', cost: 140, slot: 'farm-hill', set: 'camp', unlock: { kind: 'shop' }, layer: 2, season: 'any' },
+  { id: 'partytable', sanctuary: 'farm', name: 'Party Table', blurb: 'A long table with a cake, cups and a paper garland.', play: 'Animals gather round for a party.', cost: 130, slot: 'farm-hill', set: 'party', unlock: { kind: 'shop' }, layer: 2, season: 'any' },
+  // The corner by the big tree (left, in front): one of five.
+  { id: 'whirligig', sanctuary: 'farm', name: 'Musical Windmill', blurb: 'A special decoration: a little windmill that plays a tune as it turns.', play: 'Tap it for a tune; animals dance to it.', cost: null, tokens: 4, slot: 'farm-corner', set: 'spring', unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  { id: 'cornshocks', sanctuary: 'farm', name: 'Corn Shocks', blurb: 'Bundles of dried corn stalks, tied with twine.', play: 'Animals play hide-and-seek behind them.', cost: 90, slot: 'farm-corner', set: 'harvest', unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  { id: 'starlanterns', sanctuary: 'farm', name: 'Star Lanterns', blurb: 'A special decoration: star-shaped paper lanterns on a crooked post.', play: 'Animals gaze up as they glow.', cost: null, tokens: 3, slot: 'farm-corner', set: 'camp', unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  { id: 'barnbell', sanctuary: 'farm', name: 'Barn Bell', blurb: 'A special decoration: a brass bell on a post that rings whenever a newcomer arrives.', play: 'Rings for every newcomer; tap it to ring it.', cost: null, tokens: 3, slot: 'farm-corner', set: 'party', unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  { id: 'bubblemachine', sanctuary: 'farm', name: 'Bubble Machine', blurb: 'A special decoration: a little machine that puffs out bubbles.', play: 'Animals chase the bubbles.', cost: null, tokens: 4, slot: 'farm-corner', unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  // The pond (once it's dug).
+  { id: 'duckfountain', sanctuary: 'farm', name: 'Duck Pond Fountain', blurb: 'A stone fountain for the middle of the pond, with a duck on top.', play: 'The ducks splash and swim round it.', cost: 250, slot: 'farm-pond', set: 'spring', stage: 3, unlock: { kind: 'shop' }, layer: 5, season: 'any' },
+  // ---------------------------------------------------------------- D48 PR C: one more in each other home
+  { id: 'windchimes', name: 'Wind Chimes', blurb: 'Silver chimes hung from the cottage eave, singing in the breeze.', play: 'Animals jump up to make them ring.', cost: 100, unlock: { kind: 'shop' }, layer: 3, season: 'any' },
+  { id: 'redrockslide', sanctuary: 'outback', name: 'Red Rock Slide', blurb: 'A smooth, sun-warmed slab of red rock, perfect for sliding.', play: 'Animals slide down it.', cost: 150, unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'drumcircle', sanctuary: 'savanna', name: 'Drum Circle', blurb: 'Three hand drums in the shade, ready for a rhythm.', play: 'Animals drum a little beat.', cost: 140, unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'sledhill', sanctuary: 'arctic', name: 'Sled Hill', blurb: 'A special decoration: a snowy slope with a little wooden sled.', play: 'Animals sled down it.', cost: null, tokens: 4, unlock: { kind: 'shop' }, layer: 4, season: 'any' },
+  { id: 'vineswing', sanctuary: 'amazon', name: 'Vine Swing', blurb: 'A leafy swing hanging from the rope bridge.', play: 'Animals swing on it.', cost: 130, unlock: { kind: 'shop' }, layer: 3, season: 'any' },
 ] as const;
 
 export const DECOR_BY_ID: Record<DecorId, DecorDefinition> = Object.fromEntries(DECOR.map((d) => [d.id, d])) as Record<DecorId, DecorDefinition>;
@@ -467,3 +560,17 @@ export function isDecorId(x: unknown): x is DecorId {
 export function chapterGift(chapter: number): DecorDefinition | null {
   return DECOR.find((d) => d.unlock.kind === 'chapter' && d.unlock.chapter === chapter) ?? null;
 }
+
+/** D48 PR C: the pieces of a themed set, in catalog order. */
+export function setPieces(set: DecorSetId): DecorDefinition[] {
+  return DECOR.filter((d) => d.set === set);
+}
+
+/** D48 PR C: the decorations that share a spot with this one (its alternatives), not counting itself. */
+export function spotMates(id: DecorId): DecorDefinition[] {
+  const slot = DECOR_BY_ID[id].slot;
+  return slot ? DECOR.filter((d) => d.slot === slot && d.id !== id) : [];
+}
+
+/** The ids every build before D48 sold (the "In Full Bloom" collection keeps to these, so it never moves). */
+export const PRE_D48_DECOR: readonly DecorId[] = DECOR.slice(0, DECOR.findIndex((d) => d.id === 'flowerarch')).map((d) => d.id);

@@ -1948,3 +1948,40 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
 - Prices are starting points for the economy check in PR F (a new level pays 35 coins).
 - Tests: `feeding.dom.test` (catalog, offers, bundles, quick taps, feasts, bowls and rollback, coins-only friendship,
   the meal in the scene incl. stop and reduced motion, the Farm's card → meal, the Shop round trip, the tray's Feed).
+
+### PR C — decorations: twenty-one pieces the animals use, spots, sets, a preview
+- **21 new pieces**, 16 on the Farm, one in each other home: Flower Arch (180), Apple Cart (200), Wooden Bench (120),
+  Festival Stage (120 gems), Mini Carousel (75 gems), Rainbow Slide (90 gems); Butterfly Garden (160), Pumpkin Patch
+  (150), Cozy Tent (140), Party Table (130); Musical Windmill (4 tokens), Corn Shocks (90), Star Lanterns (3 tokens),
+  Barn Bell (3 tokens), Bubble Machine (4 tokens); Duck Pond Fountain (250); Wind Chimes (Pet Garden, 100), Red Rock
+  Slide (Outback, 150), Drum Circle (Savanna, 140), Sled Hill (Arctic, 4 tokens), Vine Swing (Amazon, 130). Prices are
+  the plan's starting points (PR F checks them against the 35 coins a level). Original art (`art/decorD48.ts`), 3D for
+  the Farm walk (`three/decorModels.ts`, with solid colliders), and something to do for every one.
+- **Spots, not clutter.** The Farm was already full, so the 16 Farm pieces share four spots (`slot`): the meadow by the
+  path (six), the hill by the orchard (four, drawn small: far away), the corner by the big tree (five, tall and narrow),
+  the pond (the fountain). One piece per spot is out at a time; putting one out (or buying it) tucks away the one there,
+  and the card says which. Each spot's pieces are drawn to fit its box, so nothing overlaps another spot or covers an
+  animal (test; the cow stands 6 units further right to make room). Buttercup's spot moved from x 262 to 268.
+- **Interactive**: one set of 15 **motions** (`three/motions.ts`) for all 21 (gather, peek, rest, ride, slide, chase,
+  splash, ring…), drawn by `styles/decor-d48.css` and the same motion as a 3D clip (`motionClip`), always the same
+  length; the decoration's own part moves with it (the carousel's ponies go round, the sled goes down, the vine swings,
+  the bell swings). The Barn Bell, the Wind Chimes and the Musical Windmill make their own sound when the player starts
+  them (never by themselves). The **Barn Bell rings whenever a parade welcomes a newcomer**; a tap on the **Festival
+  Stage** starts a dance for everyone (a solo show with one animal); its lights chase during any celebration there.
+- **Themed sets**: Spring Meadow (arch, butterfly garden, musical windmill, pond fountain), Harvest Festival (cart,
+  pumpkins, corn shocks, and the scarecrow), Cozy Camp (bench, tent, star lanterns), Barnyard Party (stage, party
+  table, barn bell). A set has at most one piece per spot, so it can always be out together. The Shop's Farm decor has a
+  *Themed sets* section (pieces, owned count, **Put the whole set out**); a home's list says which sets are set up; new
+  badge **Set Dresser** (a whole set out). *In Full Bloom* keeps counting the collection it was set for (the pieces before
+  D48), so new pieces never move a goal a player was working toward.
+- **The card previews it in the player's own home**: the home as it is, this piece out in its spot (its spot-mate away),
+  framed round it with a dashed ring; **Show me** plays what the animals do with it, with one of the home's own animals.
+  It says where it stands and what it replaces, its set and how much of it is owned, and when it will appear (the
+  fountain waits for the pond: `stage`, honoured by the drawing, the walk and `homeState` alike). Owned pieces have
+  **Put it out / Tuck it away** right on the card. Premium pieces are more of a spectacle, never better at anything.
+- Saves: decorations, hidden flags and set membership are kept by id (older builds keep unknown ids), so a save from
+  before D48 shows exactly what it did (test), and a rollback keeps owned pieces.
+- Tests: `decorations.dom.test` (art, activity and 3D length for each, prices, spots and swapping, no overlaps with other
+  spots or the animals, the pond's wait, sets and the badge, the preview, older saves, the Shop card's preview, spot,
+  set and show/hide, the sets section, the stage's dance and the bell); `walkPlaces` and `toys` updated for spots and
+  motions.

@@ -15,6 +15,7 @@ import { petRigMarkup } from './pets';
 import { COMPANION_BY_ID, COMPANIONS, type CompanionId } from '../../meta/catalogs/companions';
 import { companionFigure, woodlandNook } from './companions';
 import { REGION_DECOR_ART, type RegionDecorId } from './regions';
+import { D48_DECOR_ART, type D48DecorId } from './decorD48';
 import { OUT, SHADOW, dusk, heartAbove, iconFrom, type DecorArt } from './sceneKit';
 
 // ------------------------------------------------------------------ backdrop
@@ -84,7 +85,10 @@ function brook(): string {
 const paw = (x: number, y: number, c = '#c8ae84') =>
   `<g fill="${c}"><ellipse cx="${x}" cy="${y + 0.7}" rx="2.4" ry="1.7"/><circle cx="${x - 2.3}" cy="${y - 1.3}" r="0.85"/><circle cx="${x}" cy="${y - 2.1}" r="0.85"/><circle cx="${x + 2.3}" cy="${y - 1.3}" r="0.85"/></g>`;
 
-type HarmonyDecorId = Exclude<DecorId, RegionDecorId>;
+type HarmonyDecorId = Exclude<DecorId, RegionDecorId | D48DecorId>;
+
+/** A Pet Garden decoration's drawing (D48 PR C's live in their own module). */
+const harmonyArt = (id: DecorId): DecorArt | undefined => (DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id] ?? (D48_DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id];
 
 const DECOR_ART: Record<HarmonyDecorId, DecorArt> = {
   kite: {
@@ -430,7 +434,8 @@ export function sanctuaryScene(state: SceneState, id = 'sanct'): string {
   const shown = new Set(state.decor);
   const items: Array<{ base: number; svg: string }> = [];
   for (const d of DECOR) {
-    const a = (DECOR_ART as Partial<Record<DecorId, DecorArt>>)[d.id];
+    if ((d.sanctuary ?? 'harmony') !== 'harmony') continue;
+    const a = harmonyArt(d.id);
     if (a && shown.has(d.id)) items.push({ base: a.base, svg: `<g data-decor="${d.id}">${a.draw()}</g>` });
   }
   for (const p of PETS) {
@@ -462,13 +467,18 @@ export function sanctuaryScene(state: SceneState, id = 'sanct'): string {
 
 /** Standalone icon of one decoration (shop cards, reward sheets). */
 export function decorIcon(id: DecorId, label?: string): string {
-  const a = (DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id] ?? (REGION_DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id];
+  const a = harmonyArt(id) ?? (REGION_DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id];
   return a ? iconFrom(a, label) : '';
+}
+
+/** A decoration's drawing in its scene (D48 PR C: for the card's preview). */
+export function decorArt(id: DecorId): DecorArt | null {
+  return harmonyArt(id) ?? (REGION_DECOR_ART as Partial<Record<DecorId, DecorArt>>)[id] ?? null;
 }
 
 /** Every decoration has art (checked by tests). */
 export function hasDecorArt(id: DecorId): boolean {
-  return id in DECOR_ART || id in REGION_DECOR_ART;
+  return id in DECOR_ART || id in REGION_DECOR_ART || id in D48_DECOR_ART;
 }
 
 export const SCENE_VIEWBOX = '0 0 360 300';

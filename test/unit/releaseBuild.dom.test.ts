@@ -110,7 +110,9 @@ describe('a release build with no store, no videos and no leaderboard', () => {
     grantItem(app.save, 'test:gems', 'gem', 200, 'store');
     expect(currencyOffered(app.save, 'gem')).toBe(true);
     router.go({ screen: 'shop', sanctuary: 'farm' });
-    expect(all('.shop-section--premium [data-decor]').map((b) => b.dataset.decor)).toEqual([premium.id]);
+    // Every premium Farm piece is for sale again (not the Welcome Pack's own: it is never sold alone).
+    const farmPremium = DECOR.filter((d) => decorTier(d) === 'premium' && decorHome(d) === 'farm' && d.unlock.kind === 'shop').map((d) => d.id);
+    expect(all('.shop-section--premium [data-decor]').map((b) => b.dataset.decor)).toEqual(farmPremium);
     expect(document.querySelector('.shop-section--premium .price--gem')).toBeTruthy();
     expect(walletPills()).toContain('200 gems');
     // Still no Gems tab: there's nowhere to buy more.

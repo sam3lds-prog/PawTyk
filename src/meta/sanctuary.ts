@@ -4,7 +4,7 @@
  */
 
 import type { SaveV2 } from '../services/storage';
-import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, type DecorId } from './catalogs/decor';
+import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, setPieces, type DecorId, type DecorSetId } from './catalogs/decor';
 import type { SanctuaryId } from './catalogs/sanctuaries';
 import { isOpen } from './world';
 import { itemBalance, spendItem } from './items';
@@ -106,6 +106,48 @@ export function setShown(save: SaveV2, id: DecorId, shown: boolean): void {
     const slot = DECOR_BY_ID[id].slot;
     if (slot) for (const d of DECOR) if (d.slot === slot && d.id !== id && owns(save, d.id)) save.sanctuary.hidden[d.id] = true;
   } else save.sanctuary.hidden[id] = true;
+}
+
+// ------------------------------------------------------------------ themed sets (D48 PR C)
+
+export interface SetProgress {
+  /** Pieces owned, of all. */
+  owned: number;
+  total: number;
+  /** Pieces out in the scene. */
+  out: number;
+  /** Every piece owned. */
+  complete: boolean;
+  /** Every piece out together. */
+  together: boolean;
+}
+
+export function setProgress(save: Pick<SaveV2, 'inventory' | 'sanctuary'>, set: DecorSetId): SetProgress {
+  const pieces = setPieces(set);
+  const owned = pieces.filter((d) => owns(save, d.id)).length;
+  const out = pieces.filter((d) => isShown(save, d.id)).length;
+  return { owned, total: pieces.length, out, complete: owned === pieces.length, together: out === pieces.length };
+}
+
+/**
+ * Puts every owned piece of a set out (each in its own spot, tucking away whatever stood there). Returns the pieces it
+ * brought out.
+ */
+export function showSet(save: SaveV2, set: DecorSetId): DecorId[] {
+  const out: DecorId[] = [];
+  for (const d of setPieces(set))
+    if (owns(save, d.id) && !isShown(save, d.id)) {
+      setShown(save, d.id, true);
+      out.push(d.id);
+    }
+  return out;
+}
+
+/** The piece out in the same spot as `id` now (the one putting `id` out would tuck away), if any. */
+export function shownInSpot(save: Pick<SaveV2, 'inventory' | 'sanctuary'>, id: DecorId): DecorId | null {
+  const slot = DECOR_BY_ID[id].slot;
+  if (!slot) return null;
+  return DECOR.find((d) => d.slot === slot && d.id !== id && isShown(save, d.id))?.id ?? null;
 }
 
 // ------------------------------------------------------------------ affection and small talk (cosmetic only)
