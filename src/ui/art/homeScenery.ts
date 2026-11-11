@@ -16,6 +16,7 @@
  * Everything here is original art drawn in code, in the scenes' 360×300 frame.
  */
 
+import { butterfly as botanyButterfly, kindFor, tuft } from './botany';
 import type { BaseRegionId } from '../../meta/catalogs/sanctuaries';
 import { OUT, SHADOW } from './sceneKit';
 
@@ -49,12 +50,11 @@ export interface HomeScenery {
 
 // ------------------------------------------------------------------ small pieces
 
-const butterfly = (x: number, y: number, c: string, c2 = '#fff') =>
-  `<g class="sp-birds"><path d="M${x} ${y} c-4 -5 -8 -3 -6 1 c1 2 4 2 6 -1z" fill="${c}"/><path d="M${x} ${y} c4 -5 8 -3 6 1 c-1 2 -4 2 -6 -1z" fill="${c}"/><path d="M${x} ${y} c-3 2 -4 5 -1 5 c1 0 1 -2 1 -5z M${x} ${y} c3 2 4 5 1 5 c-1 0 -1 -2 -1 -5z" fill="${c}" opacity="0.8"/><circle cx="${x - 3.4}" cy="${y - 1.6}" r="0.8" fill="${c2}"/><circle cx="${x + 3.4}" cy="${y - 1.6}" r="0.8" fill="${c2}"/><path d="M${x} ${y - 1} v3" stroke="#3d3229" stroke-width="0.8" stroke-linecap="round"/></g>`;
+/** A butterfly of the kind its colour stands for (D47 PR 1: fore- and hindwings, veins, a border, antennae). */
+const butterfly = (x: number, y: number, c: string, _c2 = '#fff') => botanyButterfly(x, y, kindFor(c), { scale: 0.62, angle: ((x * 7 + y * 3) % 50) - 25, open: (x + y) % 2 ? 0.8 : 1 });
 
-/** A tuft that sways from its root. */
-const grass = (x: number, y: number, c: string, h = 1) =>
-  `<g class="sp-grass" stroke="${c}" stroke-width="1.5" stroke-linecap="round" fill="none"><path d="M${x} ${y} q-3 ${-6 * h} -7 ${-9 * h} M${x} ${y} q0 ${-7 * h} -2 ${-12 * h} M${x} ${y} q1 ${-7 * h} 3 ${-12 * h} M${x} ${y} q4 ${-5 * h} 8 ${-8 * h}"/></g>`;
+/** A clump of grass that sways from its root (D47 PR 1: organic blades). */
+const grass = (x: number, y: number, c: string, h = 1) => tuft(x, y, c, h);
 
 /** Leaves (or petals, or snow) that drift down a little way. */
 const drift = (pts: Array<[number, number]>, c: string, shape: 'leaf' | 'dot' = 'leaf') =>

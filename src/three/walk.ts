@@ -6,12 +6,13 @@
  *
  * Getting round: drag to look, tap the ground to walk there, tap an animal to go and say hello, or use the arrow
  * buttons (and the keyboard). Quality tiers: high (sharp, every frame) until frames come slow, then lite (lower
- * resolution, fewer grass tufts). It draws only while it is showing; leaving the app pauses it.
+ * resolution, a thinner meadow). The meadow (D47: grass, wildflowers, butterflies) is `meadow.ts`. It draws only while it is showing; leaving the app pauses it.
  */
 
 import * as THREE from 'three';
 import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
+import { buildMeadow, type Meadow } from './meadow';
 import { addLights } from './lights';
 import { toySpec } from './species';
 import { Toy, ToyKit } from './toy';
@@ -29,6 +30,7 @@ import {
   landmarksAt,
   nudge,
   obstaclesAt,
+  pathOffset,
   route,
   settle,
   stepWalker,
@@ -115,6 +117,8 @@ export class FarmWalk {
   private barnOpen = 0;
   /** The decorations standing here (tests and the QA page). */
   readonly decor: FarmDecor[];
+  /** The grass, wildflowers and butterflies (D47 PR 1). */
+  private meadow!: Meadow;
 
   constructor(private readonly o: WalkOptions) {
     this.quality = o.quality;
@@ -217,6 +221,9 @@ export class FarmWalk {
     if (f.has('windmill')) this.buildWindmill();
     if (f.has('party')) this.buildPartyLights(ev);
     for (const d of this.decor) this.buildDecor(d);
+    // D47 PR 1: the meadow (grass, wildflowers, clover, butterflies), clear of everything standing here.
+    this.meadow = buildMeadow(this.o.stage, this.decor, this.quality, groundY, (d) => this.disposables.push(d));
+    this.scene.add(this.meadow.root);
     this.buildPastureLife();
     this.buildResidents();
   }
@@ -237,11 +244,10 @@ export class FarmWalk {
       const z = pos.getZ(i);
       pos.setY(i, groundY(x, z));
       // The path: from the gate to the barn, a gentle S.
-      const px = Math.sin((z + 20) * 0.09) * 3 + (z < 0 ? (-z / 12) * 8 : 0);
-      const onPath = z < 24 && z > -10 && Math.abs(x - px) < 1.3;
+      const off = pathOffset(x, z);
       const n = (Math.sin(x * 1.7) * Math.cos(z * 1.3) + 1) / 2;
       c.copy(grass).lerp(grass2, n * 0.7);
-      if (onPath) c.copy(dirt).lerp(grass, Math.max(0, Math.abs(x - px) - 0.8) * 1.4);
+      if (off < 1.3) c.copy(dirt).lerp(grass, Math.max(0, off - 0.8) * 1.4);
       colors.push(c.r, c.g, c.b);
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -250,22 +256,7 @@ export class FarmWalk {
     this.disposables.push(m);
     this.ground = new THREE.Mesh(g, m);
     this.scene.add(this.ground);
-    // Grass tufts, scattered (fewer in the lite tier).
-    const n = this.quality === 'high' ? 520 : 160;
-    const tuft = this.geo(new THREE.ConeGeometry(0.05, 0.26, 4));
-    const tm = this.mat('#6fa54e');
-    const inst = new THREE.InstancedMesh(tuft, tm, n);
-    const m4 = new THREE.Matrix4();
-    let seed = 7;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < n; i++) {
-      const x = (rnd() - 0.5) * 70;
-      const z = (rnd() - 0.5) * 70;
-      const s = 0.7 + rnd() * 0.8;
-      m4.makeRotationZ((rnd() - 0.5) * 0.4).scale(new THREE.Vector3(s, s, s)).setPosition(x, groundY(x, z) + 0.11 * s, z);
-      inst.setMatrixAt(i, m4);
-    }
-    this.scene.add(inst);
+    // D47: the grass, wildflowers and butterflies are the meadow's (built with the rest of the world, in build()).
   }
 
   private buildHills(): void {
@@ -563,42 +554,19 @@ export class FarmWalk {
     });
   }
 
-  /** The pasture's moment (D45 PR C): butterflies rise from the clover, flutter round and settle again. */
+  /**
+   * The pasture's moment (D45 PR C): butterflies rise from the clover, flutter round and settle again. Since D47 they
+   * are the meadow's own butterflies, resting on the pasture's clover: arriving sends them up together.
+   */
   private buildPastureLife(): void {
-    const wingG = this.geo(new THREE.CircleGeometry(0.09, 10));
-    const flies = ['#f6a5c0', '#ffd84a', '#9fd3f2', '#ffffff', '#f6a5c0'].map((c, i) => {
-      const m = new THREE.MeshBasicMaterial({ color: col(c), side: THREE.DoubleSide });
-      this.disposables.push(m);
-      const g = new THREE.Group();
-      g.visible = false;
-      const l = new THREE.Group();
-      const r = new THREE.Group();
-      this.add(wingG, m, -0.08, 0, 0, l);
-      this.add(wingG, m, 0.08, 0, 0, r);
-      g.add(l, r);
-      this.scene.add(g);
-      return { g, l, r, x: -2.5 + i * 1.3, z: 4.5 + (i % 2) * 2.2, a: i * 1.7 };
-    });
-    // A patch of clover flowers where they live.
-    const cl = this.geo(new THREE.SphereGeometry(0.07, 8, 6));
-    const pink = this.mat('#f4b6cf');
-    for (const f of flies) for (const [dx, dz] of [[0, 0], [0.25, 0.18], [-0.2, 0.22]]) this.add(cl, pink, f.x + dx, groundY(f.x, f.z) + 0.1, f.z + dz);
-    this.moments.set('pasture', {
+    const m: Moment = {
       start: -1e9,
       ms: 5200,
       frame: (t) => {
-        for (const f of flies) {
-          const k = Math.sin(Math.min(1, t) * Math.PI);
-          f.g.visible = t > 0 && t < 1;
-          const a = f.a + t * 7;
-          f.g.position.set(f.x + Math.cos(a) * k * 1.1, groundY(f.x, f.z) + 0.15 + k * 1.3 + Math.sin(a * 2.3) * 0.12, f.z + Math.sin(a) * k * 1.1);
-          f.g.rotation.y = -a;
-          const flap = Math.abs(Math.sin(t * 90 + f.a)) * 1.2;
-          f.l.rotation.z = flap;
-          f.r.rotation.z = -flap;
-        }
+        if (t < 0.5) this.meadow.butterflies.scatter(m.start);
       },
-    });
+    };
+    this.moments.set('pasture', m);
   }
 
   /** One of the player's decorations (D45 PR C), where the drawn Farm has it too. */
@@ -783,6 +751,8 @@ export class FarmWalk {
 
   setQuality(q: 'high' | 'lite'): void {
     this.quality = q;
+    // Fewer grass clumps, flowers and butterflies too (D47).
+    this.meadow.setTier(q);
     this.renderer.setPixelRatio(q === 'high' ? Math.min(devicePixelRatio || 1, 2) : 1);
     const s = new THREE.Vector2();
     this.renderer.getSize(s);
@@ -791,6 +761,11 @@ export class FarmWalk {
 
   get tier(): 'high' | 'lite' {
     return this.quality;
+  }
+
+  /** What the meadow is drawing (tests and the QA page). */
+  get meadowStats(): ReturnType<Meadow['stats']> {
+    return this.meadow.stats();
   }
 
   private step(dt: number, now: number): void {
@@ -851,6 +826,7 @@ export class FarmWalk {
       r.actor.update(now, !still);
     }
     if (this.windmillSails && !still) this.windmillSails.rotation.z += dt * 0.6;
+    this.meadow.update(dt, still, w);
     this.stepPlaces(dt, now, still);
   }
 
@@ -943,6 +919,7 @@ export class FarmWalk {
     const y = groundY(w.x, w.z) + EYE;
     this.camera.position.set(w.x, y, w.z);
     this.camera.rotation.set(this.pitch, w.yaw, 0, 'YXZ');
+    this.meadow.follow(w.x, w.z);
     this.renderer.render(this.scene, this.camera);
     noteSharedTextures(this.renderer, this.scene);
     this.drawn++;

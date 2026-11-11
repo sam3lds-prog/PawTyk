@@ -183,6 +183,16 @@ export function groundY(x: number, z: number): number {
   return rise + Math.sin(x * 0.21) * Math.cos(z * 0.17) * 0.12 * Math.min(1, r / 12);
 }
 
+/** The dirt path's middle at z: from the gate to the barn, a gentle S (D47: shared by the ground and the meadow). */
+export function pathX(z: number): number {
+  return Math.sin((z + 20) * 0.09) * 3 + (z < 0 ? (-z / 12) * 8 : 0);
+}
+
+/** How far a point is from the path's middle across it, or Infinity off its length (it runs from the gate to the barn). */
+export function pathOffset(x: number, z: number): number {
+  return z < 24 && z > -10 ? Math.abs(x - pathX(z)) : Infinity;
+}
+
 /** Turns `from` toward `to` by at most `max` radians (the short way round). */
 export function turnToward(from: number, to: number, max: number): number {
   let d = to - from;
