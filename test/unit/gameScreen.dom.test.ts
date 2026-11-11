@@ -1160,7 +1160,11 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(goal.hidden).toBe(false);
     expect(goal.textContent).toMatch(/Bring Truffle the piglet home/);
     expect(goal.textContent).toMatch(/3 more puzzles, and Truffle moves in/);
-    expect(goal.querySelector('[data-act="play"]')?.textContent).toBe('Play level 2');
+    // D49 PR A: an interaction with Cotton first (the first treat is free), then the Journey.
+    expect(goal.querySelector('[data-act="snack"]')?.textContent).toMatch(/Give Cotton a welcome snack/);
+    expect(goal.textContent).toMatch(/Your first treat is on us/);
+    expect(goal.querySelector('[data-act="play"]')?.textContent).toBe('Continue to level 2');
+    expect(goal.querySelector('[data-act="visit"]')).toBeNull();
     // The World's "New" marker is already read: the player has just seen the news.
     expect(app.save.world.unseen.farm).toBeUndefined();
     (goal.querySelector('[data-act="play"]') as HTMLButtonElement).click();
@@ -1168,7 +1172,7 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(app.active?.mode).toMatchObject({ kind: 'level', level: 2 });
   });
 
-  it('Skip goes straight to the goal and stops the steps still to come; Visit opens the Farm', () => {
+  it('Skip goes straight to the goal and stops the steps still to come; the welcome snack opens the Farm', () => {
     start(1);
     solveBoard();
     vi.advanceTimersByTime(200);
@@ -1176,16 +1180,16 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
     expect(title()).toBe('Cotton is home!');
     expect(arrival()!.querySelector('.is-waiting')).toBeNull();
-    const play = arrival()!.querySelector<HTMLElement>('[data-act="play"]')!;
-    expect(document.activeElement).toBe(play);
+    const snack = arrival()!.querySelector<HTMLElement>('[data-act="snack"]')!;
+    expect(document.activeElement).toBe(snack);
     // Nothing replays behind the goal: no grow-in, no drop-in, the caption stays.
     vi.advanceTimersByTime(5000);
     expect(title()).toBe('Cotton is home!');
     expect(arrival()!.querySelector('.is-new, .is-arriving')).toBeNull();
-    expect(document.activeElement).toBe(play);
-    (arrival()!.querySelector('[data-act="visit"]') as HTMLButtonElement).click();
-    // D45 PR B: the Farm welcomes Cotton with the parade, and is told the introduction has been made.
-    expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm', welcome: ['cotton'], met: true });
+    expect(document.activeElement).toBe(snack);
+    snack.click();
+    // D49 PR A: the Farm, told the introduction has been made, where Cotton has her snack at once.
+    expect(app.router.route).toMatchObject({ screen: 'region', id: 'farm', welcome: ['cotton'], met: true, snack: true });
   });
 
   it('under reduced motion it is the end at once: the scene as it is now, the news and the goal', () => {
@@ -1196,7 +1200,7 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!.hidden).toBe(false);
     expect(arrival()!.querySelector('.is-waiting')).toBeNull();
     // Focus is inside, on the main button (Skip is hidden: there is nothing to skip).
-    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="snack"]'));
   });
 
   it('is a modal: the game behind it is inert and Tab stays inside', () => {
@@ -1207,12 +1211,12 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     expect(behind.length).toBeGreaterThan(0);
     expect(behind.every((n) => (n as HTMLElement).inert)).toBe(true);
     (arrival()!.querySelector('[data-act="skip"]') as HTMLButtonElement).click();
-    const visit = arrival()!.querySelector<HTMLElement>('[data-act="visit"]')!;
-    visit.focus();
+    const play = arrival()!.querySelector<HTMLElement>('[data-act="play"]')!;
+    play.focus();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
-    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="play"]'));
+    expect(document.activeElement).toBe(arrival()!.querySelector('[data-act="snack"]'));
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
-    expect(document.activeElement).toBe(visit);
+    expect(document.activeElement).toBe(play);
   });
 
   it('a Daily solved first keeps its own results, with Cotton to meet on them', () => {

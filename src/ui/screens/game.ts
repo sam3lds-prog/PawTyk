@@ -1672,7 +1672,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           if (typeof next === 'object') playMode(next);
           else app.router.back({ screen: 'journey' });
         },
-        // The Farm welcomes the newcomer with its parade (D45 PR B); the arrival has already said who came home.
+        // D49 PR A: the Farm, where the newcomer has its welcome snack at once (its parade waits under the scene); the
+        // arrival has already said who came home.
+        onSnack: () => app.router.go({ screen: 'region', id: growth.sanctuary as RegionId, welcome: [hero.animal], met: true, snack: true }),
+        // The Farm welcomes the newcomer with its parade (D45 PR B).
         onVisit: () => app.router.go({ screen: 'region', id: growth.sanctuary as RegionId, welcome: [hero.animal], met: true }),
       });
       return;

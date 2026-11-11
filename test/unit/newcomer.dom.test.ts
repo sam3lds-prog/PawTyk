@@ -90,24 +90,29 @@ describe('the newcomer is easy to find (D39)', () => {
   });
 });
 
-describe('the arrival ends with the next goal (D40 PR C)', () => {
-  it('after Meet, once the Welcome Parade has played (D44 PR E), a card says what the next puzzles bring closer', async () => {
+describe('the arrival ends with the next goal (D40 PR C; D49 PR A: in the welcome card)', () => {
+  it('after Meet, once the Welcome Parade has played (D44 PR E), one card: a snack for the newcomer, the way on, and what the next puzzles bring closer', async () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
     await vi.advanceTimersByTimeAsync(400);
-    // The parade first (still, under the reduced motion set above): the goal waits for it.
+    // The parade first (still, under the reduced motion set above): the card waits for it.
     expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
-    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).toBeNull();
     await vi.advanceTimersByTimeAsync(PARADE_MS);
     expect(document.querySelector('.sanctuary__scene.is-parading')).toBeNull();
-    const goal = document.querySelector('[data-next-goal]')!;
-    expect(goal).not.toBeNull();
-    expect(goal.textContent).toMatch(/Next goal/);
-    expect(goal.textContent).toMatch(/Buttercup the calf comes home in \d+ more puzzles/);
-    expect(goal.querySelector('[data-act="play"]')?.textContent).toMatch(/Play level \d+/);
+    const card = document.querySelector('[data-welcome-card]')!;
+    expect(card).not.toBeNull();
+    expect(card.textContent).toMatch(/Truffle is home!/);
+    // One primary action (an interaction with the newcomer) and one secondary (the Journey); no second goal card.
+    expect(card.querySelector('[data-act="welcome-snack"]')?.textContent).toMatch(/Give Truffle a welcome snack/);
+    expect(card.textContent).toMatch(/Your first treat is on us/);
+    expect(card.querySelector('[data-act="welcome-play"]')?.textContent).toMatch(/Continue to level \d+/);
+    expect(card.querySelectorAll('.btn').length).toBe(2);
+    expect(card.textContent).toMatch(/Next: Buttercup the calf comes home in \d+ more puzzles/);
+    expect(document.querySelector('[data-next-goal]')).toBeNull();
     // An ordinary visit has none.
     router.go({ screen: 'region', id: 'farm' });
-    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('[data-welcome-card], [data-next-goal]')).toBeNull();
   });
 
   it('with every animal home, the goal is the next stage, else the next home', async () => {
@@ -126,20 +131,20 @@ describe('the arrival ends with the next goal (D40 PR C)', () => {
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
     await vi.advanceTimersByTimeAsync(400 + PARADE_MS);
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
     expect(router.route).toMatchObject({ screen: 'region', id: 'farm' });
     expect((router.route as { welcome?: unknown }).welcome).toBeUndefined();
     await vi.advanceTimersByTimeAsync(3000);
     router.go({ screen: 'pets' });
     router.back({ screen: 'world' });
     await vi.advanceTimersByTimeAsync(3000);
-    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('[data-welcome-card], [data-next-goal]')).toBeNull();
     expect(document.querySelector('.sanctuary__scene.is-parading, [data-trick^="dance:"]')).toBeNull();
     expect(document.querySelector('.sp-spotlight')).toBeNull();
     expect(document.querySelector('.resident.is-new')).toBeNull();
   });
 
-  it("a new player's starter gift waits until the welcome has played, so it never covers it", async () => {
+  it("a new player's starter gift waits until the welcome has played and the snack has been eaten, so it never covers either", async () => {
     app.save.onboarding.starterDecorChosen = false;
     const router = mount();
     router.go({ screen: 'region', id: 'farm', welcome: ['truffle'] });
@@ -147,7 +152,11 @@ describe('the arrival ends with the next goal (D40 PR C)', () => {
     expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
     expect(document.querySelector('.sheet [data-choose]')).toBeNull();
     await vi.advanceTimersByTimeAsync(PARADE_MS);
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
+    expect(document.querySelector('.sheet [data-choose]')).toBeNull();
+    (document.querySelector('[data-act="welcome-snack"]') as HTMLButtonElement).click();
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(document.querySelector('[data-welcome-card="fed"]')).not.toBeNull();
     expect(document.querySelector('.sheet [data-choose]')).not.toBeNull();
   });
 
@@ -170,7 +179,8 @@ describe('the arrival ends with the next goal (D40 PR C)', () => {
     expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
     expect(document.querySelector('[data-friend="juniper"], [data-pet="juniper"]')?.getAttribute('data-trick')).toMatch(/^dance:newcomer:/);
     await vi.advanceTimersByTimeAsync(PARADE_MS);
-    expect(document.querySelector('[data-next-goal]')?.textContent).toMatch(/Next goal/);
+    expect(document.querySelector('[data-welcome-card]')?.textContent).toMatch(/Juniper is home!/);
+    expect(document.querySelector('[data-welcome-card]')?.textContent).toMatch(/Next: /);
   });
 });
 

@@ -74,8 +74,13 @@ describe('Featured for your home', () => {
     for (const p of featuredFor(s, 'farm', coinsOnly)) {
       if (p.kind === 'decor') expect(DECOR_BY_ID[p.id].cost, p.id).not.toBeNull();
     }
-    // With them, a special piece can be featured for a currency the player already has.
-    expect(featuredFor(s, 'farm', all).some((p) => p.kind === 'decor' && (DECOR_BY_ID[p.id].gems || DECOR_BY_ID[p.id].tokens))).toBe(true);
+    // With them, a special piece can be featured for a currency the player already has (D49 PR A: after the
+    // decoration, trick and food, so where nobody lives yet to suggest those for).
+    const nobody = defaultSave(NOW);
+    nobody.journey.nextLevel = 41;
+    grantItem(nobody, 'test:gems', 'gem', 500, 'test', NOW);
+    grantItem(nobody, 'test:tokens', 'vtoken', 10, 'gift', NOW);
+    expect(featuredFor(nobody, 'farm', all).some((p) => p.kind === 'decor' && (DECOR_BY_ID[p.id].gems || DECOR_BY_ID[p.id].tokens))).toBe(true);
   });
 
   it('a set already started comes first; with nobody home there are no tricks or foods to suggest', () => {
@@ -131,7 +136,7 @@ describe('in the app', () => {
   it('the Shop shows "Featured for your Farm" with real prices; a pick opens its card', async () => {
     mount().go({ screen: 'shop', tab: 'decor', sanctuary: 'farm' });
     expect(document.querySelector('#featured-title')?.textContent).toBe('Featured for your Farm');
-    const cards = [...document.querySelectorAll<HTMLElement>('.featured-card')];
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-featured]')];
     expect(cards.length).toBeGreaterThan(1);
     for (const c of cards) expect(c.getAttribute('aria-label')).toMatch(/\d+ (Paw Coins|video tokens|gems)\./);
     cards.find((c) => c.dataset.featured === 'trick')!.click();

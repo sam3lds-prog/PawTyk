@@ -111,14 +111,23 @@ export async function d48Checks({ browser, URL, check, errors }) {
     const card = await qa.evaluate(() => ({
       preview: !!document.querySelector('.decor-sheet .decor-preview svg [data-decor="flowerarch"]'),
       ring: !!document.querySelector('.decor-sheet .sp-preview-ring'),
-      showMe: !document.querySelector('.decor-sheet [data-act="preview-play"]')?.hidden,
+      // D49 PR A: a piece that can be tried on has one way to see it, Try it in my Farm.
+      tryIt: /Try it in my Farm/.test(document.querySelector('.decor-sheet [data-act="try"]')?.textContent ?? ''),
+      noShowMe: document.querySelector('.decor-sheet [data-act="preview-play"]')?.hidden !== false,
       text: document.querySelector('.decor-sheet')?.textContent ?? '',
     }));
+    // Owned (nothing to try on): the card's own Show me plays it with a Farm animal.
+    await qa.evaluate(() => {
+      document.querySelector('.decor-sheet [data-act="close"]')?.click();
+      window.__pt.app.save.inventory.decor.flowerarch = { ownedAt: new Date().toISOString() };
+      window.__pt.go({ screen: 'shop', tab: 'decor', sanctuary: 'farm', decor: 'flowerarch' });
+    });
+    card.showMe = await waitFor(qa, '.decor-sheet [data-act="preview-play"]:not([hidden])', 20000);
     await qa.evaluate(() => document.querySelector('.decor-sheet [data-act="preview-play"]')?.click());
     await qa.waitForTimeout(500);
     const playing = await qa.evaluate(() => !!document.querySelector('.decor-sheet .decor-preview .sp-act, .decor-sheet .decor-preview .is-away'));
     const named = await unnamed(qa, '.decor-sheet');
-    check('a decoration’s card previews it in the player’s own Farm, in its spot; Show me plays it with a Farm animal (D48)', card.preview && card.ring && card.showMe && /meadow/i.test(card.text) && playing && named.length === 0, JSON.stringify({ ...card, text: card.text.slice(0, 160), playing, named }));
+    check('a decoration’s card previews it in the player’s own Farm, in its spot; Try it in my Farm when it can be tried on, Show me when owned (D48, D49)', card.preview && card.ring && card.tryIt && card.noShowMe && card.showMe && /meadow/i.test(card.text) && playing && named.length === 0, JSON.stringify({ ...card, text: card.text.slice(0, 160), playing, named }));
     await qa.close();
   }
 

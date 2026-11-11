@@ -91,7 +91,7 @@ const sceneState = (qa) =>
       walk: !!document.querySelector('.walk'),
       inert: !!document.getElementById('app')?.inert,
       offered: b && !b.hidden ? b.textContent.trim() : null,
-      goal: !!document.querySelector('[data-next-goal]'),
+      goal: !!document.querySelector('[data-welcome-card], [data-next-goal]'),
       overlay: !!document.querySelector('.overlay'),
       music: nowPlaying()?.id ?? null,
       canvases: document.querySelectorAll('canvas').length,

@@ -1,0 +1,174 @@
+/* ------------------------------------------------------------------ D49 PR A: attention first */
+
+/* Featured for your <home>: one large pick, two small ones, and See all. */
+.shop-featured .section-head {
+  align-items: center;
+}
+.featured-all {
+  flex: none;
+  margin-left: auto;
+}
+.featured-card--lead {
+  grid-template-columns: 64px 1fr auto;
+  padding: 12px 14px;
+}
+.featured-card--lead .featured-card__art {
+  width: 64px;
+  height: 64px;
+}
+.featured-minis {
+  list-style: none;
+  margin: var(--s2) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+.featured-mini {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 8px 10px;
+  text-align: left;
+}
+.featured-mini__art {
+  grid-row: 1 / span 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-tint);
+  padding: 3px;
+  display: grid;
+  place-items: center;
+}
+.featured-mini__art > * {
+  width: 100%;
+  height: 100%;
+}
+.featured-mini__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.featured-mini__body b {
+  font-size: var(--t-sm);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.featured-mini__body small {
+  font-size: 12px;
+  color: var(--muted-ink);
+  line-height: 1.25;
+}
+.featured-mini > .price {
+  grid-column: 2;
+  justify-self: start;
+}
+/* The narrowest phones: one small pick per row. */
+@media (max-width: 340px) {
+  .featured-minis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The row under a home's scene: the resident's line gets a line of its own, then the buttons wrap beside each other
+   (before, the line was squeezed into a narrow column between Watch the parade and Tricks). */
+.sanctuary__under .sanctuary__chat {
+  flex: 1 1 100%;
+  order: -1;
+}
+.sanctuary__under .scene-tricks {
+  margin-left: 0;
+}
+.sanctuary__under > .scene-replay,
+.sanctuary__under > .scene-tricks,
+.sanctuary__under > .scene-share {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sanctuary__under > .scene-share {
+  order: 0;
+}
+
+/* The arrival's follow-up: who came home, one thing to do now, and the way on. */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent, var(--brand)) 45%, transparent);
+}
+.welcome-card.is-entering {
+  animation: win-rise 380ms var(--ease) both;
+}
+.welcome-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.welcome-card__art {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.welcome-card__who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.welcome-card__title {
+  font-size: var(--t-lg, 20px);
+  line-height: 1.2;
+}
+.welcome-card__who small {
+  color: var(--muted-ink);
+  font-weight: 700;
+}
+.welcome-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.welcome-card__actions[aria-busy='true'] .btn {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.welcome-card__note,
+.arrival__note {
+  margin-top: -2px;
+  text-align: center;
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+.welcome-card__next {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+.welcome-card__next .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--accent, var(--brand));
+}
+:root[data-motion='reduce'] .welcome-card {
+  animation: none;
+}
+
+/* Trying something on: Again, Back and Buy share a row and wrap on the narrowest phones. */
+.try-banner__actions {
+  flex-wrap: wrap;
+}

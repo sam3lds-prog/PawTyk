@@ -99,7 +99,7 @@ describe('the brief spotlight', () => {
 });
 
 describe('Cotton’s first visit, straight from the first arrival', () => {
-  it('plays the Welcome Parade, without announcing the arrival a second time; then the next goal', async () => {
+  it('plays the Welcome Parade, without announcing the arrival a second time; then the welcome card (D49 PR A)', async () => {
     home('cotton');
     app.save.world.growth.farm = 1;
     const router = mount();
@@ -111,10 +111,10 @@ describe('Cotton’s first visit, straight from the first arrival', () => {
     expect(document.querySelector('[data-friend="cotton"]')!.getAttribute('data-trick')).toMatch(/^dance:newcomer:/);
     // The arrival scene already said "Cotton is home!": no toast says it again.
     expect(toasts()).not.toMatch(/came home/);
-    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).toBeNull();
     await vi.advanceTimersByTimeAsync(cueMs(SCORES.bounce) + 800);
     expect(parading()).toBe(false);
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
     // Coming back here later opens the Farm plainly: the welcome doesn't play twice.
     expect(app.router.route).toEqual({ screen: 'region', id: 'farm' });
   });
@@ -129,7 +129,46 @@ describe('Cotton’s first visit, straight from the first arrival', () => {
     await vi.advanceTimersByTimeAsync(50);
     expect(parading()).toBe(false);
     expect(document.querySelector('[data-trick^="dance:"]')).toBeNull();
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
+  });
+
+  it('D49 PR A: from the arrival’s "Give Cotton a welcome snack": the snack plays at once (free, once), the parade waits under the scene', async () => {
+    home('cotton');
+    app.save.world.growth.farm = 1;
+    const { WELCOME_SNACK_ID } = await import('../../src/meta/welcomeSnack');
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton' as never], met: true, snack: true });
+    await vi.advanceTimersByTimeAsync(2200);
+    // No parade by itself: the snack is the welcome, and the parade is offered.
+    expect(parading()).toBe(false);
+    expect(document.querySelector('[data-friend="cotton"]')!.getAttribute('data-trick')).toBe('feed');
+    expect(document.querySelector<HTMLElement>('[data-act="parade-replay"]')?.textContent).toMatch(/Cotton/);
+    // The free portion arrived and was eaten (the pantry is empty again), once.
+    expect(app.save.inventory.items.filter((e) => e.id === WELCOME_SNACK_ID)).toHaveLength(1);
+    expect(app.save.sanctuary.affection.cotton).toBeGreaterThan(0);
+    await vi.advanceTimersByTimeAsync(4500);
+    const card = document.querySelector('[data-welcome-card="fed"]')!;
+    expect(card.textContent).toMatch(/Cotton loved the/);
+    expect(card.querySelectorAll('.btn')).toHaveLength(1);
+    expect(card.querySelector('[data-act="welcome-play"]')?.textContent).toMatch(/Continue to level/);
+    // Back here later: plain, nothing replays, and no second free snack.
+    expect(app.router.route).toEqual({ screen: 'region', id: 'farm' });
+    const { welcomeSnack } = await import('../../src/meta/welcomeSnack');
+    expect(welcomeSnack(app.save, 'cotton')).toBeNull();
+  });
+
+  it('D49 PR A: the Tour tapped during the snack’s lead-in keeps going; the card offers the snack instead of playing it', async () => {
+    home('cotton');
+    app.save.world.growth.farm = 1;
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', welcome: ['cotton' as never], met: true, snack: true });
+    await vi.advanceTimersByTimeAsync(100);
+    document.querySelector<HTMLElement>('[data-act="tour"]')!.click();
+    await vi.advanceTimersByTimeAsync(2200);
+    expect(document.querySelector('.is-touring')).not.toBeNull();
+    expect(document.querySelector('[data-friend="cotton"]')!.getAttribute('data-trick')).not.toBe('feed');
+    expect(document.querySelector('[data-welcome-card="offer"] [data-act="welcome-snack"]')).not.toBeNull();
+    expect(app.save.sanctuary.affection.cotton ?? 0).toBe(0);
   });
 
   it('a later Meet (not from the arrival scene) still announces who came home', async () => {

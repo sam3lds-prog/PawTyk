@@ -8,6 +8,7 @@
 import { hasUnlock } from '../../meta/bonds';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
+import { welcomeFlow } from '../components/welcomeCard';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
@@ -32,7 +33,7 @@ import { animalPortrait, animalTint } from '../art/animals';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray, partnersFor } from '../components/tricks';
-import { shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
+import { buyTriedOn, shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
 import { performTrick } from '../components/trickPlay';
 import { TRICK_BY_ID } from '../../meta/catalogs/tricks';
 import { createScene3D } from '../components/scene3d';
@@ -95,8 +96,9 @@ export const sanctuaryScreen: ScreenDef = {
     for (const a of news.achievements) toast(`Badge unlocked: ${a.name}`);
 
     const el = h(`<div class="sanctuary"></div>`);
-    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved.
-    const tryOn = route.screen === 'sanctuary' ? tryOnOf(route, 'harmony') : null;
+    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved. D49 PR A: until the
+    // player buys it from the banner; the garden is then plainly theirs (no banner).
+    let tryOn = route.screen === 'sanctuary' ? tryOnOf(route, 'harmony') : null;
     root.appendChild(el);
 
     // Tricks: a tray under the scene for the animal you tap (kept across re-renders).
@@ -168,6 +170,8 @@ export const sanctuaryScreen: ScreenDef = {
       hello: (animal) => sayHello(animal),
       bowl: () => bowlInUse(app.save),
     });
+    // D49 PR A: the arrival's follow-up card (a welcome snack, then the Journey); the starter gift waits for the snack.
+    const welcomes = welcomeFlow(scope, { el, home: 'harmony', meals, life: () => life, afterSnack: () => offerStarterGift(scope, 'harmony', render, { askNext: false }) });
     /** An animal's card (a resident's or a friend's), its feeding played out in the garden. */
     function openCard(id: string): void {
       if (isPetId(id)) showPetSheet(scope, id, { showVisit: false, ...meals.events(id, animalInfo(id).name), welcome: welcomeFor(id) });
@@ -216,7 +220,7 @@ export const sanctuaryScreen: ScreenDef = {
       if (btn) btn.hidden = !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
-      if (goalShown) showNextGoal(el, 'harmony');
+      if (!welcomes.redraw() && goalShown) showNextGoal(el, 'harmony');
     }
     let goalShown = false;
 
@@ -319,23 +323,46 @@ export const sanctuaryScreen: ScreenDef = {
     // M1: a trick tried on: one of the garden's animals plays it, once the toys are there (again on request). A
     // preview, never an unlock; a group act brings in its partners as it would for real.
     function playTry(): void {
-      if (tryOn?.kind !== 'trick' || !scope.alive) return;
+      const t = tryOn;
+      if (t?.kind !== 'trick' || !scope.alive) return;
       const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       const fig = svg?.querySelector<SVGGElement>('.sanctuary__pet:not(.is-away):not([data-trick])');
       if (!svg || !fig) return;
       if (tray.isOpen) tray.close();
-      if (!performTrick(svg, fig, tryOn.id, app.reducedMotion)) return;
-      const n = TRICK_BY_ID[tryOn.id].partners ?? 0;
-      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, tryOn.id, app.reducedMotion, i + 1));
-      feel('trick', { cue: `trick:${tryOn.id}` });
+      if (!performTrick(svg, fig, t.id, app.reducedMotion)) return;
+      const n = TRICK_BY_ID[t.id].partners ?? 0;
+      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, t.id, app.reducedMotion, i + 1));
+      feel('trick', { cue: `trick:${t.id}` });
       director.claim('closeup');
-      closeups.play(fig, tryOn.id);
+      closeups.play(fig, t.id);
     }
     if (tryOn?.kind === 'trick') void Promise.race([s3d.ready, scope.wait(1500)]).then(() => scope.timeout(playTry, app.reducedMotion ? 200 : 700));
+    // D49 PR A: a decoration tried on is used here too (again on request), as on the Farm.
+    function playTryDecor(): void {
+      if (tryOn?.kind !== 'decor' || !scope.alive || !acts || acts.busy) return;
+      acts.play(tryOn.id);
+    }
+    if (tryOn?.kind === 'decor') void Promise.race([s3d.ready, scope.wait(1500)]).then(() => scope.timeout(playTryDecor, app.reducedMotion ? 300 : 900));
+    /** D49 PR A: bought from the banner: it's theirs, here, and the garden is plainly theirs again. */
+    function buyTry(): void {
+      if (!tryOn) return;
+      const t = tryOn;
+      const r = buyTriedOn(t, 'harmony');
+      toast(r.line, r.ok ? ICON.check : undefined);
+      if (!r.ok) return;
+      tryOn = null;
+      app.router.settle({ screen: 'sanctuary' });
+      render();
+      afterTryBuy(t);
+    }
+    function afterTryBuy(t: NonNullable<typeof tryOn>): void {
+      if (t.kind === 'decor') scope.timeout(() => scope.alive && acts && !acts.busy && acts.play(t.id), app.reducedMotion ? 200 : 600);
+    }
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
       if (parades.onClick(t)) return;
+      if (welcomes.onClick(t)) return;
       // A meal is playing: the scene is its stage until it's eaten (a moment; anything else the player starts ends it).
       if (meals.active && t.closest('.sanctuary__scene')) return;
       // A tap on someone in the garden: a small happy reaction (a heart; face only under reduced motion).
@@ -397,7 +424,8 @@ export const sanctuaryScreen: ScreenDef = {
       if (!a) return;
       if (a.act === 'back') app.router.back({ screen: 'world' });
       else if (a.act === 'try-back' && tryOn) app.router.back(shopRouteFor(tryOn, 'harmony'));
-      else if (a.act === 'try-again') playTry();
+      else if (a.act === 'try-again') tryOn?.kind === 'decor' ? playTryDecor() : playTry();
+      else if (a.act === 'try-buy') buyTry();
       else if (a.act === 'shop') app.router.go({ screen: 'shop', sanctuary: 'harmony' });
       else if (a.act === 'play') playMode({ kind: 'level', level: app.save.journey.nextLevel });
       else if (a.act === 'build' && setActive(app.save, 'harmony')) {
@@ -430,8 +458,9 @@ export const sanctuaryScreen: ScreenDef = {
           short: celebrationLength(app.save, app.settings.celebrations, who, 'harmony') === 'short',
           after: () => {
             goalShown = true;
-            showNextGoal(el, 'harmony', true);
-            scope.timeout(intro, 900);
+            // D49 PR A: the welcome ends with one card (a snack for the newcomer, then the Journey); the starter gift
+            // waits for the snack, or the next visit.
+            welcomes.show(who, true);
           },
         });
       });
@@ -527,7 +556,7 @@ export function introduce(scope: Scope, pets: AnimalId[], then?: () => void): vo
  * One of two free starter decorations, once, after the first board: offered by whichever beginner sanctuary the player
  * visits first (the Farm's or the Pet Garden's own pair).
  */
-export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () => void): void {
+export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () => void, o: { askNext?: boolean } = {}): void {
   if (!app.save.onboarding.tutorialDone || app.save.onboarding.starterDecorChosen) return;
   const choices = STARTER_DECOR.filter((id) => decorHome(DECOR_BY_ID[id]) === where);
   if (choices.length < 2) return;
@@ -562,7 +591,8 @@ export function offerStarterGift(scope: Scope, where: SanctuaryId, rerender: () 
       sh.close();
       rerender();
       toast(`${DECOR_BY_ID[id].name} is in the ${sanctuaryDef(where).short}.`);
-      offerNext(scope);
+      // D49 PR A: after a welcome, its card already offers Continue: no second "Ready for the next puzzle?".
+      if (o.askNext !== false) offerNext(scope);
     }
   });
 }

@@ -2231,3 +2231,56 @@ Ruled out: loot boxes, timers, limited pieces, gem-only collections, power and n
 - **Not established by any of this:** an iPhone's share sheet (each app reports its own result), AdMob's real videos
   and their failures, Photos permission, and VoiceOver. The M sections of the release checklist cover them on
   TestFlight.
+
+## 2026-11-11 · D49 — Attention, delight and retention: fewer choices, quicker rewards, a reason to come back
+
+From the outside review Sam shared (*PawTyk — D48 UX, Engagement & Retention Review*, of `main` @ `02d593b`). Its
+verdict: the features are well built and there is enough content; what PawTyk needs is a tighter run of small,
+satisfying moments for someone with two or three minutes: immediate feedback, visible progress, one obvious next
+action. It asked for five focused PRs (A–E), no new currencies, catalogs, referral rewards or tabs, and nothing that
+pressures a player (no chores, missed-day penalties, artificial scarcity or guilt).
+
+### PR A — attention first (`d49/a-attention`)
+- **Featured, one large and two small** (`meta/featured.ts`, `screens/shop.ts`): at most three picks (was four), and
+  what the player can buy *today* comes first (a stable sort on `afford`, else the order the picks are chosen in), so the
+  large one is something they could have now. The trick and the food are named for the home's **newest** animal (the
+  one the player most likely just met). Order of choosing: a decoration (the next piece of a set started, else the
+  dearest affordable, else the nearest), a trick, a favorite food not in the pantry, then a special piece. **See all**
+  in the section's head goes straight to the home's whole catalog (its first section, heading focused). At 390 pt the
+  catalog now starts on the first screen; at 320 pt the large card and the first small one do.
+- **One way to see a decoration** (`decorSheet`, `components/tryOn.ts`): the card no longer offers both *Show me* and
+  *See it in your Farm*. A piece that can be tried on has **Try it in my <home>**: it stands out in the player's own
+  scene and one of the home's animals uses it there at once (**Again** replays it). The card's own *Show me* stays only
+  as the light fallback for a piece that can't be tried on now (owned, or waiting for the pond). **Buy is right there**:
+  when the player has the price, the try-on banner has **Buy** (a trick: **Learn**), charged once by the Shop's own
+  purchase ids (`buy:decor:<id>`, `buy:trick:<id>`); the piece stays out, theirs, the banner goes and the home is plain
+  again (`router.settle`). Without the price the banner shows it as short, with no Buy.
+- **An arrival ends with one card** (`components/welcomeCard.ts`, `meta/welcomeSnack.ts`): before, after a welcome
+  the screen held the parade's Replay, Tricks, Share, the stage's news, a Next goal card with its own Play button and a
+  toast, with the resident's line squeezed into a narrow column between buttons. Now, once the Welcome Parade has
+  played, one card under the scene says **<Name> is home!** · *Your second friend at the Farm*, then:
+  - **Give <Name> a welcome snack** (primary): played out in the scene at once (`SceneMeals.feed`), an ordinary meal
+    (same daily limit, same hearts). Something from the pantry it can eat (favorites first, never a feast); with
+    nothing in the pantry, **the first one is on the house**: one portion of its favorite, granted once per player by
+    one item-ledger entry (`gift:welcome-snack`), so a double tap, a reload or the next arrival can never grant it twice.
+  - **Continue to level N** (secondary). After the snack the card says *<Name> loved the Apple Slices!* and Continue
+    is its one button. With nothing to give (no food, the gift had, or it ate its fill today) Continue leads and the
+    second button is **Say hello to <Name>** (a heart once a day, as a tap does).
+  - The next goal as one line (*Next: Buttercup the calf comes home in 2 more puzzles*) instead of a second card.
+  - Replay, Share, Tricks and Photo stay by the scene. The row under the scene gives the resident's line a line of its
+    own and lets the buttons wrap (the cramped text in the review's screenshot).
+  - The starter gift (after the first board) now waits until the snack has been eaten, or the next visit, and no longer
+    asks *Ready for the next puzzle?* afterwards: the card already has Continue.
+- **The first arrival** (D41) ends the same way: **Give Cotton a welcome snack** (*Your first treat is on us*), then
+  **Continue to level 2**. The snack opens the Farm with Cotton eating it at once (`route.snack`); the arrival has
+  already shown her coming home, so her Welcome Parade is offered under the scene (*Watch Cotton's welcome*) instead of
+  playing first. (*Visit the Farm*, with the parade first, remains only for a newcomer with no snack to give.)
+- Analytics (opt-in, as always): `featured_tap` (kind, position), `featured_see_all`, `welcome_card` (shown, continue,
+  hello), `welcome_snack` (gift or pantry, favorite, from the card or the arrival), `decor_bought` / `trick_bought`
+  with `surface: 'try_on'`.
+- Tests: `test/unit/d49Attention.dom.test.ts` (three picks, affordable first, named for the newest animal; one large
+  and two small with See all; one way to see a piece; Buy and Learn from the banner, charged once; the free snack once,
+  the pantry next, never a feast, none when full; the card without a snack; Meet → parade → snack → Continue, kept
+  across a re-render, gone on a later visit). Updated: the D40/D41/D45/D46 arrival tests (the card instead of the goal
+  card; the first arrival's snack), M1's Featured tests, and the browser checks (the first session's snack, M1's
+  1–3 picks, D48's card).

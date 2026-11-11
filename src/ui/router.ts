@@ -110,8 +110,12 @@ export type Route =
   /** M1: `tryDecor` / `tryTrick`: the Shop's try-on (a decoration put out, a trick played), changing nothing saved. */
   | { screen: 'sanctuary'; welcome?: AnimalId[]; tryDecor?: string; tryTrick?: string }
   | { screen: 'world' }
-  /** `met`: the newcomer was already introduced on the way here (the first arrival's own scene), so no "came home" news again. */
-  | { screen: 'region'; id: RegionId; fresh?: number; welcome?: AnimalId[]; met?: boolean; tryDecor?: string; tryTrick?: string }
+  /**
+   * `met`: the newcomer was already introduced on the way here (the first arrival's own scene), so no "came home" news
+   * again. D49 PR A: `snack`: the first arrival's "Give Cotton a welcome snack": the snack plays at once, and the
+   * Welcome Parade is offered under the scene instead of starting by itself.
+   */
+  | { screen: 'region'; id: RegionId; fresh?: number; welcome?: AnimalId[]; met?: boolean; snack?: boolean; tryDecor?: string; tryTrick?: string }
   | { screen: 'game' }
   | { screen: 'gallery' }
   | { screen: 'welcome' }

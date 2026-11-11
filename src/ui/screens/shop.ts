@@ -233,39 +233,51 @@ export const shopScreen: ScreenDef = {
     /**
      * M1: "Featured for your <home>": a few things from the catalog that fit this home and this player now
      * (`meta/featured.ts`), each with its real price and currency. Tapping one opens its card.
+     * D49 PR A: one large (something the player can have today, when there is one) and two small, so the catalog
+     * starts on the first screen; **See all** goes straight to it.
      */
     function featuredSection(): string {
       if (!isOpen(app.save, place)) return '';
       const picks = featuredFor(app.save, place, (c) => offered(c));
       if (!picks.length) return '';
-      const card = (f: Featured) => {
-        let art = '';
-        let name = '';
-        let attr = '';
-        let cur: 'coins' | 'vtoken' | 'gem' | null = null;
-        let amount = 0;
+      const facts = (f: Featured) => {
         if (f.kind === 'decor') {
-          const d = DECOR_BY_ID[f.id];
           const p = decorPrice(f.id)!;
-          [art, name, attr, cur, amount] = [decorIcon(f.id), d.name, `data-decor="${f.id}"`, p.currency, p.amount];
-        } else if (f.kind === 'trick') {
-          const t = TRICKS.find((x) => x.id === f.id)!;
-          [art, name, attr, cur, amount] = [trickBadge(t.emote), t.name, `data-trick-card="${f.id}"`, trickCurrency(t), t.price];
-        } else {
-          const food = FOOD_BY_ID[f.id];
-          const main = offersFor(f.id)[0] ?? mainOffer(food);
-          [art, name, attr, cur, amount] = [foodIcon(f.id), food.name, `data-food="${f.id}"`, main.currency, main.amount];
+          return { art: decorIcon(f.id), name: DECOR_BY_ID[f.id].name, attr: `data-decor="${f.id}"`, cur: p.currency, amount: p.amount, what: 'Decoration' };
         }
-        const what = f.kind === 'decor' ? 'Decoration' : f.kind === 'trick' ? 'Trick' : 'Food';
-        return `<li><button class="featured-card card card--tap" ${attr} data-featured="${f.kind}" aria-label="${esc(`${what}: ${name}, ${amount} ${cur ? CURRENCY_NAME[cur] : ''}. ${f.reason}.`)}">
-          <span class="featured-card__art">${art}</span>
-          <span class="featured-card__body"><span class="featured-card__kind">${what}</span><b class="featured-card__name">${esc(name)}</b><small>${esc(f.reason)}</small></span>
-          ${cur ? `<span class="featured-card__price">${priceTag(cur, amount)}<small>${CURRENCY_NAME[cur]}</small></span>` : ''}
-        </button></li>`;
+        if (f.kind === 'trick') {
+          const t = TRICKS.find((x) => x.id === f.id)!;
+          return { art: trickBadge(t.emote), name: t.name, attr: `data-trick-card="${f.id}"`, cur: trickCurrency(t), amount: t.price, what: 'Trick' };
+        }
+        const food = FOOD_BY_ID[f.id];
+        const main = offersFor(f.id)[0] ?? mainOffer(food);
+        return { art: foodIcon(f.id), name: food.name, attr: `data-food="${f.id}"`, cur: main.currency, amount: main.amount, what: 'Food' };
       };
+      const label = (f: Featured) => {
+        const x = facts(f);
+        return esc(`${x.what}: ${x.name}, ${x.amount} ${x.cur ? CURRENCY_NAME[x.cur] : ''}. ${f.reason}.`);
+      };
+      const [lead, ...rest] = picks;
+      const L = facts(lead);
+      const big = `<button class="featured-card featured-card--lead card card--tap" ${L.attr} data-featured="${lead.kind}" data-featured-pos="0" aria-label="${label(lead)}">
+          <span class="featured-card__art">${L.art}</span>
+          <span class="featured-card__body"><span class="featured-card__kind">${L.what}</span><b class="featured-card__name">${esc(L.name)}</b><small>${esc(lead.reason)}</small></span>
+          ${L.cur ? `<span class="featured-card__price">${priceTag(L.cur, L.amount)}<small>${CURRENCY_NAME[L.cur]}</small></span>` : ''}
+        </button>`;
+      const small = rest
+        .map((f, i) => {
+          const x = facts(f);
+          return `<li><button class="featured-mini card card--tap" ${x.attr} data-featured="${f.kind}" data-featured-pos="${i + 1}" aria-label="${label(f)}">
+            <span class="featured-mini__art">${x.art}</span>
+            <span class="featured-mini__body"><b>${esc(x.name)}</b><small>${esc(f.reason)}</small></span>
+            ${x.cur ? priceTag(x.cur, x.amount) : ''}
+          </button></li>`;
+        })
+        .join('');
       return `<section class="shop-section shop-featured" aria-labelledby="featured-title">
-        <div class="section-head"><h2 id="featured-title">Featured for your ${esc(placeShort(place))}</h2></div>
-        <ul class="featured-row">${picks.map(card).join('')}</ul>
+        <div class="section-head"><h2 id="featured-title">Featured for your ${esc(placeShort(place))}</h2><button class="btn btn--quiet btn--small featured-all" data-act="see-all">See all</button></div>
+        ${big}
+        ${small ? `<ul class="featured-minis">${small}</ul>` : ''}
       </section>`;
     }
 
@@ -584,6 +596,17 @@ export const shopScreen: ScreenDef = {
         toast(news.achievements.length ? `${DECOR_SET_BY_ID[set].name} is out on your Farm. Badge unlocked: ${news.achievements[0].name}!` : `${DECOR_SET_BY_ID[set].name} is out on your Farm.`);
         return;
       }
+      if (t.closest('[data-act="see-all"]')) {
+        // D49 PR A: straight to the whole catalog for this home (its first section), its heading focused.
+        const first = el.querySelector<HTMLElement>('.shop-featured ~ .shop-section .section-head h2');
+        first?.setAttribute('tabindex', '-1');
+        first?.closest('.shop-section')?.scrollIntoView?.({ block: 'start', behavior: app.reducedMotion ? 'auto' : 'smooth' });
+        first?.focus({ preventScroll: true });
+        track('featured_see_all', { home: place });
+        return;
+      }
+      const fpos = t.closest('[data-featured-pos]') as HTMLElement | null;
+      if (fpos) track('featured_tap', { kind: fpos.dataset.featured ?? '', pos: Number(fpos.dataset.featuredPos) });
       const card = t.closest('[data-decor]') as HTMLElement | null;
       if (card) {
         decorSheet(scope, card.dataset.decor as DecorId, render);
@@ -715,8 +738,13 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
    * isn't, so its card's own preview stands in).
    */
   const canTry = () => !owns(app.save, id) && d.unlock.kind !== 'pack' && decorUnlocked(app.save, id) && !(d.stage && isRegionId(home) && stageOf(app.save, home) < d.stage);
+  /**
+   * D49 PR A: one way to see it: **Try it in my <home>**, where it stands out in the player's own scene and the
+   * animals use it there (with a Buy on the way back). The card's own "Show me" stays only for a piece that can't be
+   * tried on now (owned, or waiting for the pond).
+   */
   const tryButton = () =>
-    canTry() ? `<button class="btn btn--secondary btn--block" data-act="try">${ICON.eye}See it in your ${esc(home === 'harmony' ? 'Pet Garden' : sanctuaryDef(home).short)}</button>` : '';
+    canTry() ? `<button class="btn btn--secondary btn--block" data-act="try">${ICON.eye}Try it in my ${esc(home === 'harmony' ? 'Pet Garden' : sanctuaryDef(home).short)}</button>` : '';
   /** M1: the price in words, with what the player has toward it, and whether this build sells it. */
   const priceLine = () => {
     if (owns(app.save, id)) return `<p class="price-line">${ICON.check}<span>Yours${isShown(app.save, id) ? ', out now' : ', tucked away'}.</span></p>`;
@@ -771,8 +799,8 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
       <div class="sheet__actions" data-actions>${actions()}${tryButton()}<button class="btn btn--quiet" data-act="close">Not now</button></div>`,
     onClose: rerender,
   });
-  // Show me: the animals use it, in the preview (only when someone lives there to do it).
-  if (bindPreview(sh.scope, sh.el, id)) sh.el.querySelector<HTMLElement>('[data-act="preview-play"]')?.removeAttribute('hidden');
+  // Show me: the animals use it, in the preview (only when someone lives there to do it), when it can't be tried on.
+  if (bindPreview(sh.scope, sh.el, id) && !canTry()) sh.el.querySelector<HTMLElement>('[data-act="preview-play"]')?.removeAttribute('hidden');
   const refresh = () => {
     const a = sh.el.querySelector('[data-actions]');
     if (a) a.innerHTML = `${actions()}${tryButton()}<button class="btn btn--quiet" data-act="close">Not now</button>`;

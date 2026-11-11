@@ -271,7 +271,7 @@ describe('the parade on Meet, and a group dance at a new stage', () => {
     await vi.advanceTimersByTimeAsync(10);
     expect(document.querySelector('.sanctuary__scene.is-parading, [data-trick^="dance:"]')).toBeNull();
     // The next goal follows a skip as it follows the end.
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
     (document.querySelector('[data-act="parade-replay"]') as HTMLElement).click();
     await vi.advanceTimersByTimeAsync(1500);
     expect(document.querySelector('.sanctuary__scene.is-parading')).not.toBeNull();
@@ -314,7 +314,7 @@ describe('the parade on Meet, and a group dance at a new stage', () => {
     await vi.advanceTimersByTimeAsync(PARADE_MS);
     expect(document.querySelector('.sanctuary__scene.is-parading, [data-trick^="dance:"]')).toBeNull();
     expect(nowPlaying()).toBeNull();
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
   });
 

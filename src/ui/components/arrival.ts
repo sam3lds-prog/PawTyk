@@ -5,6 +5,9 @@
  *
  * About five seconds, in four steps; Skip (or Escape) jumps straight to the goal, and under reduced motion the goal is
  * all there is, the scene already as it is now. Nothing here is required reading: the buttons work from the start.
+ *
+ * D49 PR A: it ends on two buttons, in order: **Give Cotton a welcome snack** (the first treat is on the house: the
+ * Farm opens and she eats it there, the first thing the player does with an animal) and **Continue to level 2**.
  */
 
 import { app } from '../../app/app';
@@ -12,6 +15,7 @@ import { animalInfo, type AnimalId } from '../../meta/animals';
 import { sanctuaryDef, type RegionId } from '../../meta/catalogs/sanctuaries';
 import { shownDecorIds } from '../../meta/sanctuary';
 import { arrivalProgress, markSeen, stageOf } from '../../meta/world';
+import { welcomeSnack } from '../../meta/welcomeSnack';
 import { TEMPERAMENT_INFO, temperamentOf } from '../../meta/temperament';
 import { feel } from '../../services/feel';
 import { track } from '../../services/analytics';
@@ -38,6 +42,9 @@ export interface ArrivalOptions {
   /** What the solve also earned, in a few words ("+45 coins · 2 badges"), shown small under the goal. */
   holds: string[];
   onPlay: () => void;
+  /** D49 PR A: to the home, where the newcomer has its welcome snack at once. */
+  onSnack: () => void;
+  /** To the home, its Welcome Parade first (only offered when there is no snack to give). */
   onVisit: () => void;
 }
 
@@ -57,6 +64,8 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
   const nextInfo = next ? animalInfo(next.next.id as AnimalId) : null;
   const span = next ? Math.max(1, next.need - next.from) : 1;
   const pct = next ? Math.round(((next.have - next.from) / span) * 100) : 0;
+  // D49 PR A: what the newcomer's welcome snack would be (the first is free), if it can have one.
+  const snack = welcomeSnack(save, o.animal);
 
   const el = h(`<div class="arrival" role="dialog" aria-modal="true" aria-labelledby="arrival-title" style="--accent:${def.accent}">
     <div class="arrival__inner">
@@ -86,8 +95,14 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
             : `<p class="arrival__line">Every puzzle grows the ${esc(def.short)}.</p>`
         }
         <div class="arrival__actions">
-          ${o.nextLevel ? `<button class="btn btn--block" data-act="play">Play level ${o.nextLevel}</button>` : ''}
-          <button class="btn btn--quiet" data-act="visit">${ICON.home}Visit the ${esc(def.short)}</button>
+          ${
+            snack
+              ? `<button class="btn btn--block" data-act="snack">${ICON.heart}Give ${esc(a.name)} a welcome snack</button>
+                 <small class="arrival__note">${snack.gift ? 'Your first treat is on us' : 'From your pantry'}</small>`
+              : ''
+          }
+          ${o.nextLevel ? `<button class="btn btn--block ${snack ? 'btn--secondary' : ''}" data-act="play">Continue to level ${o.nextLevel}</button>` : ''}
+          ${snack ? '' : `<button class="btn btn--quiet" data-act="visit">${ICON.home}Visit the ${esc(def.short)}</button>`}
         </div>
         ${o.holds.length ? `<p class="arrival__holds">${esc(o.holds.join(' · '))}</p>` : ''}
       </section>
@@ -149,7 +164,7 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     el.classList.add('is-done');
     // On a short phone the goal is below the scene: bring its buttons into view.
     if (typeof goal.scrollIntoView === 'function') goal.scrollIntoView({ block: 'nearest', behavior: app.reducedMotion ? 'auto' : 'smooth' });
-    if (focus) el.querySelector<HTMLElement>('[data-act="play"], [data-act="visit"]')?.focus({ preventScroll: true });
+    if (focus) el.querySelector<HTMLElement>('[data-act="snack"], [data-act="play"], [data-act="visit"]')?.focus({ preventScroll: true });
   };
 
   // The steps run in their own scope, so Skip stops the ones still to come (none replays behind the goal).
@@ -193,7 +208,10 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
     const act = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
     if (!act) return;
     if (act.dataset.act === 'skip') skip();
-    else if (act.dataset.act === 'play') close(o.onPlay);
+    else if (act.dataset.act === 'play') {
+      track('welcome_card', { home: o.where, action: 'continue', from: 'first_arrival' });
+      close(o.onPlay);
+    } else if (act.dataset.act === 'snack') close(o.onSnack);
     else if (act.dataset.act === 'visit') close(o.onVisit);
   });
   sc.on(document, 'keydown', (e) => {

@@ -26,7 +26,7 @@ import { decorIcon, SCENE_VIEWBOX } from '../art/sanctuary';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
 import { mountTrickTray, partnersFor } from '../components/tricks';
-import { shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
+import { buyTriedOn, shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
 import { performTrick } from '../components/trickPlay';
 import { TRICK_BY_ID } from '../../meta/catalogs/tricks';
 import { createScene3D } from '../components/scene3d';
@@ -63,6 +63,7 @@ import { coinPill } from '../components/wallet';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
+import { welcomeFlow } from '../components/welcomeCard';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 
 /** How long a stage that just appeared glows (D40). */
@@ -102,8 +103,9 @@ export const regionScreen: ScreenDef = {
 
     const el = h(`<div class="sanctuary region" style="--accent:${def.accent}"></div>`);
     root.appendChild(el);
-    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved.
-    const tryOn = route.screen === 'region' ? tryOnOf(route, id) : null;
+    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved. D49 PR A: until the
+    // player buys it from the banner; the home is then plainly theirs (no banner).
+    let tryOn = route.screen === 'region' ? tryOnOf(route, id) : null;
     /** M3: the newcomer whose arrival can be kept and shared, once their welcome has played (for the rest of the visit). */
     let keepsake: AnimalId | null = null;
     const keepsakeMarkup = () =>
@@ -203,6 +205,9 @@ export const regionScreen: ScreenDef = {
       hello: (animal) => sayHello(animal),
       bowl: () => bowlInUse(app.save),
     });
+    // D49 PR A: the arrival's follow-up card (a welcome snack, then the Journey); the starter gift waits for the snack.
+    const welcomes = welcomeFlow(scope, { el, home: id, meals, life: () => life, afterSnack: () => offerStarterGift(scope, id, render, { askNext: false }) });
+    if (import.meta.env.DEV) (window as unknown as { __welcomes?: unknown }).__welcomes = welcomes;
     /** A friend's card, its feeding played out in the scene. */
     function openCard(cid: FriendId): void {
       showFriendSheet(scope, cid, { ...meals.events(cid, animalInfo(cid).name), welcome: welcomeFor(cid) });
@@ -396,7 +401,8 @@ export const regionScreen: ScreenDef = {
       if (btn) btn.hidden = !open || !svg?.querySelector('.sanctuary__pet');
       el.querySelector('.sanctuary__under')?.after(trayHost);
       tray.refresh();
-      if (goalShown) showNextGoal(el, id);
+      // D49 PR A: after a welcome, its card (one thing to do now, and the way on) stands where the next goal would.
+      if (!welcomes.redraw() && goalShown) showNextGoal(el, id);
       stageNewsShown = true;
     }
     let goalShown = false;
@@ -436,7 +442,7 @@ export const regionScreen: ScreenDef = {
       // Straight from the first arrival's own scene (D45 PR B), the news has been told: no second announcement.
       if (!route.met) toast(`${a.name} the ${a.noun} came home to the ${def.short}!`, ICON.heart);
       spotlightNewcomer(scope, el.querySelector<SVGSVGElement>('.sanctuary__scene svg'), newcomers[0]);
-      if (welcoming) {
+      if (welcoming && !route.snack) {
         // Straight from the win that brought them: the Welcome Parade (D44 PR E), then (D40) the next goal, and after
         // the first board the Farm's starter gift, so its card never covers the welcome. If the player starts a walk,
         // the tour or a trick before it begins, theirs is kept and the parade is offered instead (D46 PR A); the goal
@@ -449,13 +455,41 @@ export const regionScreen: ScreenDef = {
           short: celebrationLength(app.save, app.settings.celebrations, who, id) === 'short',
           after: () => {
             goalShown = true;
-            showNextGoal(el, id, true);
-            offerStarterGift(scope, id, render);
+            // D49 PR A: the welcome ends with one card: a snack for the newcomer, then the Journey. The Farm's
+            // starter gift (after the first board) waits until the snack has been eaten, or the next visit.
+            welcomes.show(who, true);
             // M3: after the celebration (never during it, never on the win sheet): an optional keepsake to share.
             offerKeepsake(who);
           },
         });
       } else scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
+    }
+    // D49 PR A: straight from the first arrival's "Give Cotton a welcome snack": the snack is the welcome (the
+    // arrival already showed Cotton coming home), and the Welcome Parade waits under the scene for whenever the
+    // player would like it.
+    // What the player chose wins (D46 PR A): the snack is a pending moment, so a Photo, the Tour, the Walk or a trick
+    // started during its lead-in is kept, and the card then offers the snack instead of playing it by itself.
+    if (route.snack && welcoming && newcomers.length) {
+      const who = newcomers[0];
+      parades.offer(who);
+      let offered = false;
+      const offerInstead = () => {
+        if (offered || !scope.alive || !isHome(app.save, who)) return;
+        offered = true;
+        welcomes.show(who);
+        offerKeepsake(who);
+      };
+      const snack = director.pending('feed', offerInstead);
+      void toysReady().then(() =>
+        scope.timeout(() => {
+          if (!scope.alive || !isHome(app.save, who) || !snack.begin()) return;
+          if (director.owner !== null || document.hidden) return offerInstead();
+          offered = true;
+          welcomes.show(who);
+          welcomes.snack(who, 'arrival');
+          offerKeepsake(who);
+        }, app.reducedMotion ? 200 : 650),
+      );
     }
     // A welcome the player missed by leaving during its lead-in (D46 PR A): offered here, never played by itself. On a
     // visit that also dances for a new stage, offered once that dance is done (the button under the scene is one slot,
@@ -520,19 +554,44 @@ export const regionScreen: ScreenDef = {
     // M1: a trick tried on: one of the home's animals plays it, once the toys are there (again on request). A preview,
     // never an unlock; a group act brings in its partners as it would for real.
     const playTry = () => {
-      if (tryOn?.kind !== 'trick' || !scope.alive) return;
+      const t = tryOn;
+      if (t?.kind !== 'trick' || !scope.alive) return;
       const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
       const fig = svg?.querySelector<SVGGElement>('.sanctuary__pet:not(.is-away):not([data-trick])');
       if (!svg || !fig) return;
       if (tray.isOpen) tray.close();
-      if (!performTrick(svg, fig, tryOn.id, app.reducedMotion)) return;
-      const n = TRICK_BY_ID[tryOn.id].partners ?? 0;
-      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, tryOn.id, app.reducedMotion, i + 1));
-      feel('trick', { cue: `trick:${tryOn.id}` });
+      if (!performTrick(svg, fig, t.id, app.reducedMotion)) return;
+      const n = TRICK_BY_ID[t.id].partners ?? 0;
+      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, t.id, app.reducedMotion, i + 1));
+      feel('trick', { cue: `trick:${t.id}` });
       director.claim('closeup');
-      closeups.play(fig, tryOn.id);
+      closeups.play(fig, t.id);
     };
     if (tryOn?.kind === 'trick') void toysReady().then(() => scope.timeout(playTry, app.reducedMotion ? 200 : 700));
+    // D49 PR A: a decoration tried on is used here too: one of the home's animals plays with it, as it would for real
+    // (again on request), so the card no longer needs its own "Show me" beside "Try it".
+    const playTryDecor = () => {
+      if (tryOn?.kind !== 'decor' || !scope.alive || !acts || acts.busy) return;
+      acts.play(tryOn.id);
+    };
+    if (tryOn?.kind === 'decor') void toysReady().then(() => scope.timeout(playTryDecor, app.reducedMotion ? 300 : 900));
+    /** D49 PR A: bought from the banner: it's theirs, here, and the home is plainly theirs again. */
+    const buyTry = () => {
+      if (!tryOn) return;
+      const t = tryOn;
+      const r = buyTriedOn(t, id);
+      toast(r.line, r.ok ? ICON.check : undefined);
+      if (!r.ok) return;
+      tryOn = null;
+      app.router.settle({ screen: 'region', id });
+      render();
+      el.querySelector<HTMLElement>('.sanctuary__scene')?.scrollIntoView?.({ block: 'nearest' });
+      afterTryBuy(t);
+    };
+    /** What follows a purchase in the home itself (a decoration's animals try it at once). */
+    const afterTryBuy = (t: NonNullable<typeof tryOn>) => {
+      if (t.kind === 'decor') scope.timeout(() => scope.alive && acts && !acts.busy && acts.play(t.id), app.reducedMotion ? 200 : 600);
+    };
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
@@ -559,6 +618,7 @@ export const regionScreen: ScreenDef = {
         return;
       }
       if (parades.onClick(t)) return;
+      if (welcomes.onClick(t)) return;
       // A meal is playing: the scene is its stage until it's eaten (anything else the player starts ends it).
       if (meals.active && t.closest('.sanctuary__scene') && !t.closest('[data-act="photo"], [data-act="walk"], [data-act="tour"]')) return;
       // Walk round the Farm in 3D (D44 PR I): the scene's own 3D layer rests meanwhile.
@@ -651,7 +711,11 @@ export const regionScreen: ScreenDef = {
           if (tryOn) app.router.back(shopRouteFor(tryOn, id));
           break;
         case 'try-again':
-          playTry();
+          if (tryOn?.kind === 'decor') playTryDecor();
+          else playTry();
+          break;
+        case 'try-buy':
+          buyTry();
           break;
         case 'play':
           playMode({ kind: 'level', level: app.save.journey.nextLevel });
