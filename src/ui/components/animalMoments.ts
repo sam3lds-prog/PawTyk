@@ -54,6 +54,15 @@ export interface SceneMoments {
   dispose(): void;
 }
 
+/**
+ * Moments can be switched off for a whole app run (browser checks that need a scene to stay exactly at rest for a
+ * long time, e.g. D46's acceptance matrix). On unless a test says otherwise; not a player setting.
+ */
+let enabled = true;
+export function setMomentsEnabled(on: boolean): void {
+  enabled = on;
+}
+
 /** Tester shortcut: the next home visited plays its first moment after a couple of seconds (one visit only). */
 let soon = false;
 export function requestMomentSoon(): void {
@@ -90,7 +99,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
   };
   host.director.register('moment', { cancel: stop, active });
 
-  const free = () => !disposed && !document.hidden && !host.reducedMotion() && host.director.owner === null && !host.director.paused && !host.busy();
+  const free = () => enabled && !disposed && !document.hidden && !host.reducedMotion() && host.director.owner === null && !host.director.paused && !host.busy();
 
   function cast(svg: SVGSVGElement): Array<MomentCast & { fig: SVGGElement }> {
     return [...svg.querySelectorAll<SVGGElement>('.sanctuary__pet:not([data-trick]):not(.is-away)')]
