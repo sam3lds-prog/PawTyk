@@ -72,6 +72,55 @@ export function glyph(g: EmoteGlyph, x: number, y: number, s: number): string {
         <path d="M${f(x - 2.6 * k)} ${f(y + 1 * k)} l${f(1.8 * k)} ${f(1.6 * k)}" stroke="#F2C230" stroke-width="${f(0.6 * k)}"/>
         <circle cx="${f(x + 1.6 * k)}" cy="${f(y - 3.6 * k)}" r="${f(0.7 * k)}" fill="#E8707A"/><circle cx="${f(x + 3.6 * k)}" cy="${f(y - 1.4 * k)}" r="${f(0.6 * k)}" fill="#5B9BC4"/><circle cx="${f(x - 0.4 * k)}" cy="${f(y - 4.4 * k)}" r="${f(0.55 * k)}" fill="#6FB07C"/>
         <path d="M${f(x + 0.8 * k)} ${f(y - 1.2 * k)} q${f(1.4 * k)} ${f(-1.2 * k)} ${f(2.8 * k)} ${f(-0.2 * k)}" stroke="#F2C230" stroke-width="${f(0.5 * k)}" fill="none" stroke-linecap="round"/>`;
+    // ---------------------------------------------------------------- D48 PR D
+    case 'wiggle':
+      return `<path d="M${f(x - 4.4 * k)} ${f(y)} q${f(1.1 * k)} ${f(-2.4 * k)} ${f(2.2 * k)} 0 t${f(2.2 * k)} 0 t${f(2.2 * k)} 0 t${f(2.2 * k)} 0" stroke="#E8707A" stroke-width="${f(1.1 * k)}" fill="none" stroke-linecap="round"/>
+        <path d="M${f(x - 2 * k)} ${f(y + 2.4 * k)} q${f(2 * k)} ${f(1.6 * k)} ${f(4 * k)} 0" stroke="#2F2A27" stroke-width="${f(0.6 * k)}" fill="none" stroke-linecap="round"/>`;
+    case 'five':
+      return `<g fill="#c96f4a"><ellipse cx="${f(x)}" cy="${f(y + 2 * k)}" rx="${f(2.6 * k)}" ry="${f(2.2 * k)}"/>${[-2.6, -0.9, 0.9, 2.6].map((d) => `<ellipse cx="${f(x + d * k)}" cy="${f(y - 2 * k + Math.abs(d) * 0.35 * k)}" rx="${f(0.75 * k)}" ry="${f(1.3 * k)}"/>`).join('')}</g>
+        <path d="M${f(x - 4.6 * k)} ${f(y - 3.4 * k)} l${f(-0.8 * k)} ${f(-0.8 * k)} M${f(x + 4.6 * k)} ${f(y - 3.4 * k)} l${f(0.8 * k)} ${f(-0.8 * k)}" stroke="#F2C230" stroke-width="${f(0.6 * k)}" stroke-linecap="round"/>`;
+    case 'peek':
+      return `<circle cx="${f(x)}" cy="${f(y)}" r="${f(4.4 * k)}" fill="#FFD866"/><path d="M${f(x - 4.6 * k)} ${f(y - 0.4 * k)} h${f(9.2 * k)} v${f(3 * k)} h${f(-9.2 * k)} Z" fill="#c96f4a"/>
+        <circle cx="${f(x - 1.6 * k)}" cy="${f(y - 1.8 * k)}" r="${f(0.6 * k)}" fill="#2F2A27"/><circle cx="${f(x + 1.6 * k)}" cy="${f(y - 1.8 * k)}" r="${f(0.6 * k)}" fill="#2F2A27"/>`;
+    case 'question':
+      return `<path d="M${f(x - 2 * k)} ${f(y - 2.2 * k)} q0 ${f(-2.6 * k)} ${f(2.4 * k)} ${f(-2.6 * k)} q${f(2.4 * k)} 0 ${f(2.4 * k)} ${f(2.2 * k)} q0 ${f(1.6 * k)} ${f(-2.2 * k)} ${f(2.6 * k)} v${f(1.2 * k)}" stroke="#5b9bc4" stroke-width="${f(1.2 * k)}" fill="none" stroke-linecap="round"/><circle cx="${f(x + 0.2 * k)}" cy="${f(y + 3.6 * k)}" r="${f(0.8 * k)}" fill="#5b9bc4"/>`;
+    case 'achoo':
+      return `<g fill="#cfeaf7" stroke="#7fb8d8" stroke-width="${f(0.4 * k)}"><circle cx="${f(x - 2 * k)}" cy="${f(y + 1 * k)}" r="${f(2 * k)}"/><circle cx="${f(x + 1 * k)}" cy="${f(y - 0.6 * k)}" r="${f(2.4 * k)}"/><circle cx="${f(x + 2.8 * k)}" cy="${f(y + 1.8 * k)}" r="${f(1.6 * k)}"/></g>
+        <path d="M${f(x - 4.4 * k)} ${f(y - 3 * k)} l${f(1 * k)} ${f(1 * k)} M${f(x + 4.4 * k)} ${f(y - 3.4 * k)} l${f(-0.8 * k)} ${f(1.2 * k)}" stroke="#7fb8d8" stroke-width="${f(0.6 * k)}" stroke-linecap="round"/>`;
+    case 'loop':
+      return `<path d="M${f(x + 3.6 * k)} ${f(y - 0.6 * k)} a${f(3.6 * k)} ${f(3.6 * k)} 0 1 1 ${f(-1.6 * k)} ${f(-3 * k)}" stroke="#c96f4a" stroke-width="${f(1.1 * k)}" fill="none" stroke-linecap="round"/><path d="M${f(x + 2.4 * k)} ${f(y - 4.8 * k)} l${f(0.6 * k)} ${f(1.6 * k)} l${f(-1.6 * k)} ${f(0.4 * k)}" fill="#c96f4a"/>`;
+    case 'flip':
+      return `<path d="M${f(x - 3.6 * k)} ${f(y + 2.4 * k)} a${f(3.6 * k)} ${f(3.6 * k)} 0 1 1 ${f(7.2 * k)} 0" stroke="#6fb07c" stroke-width="${f(1.1 * k)}" fill="none" stroke-linecap="round"/><path d="M${f(x + 3.6 * k)} ${f(y + 3.8 * k)} l${f(-1.2 * k)} ${f(-1.8 * k)} h${f(2.4 * k)} Z" fill="#6fb07c"/>`;
+    case 'moon':
+      return `<path d="M${f(x + 1.4 * k)} ${f(y - 4.4 * k)} a${f(4.4 * k)} ${f(4.4 * k)} 0 1 0 ${f(3 * k)} ${f(7.6 * k)} a${f(3.6 * k)} ${f(3.6 * k)} 0 1 1 ${f(-3 * k)} ${f(-7.6 * k)} Z" fill="#F2C230"/><path d="M${f(x - 4.6 * k)} ${f(y + 4 * k)} h${f(5 * k)}" stroke="#8a6a4f" stroke-width="${f(0.6 * k)}" stroke-linecap="round"/>`;
+    case 'disco':
+      return `<circle cx="${f(x)}" cy="${f(y + 0.6 * k)}" r="${f(3.8 * k)}" fill="#cfd6dc" stroke="#9aa3a8" stroke-width="${f(0.4 * k)}"/><path d="M${f(x - 3.8 * k)} ${f(y + 0.6 * k)} h${f(7.6 * k)} M${f(x)} ${f(y - 3.2 * k)} v${f(7.6 * k)} M${f(x - 2.8 * k)} ${f(y - 2 * k)} q${f(2.8 * k)} ${f(1.6 * k)} ${f(5.6 * k)} 0 M${f(x - 2.8 * k)} ${f(y + 3.2 * k)} q${f(2.8 * k)} ${f(-1.6 * k)} ${f(5.6 * k)} 0" stroke="#9aa3a8" stroke-width="${f(0.3 * k)}" fill="none"/><path d="M${f(x)} ${f(y - 3.2 * k)} v${f(-1.4 * k)}" stroke="#6b6157" stroke-width="${f(0.5 * k)}"/>${starPath(x + 4 * k, y - 3 * k, 1.4 * k) ? `<path d="${starPath(x + 4 * k, y - 3 * k, 1.4 * k)}" fill="#F4A6D0"/>` : ''}`;
+    case 'feather':
+      return `<path d="M${f(x - 3.6 * k)} ${f(y + 4 * k)} q${f(1 * k)} ${f(-6 * k)} ${f(7 * k)} ${f(-8.4 * k)} q${f(-0.6 * k)} ${f(6 * k)} ${f(-7 * k)} ${f(8.4 * k)} Z" fill="#F6D27A" stroke="#D9A42E" stroke-width="${f(0.4 * k)}"/><path d="M${f(x - 3.6 * k)} ${f(y + 4 * k)} l${f(5.8 * k)} ${f(-6.6 * k)}" stroke="#D9A42E" stroke-width="${f(0.4 * k)}"/>`;
+    case 'stretch':
+      return `<path d="M${f(x - 4.4 * k)} ${f(y + 2 * k)} q${f(4.4 * k)} ${f(-6 * k)} ${f(8.8 * k)} 0" stroke="#5b6b8a" stroke-width="${f(1.1 * k)}" fill="none" stroke-linecap="round"/><path d="M${f(x - 4.4 * k)} ${f(y + 2 * k)} l${f(-0.4 * k)} ${f(1.6 * k)} M${f(x + 4.4 * k)} ${f(y + 2 * k)} l${f(0.4 * k)} ${f(1.6 * k)}" stroke="#5b6b8a" stroke-width="${f(0.8 * k)}" stroke-linecap="round"/>`;
+    case 'confetti':
+      return ['#E8707A', '#F2C230', '#6FB07C', '#5B9BC4', '#9B7FD0']
+        .map((c, i) => `<rect x="${f(x - 4 * k + i * 1.9 * k)}" y="${f(y - 3 + ((i * 7) % 5) * 1.4 * k - 2 * k)}" width="${f(1.4 * k)}" height="${f(0.8 * k)}" fill="${c}" transform="rotate(${i * 37} ${f(x - 4 * k + i * 1.9 * k)} ${f(y)})"/>`)
+        .join('');
+    case 'balloon':
+      return `${[
+        [-2, -1, '#E8707A'],
+        [1.6, -2.2, '#5B9BC4'],
+        [0, 0.6, '#F2C230'],
+      ]
+        .map(([dx, dy, c]) => `<ellipse cx="${f(x + (dx as number) * k)}" cy="${f(y + (dy as number) * k - 1 * k)}" rx="${f(1.9 * k)}" ry="${f(2.3 * k)}" fill="${c}"/>`)
+        .join('')}<path d="M${f(x)} ${f(y + 1.8 * k)} v${f(2.8 * k)} M${f(x - 2 * k)} ${f(y + 0.8 * k)} l${f(2 * k)} ${f(3.8 * k)} M${f(x + 1.6 * k)} ${f(y - 0.6 * k)} l${f(-1.6 * k)} ${f(5.2 * k)}" stroke="#6b6157" stroke-width="${f(0.3 * k)}"/>`;
+    case 'twirl':
+      return `<path d="M${f(x)} ${f(y)} m${f(-0.5 * k)} 0 a${f(0.9 * k)} ${f(0.9 * k)} 0 1 1 ${f(1.8 * k)} 0 a${f(2.2 * k)} ${f(2.2 * k)} 0 1 1 ${f(-4.4 * k)} 0" stroke="#9b7fd0" stroke-width="${f(0.9 * k)}" fill="none" stroke-linecap="round"/><path d="${starPath(x + 3.4 * k, y - 3 * k, 1.8 * k)}" fill="#F7C534"/><path d="${starPath(x - 3.6 * k, y + 3 * k, 1.2 * k)}" fill="#F4A6D0"/>`;
+    case 'drum':
+      return `<path d="M${f(x - 4 * k)} ${f(y - 1 * k)} v${f(4 * k)} q${f(4 * k)} ${f(2 * k)} ${f(8 * k)} 0 v${f(-4 * k)}" fill="#C9763E" stroke="#8a4a2a" stroke-width="${f(0.4 * k)}"/><ellipse cx="${f(x)}" cy="${f(y - 1 * k)}" rx="${f(4 * k)}" ry="${f(1.3 * k)}" fill="#f2e2c4" stroke="#8a4a2a" stroke-width="${f(0.4 * k)}"/><path d="M${f(x - 3 * k)} ${f(y - 4.6 * k)} l${f(2 * k)} ${f(3 * k)} M${f(x + 3.4 * k)} ${f(y - 4.6 * k)} l${f(-2 * k)} ${f(3 * k)}" stroke="#8a6a4f" stroke-width="${f(0.6 * k)}" stroke-linecap="round"/>`;
+    case 'boogie':
+      return `${glyph('note', x - 1.6 * k, y, 8 * k)}<path d="${starPath(x + 3.4 * k, y - 3 * k, 1.6 * k)}" fill="#F2C230"/><path d="M${f(x - 4.6 * k)} ${f(y + 4 * k)} h${f(9 * k)}" stroke="#C9628E" stroke-width="${f(0.8 * k)}" stroke-linecap="round"/>`;
+    case 'duet':
+      return `<path d="${heartPath(x - 1.8 * k, y + 0.4 * k, 3.2 * k)}" fill="#E8556A"/><path d="${heartPath(x + 2 * k, y - 1 * k, 2.6 * k)}" fill="#F4A6C4"/>`;
+    case 'march':
+      return `<path d="M${f(x - 3.4 * k)} ${f(y + 4 * k)} v${f(-8.6 * k)}" stroke="#8a6a4f" stroke-width="${f(0.6 * k)}"/><path d="M${f(x - 3.4 * k)} ${f(y - 4.6 * k)} l${f(5.4 * k)} ${f(1.6 * k)} l${f(-5.4 * k)} ${f(1.6 * k)} Z" fill="#E8707A"/>${[0, 1, 2].map((i) => `<circle cx="${f(x + (i - 0.4) * 2.2 * k)}" cy="${f(y + 3.2 * k)}" r="${f(0.8 * k)}" fill="${['#F2C230', '#6FB07C', '#5B9BC4'][i]}"/>`).join('')}`;
   }
 }
 
@@ -129,6 +178,59 @@ export function trickProps(id: TrickId, b: Box, dir: 1 | -1 = 1): string {
         .join('')}</g>
         <g class="sp-trick-burst">${[0, 1, 2].map((i) => `<path d="${starPath(cx + dir * (span - 6 + i * 6), bottom - 6 - (i % 2) * 6, 3)}" fill="#fff3b0" stroke="#f2c230" stroke-width="0.5"/>`).join('')}</g>`;
     }
+    // D48 PR D
+    case 'confetti': {
+      const cols = ['#e8707a', '#f2c230', '#6fb07c', '#5b9bc4', '#9b7fd0', '#f6a23a'];
+      return `<g class="sp-trick-confetti">${cols
+        .concat(cols)
+        .map((c, i) => {
+          const a = (i / 12) * Math.PI + Math.PI;
+          const x = cx + Math.cos(a) * r * (0.7 + (i % 3) * 0.2);
+          const y = top - 2 + Math.sin(a) * r * 0.5;
+          return `<rect x="${f(x)}" y="${f(y)}" width="2.6" height="1.6" rx="0.4" fill="${c}" transform="rotate(${(i * 37) % 90} ${f(x)} ${f(y)})"/>`;
+        })
+        .join('')}</g>`;
+    }
+    case 'balloon': {
+      const hx = cx + b.w * 0.3;
+      return `<g class="sp-trick-balloons">${['#e8707a', '#f2c230', '#5b9bc4']
+        .map((c, i) => {
+          const x = hx + (i - 1) * 6;
+          const y = top - 16 - (i === 1 ? 4 : 0);
+          return `<path d="M${f(hx)} ${f(top + 4)} Q${f(x + 1)} ${f(y + 10)} ${f(x)} ${f(y + 5.6)}" stroke="#8a7a6a" stroke-width="0.5" fill="none"/>
+            <ellipse cx="${f(x)}" cy="${f(y)}" rx="4.2" ry="5.2" fill="${c}"/><ellipse cx="${f(x - 1.4)}" cy="${f(y - 2)}" rx="1" ry="1.5" fill="#fff" fill-opacity="0.6"/>`;
+        })
+        .join('')}</g>`;
+    }
+    case 'drumsolo': {
+      const y = bottom - 7;
+      return `<g class="sp-trick-drum"><ellipse cx="${f(cx)}" cy="${f(y + 6)}" rx="8" ry="2.4" fill="#a8362e"/><rect x="${f(cx - 8)}" y="${f(y)}" width="16" height="6" fill="#c8473c"/>
+        <path d="M${f(cx - 8)} ${f(y + 1)} L${f(cx - 4)} ${f(y + 6)} L${f(cx)} ${f(y + 1)} L${f(cx + 4)} ${f(y + 6)} L${f(cx + 8)} ${f(y + 1)}" stroke="#f2c230" stroke-width="0.7" fill="none"/>
+        <ellipse cx="${f(cx)}" cy="${f(y)}" rx="8" ry="2.4" fill="#f4efe4" stroke="#a8362e" stroke-width="0.6"/></g>
+        <g class="sp-trick-notes">${glyph('note', cx - b.w * 0.62, top + 8, 10)}${glyph('note', cx + b.w * 0.62, top + 3, 11)}</g>`;
+    }
+    case 'disco': {
+      const y = top - 14;
+      return `<g class="sp-trick-disco"><line x1="${f(cx)}" y1="${f(y - 8)}" x2="${f(cx)}" y2="${f(y - 4.4)}" stroke="#8a8f99" stroke-width="0.6"/>
+        <circle cx="${f(cx)}" cy="${f(y)}" r="4.6" fill="#d9dee6" stroke="#9aa3b0" stroke-width="0.5"/>
+        <path d="M${f(cx - 4.6)} ${f(y)} H${f(cx + 4.6)} M${f(cx)} ${f(y - 4.6)} V${f(y + 4.6)} M${f(cx - 3.3)} ${f(y - 3.3)} L${f(cx + 3.3)} ${f(y + 3.3)}" stroke="#ffffff" stroke-width="0.5"/>
+        ${[0, 1, 2, 3].map((i) => `<path d="${starPath(cx + (i % 2 ? 1 : -1) * (9 + i * 2), y + 4 + i * 3, 1.8)}" fill="${['#f4a6d0', '#9fe0e6', '#f2c230', '#b8f0b0'][i]}"/>`).join('')}</g>`;
+    }
+    case 'sneeze': {
+      const x = cx + dir * b.w * 0.55;
+      const y = top + b.h * 0.3;
+      return `<g class="sp-trick-puff">${[0, 1, 2, 3].map((i) => `<circle cx="${f(x + dir * i * 2.6)}" cy="${f(y + (i % 2 ? -2 : 1))}" r="${f(2.4 + (i % 2) * 0.8)}" fill="#ffffff" fill-opacity="0.92" stroke="rgba(40,52,52,0.15)" stroke-width="0.4"/>`).join('')}</g>`;
+    }
+    case 'startwirl':
+      return `<g class="sp-trick-twinkles">${[0, 1, 2, 3, 4, 5].map((i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return `<path d="${starPath(cx + Math.cos(a) * r, b.y + b.h / 2 + Math.sin(a) * r * 0.6, 2.6)}" fill="${i % 2 ? '#f2c230' : '#fff3b0'}" stroke="#ffffff" stroke-width="0.5"/>`;
+      }).join('')}</g>`;
+    case 'boogie':
+    case 'chickendance':
+    case 'duet':
+    case 'miniparade':
+      return `<g class="sp-trick-notes">${glyph('note', cx - b.w * 0.62, top + 8, 10)}${glyph('note', cx + b.w * 0.62, top + 3, 11)}</g>`;
     default:
       return '';
   }

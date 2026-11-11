@@ -761,6 +761,196 @@ export const ACTIVITY_CLIPS: Record<string, Clip> = {
   },
 };
 
+// ------------------------------------------------------------------ eighteen more (D48 PR D)
+
+/** Big and tall animals (and seals) jump less and don't flip; birds use wings for paws. */
+const heavy = (c: ClipCtx) => c.body === 'big' || c.body === 'tall';
+
+/**
+ * The new tricks and emotes, built from the same primitives (hop, turn, sway, lean, glance, squash) into different
+ * routines. Each has its own motion and its own face; a body that can't do it the usual way does its own version.
+ */
+export const D48_CLIPS: Record<string, Clip> = {
+  wiggle: {
+    ms: 1600,
+    frame: (t) => ({ pose: { tilt: wiggle(t, 0.05, 0.85, 3, 0.2), px: wiggle(t, 0.05, 0.85, 3, 0.05), tail: wiggle(t, 0, 1, 6, 0.8), squash: bump(t, 0.82, 0.9, 0.98) * 0.06 }, face: 'laugh' }),
+  },
+  peekaboo: {
+    ms: 2000,
+    frame: (t, c) => {
+      const hide = hold(t, 0.06, 0.58, 0.08);
+      const boo = bump(t, 0.56, 0.64, 0.78);
+      return {
+        pose: sum(jump(t, 0.58, 0.72, heavy(c) ? 0.08 : 0.16), { armL: 1.5 * hide, armR: 1.5 * hide, armLOut: -0.3 * hide, armROut: -0.3 * hide, headPitch: 0.25 * hide, ears: 0.4 * boo, headTilt: wiggle(t, 0.76, 0.98, 1, 0.18) } as PoseDelta),
+        face: hide > 0.5 ? 'blink' : t > 0.56 ? 'laugh' : 'happy',
+      };
+    },
+  },
+  headtilt: {
+    ms: 1600,
+    frame: (t) => {
+      const a = hold(t, 0.08, 0.46, 0.1);
+      const b = hold(t, 0.52, 0.92, 0.1);
+      return { pose: { headTilt: 0.42 * a - 0.38 * b, headYaw: 0.15 * a - 0.15 * b, ears: 0.25 * (a + b) }, face: t > 0.44 && t < 0.54 ? 'blink' : 'lookR' };
+    },
+  },
+  sneeze: {
+    ms: 1800,
+    frame: (t) => {
+      const build = easeInOut(seg(t, 0.05, 0.48)) * (1 - seg(t, 0.48, 0.52));
+      const snap = bump(t, 0.48, 0.52, 0.66);
+      return { pose: { headPitch: -0.35 * build + 0.4 * snap, lean: -0.1 * build + 0.2 * snap, squash: -0.05 * build + 0.12 * snap, px: -0.05 * bump(t, 0.52, 0.6, 0.8), mouth: build, ears: -0.2 * snap }, face: t > 0.52 && t < 0.8 ? 'surprised' : t < 0.48 ? 'yawn' : 'happy' };
+    },
+  },
+  stretch: {
+    ms: 2600,
+    frame: (t, c) => {
+      const w = hold(t, 0.12, 0.85, 0.2);
+      if (c.body === 'bird') return { pose: { armLOut: 1.5 * w, armROut: 1.5 * w, armL: 0.5 * w, armR: 0.5 * w, squash: -0.06 * w + 0.05 * bump(t, 0.75, 0.85, 0.95) }, face: t < 0.4 ? 'yawn' : 'sleepy' };
+      return { pose: { lean: 0.42 * w, armL: 1.1 * w, armR: 1.1 * w, tailUp: 0.6 * w, headPitch: -0.3 * w, squash: 0.05 * bump(t, 0.78, 0.86, 0.96), mouth: bump(t, 0.05, 0.22, 0.4) }, face: t < 0.4 ? 'yawn' : 'sleepy' };
+    },
+  },
+  confetti: {
+    ms: 2000,
+    frame: (t, c) => ({ pose: sum(jump(t, 0.04, 0.24, heavy(c) ? 0.12 : 0.28), { armLOut: 1.6 * hold(t, 0.06, 0.4, 0.06), armROut: 1.6 * hold(t, 0.06, 0.4, 0.06), tilt: wiggle(t, 0.35, 0.9, 2, 0.12), ears: 0.4 * hold(t, 0.04, 0.5) }), face: t < 0.3 ? 'surprised' : 'laugh' }),
+  },
+  highfive: {
+    ms: 1500,
+    frame: (t, c) => {
+      const up = hold(t, 0.3, 0.72, 0.08);
+      const wing = c.body === 'bird';
+      return {
+        pose: sum(jump(t, 0.32, 0.52, heavy(c) ? 0.06 : 0.12), {
+          armR: (wing ? 0.4 : 2.6) * up,
+          armROut: (wing ? 2.4 : 0.4) * up,
+          lean: -0.08 * up,
+          headPitch: -0.2 * up,
+          headYaw: c.dir * 0.2 * up,
+          tail: wiggle(t, 0.5, 1, 3, 0.5),
+        }),
+        face: up > 0.3 ? 'laugh' : 'happy',
+      };
+    },
+  },
+  tailchase: {
+    ms: 2200,
+    frame: (t) => {
+      const turn = easeInOut(seg(t, 0.06, 0.72));
+      const dizzy = hold(t, 0.72, 0.98, 0.06);
+      return { pose: sum(steps(t, 0.06, 0.72, 6), { yaw: turn * TAU * 2, headYaw: -0.5 * hold(t, 0.06, 0.72), tail: 0.8 * hold(t, 0.06, 0.72), tilt: wiggle(t, 0.72, 0.98, 2, 0.16) * dizzy, roll: wiggle(t, 0.72, 0.98, 2, 0.05) }), face: dizzy > 0.3 ? 'laugh' : 'focused' };
+    },
+  },
+  somersault: {
+    ms: 1800,
+    frame: (t, c) => {
+      if (heavy(c) || c.body === 'seal') {
+        // A big animal rolls onto its side and back, legs in the air for a moment.
+        const side = hold(t, 0.12, 0.82, 0.18);
+        return { pose: { roll: c.dir * 1.0 * side, py: -0.04 * side, legL: 0.8 * side, legR: 0.8 * side, armL: 0.8 * side, armR: 0.8 * side, tail: wiggle(t, 0.2, 0.8, 4, 0.6) }, face: 'laugh' };
+      }
+      const flip = easeInOut(seg(t, 0.2, 0.62));
+      return { pose: sum(jump(t, 0.16, 0.66, 0.24), { pitch: flip * TAU, px: c.dir * 0.22 * easeInOut(seg(t, 0.16, 0.66)) * (1 - easeInOut(seg(t, 0.8, 0.98))), armLOut: 1.5 * bump(t, 0.6, 0.72, 0.95), armROut: 1.5 * bump(t, 0.6, 0.72, 0.95) }), face: t > 0.62 ? 'laugh' : 'focused' };
+    },
+  },
+  balloon: {
+    ms: 3400,
+    frame: (t, c) => {
+      const up = easeInOut(seg(t, 0.06, 0.45)) * (1 - easeInOut(seg(t, 0.6, 0.94)));
+      return { pose: { py: (heavy(c) ? 0.35 : 0.7) * up, armR: 2.6 * hold(t, 0.04, 0.95, 0.08), armROut: 0.3 * hold(t, 0.04, 0.95), legL: 0.4 * up, legR: 0.4 * up, tilt: wiggle(t, 0.1, 0.9, 2, 0.08), tail: wiggle(t, 0, 1, 4, 0.4) }, face: up > 0.5 ? 'stars' : 'happy' };
+    },
+  },
+  drumsolo: {
+    ms: 3200,
+    frame: (t, c) => {
+      // Faster and faster: the beats crowd together toward the end, then one big crash.
+      const x = seg(t, 0.05, 0.8);
+      const beat = Math.sin(x * x * 14 * Math.PI);
+      const crash = bump(t, 0.76, 0.82, 0.96);
+      return { pose: sum(jump(t, 0.76, 0.84, heavy(c) ? 0.06 : 0.14), { armL: (0.9 + beat * 0.5) * hold(t, 0.04, 0.82), armR: (0.9 - beat * 0.5) * hold(t, 0.04, 0.82), armLOut: 1.8 * crash, armROut: 1.8 * crash, headPitch: Math.abs(beat) * 0.12, tail: beat * 0.4 }), face: t > 0.8 ? 'laugh' : 'focused' };
+    },
+  },
+  moonwalk: {
+    ms: 2600,
+    frame: (t, c) => {
+      // Faces one way and glides the other.
+      const back = easeInOut(seg(t, 0.08, 0.8));
+      const glide = hold(t, 0.08, 0.86, 0.06);
+      const p = Math.sin(seg(t, 0.08, 0.8) * 8 * Math.PI);
+      return { pose: sum(jump(t, 0.74, 0.82, 0.08), { yaw: -c.dir * 1.1 * glide, px: c.dir * 0.3 * back * (1 - easeInOut(seg(t, 0.86, 0.99))), legL: p * 0.4 * glide, legR: -p * 0.4 * glide, lean: -0.08 * glide, armL: 0.4 * glide }), face: 'proud' };
+    },
+  },
+  disco: {
+    ms: 2800,
+    frame: (t, c) => {
+      const s1 = Math.sin(seg(t, 0.04, 0.84) * 6 * Math.PI);
+      const point = hold(t, 0.84, 0.98, 0.04);
+      return { pose: { px: s1 * 0.07, tilt: s1 * 0.16, armR: (0.6 + 1.8 * Math.max(0, s1)) * hold(t, 0.04, 0.84) + 2.6 * point, armL: (0.6 + 1.8 * Math.max(0, -s1)) * hold(t, 0.04, 0.84), armROut: 0.6 * point, headYaw: c.dir * 0.3 * point, py: Math.abs(s1) * 0.03 }, face: point > 0.4 ? 'proud' : 'happy' };
+    },
+  },
+  chickendance: {
+    ms: 3000,
+    frame: (t) => {
+      const flap = hold(t, 0.02, 0.24, 0.04) * Math.abs(Math.sin(t * 40));
+      const wig = hold(t, 0.28, 0.5, 0.04);
+      const clap = hold(t, 0.54, 0.66, 0.03);
+      const turn = easeInOut(seg(t, 0.68, 0.94));
+      return {
+        pose: { armLOut: 1.4 * flap + 0.4 * clap, armROut: 1.4 * flap + 0.4 * clap, armL: 0.6 * flap + 1.2 * clap, armR: 0.6 * flap + 1.2 * clap, squash: 0.08 * flap, tilt: Math.sin(t * 40) * 0.12 * wig, tail: Math.sin(t * 40) * 0.8 * wig, yaw: turn * TAU, py: bump(t, 0.56, 0.6, 0.64) * 0.05 },
+        face: 'laugh',
+      };
+    },
+  },
+  startwirl: {
+    ms: 3000,
+    frame: (t) => {
+      const spin = easeInOut(seg(t, 0.08, 0.9));
+      const w = hold(t, 0.06, 0.94, 0.1);
+      return { pose: { yaw: spin * TAU * 1.5 * 2 - (spin > 0 ? 0 : 0), py: 0.06 * w + 0.02 * Math.sin(t * 18), armLOut: 1.3 * w, armROut: 1.3 * w, armL: 0.5 * w, armR: 0.5 * w, headPitch: -0.12 * w }, face: 'stars' };
+    },
+  },
+  boogie: {
+    ms: 3600,
+    frame: (t, c) => {
+      // Steps, a spin, a hop and a big finish, one after another.
+      const step = hold(t, 0.02, 0.34, 0.04);
+      const s1 = Math.sin(seg(t, 0.02, 0.34) * 4 * Math.PI);
+      const spin = easeInOut(seg(t, 0.36, 0.52));
+      const fin = hold(t, 0.78, 0.97, 0.04);
+      return {
+        pose: sum(jump(t, 0.56, 0.7, heavy(c) ? 0.12 : 0.3), {
+          px: s1 * 0.07 * step,
+          tilt: s1 * 0.18 * step,
+          legL: Math.max(0, s1) * 0.5 * step,
+          legR: Math.max(0, -s1) * 0.5 * step,
+          yaw: spin * TAU,
+          armLOut: 1.8 * fin + 1.2 * bump(t, 0.56, 0.63, 0.7),
+          armROut: 1.8 * fin + 1.2 * bump(t, 0.56, 0.63, 0.7),
+          armL: 0.8 * fin,
+          armR: 0.8 * fin,
+          tail: wiggle(t, 0, 1, 10, 0.6),
+        }),
+        face: fin > 0.4 ? 'stars' : 'laugh',
+      };
+    },
+  },
+  duet: {
+    ms: 3400,
+    frame: (t, c) => {
+      const s1 = Math.sin(seg(t, 0.04, 0.56) * 4 * Math.PI);
+      const bow = hold(t, 0.78, 0.96, 0.06);
+      return { pose: sum(jump(t, 0.58, 0.72, 0.12), { tilt: s1 * 0.16 * hold(t, 0.04, 0.56), headYaw: c.dir * 0.4 * hold(t, 0.04, 0.56), lean: 0.4 * bow, headPitch: 0.3 * bow, armL: 0.5 * bow, armR: 0.5 * bow }), face: bow > 0.3 ? 'happy' : 'love' };
+    },
+  },
+  miniparade: {
+    ms: 3600,
+    frame: (t, c) => {
+      const march = hold(t, 0.04, 0.9, 0.06);
+      const p = Math.sin(seg(t, 0.04, 0.9) * 10 * Math.PI);
+      return { pose: { px: c.dir * 0.18 * easeInOut(seg(t, 0.04, 0.5)) * (1 - easeInOut(seg(t, 0.6, 0.98))), py: Math.abs(p) * 0.04 * march, legL: Math.max(0, p) * 0.7 * march, legR: Math.max(0, -p) * 0.7 * march, armL: Math.max(0, -p) * 0.8 * march, armR: Math.max(0, p) * 0.8 * march, headPitch: -0.12 * march, tail: p * 0.4 }, face: 'proud' };
+    },
+  },
+};
+
 // ------------------------------------------------------------------ the new decorations' motions (D48 PR C)
 
 /**
@@ -868,7 +1058,7 @@ export function activityClip(decor: string): Clip | null {
 
 /** A trick's or an emote's clip (they share the catalog's ids; D33/D34), or a group dance's (D44 PR D). */
 export function performClip(id: string): Clip | null {
-  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? MOMENT_CLIPS[id] ?? (id.startsWith('dance:') ? danceClip(id) : null);
+  return TRICK_CLIPS[id] ?? EMOTE_CLIPS[id] ?? D48_CLIPS[id] ?? MOMENT_CLIPS[id] ?? (id.startsWith('dance:') ? danceClip(id) : null);
 }
 
 /** An everyday move's clip (the ambient director's action names). */

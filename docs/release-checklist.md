@@ -418,6 +418,15 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] Buy the Barn Bell, then bring an animal home: the bell rings as the welcome starts; tap the Festival Stage:
       everyone dances
 
+**PR D — tricks and emotes**
+- [ ] Tray on the Farm: four tabs (Emotes, Tricks, Dances, Group acts); play two; the *Again* row shows them
+- [ ] Shop → Tricks: four headings; open Tail Chase: it plays first; learn it with coins; balance down by 100, once
+- [ ] Each new one in 3D and drawn (3D toys off): a cat, the cow (side roll for Somersault), a duck (wing five), the
+      seal (dances): nothing clips through the ground, every bubble gone when the move ends
+- [ ] Buddy Duet and Mini Parade with 1, 2 and 4 animals in a home: partners join a beat late; alone it's a solo
+- [ ] Each new tune on a phone speaker, sound on: none much louder or quieter than Wave or Love
+- [ ] Reduce Motion: the bubble only, still; no props
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

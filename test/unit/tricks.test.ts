@@ -8,6 +8,8 @@ import { defaultSave, normalizeSave } from '../../src/services/storage';
 import { emoteBubble, trickDir, trickOverlay, trickProps } from '../../src/ui/art/tricks';
 
 const NOW = new Date('2026-10-20T10:00:00Z');
+/** The first eighteen (D33/D35); D48 PR D's are tested in tricksD48.dom.test.ts. */
+const FIRST = TRICKS.slice(0, TRICKS.findIndex((t) => t.id === 'wiggle'));
 
 describe('trick catalog (D33)', () => {
   it('two free tricks, then video-token tricks, then premium gem tricks; emotes the same way', () => {
@@ -15,7 +17,7 @@ describe('trick catalog (D33)', () => {
       ['trick', ['wave', 'hop']],
       ['emote', ['love', 'laugh']],
     ] as const) {
-      const list = TRICKS.filter((t) => t.kind === kind);
+      const list = FIRST.filter((t) => t.kind === kind);
       const free = list.filter((t) => t.tier === 'free');
       const video = list.filter((t) => t.tier === 'video');
       const premium = list.filter((t) => t.tier === 'premium');
@@ -32,8 +34,10 @@ describe('trick catalog (D33)', () => {
         if (kind === 'trick') expect(trickProps(t.id, { x: 100, y: 100, w: 30, h: 30 }), t.id).not.toBe('');
       }
     }
-    expect(EMOTE_LIST.length).toBe(8);
-    expect(TRICK_LIST.length).toBe(10);
+    expect(FIRST.filter((t) => t.kind === 'emote').length).toBe(8);
+    expect(FIRST.filter((t) => t.kind === 'trick').length).toBe(10);
+    // With D48 PR D's eighteen.
+    expect(EMOTE_LIST.length + TRICK_LIST.length).toBe(36);
   });
 
   it('ids, names and timings are sane', () => {
@@ -45,14 +49,14 @@ describe('trick catalog (D33)', () => {
       expect(t.ms).toBeLessThanOrEqual(3600);
       expect(t.blurb.length).toBeGreaterThan(5);
     }
-    expect(isTrickId('moonwalk')).toBe(false);
+    expect(isTrickId('cartwheel')).toBe(false);
   });
 });
 
 describe('learning tricks', () => {
   it('free tricks are always known; nothing else until bought', () => {
     const s = defaultSave(NOW);
-    expect(ownedTricks(s)).toEqual(['wave', 'hop', 'love', 'laugh']);
+    expect(ownedTricks(s)).toEqual(['wave', 'hop', 'love', 'laugh', 'wiggle', 'highfive']);
     expect(buyTrick(s, 'wave', NOW)).toBe('free');
     expect(ownsTrick(s, 'spin')).toBe(false);
   });
@@ -133,7 +137,7 @@ describe('trick art', () => {
 });
 
 describe('trick motion', () => {
-  const css = readFileSync('src/ui/styles/sanctuary-play.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = (readFileSync('src/ui/styles/sanctuary-play.css', 'utf8') + readFileSync('src/ui/styles/tricks-d48.css', 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
 
   it('every trick moves the animal and shows its emote for exactly as long as it plays', () => {
     for (const t of TRICKS) {

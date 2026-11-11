@@ -121,7 +121,8 @@ describe('a release build with no store, no videos and no leaderboard', () => {
 
   it('a sanctuary\'s trick tray offers only the free tricks (and any already learned)', () => {
     const chips = (html: string) => [...html.matchAll(/data-trick="([^"]+)"/g)].map((m) => m[1]);
-    const free = TRICKS.filter((t) => t.kind === 'trick' && t.tier === 'free').map((t) => t.id);
+    // The free ones, and (D48 PR D) the ones for coins: those are earned by playing, so a release build sells them.
+    const free = TRICKS.filter((t) => t.kind === 'trick' && !t.group && (t.tier === 'free' || t.tier === 'coins')).map((t) => t.id);
     expect(chips(trickChips('trick'))).toEqual(free);
     const premium = TRICKS.find((t) => t.kind === 'trick' && t.tier === 'premium')!;
     app.save.inventory.tricks = { ...(app.save.inventory.tricks ?? {}), [premium.id]: { at: '2026-11-01T00:00:00.000Z' } } as never;

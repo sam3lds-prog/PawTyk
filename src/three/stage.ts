@@ -434,8 +434,10 @@ export class SceneStage {
     if (trick && trick !== e.seen.trick) {
       // Under reduced motion the trick class isn't set: the face and the emote show, still.
       const moving = classes.has(`is-trick-${trick}`);
-      const ms = e.actor.perform(trick, now, !moving);
-      if (ms) this.effects.perform(trick, e.actor, now, ms, !moving);
+      const partner = Number(el.dataset.trickPartner ?? 0);
+      const delay = moving ? partner * 160 : 0;
+      const ms = e.actor.perform(trick, now, !moving, delay);
+      if (ms) this.effects.perform(trick, e.actor, now + delay, ms, !moving, !partner);
     } else if (!trick && e.seen.trick && e.actor.performing(now) === e.seen.trick) {
       // Taken back before its end (a skipped dance, D44 PR D): the toy settles at once and its props go.
       e.actor.endPerform(now);

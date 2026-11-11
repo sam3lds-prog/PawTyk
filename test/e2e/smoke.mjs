@@ -705,7 +705,7 @@ try {
   check('the Tricks button opens the tray from the keyboard', await page.evaluate(() => !!document.activeElement?.closest('.trick-tray') && document.querySelector('[data-act="tricks"]').getAttribute('aria-expanded') === 'true'));
   await page.evaluate(() => window.__pt.go({ screen: 'shop', tab: 'tricks' }));
   await page.waitForSelector('.trick-card');
-  check('the Shop lists every trick and emote', (await page.$$('.trick-card')).length === 18);
+  check('the Shop lists every trick and emote, in four groups (D48)', (await page.$$('.trick-card')).length === 36 && (await page.$$('.shop__group')).length === 4);
 
   // Paw Cup waits for the two-animal lesson; then an open attempt survives other play, resumes, and scores from its log
   await page.evaluate(() => window.__pt.go({ screen: 'league' }));
@@ -1114,7 +1114,7 @@ try {
     return { out, arranged };
   });
   const badLevels = [...levels.out, ...levels.arranged].filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
-  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 23 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
+  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 41 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
   const span = (ls) => Math.max(...ls.map((l) => l.phone)) - Math.min(...ls.map((l) => l.phone));
   const trickLv = levels.out.filter((l) => l.id.startsWith('trick:') && l.id !== 'trick:party');
   const bigLv = levels.out.filter((l) => ['triumph', 'welcome', 'bounce', 'jig', 'trick:party'].includes(l.id));
