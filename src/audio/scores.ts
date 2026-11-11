@@ -76,7 +76,7 @@ export interface Score {
   level?: number;
 }
 
-export type CueId = 'triumph' | 'welcome' | 'bounce' | 'jig' | 'meadow' | 'hopalong' | 'sparkle' | 'circle' | `trick:${TrickId}`;
+export type CueId = 'triumph' | 'triumph2' | 'triumph3' | 'welcome' | 'bounce' | 'jig' | 'meadow' | 'hopalong' | 'sparkle' | 'circle' | `trick:${TrickId}`;
 
 const NAMES: Record<string, number> = {
   C: 0,
@@ -157,6 +157,64 @@ const triumph: Score = {
     hits('shaker', [0, 0.25, 0.5], 0.45),
     hits('clap', [0.75], 0.7),
     part('cymbal', [[0.75, null, 1.6, 0.3]]),
+  ],
+};
+
+/**
+ * D50 PR B: two restrained turns of Tiny Triumph for ordinary wins, so a run of quick solves doesn't ring the same
+ * bell every time. Same motif (C–E–G), same band, same length and level; only where it lands changes. A milestone win
+ * always plays the original (its spotlight's Welcome Home answers it, D45 PR B).
+ *  - `triumph2` (A Little Skip): the motif steps up through A before landing on the high C.
+ *  - `triumph3` (Bright Landing): the motif lands on G with a glockenspiel shimmer above it.
+ */
+const triumph2: Score = {
+  id: 'triumph2',
+  title: 'Tiny Triumph: A Little Skip',
+  bpm: 160,
+  beats: 3,
+  accents: [1],
+  parts: [
+    part('marimba', [
+      [0, 'C5', 0.25, 0.85],
+      [0.25, 'E5', 0.25, 0.85],
+      [0.5, 'G5', 0.25, 0.9],
+      [0.75, 'A5', 0.25, 0.85],
+      [1, 'C6', 0.9, 1],
+    ]),
+    part('bell', [
+      [1, 'E6', 1.5, 0.42],
+      [1, 'A5', 1.5, 0.28],
+    ]),
+    part('pluck', [[1, Fmaj7, 0.6, 0.5]]),
+    part('bass', [[1, 'F2', 0.9, 0.85]]),
+    hits('shaker', [0, 0.25, 0.5, 0.75], 0.42),
+    hits('clap', [1], 0.65),
+    part('cymbal', [[1, null, 1.5, 0.28]]),
+  ],
+};
+
+const triumph3: Score = {
+  id: 'triumph3',
+  title: 'Tiny Triumph: Bright Landing',
+  bpm: 160,
+  beats: 3,
+  accents: [0.75],
+  parts: [
+    part('marimba', [
+      [0, 'C5', 0.25, 0.85],
+      [0.25, 'E5', 0.25, 0.85],
+      [0.5, 'G5', 0.25, 0.9],
+      [0.75, 'G5', 0.9, 1],
+    ]),
+    part('glock', [
+      [0.75, 'D6', 0.4, 0.4],
+      [1, 'G6', 1.4, 0.38],
+    ]),
+    part('pluck', [[0.75, G, 0.6, 0.55]]),
+    part('bass', [[0.75, 'G2', 0.9, 0.9]]),
+    hits('shaker', [0, 0.25, 0.5], 0.45),
+    hits('clap', [0.75], 0.7),
+    part('cymbal', [[0.75, null, 1.6, 0.28]]),
   ],
 };
 
@@ -1735,7 +1793,7 @@ const meadow: Score = {
   ],
 };
 
-export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, welcome, bounce, jig, meadow, hopalong, sparkle, circle, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
+export const SCORES: Record<CueId, Score> = Object.fromEntries([triumph, triumph2, triumph3, welcome, bounce, jig, meadow, hopalong, sparkle, circle, ...tricks].map((s) => [s.id, s])) as Record<CueId, Score>;
 
 export function scoreFor(id: CueId): Score | undefined {
   return SCORES[id];

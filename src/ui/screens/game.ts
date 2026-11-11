@@ -31,6 +31,7 @@ import { finishAttempt } from '../../competitions/localCup';
 import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, claimedLine, type MetaNews } from '../../app/events';
 import { coinPartsLine, winCoins, type WinCoins } from '../../meta/winCoins';
+import { winFlavor, type WinFlavor } from '../../meta/winFlavor';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { showFirstArrival } from '../components/arrival';
@@ -152,6 +153,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   let warmup = false;
   let guideTries = 0;
   let winPet: AnimalId | null = null;
+  /** D50 PR B: this win's turn (its jingle and its animal's smile). */
+  let flavor: WinFlavor = winFlavor(0, true);
   // Zen and the guided first board never charge for hints. Extra lives work on casual boards with hearts (not Paw Cup).
   const freeHints = mode.kind === 'zen' || guided;
   const pantryOn = rules.revive && rules.hearts && !tutorial;
@@ -1349,7 +1352,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (mode.kind === 'daily' && rec.newDaily) track('daily_complete', { streak: rec.streak ?? 0 });
     if (growth?.stageUp) track('region_stage', { region: growth.sanctuary, stage: stageOf(app.save, growth.sanctuary) });
     for (const c of growth?.arrived ?? []) track('animal_arrived', { animal: c, sanctuary: growth!.sanctuary });
-    feel('solved');
+    // D50 PR B: an ordinary win takes one of three restrained turns (its jingle and its animal's smile), in rotation;
+    // a milestone keeps the original, so the big moments stay big.
+    flavor = winFlavor(app.save.stats.solved, !!growth && isMilestone(growth) && mode.kind !== 'cup');
+    feel('solved', { cue: flavor.cue });
     coach('Puzzle solved!');
     // D44 PR E, celebration level 1: light sweeps the board as its faces smile in a wave and stars pop over it, then
     // the results rise in stages. Nothing waits on the sparkle: the sheet's buttons work the moment it opens, and a tap
@@ -1766,7 +1772,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const first =
       milestone && hero && growth
         ? `${heroMarkup(growth, hero)}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${growthMarkup(growth, hero)}${errandLine}`
-        : `${winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}${stars}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}${errandLine}`;
+        : `${winPet ? `<div class="win-pet" data-win-mood="${flavor.mood}">${animalSvg(winPet, { mood: flavor.mood })}</div>` : ''}${stars}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}${errandLine}`;
     const details = [
       milestone ? stars : '',
       stats,

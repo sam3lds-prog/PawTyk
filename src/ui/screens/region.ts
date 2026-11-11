@@ -36,7 +36,7 @@ import { CELEBRATION_BY_ID, assignCelebration, celebrationFor, celebrationOf } f
 import { createSceneDirector } from '../components/sceneDirector';
 import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
-import { homeState } from '../../meta/homeState';
+import { homeState, isEveningAt } from '../../meta/homeState';
 import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
@@ -240,6 +240,8 @@ export const regionScreen: ScreenDef = {
           director,
           reducedMotion: () => app.reducedMotion,
           busy: () => !!tryOn || tray.isOpen || meals.active || parades.active || !!document.querySelector('.overlay') || !!acts?.busy,
+          // D50 PR B: someone says hello a couple of seconds into a calm visit (never over a welcome or anything else).
+          greet: { home: id, evening: () => isEveningAt(new Date()), welcoming: () => !!welcomes.animal || !!newcomers.length },
         })
       : null;
     scope.onDispose(() => moments?.dispose());

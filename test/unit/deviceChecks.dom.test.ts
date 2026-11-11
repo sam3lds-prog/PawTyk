@@ -48,7 +48,7 @@ describe('device checks (D46 PR C)', () => {
   it('the listening list has the five big moments, the parade in every home, the welcomes, and every trick tune', () => {
     const groups = listeningList();
     const all = groups.flatMap((g) => g.items);
-    expect(groups[0].items.map((i) => i.id)).toEqual(['triumph', 'welcome', 'bounce', 'jig', 'meadow']);
+    expect(groups[0].items.map((i) => i.id)).toEqual(['triumph', 'triumph2', 'triumph3', 'welcome', 'bounce', 'jig', 'meadow']);
     expect(groups[1].items.map((i) => i.home)).toEqual([...THEME_HOMES]);
     expect(groups[2].items.map((i) => i.id)).toEqual(['hopalong', 'sparkle', 'circle']);
     for (const t of TRICKS) expect(all.some((i) => i.id === `trick:${t.id}`)).toBe(true);
