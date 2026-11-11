@@ -13,6 +13,22 @@ import * as THREE from 'three';
 import { noteSharedTextures, releaseRenderer } from './release';
 import { Actor } from './actor';
 import { buildMeadow, type Meadow } from './meadow';
+import {
+  Shadows,
+  appleGeometry,
+  appleTreeGeometry,
+  baleEndTexture,
+  lilyPadGeometry,
+  plankTexture,
+  seedHeadTexture,
+  shingleTexture,
+  stoneGeometry,
+  strawTexture,
+  sunflowerHeadGeometry,
+  sunflowerLeafGeometry,
+  type PropKit,
+} from './farmProps';
+import { seedOf, seeded } from '../art/botany';
 import { addLights } from './lights';
 import { toySpec } from './species';
 import { Toy, ToyKit } from './toy';
@@ -31,6 +47,7 @@ import {
   nudge,
   obstaclesAt,
   pathOffset,
+  pathX,
   route,
   settle,
   stepWalker,
@@ -84,6 +101,13 @@ interface Moment {
 
 const col = (c: string) => new THREE.Color(c);
 
+/** Stretches a geometry's texture coordinates (so one painted texture repeats at the right size on each thing). */
+function scaleUv(g: THREE.BufferGeometry, su: number, sv: number): void {
+  const uv = g.attributes.uv as THREE.BufferAttribute | undefined;
+  if (!uv) return;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * su, uv.getY(i) * sv);
+}
+
 export class FarmWalk {
   readonly canvas: HTMLCanvasElement;
   private renderer: THREE.WebGLRenderer;
@@ -119,6 +143,17 @@ export class FarmWalk {
   readonly decor: FarmDecor[];
   /** The grass, wildflowers and butterflies (D47 PR 1). */
   private meadow!: Meadow;
+  /** D47 PR 2: painted textures and shared pieces (made in build()), soft shadows, and small things that move. */
+  private wood!: THREE.Texture;
+  private straw!: THREE.Texture;
+  private shadows!: Shadows;
+  private treeMat!: THREE.MeshStandardMaterial;
+  private appleGeo!: THREE.BufferGeometry;
+  private appleMat!: THREE.MeshStandardMaterial;
+  private stoneGeo!: THREE.BufferGeometry;
+  private stoneMat!: THREE.MeshStandardMaterial;
+  private tickers: Array<(t: number, still: boolean) => void> = [];
+  private clock = 0;
 
   constructor(private readonly o: WalkOptions) {
     this.quality = o.quality;
@@ -161,6 +196,10 @@ export class FarmWalk {
     this.disposables.push(g);
     return g;
   }
+  private track<T extends { dispose(): void }>(d: T): T {
+    this.disposables.push(d);
+    return d;
+  }
   private add(g: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = this.scene): THREE.Mesh {
     const mesh = new THREE.Mesh(g, m);
     mesh.position.set(x, y, z);
@@ -199,7 +238,18 @@ export class FarmWalk {
     this.scene.add(sun);
     addLights(this.scene);
     if (ev) for (const l of this.scene.children) if (l instanceof THREE.Light) l.intensity *= 0.55;
+    // D47 PR 2: the painted textures and pieces the Farm's things share.
+    const kit: PropKit = { mat: (c, rough) => this.mat(c, rough), geo: (g) => this.geo(g), track: (d) => this.track(d) };
+    this.wood = this.track(plankTexture(seedOf('farm-boards')));
+    this.straw = this.track(strawTexture(seedOf('farm-straw')));
+    this.shadows = new Shadows(this.scene, kit);
+    this.treeMat = this.track(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }));
+    this.appleGeo = this.geo(appleGeometry());
+    this.appleMat = this.track(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
+    this.stoneGeo = this.geo(stoneGeometry(seedOf('farm-stone')));
+    this.stoneMat = this.mat('#b7b0a2', 0.95);
     this.buildGround();
+    this.buildPathStones();
     const f = new Set(featuresAt(this.o.stage));
     this.buildHills();
     if (f.has('fence')) this.buildFence();
@@ -259,6 +309,39 @@ export class FarmWalk {
     // D47: the grass, wildflowers and butterflies are the meadow's (built with the rest of the world, in build()).
   }
 
+  /** D47 PR 2: pebbles along the path's edges, and a few stones about the Farm. */
+  private buildPathStones(): void {
+    const r = seeded(seedOf('walk-pebbles'));
+    const spots: Array<[number, number, number]> = [];
+    for (let z = -9.5; z < 23.5; z += 0.55) {
+      const px = pathX(z);
+      for (const side of [-1, 1]) if (r() < 0.7) spots.push([px + side * (0.95 + r() * 0.45), z + (r() - 0.5) * 0.3, 0.05 + r() * 0.07]);
+    }
+    // Stones in small groups: by the fence's corners, the gate, the windmill's hill.
+    for (const [cx, cz] of [
+      [-7.6, -7.6],
+      [7.6, 12.6],
+      [-3.4, 19],
+      [14, 8],
+      [-22, -27],
+      [18, -22],
+      [-18, 14],
+    ])
+      for (let k = 0; k < 4; k++) spots.push([cx + (r() - 0.5) * 1.6, cz + (r() - 0.5) * 1.6, 0.12 + r() * 0.22]);
+    const obstacles = this.obstacles;
+    const free = spots.filter(([x, z]) => !obstacles.some((o) => (o.r !== undefined ? Math.hypot(x - o.x, z - o.z) < o.r : false)));
+    const inst = new THREE.InstancedMesh(this.stoneGeo, this.stoneMat, free.length);
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const tone = new THREE.Color();
+    free.forEach(([x, z, s], i) => {
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6.28);
+      inst.setMatrixAt(i, m4.compose(new THREE.Vector3(x, groundY(x, z) + s * 0.15, z), q, new THREE.Vector3(s * (1 + r() * 0.4), s, s)));
+      inst.setColorAt(i, tone.setRGB(0.85 + r() * 0.2, 0.83 + r() * 0.18, 0.78 + r() * 0.18));
+    });
+    this.scene.add(inst);
+  }
+
   private buildHills(): void {
     // Far rolling hills (and a few round trees on them) closing the world in.
     const hm = this.mat('#b5d892');
@@ -294,45 +377,94 @@ export class FarmWalk {
     side(x1, z0, x1, z1);
     side(x0, z1, x1, z1, [-2.2, 2.2]); // the gate's gap, where the path comes in
     side(x0, z0, x0, z1);
-    const wood = this.mat('#b98a5e');
+    // D47 PR 2: weathered boards (painted grain), posts a touch out of true with pointed caps, rails each their own shade.
+    const wood = this.mat('#c49464');
+    wood.map = this.wood;
     const pg = this.geo(new THREE.BoxGeometry(0.16, 1.1, 0.16));
+    scaleUv(pg, 0.12, 1);
     const pm = new THREE.InstancedMesh(pg, wood, posts.length);
+    const cap = new THREE.InstancedMesh(this.geo(new THREE.ConeGeometry(0.13, 0.14, 4).rotateY(Math.PI / 4)), this.mat('#a77a50'), posts.length);
     const m4 = new THREE.Matrix4();
-    posts.forEach(([x, z], i) => pm.setMatrixAt(i, m4.makeTranslation(x, 0.55, z)));
-    this.scene.add(pm);
-    const rg = this.geo(new THREE.BoxGeometry(1, 0.1, 0.07));
-    const rm = new THREE.InstancedMesh(rg, wood, rails.length * 2);
     const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const one = new THREE.Vector3(1, 1, 1);
+    const shade = new THREE.Color();
+    const r = seeded(seedOf('walk-fence'));
+    posts.forEach(([x, z], i) => {
+      q.setFromEuler(e.set((r() - 0.5) * 0.06, r() * 0.4, (r() - 0.5) * 0.06));
+      pm.setMatrixAt(i, m4.compose(new THREE.Vector3(x, 0.55, z), q, one));
+      cap.setMatrixAt(i, m4.compose(new THREE.Vector3(x, 1.17, z), q, one));
+      pm.setColorAt(i, shade.setScalar(0.88 + r() * 0.14));
+      this.shadows.add(x, z, 0.5, 0.5, 0, 0, 0.6);
+    });
+    this.scene.add(pm, cap);
+    const rg = this.geo(new THREE.BoxGeometry(1, 0.1, 0.07));
+    scaleUv(rg, 2, 0.08);
+    const rm = new THREE.InstancedMesh(rg, wood, rails.length * 2);
     rails.forEach(([ax, az, bx, bz], i) => {
       const len = Math.hypot(bx - ax, bz - az);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.atan2(bz - az, bx - ax));
       for (const [k, y] of [
         [0, 0.45],
         [1, 0.85],
-      ])
-        rm.setMatrixAt(i * 2 + k, m4.compose(new THREE.Vector3((ax + bx) / 2, y, (az + bz) / 2), q, new THREE.Vector3(len, 1, 1)));
+      ]) {
+        rm.setMatrixAt(i * 2 + k, m4.compose(new THREE.Vector3((ax + bx) / 2, y + (r() - 0.5) * 0.03, (az + bz) / 2), q, new THREE.Vector3(len, 1, 1)));
+        rm.setColorAt(i * 2 + k, shade.setScalar(0.86 + r() * 0.16));
+      }
     });
     this.scene.add(rm);
   }
 
   private buildHay(x: number, z: number): void {
-    const g = this.geo(new THREE.CylinderGeometry(0.9, 0.9, 1.1, 24));
-    const m = this.add(g, this.mat('#e8c76a'), x, 0.9, z);
+    // D47 PR 2: a round bale of rolled straw (its ends a spiral), loose straw round its foot, and its shadow.
+    const g = this.geo(new THREE.CylinderGeometry(0.9, 0.9, 1.1, 28));
+    scaleUv(g, 3, 1);
+    const side = this.mat('#ffffff', 0.95);
+    side.map = this.straw;
+    const end = this.mat('#ffffff', 0.95);
+    end.map = this.track(baleEndTexture());
+    const m = new THREE.Mesh(g, [side, end, end]);
+    m.position.set(x, 0.9, z);
     m.rotation.z = Math.PI / 2;
-    const ring = this.add(this.geo(new THREE.TorusGeometry(0.5, 0.05, 6, 24)), this.mat('#d1a94a'), x + 0.56, 0.9, z);
-    ring.rotation.y = Math.PI / 2;
+    this.scene.add(m);
+    this.shadows.add(x, z, 2.2, 2.6);
+    const loose = this.geo(new THREE.ConeGeometry(0.18, 0.16, 6));
+    const lm = this.mat('#e2c26c');
+    for (const [dx, dz] of [
+      [0.8, 0.6],
+      [-0.7, 0.8],
+      [0.3, -0.9],
+    ])
+      this.add(loose, lm, x + dx, 0.06, z + dz).scale.set(1.4, 1, 0.8);
   }
 
   private buildBarn(): void {
     const { x, z, w, d } = PLACES.barn;
     const h = 5;
-    const red = this.mat('#c9483b');
+    // D47 PR 2: red boards (painted grain and seams), a shingled roof, white trim at the corners and eaves, and a stone
+    // footing; its soft shadow on the grass.
+    const red = this.mat('#d0503f');
+    red.map = this.wood;
     const white = this.mat('#f3efe6');
     const barn = new THREE.Group();
     barn.position.set(x, 0, z);
     barn.rotation.y = PLACES.barn.rot;
     this.scene.add(barn);
-    this.add(this.geo(new THREE.BoxGeometry(w, h, d)), red, 0, h / 2, 0, barn);
+    const walls = this.geo(new THREE.BoxGeometry(w, h, d));
+    scaleUv(walls, 3.4, 1.6);
+    this.add(walls, red, 0, h / 2, 0, barn);
+    for (const [cx, cz] of [
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ])
+      this.add(this.geo(new THREE.BoxGeometry(0.22, h, 0.22)), white, (cx * w) / 2, h / 2, (cz * d) / 2, barn);
+    this.add(this.geo(new THREE.BoxGeometry(w + 0.12, 0.2, d + 0.12)), white, 0, h - 0.1, 0, barn);
+    const footing = this.mat('#a9a49a', 0.95);
+    footing.map = this.wood;
+    this.add(this.geo(new THREE.BoxGeometry(w + 0.16, 0.36, d + 0.16)), footing, 0, 0.18, 0, barn);
+    this.shadows.add(x, z, w + 3.2, d + 3.2, 0, PLACES.barn.rot, 0.9);
     // The roof: a prism over the long side, white-trimmed.
     const roof = new THREE.Shape();
     roof.moveTo(-w / 2 - 0.4, 0);
@@ -340,7 +472,10 @@ export class FarmWalk {
     roof.lineTo(w / 2 + 0.4, 0);
     roof.lineTo(-w / 2 - 0.4, 0);
     const rg = this.geo(new THREE.ExtrudeGeometry(roof, { depth: d + 0.6, bevelEnabled: false }));
-    this.add(rg, this.mat('#7a2f26'), 0, h, -d / 2 - 0.3, barn);
+    scaleUv(rg, 0.35, 0.35);
+    const roofM = this.mat('#8a3a2e', 0.9);
+    roofM.map = this.track(shingleTexture(seedOf('barn-roof')));
+    this.add(rg, roofM, 0, h, -d / 2 - 0.3, barn);
     // Front: big doors with their white X, the hayloft, two windows.
     const front = d / 2 + 0.02;
     // The doorway (dark inside), and two doors on their hinges, each with half of the white X: they swing open when
@@ -400,25 +535,107 @@ export class FarmWalk {
   }
 
   private buildBales(): void {
+    // D47 PR 2: square bales of straw, tied with twine, in their shadow.
     const g = this.geo(new THREE.BoxGeometry(1.4, 0.8, 0.9));
-    const m = this.mat('#e8c76a');
+    scaleUv(g, 1.2, 0.7);
+    const m = this.mat('#ffffff', 0.95);
+    m.map = this.straw;
+    const twine = this.geo(new THREE.BoxGeometry(0.04, 0.82, 0.92));
+    const tm = this.mat('#a07a48');
     const { x, z } = PLACES.bales;
-    for (const [dx, dy, dz] of [
-      [-0.72, 0.4, 0],
-      [0.72, 0.4, 0],
-      [0, 1.2, 0],
-    ])
-      this.add(g, m, x + dx, dy, z + dz);
+    for (const [dx, dy, dz, turn] of [
+      [-0.72, 0.4, 0, 0.03],
+      [0.72, 0.4, 0, -0.04],
+      [0, 1.2, 0, 0.08],
+    ]) {
+      const b = this.add(g, m, x + dx, dy, z + dz);
+      b.rotation.y = turn;
+      for (const t of [-0.35, 0.35]) this.add(twine, tm, t, 0, 0, b);
+    }
+    this.shadows.add(x, z, 3.6, 2.2);
   }
 
   private buildPond(): void {
     const { x, z, r } = PLACES.pond;
-    const rim = this.add(this.geo(new THREE.CircleGeometry(r + 0.6, 40)), this.mat('#8dbf74'), x, 0.02, z);
+    // D47 PR 2: a bank of damp earth and stones round the water, deeper blue toward the middle, lily pads (one in
+    // flower), and slow rings spreading now and then (still under reduced motion).
+    const rim = this.add(this.geo(new THREE.CircleGeometry(r + 0.6, 48)), this.mat('#8dbf74'), x, 0.02, z);
     rim.rotation.x = -Math.PI / 2;
-    const water = new THREE.MeshStandardMaterial({ color: col('#8fcbe0'), roughness: 0.15, metalness: 0.1 });
+    const bank = this.add(this.geo(new THREE.RingGeometry(r - 0.15, r + 0.35, 48)), this.mat('#9a8460', 0.95), x, 0.035, z);
+    bank.rotation.x = -Math.PI / 2;
+    const wg = this.geo(new THREE.CircleGeometry(r, 48));
+    const wc: number[] = [];
+    const deep = col('#5fa9c8');
+    const shallow = col('#9fd6e6');
+    const c = new THREE.Color();
+    const wp = wg.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < wp.count; i++) {
+      c.copy(deep).lerp(shallow, Math.min(1, Math.hypot(wp.getX(i), wp.getY(i)) / r) ** 1.5);
+      wc.push(c.r, c.g, c.b);
+    }
+    wg.setAttribute('color', new THREE.Float32BufferAttribute(wc, 3));
+    const water = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.12, metalness: 0.1 });
     this.disposables.push(water);
-    const w = this.add(this.geo(new THREE.CircleGeometry(r, 40)), water, x, 0.05, z);
+    const w = this.add(wg, water, x, 0.05, z);
     w.rotation.x = -Math.PI / 2;
+    const sr = seeded(seedOf('pond-bank'));
+    const stones = new THREE.InstancedMesh(this.stoneGeo, this.stoneMat, 34);
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const tone = new THREE.Color();
+    for (let i = 0; i < 34; i++) {
+      const a = (i / 34) * Math.PI * 2 + sr() * 0.12;
+      const d = r + 0.05 + sr() * 0.35;
+      const s = 0.14 + sr() * 0.18;
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), sr() * 6.28);
+      stones.setMatrixAt(i, m4.compose(new THREE.Vector3(x + Math.cos(a) * d, 0.04, z + Math.sin(a) * d), q, new THREE.Vector3(s * 1.3, s, s)));
+      stones.setColorAt(i, tone.setScalar(0.82 + sr() * 0.3));
+    }
+    this.scene.add(stones);
+    const padM = this.mat('#5c9a48', 0.7);
+    padM.side = THREE.DoubleSide;
+    const padG = this.geo(lilyPadGeometry());
+    for (const [dx, dz, s, a] of [
+      [1.9, 1.6, 1, 0.3],
+      [2.4, 0.9, 0.8, 2.1],
+      [-2.6, -1.2, 0.9, 4],
+      [-1.9, -2.1, 0.7, 1.2],
+      [0.4, 2.8, 0.75, 5.1],
+    ]) {
+      const pad = this.add(padG, padM, x + dx, 0.07, z + dz);
+      pad.scale.setScalar(s);
+      pad.rotation.y = a;
+    }
+    const lily = this.add(this.geo(new THREE.ConeGeometry(0.13, 0.12, 8, 1, true)), this.mat('#f6b6cf', 0.7), x + 1.95, 0.13, z + 1.55);
+    lily.rotation.x = Math.PI;
+    this.add(this.geo(new THREE.SphereGeometry(0.05, 8, 6)), this.mat('#ffd84a', 0.6), x + 1.95, 0.12, z + 1.55);
+    // Slow rings, now here, now there.
+    const calmM = new THREE.MeshBasicMaterial({ color: col('#ffffff'), transparent: true, opacity: 0, depthWrite: false });
+    this.disposables.push(calmM);
+    const calmG = this.geo(new THREE.RingGeometry(0.46, 0.5, 32));
+    const calm = [0, 1].map((k) => {
+      const m = this.add(calmG, k ? calmM.clone() : calmM, x, 0.06, z);
+      if (k) this.disposables.push(m.material as THREE.Material);
+      m.rotation.x = -Math.PI / 2;
+      return m;
+    });
+    this.tickers.push((t, still) => {
+      calm.forEach((m, k) => {
+        const u = ((t + k * 3.5) % 7) / 7;
+        const mat = m.material as THREE.MeshBasicMaterial;
+        if (still) {
+          mat.opacity = 0;
+          return;
+        }
+        if (u < 0.02) {
+          const a = Math.floor((t + k * 3.5) / 7) * 2.4 + k;
+          m.position.set(x + Math.cos(a) * r * 0.45, 0.06, z + Math.sin(a) * r * 0.45);
+        }
+        m.scale.setScalar(0.6 + u * 3);
+        mat.opacity = Math.sin(u * Math.PI) * 0.35;
+      });
+    });
+    this.shadows.add(x, z, 2 * r + 2, 2 * r + 2, 0, 0, 0.25);
     // Two ducks. When the player comes to the bank they splash hello (D45 PR C): a hop, a shake, rings on the water.
     const ducks: THREE.Group[] = [];
     const duck = (dx: number, dz: number, c: string) => {
@@ -478,48 +695,89 @@ export class FarmWalk {
 
   private buildHenHouse(): void {
     const { x, z } = PLACES.henhouse;
-    this.add(this.geo(new THREE.BoxGeometry(2.6, 1.8, 2.4)), this.mat('#f2d7a6'), x, 0.9, z);
-    const roof = this.add(this.geo(new THREE.ConeGeometry(2.3, 1.3, 4)), this.mat('#c9483b'), x, 2.45, z);
+    // D47 PR 2: cream boards, a shingled roof, a little ramp, and its shadow.
+    const boards = this.mat('#f2d7a6');
+    boards.map = this.wood;
+    const body = this.geo(new THREE.BoxGeometry(2.6, 1.8, 2.4));
+    scaleUv(body, 1.2, 0.8);
+    this.add(body, boards, x, 0.9, z);
+    const roofM = this.mat('#c9483b', 0.9);
+    roofM.map = this.track(shingleTexture(seedOf('hen-roof')));
+    const roof = this.add(this.geo(new THREE.ConeGeometry(2.3, 1.3, 4)), roofM, x, 2.45, z);
     roof.rotation.y = Math.PI / 4;
     this.add(this.geo(new THREE.PlaneGeometry(0.7, 1)), this.mat('#7a4a2a'), x + 0.2, 0.55, z + 1.21);
+    const ramp = this.add(this.geo(new THREE.BoxGeometry(0.6, 0.05, 1.1)), this.mat('#b98a5e'), x + 0.2, 0.22, z + 1.7);
+    ramp.rotation.x = 0.38;
+    this.shadows.add(x, z, 4, 3.8);
   }
 
   private buildSunflowers(): void {
-    const stem = this.geo(new THREE.CylinderGeometry(0.04, 0.05, 1.8, 6));
-    const head = this.geo(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 18));
-    const disc = this.geo(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 14));
+    // D47 PR 2: tall sunflowers along the pasture: a stem that bends a little, broad leaves, a head of golden petals
+    // round a seed spiral, each its own height and turn, nodding slowly in the breeze.
+    const stemM = this.mat('#6f8a4e');
+    const leafM = this.mat('#6a9a48', 0.8);
+    leafM.side = THREE.DoubleSide;
+    const leafG = this.geo(sunflowerLeafGeometry());
+    const headM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide });
+    this.disposables.push(headM);
+    const heads = [11, 23, 37].map((k) => this.geo(sunflowerHeadGeometry(k)));
+    const discM = this.mat('#ffffff', 0.95);
+    discM.map = this.track(seedHeadTexture());
+    const disc = this.geo(new THREE.CircleGeometry(0.16, 24));
+    const r = seeded(seedOf('walk-sunflowers'));
     for (let i = 0; i < 9; i++) {
       const x = -8.6 - (i % 2) * 0.5;
       const z = -5 + i * 1.8;
-      this.add(stem, this.mat('#6f8a4e'), x, 0.9, z);
-      // Facing into the pasture (toward +x), tilted up a little.
+      const h = 1.65 + r() * 0.45;
+      const bend = (r() - 0.3) * 0.35;
+      const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + bend * 0.2, h * 0.55, z), new THREE.Vector3(x + bend, h, z));
+      this.add(this.geo(new THREE.TubeGeometry(curve, 8, 0.045, 6, false)), stemM, 0, 0, 0);
+      for (const [t, a] of [
+        [0.35, r() * 6.28],
+        [0.6, r() * 6.28],
+      ]) {
+        const p = curve.getPoint(t);
+        const leaf = this.add(leafG, leafM, p.x, p.y, p.z);
+        leaf.rotation.set(-0.9, a, 0);
+      }
+      // Facing into the pasture (toward +x), tilted up a little, nodding in the breeze.
       const face = new THREE.Group();
-      face.position.set(x, 1.85, z);
-      face.rotation.set(0, Math.PI / 2, 0);
+      face.position.set(x + bend, h + 0.05, z);
+      face.rotation.set(0, Math.PI / 2 + (r() - 0.5) * 0.5, 0);
       this.scene.add(face);
-      const h = this.add(head, this.mat('#f6c430'), 0, 0, 0.05, face);
-      h.rotation.x = Math.PI / 2 - 0.3;
-      const d = this.add(disc, this.mat('#7a4a2a'), 0, 0, 0.1, face);
-      d.rotation.x = Math.PI / 2 - 0.3;
+      const tilt = new THREE.Group();
+      tilt.rotation.x = -0.25 - r() * 0.2;
+      face.add(tilt);
+      tilt.add(new THREE.Mesh(heads[i % 3], headM));
+      this.add(disc, discM, 0, 0, 0.035, tilt);
+      const phase = r() * 6.28;
+      this.tickers.push((t, still) => {
+        tilt.rotation.z = still ? 0 : Math.sin(t * 0.8 + phase) * 0.05;
+      });
+      this.shadows.add(x + bend * 0.5, z, 0.9, 0.9, 0, 0, 0.7);
     }
   }
 
   private buildTree(x: number, z: number): void {
-    this.add(this.geo(new THREE.CylinderGeometry(0.22, 0.3, 2.4, 8)), this.mat('#8a6648'), x, 1.2, z);
-    const crown = this.add(this.geo(new THREE.SphereGeometry(1.7, 18, 14)), this.mat('#7fb35d'), x, 3.4, z);
-    crown.scale.y = 0.85;
-    const apple = this.geo(new THREE.SphereGeometry(0.13, 10, 8));
-    const red = this.mat('#d8342c', 0.5);
-    for (let i = 0; i < 6; i++) {
-      const a = i * 1.1;
-      this.add(apple, red, x + Math.cos(a) * 1.5, 3.1 + Math.sin(i * 2.3) * 0.6, z + Math.sin(a) * 1.5);
-    }
+    // D47 PR 2: an apple tree: a trunk that splits into branches, foliage in layered clusters, apples among them.
+    const i = PLACES.orchard.findIndex(([tx, tz]) => tx === x && tz === z);
+    const t = appleTreeGeometry(seedOf(`apple-tree-${i}`));
+    const mesh = new THREE.Mesh(this.geo(t.geo), this.treeMat);
+    mesh.position.set(x, groundY(x, z), z);
+    mesh.rotation.y = i * 1.7;
+    this.scene.add(mesh);
+    mesh.updateMatrixWorld();
+    const apples = new THREE.InstancedMesh(this.appleGeo, this.appleMat, t.apples.length);
+    const m4 = new THREE.Matrix4();
+    t.apples.forEach((p, k) => apples.setMatrixAt(k, m4.makeTranslation(p.clone().applyMatrix4(mesh.matrixWorld))));
+    this.scene.add(apples);
+    this.shadows.add(x, z, 4.6, 4.6, groundY(x, z));
   }
 
   /** The orchard's moment (D45 PR C): an apple drops from the nearest tree, and three birds fly up out of it. */
   private buildOrchardLife(): void {
     const [tx, tz] = PLACES.orchard[2];
-    const apple = this.add(this.geo(new THREE.SphereGeometry(0.14, 10, 8)), this.mat('#d8342c', 0.5), tx + 1.2, 2.6, tz + 1.3);
+    const apple = this.add(this.appleGeo, this.appleMat, tx + 1.2, 2.6, tz + 1.3);
     const birdM = this.mat('#4a4f63', 0.8);
     const wingG = this.geo(new THREE.BoxGeometry(0.34, 0.02, 0.14));
     const birds = [0, 1, 2].map((i) => {
@@ -577,6 +835,9 @@ export class FarmWalk {
     g.rotation.y = p.rot;
     g.name = `decor:${id}`;
     this.scene.add(g);
+    // Its soft shadow (D47 PR 2), the size of its footprint.
+    const span = p.r !== undefined ? p.r * 2.6 : Math.max(p.hw ?? 1, p.hd ?? 1) * 2.4;
+    this.shadows.add(p.x, p.z, span, span, groundY(p.x, p.z), p.rot);
     const box = (w: number, h: number, d: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.BoxGeometry(w, h, d)), this.mat(c), x, y, z, g);
     const cyl = (r0: number, r1: number, h: number, c: string, x: number, y: number, z: number, seg = 14) => this.add(this.geo(new THREE.CylinderGeometry(r0, r1, h, seg)), this.mat(c), x, y, z, g);
     const ball = (r: number, c: string, x: number, y: number, z: number) => this.add(this.geo(new THREE.SphereGeometry(r, 14, 10)), this.mat(c), x, y, z, g);
@@ -648,21 +909,39 @@ export class FarmWalk {
   private windmillSails: THREE.Group | null = null;
   private buildWindmill(): void {
     const { x, z } = PLACES.windmill;
-    const tower = this.add(this.geo(new THREE.CylinderGeometry(0.9, 1.6, 7, 12)), this.mat('#f3efe6'), x, 3.5 + groundY(x, z), z);
-    void tower;
-    this.add(this.geo(new THREE.ConeGeometry(1.2, 1.4, 12)), this.mat('#c9483b'), x, 7.7 + groundY(x, z), z);
+    const gy = groundY(x, z);
+    // D47 PR 2: a white boarded tower, a shingled cap, and four sails of cloth on wooden frames; its shadow.
+    const boards = this.mat('#f3efe6');
+    boards.map = this.wood;
+    const tg = this.geo(new THREE.CylinderGeometry(0.9, 1.6, 7, 14));
+    scaleUv(tg, 3, 1.2);
+    this.add(tg, boards, x, 3.5 + gy, z);
+    const capM = this.mat('#c9483b', 0.9);
+    capM.map = this.track(shingleTexture(seedOf('windmill-cap')));
+    this.add(this.geo(new THREE.ConeGeometry(1.2, 1.4, 14)), capM, x, 7.7 + gy, z);
+    this.add(this.geo(new THREE.BoxGeometry(0.7, 0.9, 0.08)), this.mat('#7a4a2a'), x, 0.45 + gy, z + 1.55);
     const sails = new THREE.Group();
-    sails.position.set(x, 6.4 + groundY(x, z), z + 1.1);
+    sails.position.set(x, 6.4 + gy, z + 1.1);
+    const frameM = this.mat('#8a6a4f');
+    const cloth = this.mat('#fffaf0', 0.95);
+    cloth.side = THREE.DoubleSide;
+    const spar = this.geo(new THREE.BoxGeometry(0.1, 3.8, 0.08));
+    const rail = this.geo(new THREE.BoxGeometry(0.08, 3.1, 0.06));
+    const rung = this.geo(new THREE.BoxGeometry(0.62, 0.05, 0.05));
+    const panel = this.geo(new THREE.PlaneGeometry(0.56, 2.9));
     for (let k = 0; k < 4; k++) {
-      const s = this.add(this.geo(new THREE.BoxGeometry(0.5, 3.6, 0.06)), this.mat('#fffaf0'), 0, 1.8, 0);
       const arm = new THREE.Group();
       arm.rotation.z = (k * Math.PI) / 2;
-      s.removeFromParent();
-      arm.add(s);
+      this.add(spar, frameM, 0, 1.9, 0, arm);
+      this.add(rail, frameM, 0.62, 2.25, 0, arm);
+      for (let j = 0; j < 6; j++) this.add(rung, frameM, 0.31, 0.8 + j * 0.58, 0.02, arm);
+      this.add(panel, cloth, 0.31, 2.25, -0.03, arm);
       sails.add(arm);
     }
+    this.add(this.geo(new THREE.CylinderGeometry(0.18, 0.18, 0.3, 10).rotateX(Math.PI / 2)), frameM, 0, 0, 0.05, sails);
     this.scene.add(sails);
     this.windmillSails = sails;
+    this.shadows.add(x, z, 4.2, 4.2, gy);
   }
 
   private buildPartyLights(evening: boolean): void {
@@ -827,6 +1106,8 @@ export class FarmWalk {
     }
     if (this.windmillSails && !still) this.windmillSails.rotation.z += dt * 0.6;
     this.meadow.update(dt, still, w);
+    if (!still) this.clock += dt;
+    for (const t of this.tickers) t(this.clock, still);
     this.stepPlaces(dt, now, still);
   }
 
