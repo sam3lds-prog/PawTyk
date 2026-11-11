@@ -106,6 +106,8 @@ export interface TrickTrayOptions {
   onToggle?: (open: boolean) => void;
   /** Told when a trick starts on a figure (the scene camera's close-up, D44 PR F). */
   onPlayed?: (fig: SVGGElement, id: TrickId) => void;
+  /** D48 PR B: the tray's Feed button (the animal's card, at its food). Without it there is no Feed button. */
+  onFeed?: (id: string) => void;
 }
 
 /**
@@ -154,6 +156,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
       <div class="trick-tray__head">
         ${everyone.length > 1 ? '' : `<span class="trick-tray__pic">${avatarPortrait(target.id)}</span>`}
         <b>Ask ${esc(name)} to…</b>
+        ${opts.onFeed ? `<button class="btn btn--small btn--secondary trick-tray__feed" data-act="tray-feed" aria-label="${esc(`Feed ${name}`)}">${ICON.heart}Feed</button>` : ''}
         <button class="icon-btn icon-btn--small" data-act="tray-close" aria-label="Close tricks">${ICON.close}</button>
       </div>
       <div class="seg seg--small trick-tray__tabs" role="tablist" aria-label="Tricks or emotes">
@@ -176,6 +179,10 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     if (t.closest('[data-act="tray-close"]')) {
       setTarget(null);
       opts.returnFocus?.()?.focus({ preventScroll: true });
+      return;
+    }
+    if (t.closest('[data-act="tray-feed"]') && target) {
+      opts.onFeed?.(target.id);
       return;
     }
     const tb = t.closest('[data-tray-tab]') as HTMLElement | null;

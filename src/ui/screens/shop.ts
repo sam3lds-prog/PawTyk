@@ -12,13 +12,16 @@
 
 import { app } from '../../app/app';
 import { DECOR, DECOR_BY_ID, decorHome, decorTier, type DecorId, type DecorTier } from '../../meta/catalogs/decor';
-import { FOODS, FOOD_BY_ID, foodsOf, type FoodId } from '../../meta/catalogs/foods';
+import { BOWLS, FOODS, FOOD_BY_ID, foodOffers, foodsOf, isFeast, isFoodId, mainOffer, type BowlId, type FoodId, type FoodOffer } from '../../meta/catalogs/foods';
 import { chapterAt } from '../../meta/chapters';
 import { buyDecor, decorPrice, decorUnlocked, owns, walletBalance } from '../../meta/sanctuary';
 import { biomeOfRegion, sanctuaryDef, SANCTUARIES, isBaseSanctuaryId, isRegionId, type BaseSanctuaryId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { activeSanctuary, isOpen } from '../../meta/world';
 import { BIOMES } from '../../meta/catalogs/places';
-import { buyFood, foodCount, FOOD_CAP_EACH } from '../../meta/feeding';
+import { bowlInUse, buyBowl, buyFood, chooseBowl, favoriteFoods, foodCount, foodRoom, ownsBowl, FOOD_CAP_EACH } from '../../meta/feeding';
+import { feedReturn, setFeedReturn } from '../components/feedPanel';
+import { animalInfo, isAnimalId, isHome, type AnimalId } from '../../meta/animals';
+import { animalPortrait } from '../art/animals';
 import { grantGemPurchase, isGemPack } from '../../meta/gems';
 import { WELCOME_PACK, dismissWelcomeHighlight, grantWelcomePack, mayHighlightWelcomePack, noteWelcomeHighlight, ownsWelcomePack, readyForWelcomeOffer, reconcileWelcomePack } from '../../meta/welcomePack';
 import { WELCOME_PACK_ON_SALE } from '../../config/services';
@@ -31,7 +34,7 @@ import { ads } from '../../services/ads';
 import { currencyOffered, gemPacksOnSale } from '../../app/offers';
 import { decorIcon } from '../art/sanctuary';
 import { activityFor } from '../art/activities';
-import { foodIcon } from '../art/foods';
+import { bowlIcon, foodIcon } from '../art/foods';
 import { trickBadge } from '../art/tricks';
 import { TRICKS, trickCurrency, type TrickId, type TrickKind, type TrickTier } from '../../meta/catalogs/tricks';
 import { ownsTrick } from '../../meta/tricks';
@@ -93,6 +96,15 @@ export const shopScreen: ScreenDef = {
       lastPlace = shopHome(route.sanctuary);
     }
     if (route.screen === 'shop' && route.tab) tab = lastTab = route.tab;
+    // D48 PR B: shopping for an animal: its favorite picked out, and the way back to feed it.
+    const wanted: FoodId | null = route.screen === 'shop' && isFoodId(route.food) ? route.food : null;
+    const shoppingFor: string | null = route.screen === 'shop' && route.feedFor && isAnimalId(route.feedFor) && isHome(app.save, route.feedFor as AnimalId) && feedReturn() === route.feedFor ? route.feedFor : null;
+    let boughtFor = false;
+    let toFeed = false;
+    // Leaving any other way than back to the animal forgets the errand (no card pops up on a later visit).
+    scope.onDispose(() => {
+      if (!toFeed && feedReturn() === shoppingFor) setFeedReturn(null);
+    });
     const tabs = (): Tab[] => (gemPacksOnSale() ? ['decor', 'food', 'tricks', 'gems'] : ['decor', 'food', 'tricks']);
     if (!tabs().includes(tab)) tab = lastTab = 'decor';
     track('store_open', { tab });
@@ -243,39 +255,86 @@ export const shopScreen: ScreenDef = {
       </section>`;
     }
 
+    /** The ways this build can sell a food (D43: nothing for a currency it can't sell, unless the player has some). */
+    function offersFor(id: FoodId): FoodOffer[] {
+      return foodOffers(FOOD_BY_ID[id]).filter((o) => offered(o.currency));
+    }
+
     function foodCard(id: FoodId): string {
       const f = FOOD_BY_ID[id];
       const have = foodCount(app.save, id);
-      const currency = f.coins ? 'coins' : 'vtoken';
-      const amount = (f.coins ?? f.tokens)!;
-      return `<li><button class="shop-card card card--tap food-card" data-food="${id}" aria-label="${esc(`${f.name}, ${amount} ${CURRENCY_NAME[currency]}, ${have} in your pantry`)}">
+      const main = offersFor(id)[0] ?? mainOffer(f);
+      const more = offersFor(id).length > 1;
+      const isWanted = id === wanted;
+      return `<li><button class="shop-card card card--tap food-card ${isWanted ? 'is-wanted' : ''}" data-food="${id}" aria-label="${esc(`${f.name}${isFeast(f) ? ', a feast for a whole home' : ''}, ${main.amount} ${CURRENCY_NAME[main.currency]}${more ? ' or more ways' : ''}, ${have} in your pantry${isWanted && shoppingFor ? `, a favorite of ${animalInfo(shoppingFor as AnimalId).name}` : ''}`)}">
         <span class="shop-card__art food-card__art">${foodIcon(id)}${have ? `<span class="food-card__have num">×${have}</span>` : ''}</span>
         <span class="shop-card__name">${esc(f.name)}</span>
-        ${priceTag(currency, amount)}
+        ${isFeast(f) ? `<span class="chip chip--small">Feast</span>` : ''}
+        ${priceTag(main.currency, main.amount)}
       </button></li>`;
+    }
+
+    /** The banner when shopping for an animal (D48 PR B): who, what they love, and the way back to feed them. */
+    function feedBanner(): string {
+      if (!shoppingFor) return '';
+      const a = animalInfo(shoppingFor as AnimalId);
+      const loves = favoriteFoods(shoppingFor)
+        .slice(0, 2)
+        .map((x) => FOOD_BY_ID[x].name);
+      return `<div class="feed-return card" data-feed-return>
+        <span class="portrait portrait--small">${animalPortrait(shoppingFor as AnimalId, 'happy')}</span>
+        <span class="feed-return__body"><b>Shopping for ${esc(a.name)}</b><br /><small class="muted">${loves.length ? `${esc(a.name)} loves ${esc(loves.join(' and '))}.` : 'Every animal loves the special treats.'}</small></span>
+        <button class="btn btn--small ${boughtFor ? '' : 'btn--secondary'}" data-act="feed-back">${boughtFor ? `Feed ${esc(a.name)}` : `Back to ${esc(a.name)}`}</button>
+      </div>`;
+    }
+
+    function bowlSection(): string {
+      const bowls = BOWLS.filter((b) => ownsBowl(app.save, b.id) || offered(b.gems ? 'gem' : 'coins'));
+      if (bowls.length < 2) return '';
+      const inUse = bowlInUse(app.save);
+      return `<section class="shop-section">
+        <div class="section-head"><h2>Feeding bowls</h2><span class="muted num">${bowls.filter((b) => ownsBowl(app.save, b.id)).length} of ${bowls.length} owned</span></div>
+        <p class="muted shop__note">Meals are served in your bowl. A bowl is yours for good; it changes how a meal looks, never what it gives.</p>
+        <ul class="shop-grid">${bowls
+          .map((b) => {
+            const own = ownsBowl(app.save, b.id);
+            const cur = b.gems ? 'gem' : 'coins';
+            const amount = b.gems ?? b.coins ?? 0;
+            const state = own ? `<span class="shop-card__state">${ICON.check}${b.id === inUse ? 'In use' : 'Yours'}</span>` : priceTag(cur, amount);
+            return `<li><button class="shop-card card card--tap bowl-card ${own ? 'is-owned' : ''} ${b.id === inUse ? 'is-chosen' : ''} ${b.gems ? 'shop-card--premium' : ''}" data-bowl="${b.id}" aria-label="${esc(own ? `${b.name}, ${b.id === inUse ? 'in use' : 'yours'}` : `${b.name}, ${amount} ${CURRENCY_NAME[cur]}`)}">
+              <span class="shop-card__art">${bowlIcon(b.id)}</span>
+              <span class="shop-card__name">${esc(b.name)}</span>
+              ${state}
+            </button></li>`;
+          })
+          .join('')}</ul>
+      </section>`;
     }
 
     function foodTab(): string {
       // Each sanctuary has its own treats (D35); the special ones are loved everywhere.
       const everyday = foodsOf(place).filter((f) => f.coins);
-      const special = offered('vtoken') ? FOODS.filter((f) => f.tokens) : [];
+      // Special treats and feasts: those this build can sell some way, and those still in the pantry.
+      const special = FOODS.filter((f) => !f.coins && (offersFor(f.id).length || foodCount(app.save, f.id) > 0));
       return `
+        ${feedBanner()}
         ${placeChips()}
         <section class="shop-section">
           <div class="section-head"><h2>${esc(placeShort(place))} treats</h2></div>
-          <p class="muted shop__note">Feed animals from their cards. Favorites count double.</p>
+          <p class="muted shop__note">Feed animals from their cards. Favorites count double. Five at once cost a little less.</p>
           ${everyday.length ? `<ul class="shop-grid">${everyday.map((f) => foodCard(f.id)).join('')}</ul>` : `<p class="empty">${special.length ? 'The animals here love the special treats below.' : 'The animals here love treats from the other sanctuaries. Pick one above.'}</p>`}
         </section>
         ${
           special.length
             ? `<section class="shop-section shop-section--video">
-          <div class="section-head"><h2>Special treats</h2></div>
-          <p class="muted shop__note">Only for video tokens. Every animal loves them.</p>
+          <div class="section-head"><h2>Special treats and feasts</h2></div>
+          <p class="muted shop__note">Every animal loves them. A feast feeds everyone in one home together. They give what a favorite does, under the same daily limit.</p>
           ${videoTokenCard()}
           <ul class="shop-grid">${special.map((f) => foodCard(f.id)).join('')}</ul>
         </section>`
             : ''
-        }`;
+        }
+        ${bowlSection()}`;
     }
 
     function trickCard(id: TrickId): string {
@@ -371,11 +430,24 @@ export const shopScreen: ScreenDef = {
         <div class="shop__body">${tab === 'decor' ? decorTab() : tab === 'food' ? foodTab() : tab === 'tricks' ? tricksTab() : gemsTab()}</div>`;
     }
     render();
+    // Shopping for an animal: its favorite in view.
+    if (wanted && tab === 'food') el.querySelector<HTMLElement>('.food-card.is-wanted')?.scrollIntoView?.({ block: 'center' });
 
     scope.on(el, 'click', async (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-act="back-from"]')) {
         app.router.back({ screen: 'world' });
+        return;
+      }
+      if (t.closest('[data-act="feed-back"]')) {
+        // Back to the animal: its home reopens its card, at its food (D48 PR B).
+        toFeed = true;
+        app.router.back({ screen: 'world' });
+        return;
+      }
+      const bw = t.closest('[data-bowl]') as HTMLElement | null;
+      if (bw) {
+        bowlSheet(scope, bw.dataset.bowl as BowlId, render);
         return;
       }
       const pc = t.closest('[data-place]') as HTMLElement | null;
@@ -398,7 +470,11 @@ export const shopScreen: ScreenDef = {
       }
       const fc = t.closest('[data-food]') as HTMLElement | null;
       if (fc) {
-        foodSheet(scope, fc.dataset.food as FoodId, render);
+        foodSheet(scope, fc.dataset.food as FoodId, () => {
+          // Something bought while shopping for an animal: the banner now offers to go and feed it.
+          if (shoppingFor && FOODS.some((f) => foodCount(app.save, f.id) > 0)) boughtFor = true;
+          render();
+        });
         return;
       }
       const tc = t.closest('[data-trick-card]') as HTMLElement | null;
@@ -571,23 +647,32 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
 
 function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
   const f = FOOD_BY_ID[id];
-  const currency = f.coins ? 'coins' : 'vtoken';
-  const amount = (f.coins ?? f.tokens)!;
   const favs = f.favorites === 'all' ? 'Everyone' : f.favorites.map((k) => KIND_NAME[k] ?? k).join(', ');
+  // D48 PR B: every way this build sells it (one portion, five for a little less, gems for a special treat).
+  const offers = () => foodOffers(f).filter((o) => currencyOffered(app.save, o.currency));
+  const offerRows = () =>
+    offers()
+      .map((o) => {
+        const short = walletBalance(app.save, o.currency) < o.amount;
+        const room = foodRoom(app.save, id) >= o.qty;
+        const what = o.qty === 1 ? 'One' : `${o.qty}, a little cheaper`;
+        return `<div class="food-offer"><span><b>${what}</b><small>${o.qty > 1 ? `${o.amount} for ${o.qty} (one by one: ${(foodOffers(f)[0].amount * o.qty)})` : o.currency === 'gem' ? 'With gems' : o.currency === 'vtoken' ? 'With video tokens' : 'With Paw Coins'}</small></span>
+          <button class="btn btn--small ${o.currency === 'gem' ? 'btn--secondary' : ''}" data-act="buy" data-offer="${o.id}" ${short || !room ? 'disabled' : ''} aria-label="${esc(`Buy ${o.qty === 1 ? 'one' : o.qty} for ${o.amount} ${CURRENCY_NAME[o.currency]}`)}">${CURRENCY_ICON[o.currency]}<span class="num">${o.amount}</span></button></div>`;
+      })
+      .join('');
   const sh = openSheet(scope, {
     title: f.name,
     className: 'decor-sheet',
     body: `
+      ${isFeast(f) ? `<span class="chip">${ICON.heart}Feast for a whole home</span>` : ''}
       <div class="decor-sheet__art food-sheet__art">${foodIcon(id)}</div>
       <p class="sheet__lead">${esc(f.blurb)}</p>
       <dl class="pet-sheet__facts">
-        <div><dt>Favorite of</dt><dd>${esc(favs)}</dd></div>
+        <div><dt>${isFeast(f) ? 'Feeds' : 'Favorite of'}</dt><dd>${esc(isFeast(f) ? 'Everyone living in the home it’s served in' : favs)}</dd></div>
         <div><dt>In your pantry</dt><dd class="num" data-have>${foodCount(app.save, id)} of ${FOOD_CAP_EACH}</dd></div>
       </dl>
-      <div class="sheet__actions">
-        <button class="btn btn--block" data-act="buy" data-autofocus>Buy one for ${CURRENCY_ICON[currency]}<span class="num">${amount}</span></button>
-        <button class="btn btn--quiet" data-act="close">Done</button>
-      </div>`,
+      <div class="food-offers" data-offers>${offerRows()}</div>
+      <div class="sheet__actions"><button class="btn btn--quiet" data-act="close" data-autofocus>Done</button></div>`,
     onClose: rerender,
   });
   sh.scope.on(sh.el, 'click', (e) => {
@@ -595,15 +680,65 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
     if (!a) return;
     if (a.act === 'close') sh.close();
     else if (a.act === 'buy') {
-      const r = buyFood(app.save, id);
+      const offer = (e.target as HTMLElement).closest<HTMLElement>('[data-offer]')?.dataset.offer as FoodOffer['id'] | undefined;
+      const o = foodOffers(f).find((x) => x.id === offer);
+      const r = buyFood(app.save, id, { offer });
       if (r === 'ok') {
         app.persist();
-        feel('coin');
-        track('food_bought', { food: id });
+        feel(o?.currency === 'gem' ? 'buy' : 'coin');
+        track('food_bought', { food: id, offer: offer ?? 'one', qty: o?.qty ?? 1, currency: o?.currency ?? 'coins' });
         const have = sh.el.querySelector('[data-have]');
         if (have) have.textContent = `${foodCount(app.save, id)} of ${FOOD_CAP_EACH}`;
-        toast(`${f.name} added to your pantry.`);
-      } else toast(r === 'full' ? 'Your pantry is full of these.' : `Not enough ${CURRENCY_NAME[currency]} yet.`);
+        const rows = sh.el.querySelector('[data-offers]');
+        if (rows) rows.innerHTML = offerRows();
+        toast(o && o.qty > 1 ? `${o.qty} ${f.name} added to your pantry.` : `${f.name} added to your pantry.`);
+      } else toast(r === 'full' ? 'Your pantry has no room for that many.' : `Not enough ${o ? CURRENCY_NAME[o.currency] : 'coins'} yet.`);
+    }
+  });
+}
+
+/** A feeding bowl's card (D48 PR B): buy it once, or use it. */
+function bowlSheet(scope: Scope, id: BowlId, rerender: () => void): void {
+  const b = BOWLS.find((x) => x.id === id)!;
+  const body = () => {
+    const own = ownsBowl(app.save, id);
+    const inUse = bowlInUse(app.save) === id;
+    const cur = b.gems ? 'gem' : 'coins';
+    const amount = b.gems ?? b.coins ?? 0;
+    const short = walletBalance(app.save, cur) < amount;
+    const action = own
+      ? inUse
+        ? `<p class="trick-sheet__owned">${ICON.check}Meals are served in it.</p>`
+        : `<button class="btn btn--block" data-act="use" data-autofocus>Serve meals in it</button>`
+      : short
+        ? `<button class="btn btn--block" disabled>${CURRENCY_ICON[cur]}<span class="num">${amount}</span></button><p class="muted">You need ${amount - walletBalance(app.save, cur)} more ${CURRENCY_NAME[cur]}.</p>`
+        : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${CURRENCY_ICON[cur]}<span class="num">${amount}</span></button>`;
+    return `<div class="decor-sheet__art food-sheet__art">${bowlIcon(id, 'apples')}</div>
+      <p class="sheet__lead">${esc(b.blurb)}</p>
+      <div class="sheet__actions">${action}<button class="btn btn--quiet" data-act="close">Done</button></div>`;
+  };
+  const sh = openSheet(scope, { title: b.name, className: 'decor-sheet', body: body(), onClose: rerender });
+  let busy = false;
+  sh.scope.on(sh.el, 'click', (e) => {
+    const a = actionOf(e);
+    if (!a || busy) return;
+    if (a.act === 'close') sh.close();
+    else if (a.act === 'use') {
+      chooseBowl(app.save, id);
+      app.persist();
+      feel('tap');
+      sh.close();
+    } else if (a.act === 'buy') {
+      busy = true;
+      const r = buyBowl(app.save, id);
+      busy = false;
+      if (r === 'ok') {
+        app.persist();
+        feel('buy');
+        track('bowl_bought', { bowl: id });
+        toast(`${b.name}: yours, and meals are served in it now.`);
+        sh.close();
+      } else toast(r === 'owned' ? 'Already yours.' : `Not enough ${b.gems ? 'gems' : 'Paw Coins'} yet.`);
     }
   });
 }
@@ -626,4 +761,11 @@ const KIND_NAME: Record<string, string> = {
   sloth: 'sloths',
   capybara: 'capybaras',
   toucan: 'toucans',
+  sheep: 'sheep',
+  pig: 'pigs',
+  cow: 'cows',
+  goat: 'goats',
+  chicken: 'chickens',
+  horse: 'horses',
+  rabbit: 'rabbits',
 };

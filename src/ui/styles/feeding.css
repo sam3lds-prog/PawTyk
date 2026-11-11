@@ -1,0 +1,228 @@
+/* D48 PR B: a meal in the scene (components/feeding.ts). The animal notices the bowl, steps up, takes three bites
+   and reacts; the heap goes down a bite at a time; hearts rise. Drawn animals only: the 3D toys play the same moment
+   from their `feed` clip. Under reduced motion only the bowl, the hearts and the friendship card show, still. */
+
+.sanctuary__scene.is-live .sanctuary__pet.is-trick-feed {
+  animation: sp-feed 3600ms ease-in-out;
+}
+@keyframes sp-feed {
+  0% {
+    transform: none;
+  }
+  /* Notices the bowl: a little lean toward it. */
+  14% {
+    transform: translateX(calc(var(--feed-dx, 6px) * 0.25)) rotate(calc(var(--trick-dir, 1) * 4deg));
+  }
+  /* Steps up to it. */
+  26% {
+    transform: translateX(var(--feed-dx, 6px)) translateY(-2px);
+  }
+  30% {
+    transform: translateX(var(--feed-dx, 6px));
+  }
+  /* Three bites: a dip toward the bowl each time. */
+  35%,
+  49%,
+  63% {
+    transform: translateX(var(--feed-dx, 6px)) rotate(calc(var(--trick-dir, 1) * 10deg)) translateY(2px);
+  }
+  41%,
+  55%,
+  69% {
+    transform: translateX(var(--feed-dx, 6px)) rotate(calc(var(--trick-dir, 1) * 2deg));
+  }
+  /* Happy: a hop and a wiggle. */
+  77% {
+    transform: translateX(var(--feed-dx, 6px)) translateY(-6px) rotate(-3deg);
+  }
+  84% {
+    transform: translateX(var(--feed-dx, 6px)) scale(1.04, 0.96);
+  }
+  90% {
+    transform: translateX(calc(var(--feed-dx, 6px) * 0.5)) rotate(3deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* The bowl pops in, and goes. */
+.sanctuary__scene .sp-feed .sp-bowl {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sp-feed-bowl 3600ms ease-out forwards;
+}
+.sanctuary__scene .sp-feed.is-still .sp-bowl {
+  animation: none;
+}
+@keyframes sp-feed-bowl {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(4px);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  13%,
+  90% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* The heap, a bite at a time. */
+.sanctuary__scene .sp-feed-food {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform 160ms ease-out;
+}
+.sanctuary__scene .sp-feed-food[data-bites='1'] {
+  transform: scale(0.78);
+}
+.sanctuary__scene .sp-feed-food[data-bites='2'] {
+  transform: scale(0.52);
+}
+.sanctuary__scene .sp-feed-food[data-bites='3'] {
+  transform: scale(0.16);
+  opacity: 0.6;
+}
+
+/* Hearts rise after the last bite. */
+.sanctuary__scene .sp-feed-hearts .sp-feed-heart {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.sanctuary__scene .sp-feed-hearts.is-on .sp-feed-heart {
+  animation: sp-feed-heart 1100ms ease-out forwards;
+}
+.sanctuary__scene .sp-feed-hearts.is-still .sp-feed-heart {
+  opacity: 1;
+  animation: none;
+}
+@keyframes sp-feed-heart {
+  0% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.9);
+  }
+}
+
+/* The friendship card under the scene's bottom edge. */
+.feed-bond {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+  box-shadow: 0 4px 14px rgba(40, 35, 25, 0.16);
+  font-size: 13px;
+  z-index: 4;
+  animation: feed-bond-in 260ms ease-out;
+  pointer-events: none;
+}
+.feed-bond__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feed-bond__name svg {
+  width: 16px;
+  height: 16px;
+  color: #e8556a;
+}
+.feed-bond small {
+  color: var(--ink-soft, #6b6157);
+  font-size: 12px;
+}
+.feed-bond__bar span {
+  transition: width 900ms cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+:root[data-motion='reduce'] .feed-bond,
+:root[data-motion='reduce'] .feed-bond__bar span {
+  animation: none;
+  transition: none;
+}
+@keyframes feed-bond-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+/* ---------------------------------------------------------------- the card: food chips, favorites first */
+.feed-row .feed-btn.is-fav {
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f2c230 70%, transparent);
+}
+.friend-panel__feed .feed-more {
+  margin-top: 8px;
+}
+.friend-panel__favs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-soft, #6b6157);
+}
+.friend-panel__favs .food-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------------------------------------------------------------- the Shop: offers, bundles, bowls, highlight */
+.food-card.is-wanted {
+  outline: 3px solid color-mix(in srgb, #f2c230 80%, transparent);
+  outline-offset: 2px;
+}
+.food-offers {
+  display: grid;
+  gap: 8px;
+}
+.food-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.food-offer small {
+  display: block;
+  color: var(--ink-soft, #6b6157);
+}
+.feed-return {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.feed-return__body {
+  flex: 1;
+  font-size: 14px;
+}
+.bowl-icon {
+  width: 40px;
+  height: 40px;
+}
+.bowl-card.is-chosen {
+  outline: 2px solid var(--brand, #287b70);
+  outline-offset: 2px;
+}

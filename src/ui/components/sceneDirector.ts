@@ -20,8 +20,8 @@
  * holds nothing and owns nothing: it is only a promise to start if nothing else happens first.
  */
 
-/** D47 PR 5: `photo`, photo mode, owns the camera too (the player framing a postcard). */
-export type SceneAct = 'parade' | 'closeup' | 'tour' | 'walk' | 'photo';
+/** D47 PR 5: `photo`, photo mode, owns the camera too (the player framing a postcard). D48 PR B: `feed`, a meal. */
+export type SceneAct = 'parade' | 'closeup' | 'tour' | 'walk' | 'photo' | 'feed';
 
 /** Why a pending moment never started: the player started `by`, or everything was ended (`null`: a re-render, leaving). */
 export type MissedBy = SceneAct | null;

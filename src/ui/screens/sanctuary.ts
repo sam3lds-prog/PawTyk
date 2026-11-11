@@ -14,7 +14,11 @@ import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { DECOR, DECOR_BY_ID, STARTER_DECOR, decorHome, decorOf, type DecorId } from '../../meta/catalogs/decor';
 import type { PetId } from '../../meta/catalogs/pets';
 import { chooseStarter, isShown, owns, sanctuaryChat, setShown, shownDecorIds } from '../../meta/sanctuary';
-import { bindFriendPanel, friendPanelMarkup, type FeedEvents } from '../components/feedPanel';
+import { bindFriendPanel, friendPanelMarkup, takeFeedReturn, type FeedEvents } from '../components/feedPanel';
+import { sceneMeals } from '../components/feeding';
+import { afterHearts } from '../components/bonding';
+import { sayHello } from '../components/hello';
+import { bowlInUse } from '../../meta/feeding';
 import { unlockedCompanions, unlockedPets } from '../../meta/rewards';
 import { COMPANION_BY_ID, type CompanionId } from '../../meta/catalogs/companions';
 import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
@@ -100,6 +104,8 @@ export const sanctuaryScreen: ScreenDef = {
         director.claim('closeup');
         closeups.play(fig, trick);
       },
+      // D48 PR B: Feed, straight from the tray: the animal's card, at its food.
+      onFeed: (id) => openCard(id),
     });
 
     // ---------------------------------------------------------------- ambient life (D24)
@@ -138,6 +144,22 @@ export const sanctuaryScreen: ScreenDef = {
     });
     director.register('parade', { cancel: () => parades.skip(), active: () => parades.active });
     director.register('closeup', { cancel: () => closeups.cancel(), active: () => closeups.active });
+    // Meals, played out in the garden (D48 PR B).
+    const meals = sceneMeals(scope, {
+      el,
+      camera,
+      director,
+      reducedMotion: () => app.reducedMotion,
+      react: (animal, action) => life?.play(isPetId(animal) ? animal : `friend:${animal}`, action),
+      afterHearts: (animal, before) => afterHearts(scope, animal, before),
+      hello: (animal) => sayHello(animal),
+      bowl: () => bowlInUse(app.save),
+    });
+    /** An animal's card (a resident's or a friend's), its feeding played out in the garden. */
+    function openCard(id: string): void {
+      if (isPetId(id)) showPetSheet(scope, id, { showVisit: false, ...meals.events(id, animalInfo(id).name) });
+      else if (isHome(app.save, id as AnimalId)) showFriendSheet(scope, id as CompanionId, meals.events(id, animalInfo(id as AnimalId).name));
+    }
     // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
     if (app.settings.ambientMusic && true) scope.timeout(() => scope.alive && startAmbient('harmony'), 1800);
     scope.onDispose(() => {
@@ -178,19 +200,6 @@ export const sanctuaryScreen: ScreenDef = {
       if (goalShown) showNextGoal(el, 'harmony');
     }
     let goalShown = false;
-
-    /** Feeding or patting from a card: the animal reacts in the garden once the card is closed. */
-    function reactions(figure: string): FeedEvents {
-      let fed = false;
-      let patted = false;
-      return {
-        onFed: () => (fed = true),
-        onPat: () => (patted = true),
-        onClose: () => {
-          if (fed || patted) scope.timeout(() => life?.play(figure, fed ? 'greet' : 'love'), 220);
-        },
-      };
-    }
 
     function render(): void {
       // A re-render draws a new scene: a parade or a close-up on the old one ends first.
@@ -291,6 +300,8 @@ export const sanctuaryScreen: ScreenDef = {
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
       if (parades.onClick(t)) return;
+      // A meal is playing: the scene is its stage until it's eaten (a moment; anything else the player starts ends it).
+      if (meals.active && t.closest('.sanctuary__scene')) return;
       // A tap on someone in the garden: a small happy reaction (a heart; face only under reduced motion).
       if (t.closest('[data-act="tricks"]')) {
         if (tray.isOpen) tray.close();
@@ -328,14 +339,12 @@ export const sanctuaryScreen: ScreenDef = {
       }
       const friendBtn = t.closest('[data-friend-card]') as HTMLElement | null;
       if (friendBtn) {
-        const id = friendBtn.dataset.friendCard as CompanionId;
-        showFriendSheet(scope, id, reactions(`friend:${id}`));
+        openCard(friendBtn.dataset.friendCard as CompanionId);
         return;
       }
       const petBtn = t.closest('[data-pet]') as HTMLElement | null;
       if (petBtn) {
-        const id = petBtn.dataset.pet as PetId;
-        showPetSheet(scope, id, { showVisit: false, ...reactions(id) });
+        openCard(petBtn.dataset.pet as PetId);
         return;
       }
       const tog = t.closest('[data-toggle]') as HTMLElement | null;
@@ -389,6 +398,9 @@ export const sanctuaryScreen: ScreenDef = {
         });
       });
     else intro();
+    // Back from the Shop with food for someone here (D48 PR B): their card again, to feed them.
+    const feedBack = takeFeedReturn('harmony');
+    if (feedBack && isHome(app.save, feedBack as AnimalId)) scope.timeout(() => scope.alive && openCard(feedBack), 350);
     // A welcome missed by leaving during its lead-in (D46 PR A) is offered under the scene, never played by itself.
     const owed = !met ? missedWelcome('harmony') : undefined;
     if (owed && isHome(app.save, owed as AnimalId)) parades.offer(owed);
@@ -433,7 +445,7 @@ export function showFriendSheet(scope: Scope, id: FriendId, ev: FeedEvents = {})
           : ''
       }`,
   });
-  if (owned) bindFriendPanel(sh.scope, sh.el, id, c.name, ev);
+  if (owned) bindFriendPanel(sh.scope, sh.el, id, c.name, { ...ev, close: () => sh.close() });
 }
 
 function habitatLabel(id: FriendId): string {

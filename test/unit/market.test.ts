@@ -120,7 +120,13 @@ describe('food and feeding', () => {
     grant(s, 'g2', 10_000, 'gift', NOW);
     while (foodCount(s, 'fishbites') < FOOD_CAP_EACH) expect(buyFood(s, 'fishbites', NOW)).toBe('ok');
     expect(buyFood(s, 'fishbites', NOW)).toBe('full');
-    for (const f of FOODS) expect(Number(!!f.coins) + Number(!!f.tokens), f.id).toBe(1);
+    // One main price each (coins or video tokens), or (D48 PR B) gems alone for the premium treat; gems may sit beside
+    // a token price, never beside coins.
+    for (const f of FOODS) {
+      expect(Number(!!f.coins) + Number(!!f.tokens), f.id).toBeLessThanOrEqual(1);
+      expect(Number(!!f.coins) + Number(!!f.tokens) + Number(!!f.gems), f.id).toBeGreaterThanOrEqual(1);
+      if (f.coins) expect(f.gems, f.id).toBeUndefined();
+    }
   });
 
   it('a favorite counts double, special treats are everyone’s favorite, and an animal has a daily fill', () => {

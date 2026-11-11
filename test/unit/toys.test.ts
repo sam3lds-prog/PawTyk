@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVITY_CLIPS, AMBIENT, EMOTE_CLIPS, TRICK_CLIPS, TURN_CHANNELS, activityClip, ambientClip, performClip } from '../../src/three/clips';
+import { ACTIVITY_CLIPS, AMBIENT, EMOTE_CLIPS, MOMENT_CLIPS, TRICK_CLIPS, TURN_CHANNELS, activityClip, ambientClip, performClip } from '../../src/three/clips';
 import { ACTIVITIES } from '../../src/ui/art/activities';
 import { CHANNELS, restPose, addPose } from '../../src/three/pose';
 import { ALL_TOY_IDS, FRIEND_TOYS, PET_TOYS, toySpec } from '../../src/three/species';
@@ -49,7 +49,7 @@ describe('3D toys (D34)', () => {
 });
 
 describe('3D clips', () => {
-  const all = { ...Object.fromEntries(Object.entries(ACTIVITY_CLIPS).map(([k, v]) => [`activity:${k}`, v])), ...Object.fromEntries(Object.entries(AMBIENT).map(([k, v]) => [`ambient:${k}`, v])), ...Object.fromEntries(Object.entries(TRICK_CLIPS).map(([k, v]) => [`trick:${k}`, v])), ...Object.fromEntries(Object.entries(EMOTE_CLIPS).map(([k, v]) => [`emote:${k}`, v])) };
+  const all = { ...Object.fromEntries(Object.entries(ACTIVITY_CLIPS).map(([k, v]) => [`activity:${k}`, v])), ...Object.fromEntries(Object.entries(AMBIENT).map(([k, v]) => [`ambient:${k}`, v])), ...Object.fromEntries(Object.entries(TRICK_CLIPS).map(([k, v]) => [`trick:${k}`, v])), ...Object.fromEntries(Object.entries(EMOTE_CLIPS).map(([k, v]) => [`emote:${k}`, v])), ...Object.fromEntries(Object.entries(MOMENT_CLIPS).map(([k, v]) => [`moment:${k}`, v])) };
 
   it('start and end at rest (so one can follow another), and never break', () => {
     for (const [name, clip] of Object.entries(all))

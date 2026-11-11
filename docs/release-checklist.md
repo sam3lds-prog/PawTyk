@@ -397,6 +397,16 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] Fresh install: the first board asks for one tap (✕) before any tile glows; the double tap then places Cotton
 - [ ] Five-player script: note who places Cotton on the first double tap without help
 
+**PR B — feeding**
+- [ ] Farm, 3D toys on and off: tap Cotton → Feed (tray) → hay: the card closes, the camera comes closer, a bowl, three
+      bites with a munch each, hearts, the friendship card; everything gone after, the camera back
+- [ ] The same with Reduce Motion on: nothing moves; bowl, hearts and card show, then go
+- [ ] Start a Tour or Photo mid-meal: the meal ends at once and cleanly
+- [ ] Empty pantry → *Get food Cotton loves* → Shop on the Farm's food, hay picked out → buy → *Feed Cotton* → her card
+- [ ] Buy a bundle of five (coins), a treat with gems (test store), a bowl; quick double taps on Buy: as many bought as
+      tapped, coins and pantry agree
+- [ ] Festival Feast on the Farm: everyone eats together, one card
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

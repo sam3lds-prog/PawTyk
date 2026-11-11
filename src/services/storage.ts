@@ -187,6 +187,8 @@ export interface SaveV2 {
     companions: Record<string, { unlockedAt: string }>;
     /** Tricks bought (the free ones are always known). */
     tricks: Record<string, { ownedAt: string }>;
+    /** Feeding bowls bought (D48 PR B); a cache: ownership is the purchase in the ledger (`meta/feeding.ts`). */
+    bowls?: Record<string, { ownedAt: string }>;
   };
   sanctuary: {
     hidden: Record<string, boolean>;
@@ -201,6 +203,8 @@ export interface SaveV2 {
     greeted: Record<string, string>;
     /** Animal id → when it became a best friend (its portrait in the album, D40). */
     bestSince: Record<string, string>;
+    /** The feeding bowl meals are served in (D48 PR B); missing = the wooden one. */
+    bowl?: string;
   };
   /** Reward videos watched today (all placements share one gentle daily cap). */
   ads: { day: string | null; rewarded: number };
@@ -751,6 +755,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       items: normItems(inv.items),
       companions: rec(inv.companions, (v) => (isObj(v) ? { unlockedAt: str(v.unlockedAt, '') } : undefined)),
       tricks: rec(inv.tricks, (v) => (isObj(v) ? { ownedAt: str(v.ownedAt, '') } : undefined)),
+      ...(isObj(inv.bowls) ? { bowls: rec(inv.bowls, (v) => (isObj(v) ? { ownedAt: str(v.ownedAt, '') } : undefined)) } : {}),
     },
     sanctuary: {
       hidden: rec(san.hidden, boolItem),
@@ -760,6 +765,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       fed: rec(san.fed, (v) => (isObj(v) && typeof v.day === 'string' ? { day: v.day, n: int(v.n, 0, 0, 1000) } : undefined)),
       greeted: rec(san.greeted, strItem),
       bestSince: rec(san.bestSince, strItem),
+      ...(typeof san.bowl === 'string' ? { bowl: san.bowl } : {}),
     },
     ads: { day: isObj(x.ads) ? strOrNull(x.ads.day) : null, rewarded: isObj(x.ads) ? int(x.ads.rewarded, 0, 0, 1000) : 0 },
     usage: isObj(x.usage) ? { lastDay: strOrNull(x.usage.lastDay), daysActive: int(x.usage.daysActive, 0, 0, 100000), firsts: rec(x.usage.firsts, boolItem) } : { lastDay: null, daysActive: 0, firsts: {} },
