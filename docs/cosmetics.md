@@ -49,10 +49,10 @@ picked when it's built.
 
 | Collection | What it groups | Completing gives |
 | --- | --- | --- |
-| Spring Meadow Day | the Spring Meadow set, a spring trick (Hop), Apple Slices | a "Spring" postcard frame |
-| Harvest Supper | the Harvest Festival set, Pumpkin Cubes, the Harvest Basket | a "Harvest" frame |
-| Campfire Evening | the Cozy Camp set, Take a bow, the Patchwork Bowl | a "Campfire" frame |
-| Barnyard Party | the Barnyard Party set, High Five, the Party Treat Platter | a "Party" frame |
+| Spring Meadow Day | the Spring Meadow set's coin pieces, Hop, Apple Slices | a "Spring" postcard frame |
+| Harvest Supper | the Harvest Festival set's coin pieces, Pumpkin Cubes, the Harvest Basket | a "Harvest" frame |
+| Campfire Evening | the Cozy Camp set's coin pieces, the Patchwork Bowl, a coin trick | a "Campfire" frame |
+| Barnyard Party | the Barnyard Party set's coin pieces and a coin trick; the gem Festival Stage and the Party Treat Platter (tokens or gems) are optional extras | a "Party" frame |
 | Arctic Hideaway | the Arctic's coin pieces, a cold-weather favorite | an "Aurora" frame |
 | Every Home's Welcome | one coin piece in each home | the title "Sanctuary Keeper" in the album |
 
@@ -89,16 +89,17 @@ An **upgrade** is a second look for a piece the player already owns. It is bough
 or off on the piece's card, and the original look is always still there. Upgrades are visual only, previewed with the
 M1 try-on, and need both the drawn scene and the 3D toys.
 
-The pilots were picked because their upgrade is obvious at a glance in a small scene, and because they're common,
-coin-tier pieces many players own:
+The pilots were picked because their upgrade is obvious at a glance in a small scene, and because many players own
+them:
 
 | Piece | Upgrade | Why it reads well |
 | --- | --- | --- |
-| Fountain (Pet Garden) | "Lily Fountain": lily pads, a little frog, sparkle on the water | a centrepiece of the Pet Garden scene |
-| Campfire (Outback) | "Starry Campfire": taller flames, sparks, a marshmallow stick the animals hold while they sit there | a natural place for the animals to gather |
-| Flower Arch (Farm) | "Blossom Arch": fuller blossoms and petals drifting when an animal walks under | the D48 gathering spot, seen on every Farm visit |
+| Stone Fountain (Pet Garden) | "Lily Fountain": lily pads, a little frog, sparkle on the water | the Meadow Gate chapter gift, so nearly every player owns it |
+| Campfire Ring (Outback, 120 coins) | "Starry Campfire": taller flames, sparks, a marshmallow stick the animals hold while they sit there | a natural place for the animals to gather |
+| Flower Arch (Farm, 180 coins) | "Blossom Arch": fuller blossoms and petals drifting when an animal walks under | the D48 gathering spot, seen on every Farm visit |
 
-- **Price:** about 1.5× the piece's coin price.
+- **Price:** about 1.5× the piece's coin price; the Stone Fountain was a gift, so it gets a fixed price (about
+  200 coins).
 - **Not for sale:** there's no gem version of an upgrade.
 - **Records:** upgrades go in the item ledger as `upgrade:<decorId>`, are idempotent, and are kept in backups.
 
