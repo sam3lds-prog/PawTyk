@@ -240,7 +240,30 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     if (!chip || !target) return;
     const id = chip.dataset.trick as TrickId;
     if (!ownsTrick(app.save, id)) {
-      showTrickSheet(scope, id, { who: target.id, onBought: () => updateChips(host) });
+      // M1: not learned yet: its card, with "Try it on <animal>" here in the scene (a preview, never an unlock).
+      const who = target.id;
+      showTrickSheet(scope, id, {
+        who,
+        onBought: () => updateChips(host),
+        tryHere: {
+          name: animalName(who),
+          play: () => {
+            const s = svg();
+            const fig = s?.querySelector<SVGGElement>(`.sanctuary__pet[data-pet="${who}"], .sanctuary__pet[data-friend="${who}"]`);
+            if (!s || !fig || !performTrick(s, fig, id, app.reducedMotion)) {
+              toast(`${animalName(who)} is busy right now. Try it in a moment.`);
+              return;
+            }
+            const n = TRICK_BY_ID[id].partners ?? 0;
+            if (n) partnersFor(s, fig, n).forEach((p, i) => performTrick(s, p, id, app.reducedMotion, i + 1));
+            feel('trick', { cue: `trick:${id}`, rhythm: rhythmOf(who) });
+            track('trick_tried', { trick: id });
+            opts.onPlayed?.(fig, id);
+            const status = host.querySelector('[data-tray-status]');
+            if (status) status.textContent = `${animalName(who)} tried ${TRICK_BY_ID[id].name}. It's not learned yet.`;
+          },
+        },
+      });
       return;
     }
     const s = svg();
@@ -297,7 +320,18 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
 }
 
 /** A trick's card: a preview, its price, and how to get it. */
-export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; onBought?: () => void } = {}): void {
+export function showTrickSheet(
+  scope: Scope,
+  id: TrickId,
+  opts: {
+    who?: string;
+    onBought?: () => void;
+    /** M1: try it on in a home (from the Shop): the home's name and the way there. */
+    tryIn?: { label: string; go: () => void };
+    /** M1: try it on right here (from a home's tray): the animal's name, and what plays it in the scene. */
+    tryHere?: { name: string; play: () => void };
+  } = {},
+): void {
   const t = TRICK_BY_ID[id];
   const cur = trickCurrency(t);
   const who = opts.who ?? 'mochi';
@@ -327,13 +361,25 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
            <p class="muted">You have ${plural(have, 'gem')}.${iap.available ? ' Gem packs are in the Shop.' : ''}</p>
            ${iap.available ? `<button class="btn btn--secondary btn--block" data-act="gems">${ICON.gem}See gem packs</button>` : ''}`
         : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${ICON.gem}<span class="num">${t.price}</span></button>`;
+    // M1: the price in words, with what the player has toward it.
+    const priceLine =
+      owned || ownsTrick(app.save, id)
+        ? ''
+        : cur
+          ? `<p class="price-line">${CURRENCY[cur].icon()}<span><b class="num">${t.price}</b> ${esc(CURRENCY[cur].name)} · <span class="num">you have ${have}</span></span></p>`
+          : '';
     return `
       ${t.tier === 'premium' || t.tier === 'video' ? `<span class="chip ${t.tier === 'premium' ? 'chip--gem' : 'chip--video'}">${t.tier === 'premium' ? `${ICON.gem}Premium` : `${ICON.videoToken}Video-token`} ${TRICK_GROUP_NAME[trickGroup(t)].toLowerCase().replace(/s$/, '')}</span>` : `<span class="chip">${TRICK_GROUP_NAME[trickGroup(t)].replace(/s$/, '')}</span>`}
       <figure class="trick-sheet__stage sanctuary__scene is-live" aria-label="${esc(`${whoName} showing ${t.name}`)}">
         <svg viewBox="0 0 120 104" role="img"><rect width="120" height="104" rx="14" fill="#e6f2df"/><path d="M0 84 Q60 74 120 84 V90 A14 14 0 0 1 106 104 H14 A14 14 0 0 1 0 90 Z" fill="#cfe3c4"/>${t.partners ? stagePartners(who, t.partners) : stageFigure(who)}</svg>
       </figure>
-      <button class="btn btn--quiet btn--small trick-sheet__again" data-act="preview">${ICON.restart}Show me again</button>
+      <div class="trick-sheet__tries">
+        <button class="btn btn--quiet btn--small trick-sheet__again" data-act="preview">${ICON.restart}Show me again</button>
+        ${!ownsTrick(app.save, id) && opts.tryHere ? `<button class="btn btn--quiet btn--small" data-act="try-here">${ICON.sparkle}Try it on ${esc(opts.tryHere.name)}</button>` : ''}
+        ${!ownsTrick(app.save, id) && !opts.tryHere && opts.tryIn ? `<button class="btn btn--quiet btn--small" data-act="try-in">${ICON.sparkle}Try it in your ${esc(opts.tryIn.label)}</button>` : ''}
+      </div>
       <p class="sheet__lead">${esc(t.blurb)}</p>
+      ${priceLine}
       <div class="sheet__actions">${actions}<button class="btn btn--quiet" data-act="close">Close</button></div>
       <p class="muted trick-sheet__note">Tricks are just for fun. They change nothing in your puzzles.</p>`;
   };
@@ -371,6 +417,15 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
         break;
       case 'preview':
         preview();
+        break;
+      case 'try-here':
+        // A preview in the scene, never an unlock (M1).
+        sh.close();
+        opts.tryHere?.play();
+        break;
+      case 'try-in':
+        sh.close();
+        opts.tryIn?.go();
         break;
       case 'gems':
         sh.close();

@@ -1,0 +1,127 @@
+/* ------------------------------------------------------------------ M1: Shop discovery */
+
+/* Featured for your <home>: a short row of honest picks, each with its real price and currency. */
+.shop-featured .section-head {
+  margin-bottom: var(--s2);
+}
+.featured-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s2);
+}
+.featured-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: var(--s3);
+  padding: 10px 12px;
+  text-align: left;
+}
+.featured-card__art {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--brand-tint);
+  padding: 5px;
+  display: grid;
+  place-items: center;
+}
+.featured-card__art > * {
+  width: 100%;
+  height: 100%;
+}
+.featured-card__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.featured-card__kind {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-ink);
+}
+.featured-card__name {
+  font-size: var(--t-md, 16px);
+}
+.featured-card__body small {
+  color: var(--muted-ink);
+}
+.featured-card__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.featured-card__price small {
+  font-size: 11px;
+  color: var(--muted-ink);
+  white-space: nowrap;
+}
+
+/* A price in words, with what the player has toward it (decoration, trick and food cards). */
+.price-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 2px;
+  color: var(--ink);
+}
+.price-line .ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.price-line .num:last-child {
+  color: var(--muted-ink);
+}
+
+.trick-sheet__tries {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Trying something on in a home: the banner over the scene, and a soft frame round the scene itself. */
+.try-banner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'text price'
+    'actions actions';
+  gap: 6px var(--s3);
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: var(--s2);
+  border: 2px dashed color-mix(in srgb, var(--accent, var(--brand)) 55%, transparent);
+  background: color-mix(in srgb, var(--accent, var(--brand)) 8%, var(--surface));
+}
+.try-banner__text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.try-banner__text small {
+  color: var(--muted-ink);
+}
+.try-banner > .price {
+  grid-area: price;
+}
+.try-banner__actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+.sanctuary__scene.is-trying {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent, var(--brand)) 45%, transparent),
+    var(--shadow-1, 0 1px 2px rgba(0, 0, 0, 0.08));
+}

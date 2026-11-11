@@ -25,7 +25,10 @@ import { regionScene } from '../art/regions';
 import { decorIcon, SCENE_VIEWBOX } from '../art/sanctuary';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
-import { mountTrickTray } from '../components/tricks';
+import { mountTrickTray, partnersFor } from '../components/tricks';
+import { shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
+import { performTrick } from '../components/trickPlay';
+import { TRICK_BY_ID } from '../../meta/catalogs/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
@@ -99,6 +102,8 @@ export const regionScreen: ScreenDef = {
 
     const el = h(`<div class="sanctuary region" style="--accent:${def.accent}"></div>`);
     root.appendChild(el);
+    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved.
+    const tryOn = route.screen === 'region' ? tryOnOf(route, id) : null;
 
     // Tricks: a tray under the scene for the animal you tap (kept across re-renders).
     const trayHost = h(`<div class="trick-tray-slot" hidden></div>`);
@@ -302,7 +307,7 @@ export const regionScreen: ScreenDef = {
       const stage = stageOf(save, id);
       const welcomed = friendsHere.filter((c) => state.residents.includes(c.id)).map((c) => c.id);
       const nextId = nextArrivalIn(save, id)?.id;
-      const decor = state.decor;
+      const decor = tryDecorList(state.decor, tryOn);
       const ownedDecor = decorOf(id).filter((d) => owns(save, d.id));
       const chat = open ? regionChat(save, id) : null;
       el.innerHTML = `
@@ -312,11 +317,12 @@ export const regionScreen: ScreenDef = {
           <div class="screen-head__end">${coinPill()}</div>
         </header>
         <p class="muted region__place">${ICON.pin}${esc(def.place)}</p>
-        <figure class="sanctuary__scene card is-live ${open ? '' : 'is-locked'}">
+        ${tryOn ? tryBannerMarkup(tryOn, id) : ''}
+        <figure class="sanctuary__scene card is-live ${open ? '' : 'is-locked'}${tryOn ? ' is-trying' : ''}">
           <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(stage, welcomed))}">${regionScene(id, { stage: open ? stage : 0, companions: welcomed, decor, evening: state.evening }, `rg-${id}`)}</svg>
           ${tourButtonMarkup(open && welcomed.length > 0)}
-          ${id === 'farm' ? walkButtonMarkup(open && stage >= 1 && canWalk()) : ''}
-          ${photoButtonMarkup(open)}
+          ${id === 'farm' ? walkButtonMarkup(!tryOn && open && stage >= 1 && canWalk()) : ''}
+          ${photoButtonMarkup(open && !tryOn)}
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
@@ -459,6 +465,22 @@ export const regionScreen: ScreenDef = {
     if (feedBack && isHome(app.save, feedBack as AnimalId)) scope.timeout(() => scope.alive && openCard(feedBack as FriendId), 350);
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
+    // M1: a trick tried on: one of the home's animals plays it, once the toys are there (again on request). A preview,
+    // never an unlock; a group act brings in its partners as it would for real.
+    const playTry = () => {
+      if (tryOn?.kind !== 'trick' || !scope.alive) return;
+      const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
+      const fig = svg?.querySelector<SVGGElement>('.sanctuary__pet:not(.is-away):not([data-trick])');
+      if (!svg || !fig) return;
+      if (tray.isOpen) tray.close();
+      if (!performTrick(svg, fig, tryOn.id, app.reducedMotion)) return;
+      const n = TRICK_BY_ID[tryOn.id].partners ?? 0;
+      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, tryOn.id, app.reducedMotion, i + 1));
+      feel('trick', { cue: `trick:${tryOn.id}` });
+      director.claim('closeup');
+      closeups.play(fig, tryOn.id);
+    };
+    if (tryOn?.kind === 'trick') void toysReady().then(() => scope.timeout(playTry, app.reducedMotion ? 200 : 700));
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
@@ -586,6 +608,13 @@ export const regionScreen: ScreenDef = {
       switch (a.dataset.act) {
         case 'back':
           app.router.back({ screen: 'world' });
+          break;
+        case 'try-back':
+          // Back to the item's card in the Shop (its entry was set to reopen it).
+          if (tryOn) app.router.back(shopRouteFor(tryOn, id));
+          break;
+        case 'try-again':
+          playTry();
           break;
         case 'play':
           playMode({ kind: 'level', level: app.save.journey.nextLevel });
