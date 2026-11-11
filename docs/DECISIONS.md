@@ -1766,3 +1766,100 @@ No P0 or P1. Eight P2s, all fixed before merge in the PR they belong to (each ne
   tester code, and a tester build does.
 - CI: three D46 browser checks failed on PR B's first run because a tap on the walk's Overview didn't settle within the
   test's 3 s on CI's software WebGL; taps are now hit-tested first and given 10 s.
+
+## 2026-11-10 · D47 — unified UX, farm graphics, photo mode, analytics, the Welcome Rescue Pack
+
+Nine PRs from the D47–D48 plan. Out of scope by the plan and not done: Buddy Training, new species, a Season Pass, VIP,
+new currencies, purchased hints or hearts, forced interstitials, a bundle id change. Puzzles, the generators and saved
+boards, three hearts per Journey and Daily board, drag-to-✕, the Look / Explain / Place hints, region patterns, high
+contrast, VoiceOver and reduced motion are unchanged (their tests are unchanged and pass). Before/after pictures at the
+same positions: `docs/screenshots/d47/` (made by `scripts/farm-shots.mjs` on D46 main 3e2fc90 and on D47).
+
+### PR 1 — a natural meadow (drawn and 3D)
+- **Purpose**: the Farm's tufts and cones become a meadow; butterflies that look and move like butterflies.
+- **What**: `src/art/botany.ts` (shared shapes and palette: six butterfly species with fore and hind wings, veins,
+  borders, spots; grass, flower and clover colours; seeded noise), `src/ui/art/botany.ts` (drawn grass clumps, seed
+  heads, clover, buttercups, daisies, lavender, dandelions and clocks, rosettes; seeded drifts kept off paths and
+  animals' spots), `src/three/meadow.ts` + `meadowLayout.ts` (the 3D meadow), `sanctuary-life.css` (drawn butterflies:
+  rest, take off, flap and glide, land, as one ambient part with no loop of its own).
+- **3D**: near grass is a field that travels with the player (placed in the vertex shader, thinned by a baked mask that
+  keeps the path, mud, pond, buildings, decorations and animals' spots bare), far grass in skippable chunks; one
+  instanced mesh per flower kind; wind in the shader, anchored at the roots (a per-vertex sway weight, 0 at the root),
+  stopped under reduced motion. Butterflies: a state machine (rest, open wings, take off, wander on curved arcs, glide,
+  land on a flower), take off when the player walks up; the pasture's discovery sends them up together. Wing texture
+  painted once from the same vector shapes as the drawn ones.
+- **Numbers**: high tier 3,600 field blades, 1,400 clumps, 620 flowers, 170 clover, 7 butterflies in ~48 draw calls;
+  lite 1,400 / 500 / 240 / 60 / 4. The drawn Farm ~1,100 elements, ~146 KB, memoized; map cards strip the meadow.
+- **Tests**: `botany.test`, `meadowLife.dom.test`, `meadow3d.test` (layout determinism, masks, tiers, the state
+  machine, reduced motion); browser: the meadow's counts, tiers and draw calls.
+
+### PR 2 — trees, sunflowers and the Farm's materials
+- Apple trees that branch, layered foliage, apples; sunflowers with two petal rings round a seed spiral, curved stems
+  and leaves; the barn's boards, shingles, trim and footing; fences with grain and caps; hay bales rolled and tied;
+  the pond's bank, stones, lily pads and slow rings; pebble paths; the windmill's boarded tower and framed sails; soft
+  contact shadows. Drawn (`src/ui/art/farmArt.ts`) and 3D (`src/three/farmProps.ts`: canvas-painted textures, merged
+  vertex-colour geometry, one draw call per thing). Every landmark, route, interaction and decoration spot stays where
+  it was (walkMath and the drawn layout unchanged). Tests: `farmProps.test`.
+
+### PR 3 — one Farm in 2D and 3D, and the frame budget
+- `src/art/farmPalette.ts` used by both; the walk's sun where its light comes from, warm and low in the evening.
+- Idle walk: half rate while nothing happens, twice a second under reduced motion; any input brings every frame back;
+  the lite-tier check measures the display's frames. Contact shadows only (no shadow maps); tracked disposal.
+  `frameStats`/`meadowStats` for tests and the QA page. Tests: `farmPalette.test`; browser: idle frames passed over,
+  five walk round trips leave one canvas.
+
+### PR 4 — losing a board
+- "So close!": how many animals were placed, the board kept as it was; an earned extra life, an optional short video
+  for one, **Try again, free**, and back. Never a purchase; Paw Cup shows only the way back. No setting (Auto-✕, dots)
+  is switched on for the player.
+- Reward exactly once: recorded when the network reports it (before the video closes), keyed by the video's id, one
+  video at a time. Tests: `gameScreen.dom.test` (choices, words, life, double tap, reported twice, interrupted close,
+  free retry, Paw Cup); browser at 320 × 568: the sheet within reach, the video tapped twice → one heart, then drag ✕,
+  tap/slow tap, double tap; free retry with settings untouched.
+- **Deferred, as an experiment only:** solver-assisted marking (offering to ✕ the tiles the solver can prove empty
+  after a revive). Not built: it changes what a board asks of the player and would need a usability test against
+  drag-marking; if tried, behind a setting that is off by default, never switched on for the player.
+
+### PR 5 — photo mode and postcards
+- Photo on every home and on the walk; the director gives photo mode the camera; framings (whole home, everyone, each
+  animal); landscape 1500 × 1000 or portrait 1080 × 1350; optional PawTyk mark and home name; nothing about the player.
+  The SVG frozen with live styles + the WebGL canvas copied right after a fresh frame (no preserveDrawingBuffer); 3D off
+  or no WebGL: the drawn animals. iOS share sheet through @capacitor/share + @capacitor/filesystem (file deleted
+  after); cancel isn't an error. Needs `NSPhotoLibraryAddUsageDescription`. Tests: `postcard.dom.test`, browser
+  (three postcards in a row, leaving mid-capture, 3D off, the walk in portrait, Escape order).
+
+### PR 6 — usage statistics (Firebase Analytics, opt-in)
+- Off by default and off in the build until configured; the player opts in (Settings, or a one-time card); no user id,
+  no advertising id, consent mode denies ad storage/personalization. Funnels for play, homes, retention (D1/D7/D30
+  counted on the device), the store (incl. cancelled), reward videos and grants. A failing SDK never reaches the game.
+  Docs: `docs/analytics.md`, privacy policy dated 2026-11-10. Tests: `usage.test` (sinks, consent, queue, failures, day counts), `privacyPolicy.test`.
+
+### PR 7 — the Welcome Rescue Pack
+- `pawtyk.welcomepack`, non-consumable ($2.99 suggested; the price shown is the App Store's), entitlement
+  `welcome_pack`: 180 gems + the **Rescue Wagon**, a Farm decoration only in this pack (drawn, 3D, with its own ride).
+  No hints, hearts or anything that helps win. 180: a little more than the 160 pack, so a fair first purchase.
+- Offered only after the first lessons (level 6+), an animal home and a home visited; in the Shop's Gems tab, and
+  highlighted with the Farm's decorations at most every 3 days, 3 times, never after "Not now"; never on a board,
+  after a loss, in the Paw Cup or a sanctuary (a test enforces where it may appear).
+- Exactly once: gems by the store's transaction id, one purchase at a time; launch reconcile grants a purchase the app
+  never recorded (crash, reinstall + Restore); a refund (or RevenueCat moving the purchase to another install) puts the
+  wagon away and takes back up to 180 unspent gems, given back if the same purchase returns; an unanswered store changes
+  nothing. Remove Interruptions stays unsold and unmarketed; v1 owners keep it.
+- **Payments stay off in release** until `VITE_WELCOME_PACK=1`, set only after App Store Connect, RevenueCat and the
+  sandbox checks (release-checklist D47). Tests: `welcomePack.test`, `welcomePackShop.dom.test`, browser (test store).
+- Open: confirm in the sandbox that a refunded non-consumable leaves RevenueCat's `nonSubscriptionTransactions`.
+
+### PR 8 — cloud backup: decision and plan only
+- `docs/cloud-backup.md`: optional iCloud backup through CloudKit's private database, no account, merged (the ledgers'
+  idempotent ids make a union safe) rather than overwritten; not Key-Value Store (silent last-writer-wins), not Game
+  Center saved games, not Firebase. Sign in with Apple alone syncs nothing. Four-phase plan; bundle id unchanged.
+
+### PR 9 — integrated QA
+- Browser checks added to the smoke run (`test/e2e/d47.mjs`): meadow counts and tiers, idle frames, five walk round
+  trips, the loss sheet and revive on 320 × 568 with drag/tap/double-tap after it, free retry, the pack in the test
+  store; plus PR 5's photo checks.
+- Bundle (gzip): app `boot` 332 → 352 KB (the drawn meadow and botany), walk chunk 8 → 20 KB (meadow and props, loaded
+  with the walk), toys +2 KB; share/filesystem/analytics plugins are small lazy chunks.
+- Release checklist D47: TestFlight build steps, device checks per PR, the pack's sandbox checks, go/no-go.
+- **Not established here**: anything about a real iPhone. All of this ran in Chrome at iPhone sizes with software WebGL;
+  frame rate, heat, the share sheet, Photos permission, Firebase DebugView and StoreKit need the TestFlight pass.

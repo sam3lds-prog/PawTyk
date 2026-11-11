@@ -83,6 +83,10 @@ Defects confirmed in source and fixed in Sprint 0:
   color glow on one-animal boards; one-time sanctuary cues; docs and the D36 device checklist
 - [x] **Sprint Z** (D37) — one gesture: tap ✕, double-tap places; mistakes stay marked (red ✕, or the struck animal on
   two-animal boards); Erase takes ✕ only; Hint shows the count; dots on Easy boards only; one-tap scheme retired
+- [x] **D47** — a natural meadow and butterflies (drawn and 3D), the Farm's trees, sunflowers and materials, one palette
+  and light for 2D and 3D with an idle frame budget, warmer losing with a free retry and exactly-once reward videos,
+  photo mode and postcards, opt-in usage statistics, the Welcome Rescue Pack (off in release until the App Store is
+  set up), the cloud backup plan, integrated QA (`docs/screenshots/d47/`)
 - [ ] Game Center and online Paw Cup leagues — not started
 - [ ] iCloud backup (CloudKit private database, no account) — decided and planned in `docs/cloud-backup.md` (D47 PR 8), not built
 - [ ] D36 device checklist (`docs/release-checklist.md`) and the five-player usability script — need a phone and people
