@@ -2190,3 +2190,20 @@ Go-live blockers, all native or ops:
 
 Open decisions D1–D6, with recommendations, are in `docs/referrals.md` §9. The most important is D1: the plan's
 50 coins for the friend carries App Review risk, and the recommendation is to reward only the referrer.
+
+### M5 — cosmetic collections and upgrades: design only (`growth/m5-cosmetics`)
+
+`docs/cosmetics.md`. Nothing is built: the plan says M5 is designed and evaluated after M1–M4, with no large new
+catalog until measured demand supports it.
+
+The proposal:
+- **Collections** grouped from existing decorations, tricks, foods and bowls. Each can be completed with Paw Coins
+  alone, and the reward is a postcard frame or album title (no coins, no new faucet).
+- **Personalising one animal** at no cost to the player: a signature trick, a favourite bowl and a portrait frame
+  tint. Accessories are parked, since they would need new art for every species.
+- **Three pilot upgrades**: Lily Fountain, Starry Campfire and Blossom Arch. Each is a second look bought with coins
+  only, switchable on and off, and previewed with the M1 try-on.
+
+Measurement gates G0–G2 use the existing opt-in events. Their thresholds are proposals for Sam.
+
+Ruled out: loot boxes, timers, limited pieces, gem-only collections, power and new IAP products.
