@@ -1,13 +1,14 @@
 /**
  * Reward videos, always the player's choice: an extra life, a hint, or a video token. One gentle daily cap is shared by
- * all of them. A reward is granted only when the ad service confirms the video was watched, and it is granted even if
- * the player left the screen meanwhile (they watched it).
+ * all of them. A reward is granted only when the ad service confirms the video was watched, exactly once per video,
+ * and it is granted even if the player left the screen meanwhile (they watched it). Never in Paw Cup (the game screen
+ * offers none there).
  */
 
 import { app } from './app';
 import { ads } from '../services/ads';
 import { track } from '../services/analytics';
-import { grantItem } from '../meta/items';
+import { grantItem, hasItemEntry } from '../meta/items';
 import { localDateKey } from '../game/dates';
 import type { SaveV2 } from '../services/storage';
 
@@ -25,27 +26,62 @@ export function canOfferVideo(): boolean {
   return ads.available && videosLeftToday(app.save) > 0;
 }
 
-/** Counts a watched video toward today's cap and grants the reward once. Pure apart from mutating the save. */
-export function recordVideoReward(save: SaveV2, reward: VideoReward, now = new Date()): boolean {
+/**
+ * Counts a watched video toward today's cap and grants the reward, once per video: `video` names the watch, so a
+ * second report of the same video (the network's reward event and its close, a retried callback) grants nothing.
+ * Pure apart from mutating the save.
+ */
+export function recordVideoReward(save: SaveV2, reward: VideoReward, now = new Date(), video?: string): boolean {
   const day = localDateKey(now);
-  if (save.ads.day !== day) save.ads = { day, rewarded: 0 };
+  if (save.ads.day !== day) save.ads = { ...save.ads, day, rewarded: 0 };
+  const id = video ? `ad:${reward}:${video}` : `ad:${reward}:${now.getTime().toString(36)}:${save.ads.rewarded + 1}`;
+  if (hasItemEntry(save, id)) return false;
   if (save.ads.rewarded >= REWARDED_DAILY_CAP) return false;
   save.ads.rewarded++;
-  const g = grantItem(save, `ad:${reward}:${now.getTime().toString(36)}:${save.ads.rewarded}`, reward, 1, 'ad', now, 'Reward video');
+  const g = grantItem(save, id, reward, 1, 'ad', now, 'Reward video');
   return !!g;
 }
 
-export type WatchResult = 'granted' | 'no-video' | 'cap' | 'unavailable';
+export type WatchResult = 'granted' | 'no-video' | 'cap' | 'unavailable' | 'busy';
 
+/** The video showing now, if any: one at a time, so a second tap never starts (or pays for) a second video. */
+let showing = false;
+let videos = 0;
+
+/**
+ * Shows a reward video the player chose, and grants its reward exactly once (D47 PR 4): at the moment the network
+ * reports the reward (so it is kept even if the video's close never reaches us, or the player has left the screen),
+ * idempotently by the video's own id, saved at once. A video that wasn't finished grants nothing.
+ */
 export async function watchVideoFor(reward: VideoReward): Promise<WatchResult> {
   if (!ads.available) return 'unavailable';
+  if (showing) return 'busy';
   if (videosLeftToday(app.save) <= 0) return 'cap';
   const placement = reward === 'vtoken' ? 'token' : reward;
+  const video = `${Date.now().toString(36)}-${++videos}`;
+  showing = true;
   track('rewarded_ad_offer', { placement });
-  const ok = await ads.showRewarded(placement);
-  if (!ok) return 'no-video';
-  if (!recordVideoReward(app.save, reward)) return 'cap';
-  track('rewarded_ad_complete', { placement });
-  app.persist();
-  return 'granted';
+  track('rewarded_ad_start', { placement });
+  let granted = false;
+  let refused = false;
+  const grantOnce = () => {
+    if (granted || refused) return;
+    if (recordVideoReward(app.save, reward, new Date(), video)) {
+      granted = true;
+      app.persist();
+      track('rewarded_ad_complete', { placement });
+      track('reward_grant', { placement, ok: true });
+    } else {
+      refused = true;
+      track('reward_grant', { placement, ok: false });
+    }
+  };
+  try {
+    const ok = await ads.showRewarded(placement, grantOnce);
+    if (ok) grantOnce();
+  } finally {
+    showing = false;
+  }
+  if (granted) return 'granted';
+  return refused ? 'cap' : 'no-video';
 }
