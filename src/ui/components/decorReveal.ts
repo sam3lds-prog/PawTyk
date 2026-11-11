@@ -7,8 +7,9 @@
  * Tire Swing gets a swing, the Bubble Machine a chase). A piece with nothing to do with it gets a curious look from the
  * nearest animal instead. Under reduced motion: the sparkle ring only, and nobody runs over.
  *
- * Nothing is granted or decided here: the purchase already happened. A reveal that never gets seen (the app closed)
- * is simply lost; the piece is out either way.
+ * Nothing is granted or decided here: the purchase already happened. A reveal stays waiting until it actually plays: a
+ * piece not drawn yet (the Duck Pond Fountain before the pond), a scene that was busy, or a visit left early keeps it
+ * for the next eligible visit. Closing the app loses it; the piece is out either way.
  */
 
 import type { DecorId } from '../../meta/catalogs/decor';
@@ -29,12 +30,23 @@ export function noteReveal(id: DecorId): void {
   if (!list.includes(id)) pending.set(home, [...list, id]);
 }
 
-/** The reveals waiting for `home` (taken: each plays once). */
-export function takeReveals(home: SanctuaryId): DecorId[] {
-  const list = pending.get(home) ?? [];
-  pending.delete(home);
-  return list;
+/** The reveals waiting for `home`. They stay waiting until `playReveals` actually plays them (each plays once). */
+export function waitingReveals(home: SanctuaryId): DecorId[] {
+  return [...(pending.get(home) ?? [])];
 }
+
+/** These pieces have had their arrival: nothing waits for them any more. */
+function settle(ids: readonly DecorId[]): void {
+  for (const id of ids) {
+    const home = decorHome(DECOR_BY_ID[id]);
+    const left = (pending.get(home) ?? []).filter((x) => x !== id);
+    if (left.length) pending.set(home, left);
+    else pending.delete(home);
+  }
+}
+
+/** Forgets every waiting reveal (tests). */
+export const clearReveals = (): void => pending.clear();
 
 /** Whether a reveal is waiting for `home` (tests and QA). */
 export const revealWaiting = (home: SanctuaryId): boolean => !!pending.get(home)?.length;
@@ -50,12 +62,14 @@ export interface RevealHost {
 }
 
 /**
- * Plays the reveal for each piece that is out in the scene (in turn, a beat apart). Returns the pieces it played.
+ * Plays the reveal for each piece that is out in the scene (in turn, a beat apart), and settles those: a piece not drawn
+ * here yet keeps waiting. Returns the pieces it played.
  */
 export function playReveals(host: RevealHost, ids: readonly DecorId[]): DecorId[] {
   const svg = host.svg();
   if (!svg) return [];
   const shown = ids.filter((id) => svg.querySelector(`[data-decor="${id}"]`));
+  settle(shown);
   shown.forEach((id, i) =>
     host.timeout(() => {
       const g = host.svg()?.querySelector<SVGGElement>(`[data-decor="${id}"]`);
