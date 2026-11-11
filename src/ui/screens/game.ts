@@ -1840,21 +1840,29 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     app.saveActive();
     track('puzzle_fail', { mode: mode.kind, size: n });
     feel('lost');
+    // D47 PR 4: every way on, each the player's choice, warmest first: an extra life they've earned, a short video
+    // for one (optional), the same board again for free, or back. Never a purchase, and none of it in Paw Cup.
     const canLife = pantryOn && lives() > 0;
-    const canRevive = pantryOn && !canLife && canOfferVideo();
+    const canRevive = pantryOn && canOfferVideo();
+    const placed = s.placedCount();
+    const cup = mode.kind === 'cup';
     const wrongs = `${numberWord(s.maxHearts)} wrong placements`;
+    const back = cup ? 'Back to Paw Cup' : mode.kind === 'daily' ? 'Back to the Daily' : 'Back to Journey';
+    const so = placed ? `You placed ${placed} of ${total} ${total === 1 ? 'animal' : 'animals'}. ` : '';
+    if (canLife || canRevive) track('revive_offer', { mode: mode.kind, life: canLife, video: canRevive });
     sheet = openSheet(scope, {
-      title: mode.kind === 'cup' ? 'Attempt ended' : 'Out of hearts',
+      title: cup ? 'Attempt ended' : 'So close!',
       center: true,
       dismissible: false,
       body: `
-        <p class="sheet__lead">${mode.kind === 'cup' ? `${wrongs} end a Paw Cup attempt.` : canLife || canRevive ? `${wrongs}. Keep this board with a heart back, or start fresh.` : `${wrongs}. Start this board again with a fresh line of logic.`}</p>
+        <p class="sheet__lead">${cup ? `${capitalize(wrongs)} end a Paw Cup attempt.` : canLife || canRevive ? `${so}Your board is just as you left it: keep going with one heart back, or start it fresh.` : `${so}Start this board fresh, free: a new look often shows the way.`}</p>
         <div class="sheet__actions">
           ${canLife ? `<button class="btn btn--block" data-act="life">${ICON.lifePlus}Use an extra life: +1 heart<span class="btn__price">${lives()} left</span></button>` : ''}
-          ${canRevive ? `<button class="btn btn--block" data-act="revive">${ICON.videoToken}Watch a short video: +1 heart</button>` : ''}
-          ${mode.kind === 'cup' ? '' : `<button class="btn ${canRevive || canLife ? 'btn--secondary' : ''} btn--block" data-act="restart">${ICON.restart}Try again</button>`}
-          <button class="btn btn--quiet" data-act="leave">${mode.kind === 'cup' ? 'Back to Paw Cup' : 'Back to Journey'}</button>
-        </div>`,
+          ${canRevive ? `<button class="btn ${canLife ? 'btn--secondary' : ''} btn--block" data-act="revive">${ICON.videoToken}Watch a short video: +1 heart</button>` : ''}
+          ${cup ? '' : `<button class="btn ${canRevive || canLife ? 'btn--secondary' : ''} btn--block" data-act="restart">${ICON.restart}Try again, free</button>`}
+          <button class="btn btn--quiet" data-act="leave">${back}</button>
+        </div>
+        ${!cup && (canLife || canRevive) ? '<p class="muted sheet__note">Extra lives come from clearing new Journey levels. Videos are always optional.</p>' : ''}`,
     });
     const ls = sheet;
     let busy = false;
@@ -1866,6 +1874,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         const ok = useLife();
         busy = false;
         if (!ok) return;
+        track('revive_used', { mode: mode.kind, via: 'life' });
         ls.close();
         sheet = null;
         coach('An extra life! One heart back, and your board is just as you left it.');
@@ -1874,19 +1883,24 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       }
       if (a.act === 'revive') {
         busy = true;
+        for (const b of ls.el.querySelectorAll<HTMLButtonElement>('button')) b.disabled = true;
         const r = await watchVideoFor('life');
         busy = false;
+        if (ls.scope.alive) for (const b of ls.el.querySelectorAll<HTMLButtonElement>('button')) b.disabled = false;
         if (r !== 'granted') {
           toast(videoMessage(r));
           return;
         }
-        // The extra life is kept in the pantry if the player left meanwhile; otherwise it brings this board back.
+        // The extra life is the player's once granted: kept in the pantry if they left meanwhile, otherwise it brings
+        // this board back.
         if (!scope.alive || !ls.scope.alive || !useLife()) return;
+        track('revive_used', { mode: mode.kind, via: 'video' });
         ls.close();
         sheet = null;
         coach('Thanks for watching! One heart back, and your board is just as you left it.');
         resumeIfOnScreen();
       } else if (a.act === 'restart') {
+        track('puzzle_retry', { mode: mode.kind, size: n });
         ls.close();
         restartGame();
       } else {
@@ -1964,6 +1978,7 @@ function numberWord(n: number): string {
 
 function videoMessage(r: WatchResult): string {
   if (r === 'cap') return "That's all the videos for today. More tomorrow.";
+  if (r === 'busy') return 'A video is already playing.';
   if (r === 'unavailable') return 'Videos are not available in this version.';
   return 'No video is available right now. Nothing was used; try again in a little while.';
 }

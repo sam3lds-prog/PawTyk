@@ -774,7 +774,7 @@ describe('hardening: large boards, assistive tech, no videos (review gaps)', () 
       }
       expect(s.outcome).toBe('lost');
       const sheet = document.querySelector('.sheet')!;
-      expect(sheet.textContent).toMatch(/Out of hearts/);
+      expect(sheet.textContent).toMatch(/So close!/);
       expect(sheet.querySelector('[data-act="revive"]')).toBeNull();
       expect(sheet.textContent).not.toMatch(/video/i);
       expect(sheet.querySelector('[data-act="restart"]')).not.toBeNull();
@@ -1360,5 +1360,168 @@ describe('a board that belongs to its home (D41 PR B)', () => {
     tap(0, 0);
     cell(0, 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(b.classList.contains('has-sel')).toBe(false);
+  });
+});
+
+describe('losing a board, and the ways back (D47 PR 4)', () => {
+  /** Loses every heart on the open board (a different wrong tile each time). */
+  function loseBoard(): HTMLElement {
+    const s = app.active!.session;
+    const hearts = s.hearts;
+    for (let i = 0; i < hearts; i++) {
+      const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+      dblTap(r, c);
+    }
+    expect(s.outcome).toBe('lost');
+    return document.querySelector('.sheet')!;
+  }
+  const lifeGrants = () => app.save.inventory.items.filter((e) => e.item === 'life' && e.source === 'ad');
+  const lifeBalance = () => app.save.inventory.items.filter((e) => e.item === 'life').reduce((n, e) => n + e.delta, 0);
+
+  async function withVideos(show: (placement: string, onEarned?: () => void) => Promise<boolean>) {
+    const ads = await import('../../src/services/ads');
+    vi.spyOn(ads.ads, 'available', 'get').mockReturnValue(true);
+    return vi.spyOn(ads.ads, 'showRewarded').mockImplementation(show as never);
+  }
+
+  it('offers an earned extra life, an optional video, a free retry and the way back, in warm words; never a purchase', async () => {
+    await withVideos(async () => false);
+    setPantry(app.save, 'life', 2);
+    start(5);
+    const sheet = loseBoard();
+    expect(sheet.textContent).toMatch(/So close!/);
+    expect(sheet.textContent).toMatch(/just as you left it/);
+    expect(sheet.textContent).not.toMatch(/Out of hearts|failed|game over/i);
+    const acts = [...sheet.querySelectorAll<HTMLElement>('[data-act]')].map((b) => b.dataset.act);
+    expect(acts).toEqual(['life', 'revive', 'restart', 'leave']);
+    expect(sheet.textContent).toMatch(/Try again, free/);
+    expect(sheet.textContent).not.toMatch(/gem|buy|purchase|\$/i);
+  });
+
+  it('an extra life brings the board back as it was, and the board takes input again (tap ✕, drag ✕, double-tap place)', () => {
+    setPantry(app.save, 'life', 1);
+    start(5);
+    const s = app.active!.session;
+    const [pr, pc] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    dblTap(pr, pc);
+    expect(s.cells[pr][pc]).toBe(CAT);
+    const sheet = loseBoard();
+    (sheet.querySelector('[data-act="life"]') as HTMLButtonElement).click();
+    expect(s.outcome).toBe('playing');
+    expect(s.hearts).toBe(1);
+    expect(s.cells[pr][pc]).toBe(CAT);
+    expect(document.querySelector('.sheet')).toBeNull();
+    // Input works again: a tap marks, a drag marks a run, a double tap places.
+    const [tr, tc] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+    tap(tr, tc);
+    expect(s.cells[tr][tc]).toBe(MARK);
+    const run = [0, 1, 2, 3, 4, 5].flatMap((c) => [[tr === 0 ? 1 : 0, c] as [number, number]]).filter(([r, c]) => s.cells[r][c] === EMPTY && !s.givenMask[r][c] && s.puzzle.solution[r][c] === EMPTY).slice(0, 2);
+    if (run.length === 2) {
+      drag(run);
+      for (const [r, c] of run) expect(s.cells[r][c]).toBe(MARK);
+    }
+    const [r2, c2] = find((r, c) => s.puzzle.solution[r][c] === CAT);
+    dblTap(r2, c2);
+    expect(s.cells[r2][c2]).toBe(CAT);
+  });
+
+  it('a watched video grants one extra life exactly once, even when the network reports it twice, and uses it here', async () => {
+    const show = await withVideos(async (_p, onEarned) => {
+      onEarned?.();
+      onEarned?.();
+      return true;
+    });
+    start(5);
+    const s = app.active!.session;
+    const before = lifeBalance();
+    const sheet = loseBoard();
+    expect(sheet.querySelector('[data-act="life"]')).toBeNull();
+    (sheet.querySelector('[data-act="revive"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(s.outcome).toBe('playing'));
+    expect(show).toHaveBeenCalledTimes(1);
+    expect(lifeGrants()).toHaveLength(1);
+    // Granted and used: the pantry is where it was, the board has its heart.
+    expect(lifeBalance()).toBe(before);
+    expect(s.hearts).toBe(1);
+  });
+
+  it('a second tap while the video plays starts nothing; a reward earned before an interrupted close is kept', async () => {
+    let finish: (v: boolean) => void = () => {};
+    const show = await withVideos(
+      (_p, onEarned) =>
+        new Promise<boolean>((res) => {
+          // The network reports the reward; the close never comes back (the app was interrupted).
+          onEarned?.();
+          finish = res;
+        }),
+    );
+    start(5);
+    const sheet = loseBoard();
+    const btn = sheet.querySelector('[data-act="revive"]') as HTMLButtonElement;
+    btn.click();
+    btn.click();
+    await Promise.resolve();
+    expect(show).toHaveBeenCalledTimes(1);
+    // Already the player's, and saved, before the video closes.
+    expect(lifeGrants()).toHaveLength(1);
+    const saved = JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => /save/i.test(k)) ?? '') ?? 'null');
+    if (saved) expect(JSON.stringify(saved)).toMatch(/ad:life:/);
+    // The screen goes meanwhile (the app moved on); when the close finally comes, nothing is granted again and the
+    // life waits in the pantry.
+    app.router.go({ screen: 'journey' });
+    finish(true);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(lifeGrants()).toHaveLength(1);
+    expect(lifeBalance()).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a video that was not finished grants nothing, and the sheet stays', async () => {
+    await withVideos(async () => false);
+    start(5);
+    const sheet = loseBoard();
+    (sheet.querySelector('[data-act="revive"]') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(lifeGrants()).toHaveLength(0);
+    expect(app.active!.session.outcome).toBe('lost');
+    expect(document.querySelector('.sheet [data-act="restart"]')).not.toBeNull();
+  });
+
+  it('try again is free: a fresh board with full hearts, and no setting is switched on for the player (no Auto-X)', () => {
+    const before = { ...app.settings };
+    start(5);
+    loseBoard();
+    (document.querySelector('.sheet [data-act="restart"]') as HTMLButtonElement).click();
+    const s = app.active!.session;
+    expect(s.outcome).toBe('playing');
+    expect(s.hearts).toBe(s.maxHearts);
+    expect(app.settings.autoMark).toBe(before.autoMark);
+    expect(app.settings.controls).toBe(before.controls);
+  });
+
+  it('Paw Cup: no extra lives, no videos, no retry; only the way back', async () => {
+    await withVideos(async () => true);
+    setPantry(app.save, 'life', 3);
+    app.save.journey.nextLevel = 60;
+    startGame({ kind: 'cup', weekKey: '2026-W44', index: 0 });
+    const s = app.active!.session;
+    for (let i = 0; i < s.maxHearts; i++) {
+      const [r, c] = find((r, c) => s.puzzle.solution[r][c] === EMPTY);
+      dblTap(r, c);
+    }
+    const sheet = document.querySelector('.sheet')!;
+    expect([...sheet.querySelectorAll<HTMLElement>('[data-act]')].map((b) => b.dataset.act)).toEqual(['leave']);
+    expect(sheet.textContent).not.toMatch(/video|extra life/i);
+  });
+});
+
+describe('reward videos are granted once per video (D47 PR 4)', () => {
+  it('the same video reported twice grants once and counts once toward the day', async () => {
+    const { recordVideoReward } = await import('../../src/app/rewarded');
+    const now = new Date(2026, 10, 10, 12);
+    expect(recordVideoReward(app.save, 'life', now, 'v1')).toBe(true);
+    expect(recordVideoReward(app.save, 'life', now, 'v1')).toBe(false);
+    expect(app.save.ads.rewarded).toBe(1);
+    expect(recordVideoReward(app.save, 'life', now, 'v2')).toBe(true);
+    expect(app.save.ads.rewarded).toBe(2);
   });
 });

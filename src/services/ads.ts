@@ -27,8 +27,12 @@ export interface AdService {
   readonly available: boolean;
   readonly isStub: boolean;
   showInterstitial(): Promise<boolean>;
-  /** Resolves true only when the reward was earned. */
-  showRewarded(placement: RewardedPlacement): Promise<boolean>;
+  /**
+   * Resolves true only when the reward was earned. `onEarned` is called the moment the network reports the reward
+   * (D47 PR 4), before the video is even closed, so a reward earned and then interrupted (the app closed, the close
+   * callback lost) is still granted; the caller grants idempotently, so a second report changes nothing.
+   */
+  showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean>;
 }
 
 export interface AdCadenceState {
@@ -87,8 +91,10 @@ export class TestVideoAdService implements AdService {
   async showInterstitial(): Promise<boolean> {
     return false;
   }
-  async showRewarded(placement: RewardedPlacement): Promise<boolean> {
-    return fakeVideo(`Test video · ${placement}`, this.ms);
+  async showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
+    const ok = await fakeVideo(`Test video · ${placement}`, this.ms);
+    if (ok) onEarned?.();
+    return ok;
   }
 }
 
@@ -131,12 +137,13 @@ export class AdMobAdService implements AdService {
     return false;
   }
 
-  async showRewarded(): Promise<boolean> {
+  async showRewarded(_placement?: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
     if (!(await this.start())) return false;
     const { AdMob, RewardAdPluginEvents } = await import('@capacitor-community/admob');
     let rewarded = false;
     const handle = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
       rewarded = true;
+      onEarned?.();
     });
     try {
       await AdMob.prepareRewardVideoAd({ adId: this.adId, isTesting: this.testing });
