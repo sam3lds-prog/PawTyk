@@ -2152,3 +2152,41 @@ VIP pass, product ids unchanged, the Welcome Pack's offer and dismissal untouche
   browser, native and copy shares, cancels and failures, wording that never claims a post, one reward per week,
   week boundaries, reload, a skipped week, the photo mode reward once, the keepsake framing and caption, analytics
   off and no recipients, nothing opening by itself after a welcome).
+
+### M4 — friend invites and referrals: review only (`growth/m4-friend-referrals`)
+
+The plan asks for an architecture and compliance review first, with no production reward system until Sam approves
+the backend, identity, attribution and fraud-control approach. So M4 is the review, `docs/referrals.md`, and nothing
+else: no code, Cloud Function, rule, screen or reward. `featureFlags.friends` stays `false`.
+
+What the review settles (each point is argued in the doc):
+- **What earns:** the referrer is rewarded only when a friend has *played* the first five Journey levels. The server
+  checks this by replaying their move logs with the leaderboard's own `checkSolve`.
+- **What never earns:** installing, signing up, posting, sharing, tagging, reviews or ratings (App Store 3.2.2(x) and
+  5.6.3; Meta's promotion rules).
+- **Gating:** a referral never gates anything.
+- **Attribution is honest:**
+  - server-issued opaque codes;
+  - Universal Links when the app is installed, and manual code entry otherwise;
+  - no fingerprinting, deferred-link SDK or clipboard sniffing (Firebase Dynamic Links has been shut down since
+    25 August 2025);
+  - the app says "a friend used your code", never "installed from your link".
+- **Fraud controls:**
+  - App Check (App Attest) enforced;
+  - Apple DeviceCheck bit 0 marks a device that has already redeemed a code (it survives reinstall);
+  - caps, a new-player window, redeem rate limits and review flags.
+- **Privacy:**
+  - stores only uids, codes and timestamps;
+  - the referrer sees counts only;
+  - in-app deletion (5.1.1(v)) through the same path as the leaderboard's Leave.
+
+Go-live blockers, all native or ops:
+- a native App Check provider;
+- a DeviceCheck plugin with its key in Secret Manager;
+- Universal Links;
+- emulator tests;
+- a legal read of the terms sentence;
+- a two-iPhone TestFlight run.
+
+Open decisions D1–D6, with recommendations, are in `docs/referrals.md` §9. The most important is D1: the plan's
+50 coins for the friend carries App Review risk, and the recommendation is to reward only the referrer.
