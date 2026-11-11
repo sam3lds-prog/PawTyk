@@ -166,7 +166,7 @@ describe('the Journey hub', () => {
     const goal = el('.hero__goal')!;
     const play = el('.hero__play')!;
     expect(goal.compareDocumentPosition(play) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(text('.hero__eyebrow')).toMatch(/Building the Meadow Farm/);
+    expect(text('.hero__eyebrow')).toMatch(/Today at your Farm/);
     expect(text('.hero__next')).toMatch(/Truffle the piglet/);
     expect(el('.hero__bar')?.getAttribute('aria-valuenow')).toBe('2');
     expect(text('#continue-title')).toBe('Level 8');

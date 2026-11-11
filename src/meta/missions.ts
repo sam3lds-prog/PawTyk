@@ -155,3 +155,23 @@ export function claimMission(save: SaveV2, key: string, now = new Date()): numbe
 export function unclaimedCount(save: SaveV2, now = new Date()): number {
   return missionStates(save, now).filter((m) => m.done && !m.claimed).length;
 }
+
+/** D49 PR D: an errand claimed by itself the moment it was done, with what it gave. */
+export interface AutoClaim extends MissionClaim {
+  def: MissionDef;
+}
+
+/**
+ * D49 PR D: claims every finished errand that isn't claimed yet (today's and this week's), each once through the same
+ * idempotent ledger ids as the Claim button (`mission:<key>`…), so nothing can be credited twice whichever path runs.
+ * Returns what each gave.
+ */
+export function autoClaimMissions(save: SaveV2, now = new Date()): AutoClaim[] {
+  const out: AutoClaim[] = [];
+  for (const m of missionStates(save, now)) {
+    if (!m.done || m.claimed) continue;
+    const got = claimMissionDetailed(save, m.key, now);
+    if (got.coins || got.lives || got.hints || got.overflowCoins) out.push({ ...got, def: m.def });
+  }
+  return out;
+}
