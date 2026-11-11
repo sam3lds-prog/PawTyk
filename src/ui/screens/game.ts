@@ -139,6 +139,13 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
   let lastPlaced: AnimalId | null = null;
   /** Tutorial: the placement the coach is pointing at. */
   let guide: { step: number; r: number; c: number; species: Species; unit: UnitRef | null; text: string } | null = null;
+  /**
+   * D48 PR A: the tutorial's warm-up, before its first placement (double-tap players only): one tap marks ✕, tried on
+   * any tile, so the two moves are met one at a time. `tries` counts single taps on the glowing tile that didn't
+   * become a double tap (the placement step's "now tap it again, quickly"), for the usability check.
+   */
+  let warmup = false;
+  let guideTries = 0;
   let winPet: AnimalId | null = null;
   // Zen and the guided first board never charge for hints. Extra lives work on casual boards with hearts (not Paw Cup).
   const freeHints = mode.kind === 'zen' || guided;
@@ -360,7 +367,17 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
 
   // ---------------------------------------------------------------- tutorial
 
-  function startGuide(step: number): void {
+  /** The tutorial's warm-up (D48 PR A): tap once for ✕, on any tile, before the first animal. */
+  function startWarmup(): void {
+    warmup = true;
+    guide = null;
+    board.setGuide(null);
+    const word = wordOf(CAT);
+    coachGuide(`Two moves to know. First, tap any tile once: that marks it ✕, your note that no ${word} lives there. Try it.`);
+    track('onboarding_step', { step: 'tutorial_warmup' });
+  }
+
+  function startGuide(step: number, lead = ''): void {
     const info = step <= TUTORIAL_STEPS && !finished ? s.peekHint() : null;
     if (!info) {
       guide = null;
@@ -386,6 +403,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         step === 1
           ? `Now two animals: one ${wordOf(CAT)} and one ${wordOf(DOG)} in every row, column and color, never side by side. ${friendlyReason(info.reason)} ${tapGlow}`
           : `${friendlyReason(info.reason)} The ${word} button is picked for you: ${tapGlow.charAt(0).toLowerCase()}${tapGlow.slice(1)}`;
+    if (lead) text = `${lead} ${text}`;
     guide = { step, r: info.r, c: info.c, species: info.species, unit: info.unit, text };
     tool = info.species === CAT ? 'cat' : 'dog';
     erasing = false;
@@ -397,6 +415,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (!guide) return;
     if (s.cells[guide.r][guide.c] === guide.species) {
       const next = guide.step + 1;
+      // The usability check (D48 PR A): did the first animal land on the first double tap, or after single taps?
+      if (tutorial && guide.step === 1) track('onboarding_controls', { scheme: classic ? 'two_step' : 'double_tap', first_try: guideTries === 0, single_taps: Math.min(guideTries, 9) });
       guide = null;
       board.setGuide(null);
       startGuide(next);
@@ -531,7 +551,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     lastTap = s.givenMask[r][c] ? null : { r, c, t: now, marked: !!res.marked };
     handle(res, r, c);
     if (slow && res.unmarked && ++slowDoubles >= 2) maybeOfferTwoStep();
-    if (guide && guide.r === r && guide.c === c && res.marked) coach(`Now tap it again, quickly, to place ${aWord(guide.species)}.`);
+    if (guide && guide.r === r && guide.c === c && res.marked) {
+      guideTries++;
+      coach(`Now tap it again, quickly, to place ${aWord(guide.species)}.`);
+    }
     if (res.marked) return 'mark';
     if (res.unmarked) return 'unmark';
     return null;
@@ -675,6 +698,16 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     } else if (res.marked) {
       feel('mark');
       react = () => glanceFromNeighbor(r, c);
+      // The warm-up's ✕ (D48 PR A): now the second move, on the tile that has to hold the first animal.
+      if (warmup) {
+        warmup = false;
+        afterChange(react);
+        // The placement step's own line says the second move ("double-tap it"); a longer line here would reflow the
+        // board as the coach line shrinks again after the placement.
+        startGuide(1);
+        paint();
+        return;
+      }
     }
     afterChange(react);
   }
@@ -1962,7 +1995,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     if (solo) ob.soloRulesSeen = true;
     else ob.pairRulesSeen = true;
     app.persist();
-    startGuide(1);
+    // The first board meets the two moves one at a time (D48 PR A); two-step tap has no timing to learn.
+    if (tutorial && !classic) startWarmup();
+    else startGuide(1);
     paint();
   } else if (solo ? !ob.soloRulesSeen : !ob.pairRulesSeen) {
     // The first board under a rule the player hasn't been shown (a returning player's first one-animal board, a Daily

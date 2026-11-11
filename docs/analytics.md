@@ -32,6 +32,7 @@ Parameters are game facts only: numbers or short text; booleans arrive as 1/0.
 | | `puzzle_start` | every board | `mode`, `size`, `difficulty` |
 | | `first_puzzle_complete` | once ever | `mode`, `seconds` |
 | | `tutorial_complete` | level 1 solved, once | `seconds` |
+| | `onboarding_controls` | the tutorial's first animal placed (D48) | `scheme`, `first_try`, `single_taps` (capped at 9) |
 | | `puzzle_complete` | every solve | `mode`, `size`, `seconds`, `mistakes`, `hints` |
 | | `level_reached` | a new Journey level 2–10, 21, then every 10 | `level` |
 | | `puzzle_fail` / `puzzle_retry` | out of hearts / Try again | `mode`, `size` |

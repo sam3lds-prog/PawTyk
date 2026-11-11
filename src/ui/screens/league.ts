@@ -139,8 +139,8 @@ export const leagueScreen: ScreenDef = {
       const days = Array.from({ length: 7 }, (_, i) => addDaysKey(today, i - 6));
       return `
         <section class="card">
-          <h3>Daily Cozy Puzzle</h3>
-          <p class="muted">The same board for everyone each day.${featureFlags.onlineLeagues ? ' Daily Dash rankings compare times.' : ' Keep your streak going.'}</p>
+          <h3>Daily Puzzle</h3>
+          <p class="muted">One new board a day, the same for everyone.${featureFlags.onlineLeagues ? ' Daily Dash compares times.' : ' Solve it to keep your streak.'}</p>
           <div class="stats">
             <div class="stat"><div class="stat__v num">${streak}</div><div class="stat__k">day streak</div></div>
             <div class="stat"><div class="stat__v num">${app.save.daily.bestStreak}</div><div class="stat__k">best streak</div></div>

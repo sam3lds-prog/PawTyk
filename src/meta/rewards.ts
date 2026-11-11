@@ -118,12 +118,12 @@ export function rewardsForWin(save: SaveV2, mode: ModeRef, rec: WinRecord, now =
   }
   const sum = empty();
   if (mode.kind === 'daily' && rec.newDaily) {
-    add(sum, save, `daily:${mode.dateKey}`, ECONOMY.dailyFirstClear, 'Daily Cozy Puzzle', 'daily', now);
+    add(sum, save, `daily:${mode.dateKey}`, ECONOMY.dailyFirstClear, 'Daily Puzzle', 'daily', now);
     if (rec.clean) add(sum, save, `dailyclean:${mode.dateKey}`, ECONOMY.dailyCleanBonus, 'Clean solve', 'daily', now);
     // Both Dailies of a date pay the same (D35), whichever board was played.
     const t = dailyPointsTier(mode.dateKey, tier);
     const pts = POINTS.dailyBase + (t ? POINTS.difficulty[t] : 0) + (rec.clean ? POINTS.clean : 0) + (rec.hintFree ? POINTS.hintFree : 0);
-    addPoints(sum, save, `pts:D${mode.dateKey}`, pts, 'daily', now, 'Daily Cozy Puzzle');
+    addPoints(sum, save, `pts:D${mode.dateKey}`, pts, 'daily', now, 'Daily Puzzle');
   }
   return sum;
 }

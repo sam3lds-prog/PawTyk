@@ -1885,3 +1885,32 @@ No P0. Five P1s and nine P2s; all fixed before merge except where noted:
 - Release checklist D47: TestFlight build steps, device checks per PR, the pack's sandbox checks, go/no-go.
 - **Not established here**: anything about a real iPhone. All of this ran in Chrome at iPhone sizes with software WebGL;
   frame rate, heat, the share sheet, Photos permission, Firebase DebugView and StoreKit need the TestFlight pass.
+
+## 2026-11-10 · D48 — shop, feeding, tricks and celebrations (Farm Life & Personality)
+
+From *PawTyk — Shop, Feeding, Tricks & Celebration Upgrade Plan* (Sam: "implement all these and merge it"). Six PRs,
+a working game after each: A polish, B feeding, C decorations, D tricks and emotes, E celebration styles, F QA. The
+guiding rule from the plan: more ways to enjoy the animals already rescued, not more obligations or things to buy.
+Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
+
+### PR A — UX and haptic polish
+- **Swipe-marking skips nothing.** A fast swipe can report its first move several tiles away; the board now marks every
+  tile on the straight line between the last tile and the new one (a 4-connected grid walk, `cellsBetween`), and
+  reads every coalesced pointer position. A tile already handled in the drag is passed over.
+- **Drag haptics are restrained.** One light selection tick per tile that changes, at most every 40 ms (`DRAG_TICK_MS`),
+  so a fast swipe changing three tiles in a frame is one tick, never a buzz. No tick for passing over an unchanged tile
+  (the board only reports changes), none for staying inside a tile, no sound while dragging, nothing with Haptics off.
+  Marks and placements are never spaced. Real `@capacitor/haptics` feel needs the device check.
+- **Postcards keep every animal.** A postcard is a 3:2 or 4:5 crop of the screen, and a centred crop cut animals near
+  the scene's top or bottom. Every framing now fits its animals (whole height, ears to feet) inside the card's own shape
+  with a 10% margin (`SAFE_MARGIN`), widening near the scene's edges until they fit where the card can reach; the crop
+  follows the animals (`focus`) instead of the screen's middle, the guide shows exactly that crop, and switching
+  landscape/portrait or the signature refits the framing.
+- **The Daily, said shorter.** "Daily Puzzle"; the card reads *Thursday: 6×6, one animal. Same board for everyone.*;
+  *Solved today. A new one tomorrow.* Internal ids and ledger entries unchanged.
+- **The first board teaches the two moves one at a time** (double-tap players): *tap any tile once* marks ✕ (a note),
+  then the guided tile glows for the double tap. Two-step tap players keep the old first step (no timing to learn).
+  Usability check: `onboarding_controls` (opt-in analytics only) says whether the first animal landed on the first
+  double tap and how many single taps came before; the five-player script should watch the same moment.
+- Tests: `d48polish.dom.test` (grid walk, tick spacing and silence, safe framing for groups, tall and edge animals in
+  both shapes, the warm-up and two-step), smoke e2e updated for the warm-up.
