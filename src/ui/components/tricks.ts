@@ -6,10 +6,9 @@
  */
 
 import { app } from '../../app/app';
-import { canOfferVideo, watchVideoFor } from '../../app/rewarded';
+import { earnToken, tokenNeedMarkup } from './earnToken';
 import { TRICK_BY_ID, TRICK_GROUPS, TRICK_GROUP_NAME, TRICKS, trickCurrency, trickGroup, type TrickGroup, type TrickId } from '../../meta/catalogs/tricks';
 import { buyTrick, ownsTrick, trickWallet } from '../../meta/tricks';
-import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
 import { rhythmFor, type RhythmFeel } from '../../audio/scores';
@@ -350,10 +349,10 @@ export function showTrickSheet(
            <p class="muted">You have ${plural(have, 'Paw Coin')}. Solving a new level earns 35.</p>`
         : `<button class="btn btn--block" data-act="buy" data-autofocus>Learn it for ${ICON.coin}<span class="num">${t.price}</span></button>`;
     else if (cur === 'vtoken')
+      // M2: short of video tokens: how many, and an optional video right here (the card stays open).
       actions = short
         ? `<button class="btn btn--block" disabled aria-label="${esc(`Costs ${t.price} video tokens`)}">${ICON.videoToken}<span class="num">${t.price}</span></button>
-           <p class="muted">You have ${plural(have, 'video token')}. Video tokens come only from short reward videos you choose to watch.</p>
-           ${ads.available && canOfferVideo() ? `<button class="btn btn--secondary btn--block" data-act="watch">${ICON.videoToken}Watch a video: +1 token</button>` : ''}`
+           ${tokenNeedMarkup(t.price)}`
         : `<button class="btn btn--block" data-act="buy" data-autofocus>Get it for ${ICON.videoToken}<span class="num">${t.price}</span></button>`;
     else if (cur === 'gem')
       actions = short
@@ -431,14 +430,14 @@ export function showTrickSheet(
         sh.close();
         app.router.go({ screen: 'shop', tab: 'gems' });
         break;
-      case 'watch': {
+      case 'earn-token': {
         busy = true;
-        const r = await watchVideoFor('vtoken');
+        await earnToken(a as HTMLButtonElement, `trick:${id}`, () => {
+          rerender();
+          opts.onBought?.();
+          sh.el.querySelector<HTMLElement>('[data-act="buy"]')?.focus({ preventScroll: true });
+        }, () => sh.scope.alive);
         busy = false;
-        if (!sh.scope.alive) return;
-        if (r === 'granted') toast('+1 video token', ICON.videoToken);
-        else toast(r === 'cap' ? "That's all the videos for today. More tomorrow." : 'No video is available right now. Try again in a little while.');
-        rerender();
         break;
       }
       case 'buy': {

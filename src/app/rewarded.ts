@@ -53,15 +53,17 @@ let videos = 0;
  * reports the reward (so it is kept even if the video's close never reaches us, or the player has left the screen),
  * idempotently by the video's own id, saved at once. A video that wasn't finished grants nothing.
  */
-export async function watchVideoFor(reward: VideoReward): Promise<WatchResult> {
+export async function watchVideoFor(reward: VideoReward, ctx: { surface?: string } = {}): Promise<WatchResult> {
   if (!ads.available) return 'unavailable';
   if (showing) return 'busy';
   if (videosLeftToday(app.save) <= 0) return 'cap';
   const placement = reward === 'vtoken' ? 'token' : reward;
   const video = `${Date.now().toString(36)}-${++videos}`;
   showing = true;
-  track('rewarded_ad_offer', { placement });
-  track('rewarded_ad_start', { placement });
+  // M2: where the player chose it (an item's card, the Shop's earn card), never who they are.
+  const surface: Record<string, string> = ctx.surface ? { surface: ctx.surface } : {};
+  track('rewarded_ad_offer', { placement, ...surface });
+  track('rewarded_ad_start', { placement, ...surface });
   let granted = false;
   let refused = false;
   const grantOnce = () => {
@@ -69,8 +71,8 @@ export async function watchVideoFor(reward: VideoReward): Promise<WatchResult> {
     if (recordVideoReward(app.save, reward, new Date(), video)) {
       granted = true;
       app.persist();
-      track('rewarded_ad_complete', { placement });
-      track('reward_grant', { placement, ok: true });
+      track('rewarded_ad_complete', { placement, ...surface });
+      track('reward_grant', { placement, ok: true, ...surface });
     } else {
       refused = true;
       track('reward_grant', { placement, ok: false });

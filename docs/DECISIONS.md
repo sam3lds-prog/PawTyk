@@ -2093,3 +2093,21 @@ VIP pass, product ids unchanged, the Welcome Pack's offer and dismissal untouche
 - Release builds: what the build can't sell is never featured or offered (the existing `currencyOffered`).
 - Tests: `shopM1.dom.test` (featured picks, honesty, determinism, availability; try-on lists; the Farm try-on and Back;
   a trick tried from the Shop and from the tray, never learned).
+
+### M2 — earning a video token from an item's card
+- When a decoration, a trick or a treat costs more video tokens than the player has, its card says so in plain numbers
+  ("You have 1 video token; this needs 3", how many to go, how many videos are left today) and offers an optional
+  **Watch a video: +1 token** (`components/earnToken.ts`). D48's trick card already had a button; decorations and
+  food now have the same, and all three share one piece.
+- It goes through the one reward-video service (`app/rewarded.ts`): the daily cap of ten, one grant per watched video
+  (a reward reported twice grants once), saved at once. The card stays open throughout, so the player is back on the
+  same item with the new balance; with enough, the Buy button is there and focused.
+- Every other outcome is said plainly and charges nothing: a video not finished or not ready ("No token this time"),
+  a failure of the ad service (caught, not an error on screen), videos not in this build (no button, a line saying
+  so), today's videos used up (no button, "more tomorrow"). Release builds without videos hide token items as before.
+- Analytics: the reward events now carry the surface they were chosen from (`decor:<id>`, `trick:<id>`, `food:<id>`,
+  `shop`), never anything about the player.
+- No forced ads, banners, interstitials or paid puzzle recovery were added; the in-puzzle extra life and hint videos
+  are unchanged.
+- Tests: `rewardedM2.dom.test` (the card's wording, no button without videos or after the cap, watched, twice,
+  cancelled, failed, the cap, staying on the item, a trick never learned by watching).
