@@ -302,6 +302,91 @@ animating.
 - [ ] Screenshots retaken from this build (the Farm's parade frames differently now); privacy answers as `release:check`
       lists them
 
+### D47 — unified UX, farm graphics, photo mode, analytics, the Welcome Rescue Pack
+
+Green browser tests (`npm test`, `npm run e2e`) are run in Chrome at iPhone sizes; they do **not** establish that the
+build is ready on an iPhone. Everything below is for a real device.
+
+**Build the TestFlight build**
+1. `git pull` on main, `npm ci`.
+2. `.env.local` (see `.env.example`): as for D46, plus for this test build `VITE_QA=1`. Leave `VITE_WELCOME_PACK` unset
+   (the tester build shows the pack with the free test store) and `VITE_FIREBASE_ANALYTICS` unset unless step 4 is done.
+3. Xcode, `ios/App/App/Info.plist`: add `NSPhotoLibraryAddUsageDescription` = "PawTyk saves the postcards you choose
+   to keep to your Photos." (without it *Save Image* in the share sheet crashes the app).
+4. Only if usage statistics are to be tested: Firebase console → add the iOS app (bundle id `com.sam3lds.catsvsdogs`),
+   download `GoogleService-Info.plist` into `App/App` (target App), set `VITE_FIREBASE_ANALYTICS=1` and
+   `VITE_FIREBASE_MEASUREMENT_ID`, and in `Info.plist` set `FIREBASE_ANALYTICS_COLLECTION_ENABLED` = NO (and the
+   ad-id keys off, as in docs/native-setup.md §3b) — **without it Firebase collects from launch for everyone**, before
+   the player is asked (docs/analytics.md).
+5. `npm run build && npx cap sync ios` (adds @capacitor/share, @capacitor/filesystem and, if used, the Firebase plugin).
+6. Xcode: bump the build number, Product → Archive → Distribute → TestFlight (internal testing). The bundle id stays
+   `com.sam3lds.catsvsdogs`.
+
+**Farm graphics (PR 1–3)** — compare with `docs/screenshots/d47/` (same positions, before | after)
+- [ ] Farm overview, the Grassland Meadow (World), the pasture's butterflies: grass in clumps with seed heads, flowers
+      with petals and stems, butterflies with fore and hind wings and antennae, flapping and gliding, landing on flowers
+- [ ] Walk: grass all the way to the horizon, no bare patches round the player, no grass through the path, fences,
+      barn, hen house or pond; orchard trees with branches and apples; barn planks and shingles; pond with stones and
+      lily pads; contact shadows under things
+- [ ] Walk to the pasture: butterflies rise from the clover, fly curved paths, settle again
+- [ ] Settings → Reduced motion: the meadow and butterflies are still, nothing flutters; 3D animals off: drawn Farm only
+- [ ] The same Farm, drawn and in 3D, in the evening (play after 6 pm): warm low sun in both
+- [ ] Device checks → *Performance check*: *Smooth* on a recent iPhone, *Fine* at worst on an older one (the walk drops to
+      the lite tier by itself); five minutes of walking with the frame counter: steady, no warmth beyond normal
+
+**Losing a board (PR 4)** — on the smallest phone available
+- [ ] Lose a Journey board (three wrong animals): *So close!* — use an extra life (if any), *Watch a short video* (test
+      video), *Try again, free*, *Back to Journey*. Nothing to buy anywhere on it
+- [ ] Watch the video, tap it twice quickly: one heart back, once; the board exactly as it was
+- [ ] Leave the app during the video, come back: the heart is either given once or not at all, never twice
+- [ ] After a revive: drag across empty tiles marks ✕; tap marks, a slow second tap clears; double tap places
+- [ ] Paw Cup: losing shows *Attempt ended* with no video, no extra life, no revive
+- [ ] Auto-✕ and every other setting are as they were before losing
+
+**Photo mode and postcards (PR 5)**
+- [ ] Farm → *Photo*: the scene's buttons step aside, framings (whole home, everyone, each animal); take landscape and
+      portrait postcards, with and without the PawTyk sign; *Share* opens the iOS share sheet; *Save Image* puts it in
+      Photos (asks once for permission); *Cancel* in the share sheet goes back to the postcard
+- [ ] Deny Photos permission (Settings → Privacy → Photos → PawTyk → None): saving fails quietly, the game carries on
+- [ ] Walk → *Photo*: the walk's controls step aside; a postcard of what the player sees; then the walk as it was
+- [ ] Rotate the phone during photo mode; lock the screen mid-capture; leave for the Journey mid-capture: no postcard
+      appears later, nothing stuck
+- [ ] VoiceOver: *Photo*, the framings, *Take photo*, *Share* and *Done* are read and work
+
+**Usage statistics (PR 6)** — only with step 4
+- [ ] Fresh install: no statistics until the one-time card on the Journey is answered *Yes*; Settings → *Share usage
+      statistics* matches the answer; turning it off stops events (Firebase DebugView with `-FIRDebugEnabled`)
+- [ ] Airplane mode, play a level: the game is unaffected
+- [ ] DebugView shows the funnels (first_puzzle_start, puzzle_complete, home_visit, revive_offer, product_view …) with no
+      names, email or free text
+
+**Welcome Rescue Pack (PR 7)** — tester build (test store, nothing charged)
+- [ ] Not offered before level 6, an animal home and a home visited; never on a board, after a loss or in the Paw Cup
+- [ ] Shop → Farm decorations: the highlight (at most every 3 days, 3 times); *Not now* puts it away for good
+- [ ] Gems tab: the pack card with its contents; buy it (tap three times fast): +180 gems once, the Rescue Wagon out on
+      the Farm (drawn and in the walk), *Owned*; the wagon's ride plays; Restore purchases gives nothing more
+- [ ] Remove Interruptions is not offered anywhere
+
+**Before selling the pack for real (sandbox, release build with `VITE_WELCOME_PACK=1`)**
+- [ ] App Store Connect: `pawtyk.welcomepack`, non-consumable, $2.99 tier, *Ready to Submit*, review screenshot
+- [ ] RevenueCat: product imported, attached to entitlement `welcome_pack`
+- [ ] Sandbox account: buy, then relaunch: +180 gems once, not again on relaunch (the purchase's transaction id and the
+      one RevenueCat lists must match; if a second +180 appears, stop: the gem packs share this assumption)
+- [ ] Sandbox account: buy (price shown is the App Store's, localized), cancel (nothing granted, no error toast), fail
+      (Settings → App Store → sandbox → interrupt), buy again; kill the app right after paying → relaunch grants it
+      once; delete and reinstall → Restore grants it once; Restore on a second device: the first keeps it (nothing is
+      taken back by default, `REVOKE_WHEN_MISSING`); refund in the sandbox and note whether RevenueCat drops it from
+      the customer's purchases (only if it does, and a Restore elsewhere doesn't, consider turning revocation on)
+- [ ] `npm run release:check` lists *Welcome Rescue Pack: ON*
+
+**Go / no-go for the App Store build**
+- Go when: every box above passes on at least one recent and one older iPhone; no crash in TestFlight for the testing
+  period; frame rate *Fine* or better everywhere; the pack's sandbox checks pass (or the pack stays off); privacy
+  answers updated for analytics if turned on.
+- No-go if: any purchase grants twice or loses a grant; a loss screen offers anything for money; a postcard save crashes;
+  the walk falls below *Fine* on the oldest supported phone without dropping to the lite tier; analytics sends anything
+  before the player says yes.
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

@@ -25,6 +25,7 @@ import { DECOR, decorHome, decorTier } from '../../src/meta/catalogs/decor';
 import { TRICKS } from '../../src/meta/catalogs/tricks';
 import { grantItem } from '../../src/meta/items';
 import { defaultSave } from '../../src/services/storage';
+import { ownsWelcomePack, grantWelcomePack } from '../../src/meta/welcomePack';
 
 const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
 let router: Router;
@@ -80,6 +81,13 @@ describe('a release build with no store, no videos and no leaderboard', () => {
     }
     // Only Paw Coins in the wallet.
     expect(document.querySelectorAll('.wallet__pill').length).toBe(1);
+  });
+
+  it('a Welcome Rescue Pack from a tester build’s test store doesn’t count here; a real purchase still can be made', () => {
+    grantWelcomePack(app.save, 'test-pack-1', 'dev');
+    expect(ownsWelcomePack(app.save)).toBe(false);
+    expect(grantWelcomePack(app.save, 'T-real', 'store')).toBe(180);
+    expect(ownsWelcomePack(app.save)).toBe(true);
   });
 
   it('a link straight to the Gems tab lands on Decor', () => {

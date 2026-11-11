@@ -1082,7 +1082,10 @@ export class FarmWalk {
   /** Something is happening: the player is moving, looking or tapping, or a discovery is playing. */
   private busy(now: number): boolean {
     const w = this.walker;
-    return !!(this.held.move || this.held.turn || w.target || this.path.length || this.lookAtOnArrival || now - this.inputAt < 1500 || this.barnOpen % 1 > 0.001 || [...this.moments.values()].some((m) => m.rested === false));
+    if (this.held.move || this.held.turn || w.target || this.path.length || this.lookAtOnArrival || now - this.inputAt < 1500 || this.barnOpen % 1 > 0.001) return true;
+    // Every frame: no array made just to ask.
+    for (const m of this.moments.values()) if (m.rested === false) return true;
+    return false;
   }
   /** When the player last did anything. */
   private inputAt = 0;

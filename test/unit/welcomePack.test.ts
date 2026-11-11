@@ -18,6 +18,7 @@ import {
   readyForWelcomeOffer,
   reconcileWelcomePack,
   revokeWelcomePack,
+  REVOKE_WHEN_MISSING,
 } from '../../src/meta/welcomePack';
 import { itemBalance, spendItem } from '../../src/meta/items';
 import { decorPrice, isShown, owns } from '../../src/meta/sanctuary';
@@ -25,6 +26,8 @@ import { DECOR_BY_ID, decorTier } from '../../src/meta/catalogs/decor';
 import { defaultSave, normalizeSave, type SaveV2 } from '../../src/services/storage';
 import { PRODUCT_CATALOG, TestStoreIapService, UnavailableIapService } from '../../src/services/iap';
 import { STORE_PRODUCTS, REVENUECAT } from '../../src/config/services';
+import { ACHIEVEMENTS } from '../../src/meta/achievements';
+import { DECOR } from '../../src/meta/catalogs/decor';
 
 const NOW = new Date(2026, 10, 10, 12);
 const later = (ms: number) => new Date(NOW.getTime() + ms);
@@ -60,6 +63,18 @@ describe('what is in the pack', () => {
   });
 });
 
+describe('nothing else asks for it', () => {
+  it('"In Full Bloom" counts every decoration except the pack’s own, so it never needs a purchase', () => {
+    const bloom = ACHIEVEMENTS.find((a) => a.id === 'full_garden')!;
+    const s = ready();
+    for (const d of DECOR) if (d.unlock.kind !== 'pack') s.inventory.decor[d.id] = { ownedAt: NOW.toISOString() } as never;
+    const [cur, target] = bloom.progress(s);
+    expect(target).toBe(DECOR.length - 1);
+    expect(cur).toBe(target);
+    expect(bloom.description).toBe(`Own all ${DECOR.length - 1} decorations.`);
+  });
+});
+
 describe('granting it exactly once', () => {
   it('gives the gems once per transaction, puts the wagon out on the Farm and records it', () => {
     const s = ready();
@@ -75,6 +90,27 @@ describe('granting it exactly once', () => {
     expect(gems(s)).toBe(180);
     expect(s.purchases.packs?.welcome).toEqual({ tx: 'T-1', source: 'store', at: NOW.toISOString() });
     expect(s.inventory.items.filter((e) => e.id === 'iap:T-1')).toHaveLength(1);
+  });
+
+  it('once per player: the same pack reported under another transaction id grants no more gems', () => {
+    const s = ready();
+    expect(grantWelcomePack(s, 'T-1', 'store', NOW)).toBe(180);
+    // StoreKit can report a new id for the same purchase ("already purchased"); the launch check then sees the first.
+    expect(grantWelcomePack(s, 'T-2', 'store', later(1000))).toBe(0);
+    expect(reconcileWelcomePack(s, record('T-1'), 'store', later(2000)).granted).toBe(0);
+    expect(reconcileWelcomePack(s, record('T-2'), 'store', later(3000)).granted).toBe(0);
+    expect(gems(s)).toBe(180);
+    expect(s.purchases.packs?.welcome?.tx).toBe('T-1');
+  });
+
+  it('after Erase progress (purchases kept, the gem ledger new) the pack’s gems and wagon come back once', () => {
+    const s = ready();
+    grantWelcomePack(s, 'T-1', 'store', NOW);
+    s.inventory.items = [];
+    delete s.inventory.decor.rescuewagon;
+    expect(reconcileWelcomePack(s, record('T-1'), 'store', later(1000)).granted).toBe(180);
+    expect(owns(s, 'rescuewagon')).toBe(true);
+    expect(reconcileWelcomePack(s, record('T-1'), 'store', later(2000)).granted).toBe(0);
   });
 
   it('never grants without a transaction id', () => {
@@ -108,9 +144,9 @@ describe('crash recovery, restore and refunds (reconciling with the store)', () 
   it('grants a purchase the app never got to record (closed mid-purchase, a new install)', () => {
     const s = ready();
     const r = reconcileWelcomePack(s, record('T-9'), 'store', NOW);
-    expect(r).toEqual({ granted: 180, revoked: false });
+    expect(r).toEqual({ granted: 180, revoked: false, missing: false });
     expect(ownsWelcomePack(s)).toBe(true);
-    expect(reconcileWelcomePack(s, record('T-9'), 'store', later(5000))).toEqual({ granted: 0, revoked: false });
+    expect(reconcileWelcomePack(s, record('T-9'), 'store', later(5000))).toEqual({ granted: 0, revoked: false, missing: false });
     expect(gems(s)).toBe(180);
   });
 
@@ -119,23 +155,33 @@ describe('crash recovery, restore and refunds (reconciling with the store)', () 
     grantWelcomePack(s, 'T-1', 'store', NOW);
     const none = await new UnavailableIapService().purchaseRecord();
     expect(none).toBeNull();
-    expect(reconcileWelcomePack(s, none, 'store', NOW)).toEqual({ granted: 0, revoked: false });
+    expect(reconcileWelcomePack(s, none, 'store', NOW, { revoke: true })).toEqual({ granted: 0, revoked: false, missing: false });
     expect(ownsWelcomePack(s)).toBe(true);
     expect(gems(s)).toBe(180);
   });
 
-  it('a refund takes back the wagon and up to 180 unspent gems, once', () => {
+  it('by default nothing is taken back when the store’s record no longer shows the pack (a Restore elsewhere moves it)', () => {
+    const s = ready();
+    grantWelcomePack(s, 'T-1', 'store', NOW);
+    expect(REVOKE_WHEN_MISSING).toBe(false);
+    expect(reconcileWelcomePack(s, record(null), 'store', later(1000))).toEqual({ granted: 0, revoked: false, missing: true });
+    expect(ownsWelcomePack(s)).toBe(true);
+    expect(owns(s, 'rescuewagon')).toBe(true);
+    expect(gems(s)).toBe(180);
+  });
+
+  it('with revocation on: the wagon and up to 180 unspent gems go back, once', () => {
     const s = ready();
     grantWelcomePack(s, 'T-1', 'store', NOW);
     expect(spendItem(s, 'buy:x', 'gem', 50, NOW)).toBe('ok');
-    const r = reconcileWelcomePack(s, record(null), 'store', later(1000));
-    expect(r).toEqual({ granted: 0, revoked: true });
+    const r = reconcileWelcomePack(s, record(null), 'store', later(1000), { revoke: true });
+    expect(r).toEqual({ granted: 0, revoked: true, missing: true });
     expect(ownsWelcomePack(s)).toBe(false);
     expect(owns(s, 'rescuewagon')).toBe(false);
     expect(gems(s)).toBe(0); // 130 left, all taken back; never below zero
     expect(s.purchases.packs?.revoked).toMatchObject({ tx: 'T-1', gems: 130 });
     // Asked again: nothing more happens.
-    expect(reconcileWelcomePack(s, record(null), 'store', later(2000))).toEqual({ granted: 0, revoked: false });
+    expect(reconcileWelcomePack(s, record(null), 'store', later(2000), { revoke: true })).toEqual({ granted: 0, revoked: false, missing: false });
     expect(gems(s)).toBe(0);
   });
 
@@ -150,7 +196,7 @@ describe('crash recovery, restore and refunds (reconciling with the store)', () 
   it('the same purchase restored after being taken away (moved to another install and back) gives everything back', () => {
     const s = ready();
     grantWelcomePack(s, 'T-1', 'store', NOW);
-    reconcileWelcomePack(s, record(null), 'store', later(1000));
+    reconcileWelcomePack(s, record(null), 'store', later(1000), { revoke: true });
     expect(gems(s)).toBe(0);
     const r = reconcileWelcomePack(s, record('T-1'), 'store', later(2000));
     expect(r.granted).toBe(180);
@@ -165,7 +211,7 @@ describe('crash recovery, restore and refunds (reconciling with the store)', () 
   it('test-store grants are never taken back by the real store, and the record survives a save round trip', () => {
     const s = ready();
     grantWelcomePack(s, 'test-pack-1', 'dev', NOW);
-    expect(reconcileWelcomePack(s, record(null), 'store', NOW)).toEqual({ granted: 0, revoked: false });
+    expect(reconcileWelcomePack(s, record(null), 'store', NOW, { revoke: true })).toEqual({ granted: 0, revoked: false, missing: false });
     expect(ownsWelcomePack(s)).toBe(true);
     const back = normalizeSave(JSON.parse(JSON.stringify(s)), NOW);
     expect(back.purchases.packs?.welcome).toEqual(s.purchases.packs?.welcome);

@@ -92,8 +92,8 @@ class App {
     if (!iap.available || iap.isStub) return 0;
     const txs = await iap.consumableTransactions();
     let n = reconcileGemPurchases(this.save, txs);
-    // D47 PR 7: the Welcome Rescue Pack: granted if a purchase was cut off (or restored on a new install), taken back
-    // if the store refunded it. An unanswered store changes nothing.
+    // D47 PR 7: the Welcome Rescue Pack: granted if a purchase was cut off (or restored on a new install). Never taken
+    // back on a guess (welcomePack.ts, REVOKE_WHEN_MISSING). An unanswered store changes nothing.
     const pack = reconcileWelcomePack(this.save, await iap.purchaseRecord(), 'store');
     n += pack.granted;
     if (n > 0 || pack.revoked) this.persist();

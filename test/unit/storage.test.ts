@@ -277,6 +277,20 @@ describe('scoped reset', () => {
     // And the reset save is what loads next time (no resurrection of v1).
     expect(loadSave(kv, NOW).save.journey.nextLevel).toBe(1);
   });
+
+  it('keeps the usage-stats answer and a bought decoration (D47)', () => {
+    const kv = new MemoryKV();
+    const save = defaultSave(NOW);
+    save.onboarding.usageAsked = true;
+    save.purchases.packs = { welcome: { tx: 'T-1', source: 'store', at: NOW.toISOString() } };
+    save.inventory.decor.rescuewagon = { ownedAt: NOW.toISOString() } as never;
+    save.inventory.decor.kite = { ownedAt: NOW.toISOString() } as never;
+    const fresh = resetProgress(save, kv, NOW);
+    expect(fresh.onboarding.usageAsked).toBe(true);
+    expect(fresh.inventory.decor.rescuewagon).toBeTruthy();
+    expect(fresh.inventory.decor.kite).toBeUndefined();
+    expect(fresh.purchases.packs?.welcome?.tx).toBe('T-1');
+  });
 });
 
 describe('platform storage guard', () => {

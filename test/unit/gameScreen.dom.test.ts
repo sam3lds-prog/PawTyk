@@ -1398,6 +1398,14 @@ describe('losing a board, and the ways back (D47 PR 4)', () => {
     expect(sheet.textContent).not.toMatch(/gem|buy|purchase|\$/i);
   });
 
+  it('with a full pantry of extra lives the video isn’t offered (it would cost one of the player’s own)', async () => {
+    await withVideos(async () => true);
+    setPantry(app.save, 'life', 10);
+    start(5);
+    const acts = [...loseBoard().querySelectorAll<HTMLElement>('[data-act]')].map((b) => b.dataset.act);
+    expect(acts).toEqual(['life', 'restart', 'leave']);
+  });
+
   it('an extra life brings the board back as it was, and the board takes input again (tap ✕, drag ✕, double-tap place)', () => {
     setPantry(app.save, 'life', 1);
     start(5);

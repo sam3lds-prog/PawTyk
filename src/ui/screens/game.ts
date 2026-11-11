@@ -1852,7 +1852,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // D47 PR 4: every way on, each the player's choice, warmest first: an extra life they've earned, a short video
     // for one (optional), the same board again for free, or back. Never a purchase, and none of it in Paw Cup.
     const canLife = pantryOn && lives() > 0;
-    const canRevive = pantryOn && canOfferVideo();
+    // A video gives one extra life, which this board then uses. With the pantry full there'd be no room for it (it
+    // would turn into coins) and the heart would come out of the player's own lives: then the video isn't offered.
+    const canRevive = pantryOn && canOfferVideo() && lives() < ITEM_CAP.life;
     const placed = s.placedCount();
     const cup = mode.kind === 'cup';
     const wrongs = `${numberWord(s.maxHearts)} wrong placements`;

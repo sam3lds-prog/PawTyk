@@ -11,10 +11,12 @@
  *    (`iap:<tx>`), the wagon an ownership record; granting the same transaction again changes nothing.
  *  - **Crash recovery and restore.** At launch, and on Restore, the store's record is read; a pack transaction this save
  *    hasn't granted yet is granted then (a purchase cut off by a closed app, a new install).
- *  - **Refunds.** When the store answers and no longer has the pack (Apple refunded it, or RevenueCat moved the purchase
- *    to another install on a restore there), the wagon goes back and up to 180 of the gems still unspent are taken
- *    back. If the same purchase comes back later (restored here again), so do the wagon and those gems. Unknown
- *    (offline, not set up) is never read as refunded.
+ *  - **Once per player.** A second transaction id for the same pack (StoreKit can report a new one) grants no more gems.
+ *  - **Refunds and other devices.** The store's record no longer showing the pack is not proof of a refund: RevenueCat
+ *    moves a purchase to another install when the player restores there, and Apple's model is one purchase for every
+ *    device on the Apple ID. So by default nothing is taken back (`REVOKE_WHEN_MISSING`). The revocation itself is
+ *    built and tested (the wagon put away, up to 180 unspent gems taken back, both given back if the same purchase
+ *    returns) for when the sandbox shows the refund signal is reliable. Unknown (offline, not set up) never counts.
  *  - **When it is offered.** Never during onboarding: only after the player has solved puzzles past the first lessons,
  *    welcomed an animal home and visited a home, and only in the Shop (the Gems tab, and with the Farm's
  *    decorations), its highlight at most every three days and three times in all. Never after a loss, never in a
@@ -25,6 +27,7 @@ import type { SaveV2 } from '../services/storage';
 import type { StoreTransaction } from '../services/iap';
 import { grantItem, hasItemEntry, itemBalance, spendItem } from './items';
 import { setShown } from './sanctuary';
+import { TEST_BUILD } from '../config/services';
 
 export const WELCOME_PACK = { product: 'welcome_pack', gems: 180, decor: 'rescuewagon' } as const;
 
@@ -35,9 +38,16 @@ function packRecord(save: SaveV2): SaveV2['purchases']['packs'] {
   return save.purchases.packs;
 }
 
-/** Whether this save has the pack (granted and not refunded). */
+/** The pack's record, if it counts in this build (a test store's grant never counts in a release build). */
+function heldRecord(save: Pick<SaveV2, 'purchases'>): NonNullable<NonNullable<SaveV2['purchases']['packs']>['welcome']> | null {
+  const rec = save.purchases.packs?.welcome;
+  if (!rec) return null;
+  return rec.source === 'store' || TEST_BUILD ? rec : null;
+}
+
+/** Whether this save has the pack (granted, and counting in this build). */
 export function ownsWelcomePack(save: Pick<SaveV2, 'purchases'>): boolean {
-  return !!save.purchases.packs?.welcome;
+  return !!heldRecord(save);
 }
 
 /**
@@ -47,7 +57,11 @@ export function ownsWelcomePack(save: Pick<SaveV2, 'purchases'>): boolean {
 export function grantWelcomePack(save: SaveV2, transactionId: string, source: Source, now = new Date()): number {
   if (!transactionId) return 0;
   const id = `iap:${transactionId}`;
-  const fresh = !hasItemEntry(save, id);
+  // Once per player, whatever id the store gives: the pack already granted under another transaction (StoreKit can
+  // report a new id for the same purchase) grants no more gems; only the wagon is made sure of.
+  const held = heldRecord(save);
+  const other = !!held && held.tx !== transactionId && hasItemEntry(save, `iap:${held.tx}`);
+  const fresh = !other && !hasItemEntry(save, id);
   const itemSource = source === 'store' ? 'store' : 'test';
   const g = fresh ? grantItem(save, id, 'gem', WELCOME_PACK.gems, itemSource, now, 'Welcome Rescue Pack') : null;
   let back = 0;
@@ -63,7 +77,7 @@ export function grantWelcomePack(save: SaveV2, transactionId: string, source: So
     save.inventory.decor[WELCOME_PACK.decor] = { ownedAt: now.toISOString() };
     setShown(save, WELCOME_PACK.decor, true);
   }
-  if (packs.welcome?.tx !== transactionId) packs.welcome = { tx: transactionId, source, at: now.toISOString() };
+  if (!other && packs.welcome?.tx !== transactionId) packs.welcome = { tx: transactionId, source, at: now.toISOString() };
   return (g ? g.granted : 0) + back;
 }
 
@@ -90,22 +104,32 @@ export function revokeWelcomePack(save: SaveV2, now = new Date()): number {
  * cut off, a restore), and takes the pack back if the store says it is gone (refunded). A null record (the store
  * couldn't be asked) changes nothing. Returns what happened.
  */
+/**
+ * Whether a pack the store's record no longer shows is taken back. Off: an absent record is not proof of a refund
+ * (RevenueCat moves a purchase to another install when the player taps Restore there, and Apple's model is that a
+ * purchase works on every device with the same Apple ID), and the game never takes back what it gave on a guess. Turn
+ * on only once the sandbox shows RevenueCat drops refunded non-consumables and a Restore elsewhere doesn't (D47).
+ */
+export const REVOKE_WHEN_MISSING = false;
+
 export function reconcileWelcomePack(
   save: SaveV2,
   record: { transactions: StoreTransaction[]; entitlements: string[] } | null,
   source: Source,
   now = new Date(),
-): { granted: number; revoked: boolean } {
-  if (!record) return { granted: 0, revoked: false };
+  opts: { revoke?: boolean } = {},
+): { granted: number; revoked: boolean; missing: boolean } {
+  if (!record) return { granted: 0, revoked: false, missing: false };
   const tx = record.transactions.find((t) => t.productId === WELCOME_PACK.product);
-  if (tx) return { granted: grantWelcomePack(save, tx.transactionId, source, now), revoked: false };
-  // Gone from the store's record and from the entitlements: refunded (only ever for what the store itself sold).
+  if (tx) return { granted: grantWelcomePack(save, tx.transactionId, source, now), revoked: false, missing: false };
+  // Gone from the store's record and from the entitlements (only ever for what the store itself sold).
   const rec = save.purchases.packs?.welcome;
   if (rec && rec.source === source && !record.entitlements.includes('welcome_pack')) {
+    if (!(opts.revoke ?? REVOKE_WHEN_MISSING)) return { granted: 0, revoked: false, missing: true };
     revokeWelcomePack(save, now);
-    return { granted: 0, revoked: true };
+    return { granted: 0, revoked: true, missing: true };
   }
-  return { granted: 0, revoked: false };
+  return { granted: 0, revoked: false, missing: false };
 }
 
 /** Where the player has got to: past the first lessons, an animal welcomed home, a home visited. */

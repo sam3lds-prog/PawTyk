@@ -183,5 +183,10 @@ export function postcardLogo(): Promise<HTMLImageElement | null> {
     };
     img.src = `${import.meta.env.BASE_URL ?? '/'}apple-touch-icon.png`;
   });
-  return logoImg;
+  const mine = logoImg;
+  // Not there in time (or not at all): the next postcard tries again instead of staying unsigned all session.
+  void mine.then((img) => {
+    if (!img && logoImg === mine) logoImg = null;
+  });
+  return mine;
 }
