@@ -6,6 +6,7 @@
  */
 
 import * as THREE from 'three';
+import { noteSprite } from './release';
 import { TRICK_BY_ID, isTrickId, type EmoteGlyph } from '../meta/catalogs/tricks';
 import { glyph } from '../ui/art/tricks';
 import type { Actor } from './actor';
@@ -144,6 +145,8 @@ export class Effects {
   /** A camera-facing picture (notes, Zs, "ha!"). */
   sprite(tex: THREE.Texture): THREE.Sprite {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    // D49 PR C: its geometry is three.js's one shared sprite geometry: released with each renderer (three/release.ts).
+    noteSprite(s);
     this.scene.add(s);
     return s;
   }
