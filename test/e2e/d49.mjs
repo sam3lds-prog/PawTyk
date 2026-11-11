@@ -230,7 +230,8 @@ export async function d49Checks({ browser, URL, check, errors }) {
       const play = document.querySelector('.win-sheet [data-act="next"]')?.getBoundingClientRect();
       return { coins: document.querySelector('.win-sheet [data-win-coins]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '', playInView: !!play && play.bottom <= window.innerHeight && play.top >= 0, errand: document.querySelector('.win-sheet [data-win-errand]')?.textContent ?? '' };
     });
-    check('D49 PR B/D: a win shows its coins beside the success, its errand already paid, and Play next is on screen at 320×568', /\+\d+ Paw Coins/.test(win.coins.replace(/\s+/g, ' ')) && win.playInView && (/Paw Coins/.test(win.errand) || win.errand === ''), JSON.stringify(win));
+    // D50 PR A: the coins (the errands' too) are one headline; the errand line names what was done, without a second figure.
+    check('D49 PR B/D: a win shows its coins beside the success, its errand already paid, and Play next is on screen at 320×568', /\+\d+ Paw Coins/.test(win.coins.replace(/\s+/g, ' ')) && win.playInView && (/errand/i.test(win.errand) || win.errand === '') && !/Paw Coins/.test(win.errand), JSON.stringify(win));
     await qa.close();
   }
 

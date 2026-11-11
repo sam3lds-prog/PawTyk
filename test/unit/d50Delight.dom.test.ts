@@ -306,3 +306,17 @@ describe('the hello and the moments share the scene', () => {
     expect(greetedRecently('farm')).toBe(false);
   });
 });
+
+describe('a new stage is its own hello', () => {
+  it('a visit that opens on a new stage (its group dance) has no greeting on top, even after the dance', async () => {
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm', fresh: 2 });
+    // The dance starts, and the player skips it straight away: the scene is free well inside the hello's window.
+    await vi.advanceTimersByTimeAsync(1300);
+    expect(document.querySelector('.parade-skip')).not.toBeNull();
+    document.querySelector<HTMLElement>('.parade-skip')!.click();
+    await vi.advanceTimersByTimeAsync(GREET_WINDOW_MS);
+    expect(greetedRecently('farm')).toBe(false);
+    expect(document.querySelector('.sanctuary__chat.is-greeting')).toBeNull();
+  });
+});
