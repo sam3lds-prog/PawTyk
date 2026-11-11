@@ -471,6 +471,18 @@ export class Butterflies {
     track(bodyM);
     const bodyG = new THREE.CapsuleGeometry(0.01, 0.1, 2, 6).rotateX(Math.PI / 2);
     track(bodyG);
+    // Antennae: two fine stalks from the head, curving out, with a club at each tip (head toward +z).
+    const antG = (() => {
+      const parts: THREE.BufferGeometry[] = [];
+      for (const side of [-1, 1]) {
+        const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(side * 0.004, 0.006, 0.058), new THREE.Vector3(side * 0.012, 0.03, 0.085), new THREE.Vector3(side * 0.03, 0.04, 0.1));
+        parts.push(new THREE.TubeGeometry(curve, 4, 0.0018, 3, false), new THREE.SphereGeometry(0.0045, 5, 4).translate(side * 0.03, 0.04, 0.1));
+      }
+      const m = new Mesher();
+      for (const g of parts) m.shape(g, new THREE.Matrix4(), new THREE.Color(1, 1, 1), () => 0, 0.5);
+      return m.build();
+    })();
+    track(antG);
     const mats = new Map<ButterflyKind, THREE.Material>();
     layout.forEach(({ kind, perch }, i) => {
       const b = BUTTERFLIES[kind];
@@ -494,7 +506,9 @@ export class Butterflies {
       left.add(lm);
       const body = new THREE.Mesh(bodyG, bodyM);
       body.scale.setScalar(b.size);
-      g.add(right, left, body);
+      const antennae = new THREE.Mesh(antG, bodyM);
+      antennae.scale.setScalar(b.size);
+      g.add(right, left, body, antennae);
       parent.add(g);
       const p = perches[perch];
       // The first few live in the pasture (they are its discovery); the rest roam the Farm.
@@ -793,7 +807,7 @@ export function buildMeadow(stage: number, decor: readonly string[], tier: Meado
         blooms: sum('blooms'),
         clover: sum('clover'),
         butterflies: butterflies.flies.filter((f) => f.g.visible).length,
-        drawCalls: meshes.length + butterflies.flies.filter((f) => f.g.visible).length * 3,
+        drawCalls: meshes.length + butterflies.flies.filter((f) => f.g.visible).length * 4,
       };
     },
   };
