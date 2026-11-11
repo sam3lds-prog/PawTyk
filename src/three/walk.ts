@@ -29,6 +29,7 @@ import {
   type PropKit,
 } from './farmProps';
 import { seedOf, seeded } from '../art/botany';
+import { FARM } from '../art/farmPalette';
 import { addLights } from './lights';
 import { toySpec } from './species';
 import { Toy, ToyKit } from './toy';
@@ -233,10 +234,18 @@ export class FarmWalk {
     const sunM = new THREE.MeshBasicMaterial({ color: col(ev ? '#ffd2a0' : '#fff3c4'), fog: false });
     this.disposables.push(sunM);
     const sun = new THREE.Mesh(this.geo(new THREE.CircleGeometry(6, 24)), sunM);
-    sun.position.set(-60, ev ? 14 : 70, -100);
+    addLights(this.scene);
+    // D47 PR 3: the sun in the sky is where the light comes from (upper left, behind the player at the gate, as the
+    // drawn Farm's sun lights its things from the front left); low and warm in the evening.
+    const light = this.scene.children.find((l): l is THREE.DirectionalLight => l instanceof THREE.DirectionalLight);
+    if (light && ev) {
+      light.position.set(-0.7, 0.35, 1.1);
+      light.color.set('#ffc89a');
+    }
+    const dir = (light?.position.clone() ?? new THREE.Vector3(-0.7, 1, 1.1)).normalize();
+    sun.position.copy(dir.multiplyScalar(120));
     sun.lookAt(0, 0, 0);
     this.scene.add(sun);
-    addLights(this.scene);
     if (ev) for (const l of this.scene.children) if (l instanceof THREE.Light) l.intensity *= 0.55;
     // D47 PR 2: the painted textures and pieces the Farm's things share.
     const kit: PropKit = { mat: (c, rough) => this.mat(c, rough), geo: (g) => this.geo(g), track: (d) => this.track(d) };
@@ -247,7 +256,7 @@ export class FarmWalk {
     this.appleGeo = this.geo(appleGeometry());
     this.appleMat = this.track(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
     this.stoneGeo = this.geo(stoneGeometry(seedOf('farm-stone')));
-    this.stoneMat = this.mat('#b7b0a2', 0.95);
+    this.stoneMat = this.mat(FARM.stone.face, 0.95);
     this.buildGround();
     this.buildPathStones();
     const f = new Set(featuresAt(this.o.stage));
@@ -255,7 +264,7 @@ export class FarmWalk {
     if (f.has('fence')) this.buildFence();
     if (f.has('hay')) this.buildHay(PLACES.hay.x, PLACES.hay.z);
     if (f.has('mud')) {
-      const m = this.add(this.geo(new THREE.CircleGeometry(PLACES.mud.r, 28)), this.mat('#8a6545', 0.95), PLACES.mud.x, 0.03, PLACES.mud.z);
+      const m = this.add(this.geo(new THREE.CircleGeometry(PLACES.mud.r, 28)), this.mat(FARM.ground.mud, 0.95), PLACES.mud.x, 0.03, PLACES.mud.z);
       m.rotation.x = -Math.PI / 2;
       m.scale.set(1.3, 0.8, 1);
     }
@@ -285,9 +294,9 @@ export class FarmWalk {
     g.rotateX(-Math.PI / 2);
     const pos = g.attributes.position as THREE.BufferAttribute;
     const colors: number[] = [];
-    const grass = col('#93c66e');
-    const grass2 = col('#a9d482');
-    const dirt = col('#d9bf8e');
+    const grass = col(FARM.ground.grass);
+    const grass2 = col(FARM.ground.grassLight);
+    const dirt = col(FARM.ground.dirt);
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
@@ -344,7 +353,7 @@ export class FarmWalk {
 
   private buildHills(): void {
     // Far rolling hills (and a few round trees on them) closing the world in.
-    const hm = this.mat('#b5d892');
+    const hm = this.mat(FARM.ground.hills);
     for (let i = 0; i < 9; i++) {
       const a = (i / 9) * Math.PI * 2 + 0.3;
       const r = 62 + (i % 3) * 6;
@@ -378,12 +387,12 @@ export class FarmWalk {
     side(x0, z1, x1, z1, [-2.2, 2.2]); // the gate's gap, where the path comes in
     side(x0, z0, x0, z1);
     // D47 PR 2: weathered boards (painted grain), posts a touch out of true with pointed caps, rails each their own shade.
-    const wood = this.mat('#c49464');
+    const wood = this.mat(FARM.wood.post);
     wood.map = this.wood;
     const pg = this.geo(new THREE.BoxGeometry(0.16, 1.1, 0.16));
     scaleUv(pg, 0.12, 1);
     const pm = new THREE.InstancedMesh(pg, wood, posts.length);
-    const cap = new THREE.InstancedMesh(this.geo(new THREE.ConeGeometry(0.13, 0.14, 4).rotateY(Math.PI / 4)), this.mat('#a77a50'), posts.length);
+    const cap = new THREE.InstancedMesh(this.geo(new THREE.ConeGeometry(0.13, 0.14, 4).rotateY(Math.PI / 4)), this.mat(FARM.wood.cap), posts.length);
     const m4 = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const e = new THREE.Euler();
@@ -429,7 +438,7 @@ export class FarmWalk {
     this.scene.add(m);
     this.shadows.add(x, z, 2.2, 2.6);
     const loose = this.geo(new THREE.ConeGeometry(0.18, 0.16, 6));
-    const lm = this.mat('#e2c26c');
+    const lm = this.mat(FARM.straw.loose);
     for (const [dx, dz] of [
       [0.8, 0.6],
       [-0.7, 0.8],
@@ -443,9 +452,9 @@ export class FarmWalk {
     const h = 5;
     // D47 PR 2: red boards (painted grain and seams), a shingled roof, white trim at the corners and eaves, and a stone
     // footing; its soft shadow on the grass.
-    const red = this.mat('#d0503f');
+    const red = this.mat(FARM.barn.wall);
     red.map = this.wood;
-    const white = this.mat('#f3efe6');
+    const white = this.mat(FARM.barn.trim);
     const barn = new THREE.Group();
     barn.position.set(x, 0, z);
     barn.rotation.y = PLACES.barn.rot;
@@ -461,7 +470,7 @@ export class FarmWalk {
     ])
       this.add(this.geo(new THREE.BoxGeometry(0.22, h, 0.22)), white, (cx * w) / 2, h / 2, (cz * d) / 2, barn);
     this.add(this.geo(new THREE.BoxGeometry(w + 0.12, 0.2, d + 0.12)), white, 0, h - 0.1, 0, barn);
-    const footing = this.mat('#a9a49a', 0.95);
+    const footing = this.mat(FARM.barn.footing, 0.95);
     footing.map = this.wood;
     this.add(this.geo(new THREE.BoxGeometry(w + 0.16, 0.36, d + 0.16)), footing, 0, 0.18, 0, barn);
     this.shadows.add(x, z, w + 3.2, d + 3.2, 0, PLACES.barn.rot, 0.9);
@@ -473,16 +482,16 @@ export class FarmWalk {
     roof.lineTo(-w / 2 - 0.4, 0);
     const rg = this.geo(new THREE.ExtrudeGeometry(roof, { depth: d + 0.6, bevelEnabled: false }));
     scaleUv(rg, 0.35, 0.35);
-    const roofM = this.mat('#8a3a2e', 0.9);
+    const roofM = this.mat(FARM.barn.roof, 0.9);
     roofM.map = this.track(shingleTexture(seedOf('barn-roof')));
     this.add(rg, roofM, 0, h, -d / 2 - 0.3, barn);
     // Front: big doors with their white X, the hayloft, two windows.
     const front = d / 2 + 0.02;
     // The doorway (dark inside), and two doors on their hinges, each with half of the white X: they swing open when
     // the player walks up (D45 PR C), and a chick looks out.
-    this.add(this.geo(new THREE.PlaneGeometry(3.4, 3.6)), this.mat('#3a2a22', 1), 0, 1.8, front, barn);
+    this.add(this.geo(new THREE.PlaneGeometry(3.4, 3.6)), this.mat(FARM.barn.doorway, 1), 0, 1.8, front, barn);
     const doorG = this.geo(new THREE.BoxGeometry(1.7, 3.6, 0.08));
-    const doorM = this.mat('#a9372c');
+    const doorM = this.mat(FARM.barn.door);
     const bar = this.geo(new THREE.BoxGeometry(0.14, 3.9, 0.04));
     for (const side of [-1, 1]) {
       const hinge = new THREE.Group();
@@ -541,7 +550,7 @@ export class FarmWalk {
     const m = this.mat('#ffffff', 0.95);
     m.map = this.straw;
     const twine = this.geo(new THREE.BoxGeometry(0.04, 0.82, 0.92));
-    const tm = this.mat('#a07a48');
+    const tm = this.mat(FARM.straw.twine);
     const { x, z } = PLACES.bales;
     for (const [dx, dy, dz, turn] of [
       [-0.72, 0.4, 0, 0.03],
@@ -559,14 +568,14 @@ export class FarmWalk {
     const { x, z, r } = PLACES.pond;
     // D47 PR 2: a bank of damp earth and stones round the water, deeper blue toward the middle, lily pads (one in
     // flower), and slow rings spreading now and then (still under reduced motion).
-    const rim = this.add(this.geo(new THREE.CircleGeometry(r + 0.6, 48)), this.mat('#8dbf74'), x, 0.02, z);
+    const rim = this.add(this.geo(new THREE.CircleGeometry(r + 0.6, 48)), this.mat(FARM.pond.rim), x, 0.02, z);
     rim.rotation.x = -Math.PI / 2;
-    const bank = this.add(this.geo(new THREE.RingGeometry(r - 0.15, r + 0.35, 48)), this.mat('#9a8460', 0.95), x, 0.035, z);
+    const bank = this.add(this.geo(new THREE.RingGeometry(r - 0.15, r + 0.35, 48)), this.mat(FARM.pond.bank, 0.95), x, 0.035, z);
     bank.rotation.x = -Math.PI / 2;
     const wg = this.geo(new THREE.CircleGeometry(r, 48));
     const wc: number[] = [];
-    const deep = col('#5fa9c8');
-    const shallow = col('#9fd6e6');
+    const deep = col(FARM.pond.deep);
+    const shallow = col(FARM.pond.shallow);
     const c = new THREE.Color();
     const wp = wg.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < wp.count; i++) {
@@ -592,7 +601,7 @@ export class FarmWalk {
       stones.setColorAt(i, tone.setScalar(0.82 + sr() * 0.3));
     }
     this.scene.add(stones);
-    const padM = this.mat('#5c9a48', 0.7);
+    const padM = this.mat(FARM.pond.pad, 0.7);
     padM.side = THREE.DoubleSide;
     const padG = this.geo(lilyPadGeometry());
     for (const [dx, dz, s, a] of [
@@ -606,9 +615,9 @@ export class FarmWalk {
       pad.scale.setScalar(s);
       pad.rotation.y = a;
     }
-    const lily = this.add(this.geo(new THREE.ConeGeometry(0.13, 0.12, 8, 1, true)), this.mat('#f6b6cf', 0.7), x + 1.95, 0.13, z + 1.55);
+    const lily = this.add(this.geo(new THREE.ConeGeometry(0.13, 0.12, 8, 1, true)), this.mat(FARM.pond.lily, 0.7), x + 1.95, 0.13, z + 1.55);
     lily.rotation.x = Math.PI;
-    this.add(this.geo(new THREE.SphereGeometry(0.05, 8, 6)), this.mat('#ffd84a', 0.6), x + 1.95, 0.12, z + 1.55);
+    this.add(this.geo(new THREE.SphereGeometry(0.05, 8, 6)), this.mat(FARM.pond.lilyHeart, 0.6), x + 1.95, 0.12, z + 1.55);
     // Slow rings, now here, now there.
     const calmM = new THREE.MeshBasicMaterial({ color: col('#ffffff'), transparent: true, opacity: 0, depthWrite: false });
     this.disposables.push(calmM);
@@ -696,17 +705,17 @@ export class FarmWalk {
   private buildHenHouse(): void {
     const { x, z } = PLACES.henhouse;
     // D47 PR 2: cream boards, a shingled roof, a little ramp, and its shadow.
-    const boards = this.mat('#f2d7a6');
+    const boards = this.mat(FARM.hen.wall);
     boards.map = this.wood;
     const body = this.geo(new THREE.BoxGeometry(2.6, 1.8, 2.4));
     scaleUv(body, 1.2, 0.8);
     this.add(body, boards, x, 0.9, z);
-    const roofM = this.mat('#c9483b', 0.9);
+    const roofM = this.mat(FARM.hen.roof, 0.9);
     roofM.map = this.track(shingleTexture(seedOf('hen-roof')));
     const roof = this.add(this.geo(new THREE.ConeGeometry(2.3, 1.3, 4)), roofM, x, 2.45, z);
     roof.rotation.y = Math.PI / 4;
-    this.add(this.geo(new THREE.PlaneGeometry(0.7, 1)), this.mat('#7a4a2a'), x + 0.2, 0.55, z + 1.21);
-    const ramp = this.add(this.geo(new THREE.BoxGeometry(0.6, 0.05, 1.1)), this.mat('#b98a5e'), x + 0.2, 0.22, z + 1.7);
+    this.add(this.geo(new THREE.PlaneGeometry(0.7, 1)), this.mat(FARM.hen.door), x + 0.2, 0.55, z + 1.21);
+    const ramp = this.add(this.geo(new THREE.BoxGeometry(0.6, 0.05, 1.1)), this.mat(FARM.wood.post), x + 0.2, 0.22, z + 1.7);
     ramp.rotation.x = 0.38;
     this.shadows.add(x, z, 4, 3.8);
   }
@@ -714,8 +723,8 @@ export class FarmWalk {
   private buildSunflowers(): void {
     // D47 PR 2: tall sunflowers along the pasture: a stem that bends a little, broad leaves, a head of golden petals
     // round a seed spiral, each its own height and turn, nodding slowly in the breeze.
-    const stemM = this.mat('#6f8a4e');
-    const leafM = this.mat('#6a9a48', 0.8);
+    const stemM = this.mat(FARM.sunflower.stem);
+    const leafM = this.mat(FARM.sunflower.leaf, 0.8);
     leafM.side = THREE.DoubleSide;
     const leafG = this.geo(sunflowerLeafGeometry());
     const headM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide });
@@ -911,19 +920,19 @@ export class FarmWalk {
     const { x, z } = PLACES.windmill;
     const gy = groundY(x, z);
     // D47 PR 2: a white boarded tower, a shingled cap, and four sails of cloth on wooden frames; its shadow.
-    const boards = this.mat('#f3efe6');
+    const boards = this.mat(FARM.windmill.tower);
     boards.map = this.wood;
     const tg = this.geo(new THREE.CylinderGeometry(0.9, 1.6, 7, 14));
     scaleUv(tg, 3, 1.2);
     this.add(tg, boards, x, 3.5 + gy, z);
-    const capM = this.mat('#c9483b', 0.9);
+    const capM = this.mat(FARM.windmill.cap, 0.9);
     capM.map = this.track(shingleTexture(seedOf('windmill-cap')));
     this.add(this.geo(new THREE.ConeGeometry(1.2, 1.4, 14)), capM, x, 7.7 + gy, z);
-    this.add(this.geo(new THREE.BoxGeometry(0.7, 0.9, 0.08)), this.mat('#7a4a2a'), x, 0.45 + gy, z + 1.55);
+    this.add(this.geo(new THREE.BoxGeometry(0.7, 0.9, 0.08)), this.mat(FARM.windmill.door), x, 0.45 + gy, z + 1.55);
     const sails = new THREE.Group();
     sails.position.set(x, 6.4 + gy, z + 1.1);
-    const frameM = this.mat('#8a6a4f');
-    const cloth = this.mat('#fffaf0', 0.95);
+    const frameM = this.mat(FARM.windmill.frame);
+    const cloth = this.mat(FARM.windmill.cloth, 0.95);
     cloth.side = THREE.DoubleSide;
     const spar = this.geo(new THREE.BoxGeometry(0.1, 3.8, 0.08));
     const rail = this.geo(new THREE.BoxGeometry(0.08, 3.1, 0.06));
@@ -987,6 +996,7 @@ export class FarmWalk {
   /** Sizes the canvas to its box. */
   fit(w: number, h: number): void {
     if (!w || !h) return;
+    this.inputAt = performance.now();
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -1009,24 +1019,47 @@ export class FarmWalk {
   private kick(): void {
     if (this.raf || this.disposed || !this.live || this.lostContext) return;
     this.last = 0;
+    this.lastFrame = 0;
     this.raf = requestAnimationFrame(this.tick);
   }
 
   private tick = (now: number): void => {
     this.raf = 0;
     if (this.disposed || !this.live || this.lostContext) return;
-    const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0.016;
-    // Adapt: a phone that can't keep up gets the lite tier (half the pixels).
-    if (this.last && this.quality === 'high') {
+    // Adapt: a phone that can't keep up gets the lite tier (half the pixels). Measured on the display's own frames,
+    // not on the ones drawn (an idle walk draws fewer on purpose).
+    if (this.lastFrame && this.quality === 'high') {
       this.frames++;
-      if (now - this.last > 34) this.slowFrames++;
+      if (now - this.lastFrame > 34) this.slowFrames++;
       if (this.frames === 45 && this.slowFrames > 25) this.setQuality('lite');
     }
+    this.lastFrame = now;
+    // D47 PR 3: while nothing is happening (no walking, looking, tapping, no discovery playing) the walk draws at half
+    // rate (the breeze and butterflies still move), and under reduced motion, where nothing moves at all, twice a
+    // second. Any input brings it back to every frame at once.
+    const gap = this.busy(now) ? 0 : this.o.reducedMotion() ? 500 : 30;
+    if (this.last && now - this.last < gap) {
+      this.skipped++;
+      this.raf = requestAnimationFrame(this.tick);
+      return;
+    }
+    const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0.016;
     this.last = now;
     this.step(dt, now);
     this.render(now);
     this.raf = requestAnimationFrame(this.tick);
   };
+
+  /** Something is happening: the player is moving, looking or tapping, or a discovery is playing. */
+  private busy(now: number): boolean {
+    const w = this.walker;
+    return !!(this.held.move || this.held.turn || w.target || this.path.length || this.lookAtOnArrival || now - this.inputAt < 1500 || this.barnOpen % 1 > 0.001 || [...this.moments.values()].some((m) => m.rested === false));
+  }
+  /** When the player last did anything. */
+  private inputAt = 0;
+  /** The display's last frame, and frames passed over while idle (tests and the QA page). */
+  private lastFrame = 0;
+  skipped = 0;
 
   setQuality(q: 'high' | 'lite'): void {
     this.quality = q;
@@ -1040,6 +1073,11 @@ export class FarmWalk {
 
   get tier(): 'high' | 'lite' {
     return this.quality;
+  }
+
+  /** Frames drawn and passed over, and the tier (tests and the QA page). */
+  get frameStats(): { drawn: number; skipped: number; tier: 'high' | 'lite' } {
+    return { drawn: this.drawn, skipped: this.skipped, tier: this.quality };
   }
 
   /** What the meadow is drawing (tests and the QA page). */
@@ -1160,6 +1198,7 @@ export class FarmWalk {
 
   /** Walks to a destination (its place to stand and look). False if it isn't built yet. */
   goTo(id: LandmarkId): boolean {
+    this.inputAt = performance.now();
     const l = landmarksAt(this.o.stage).find((x) => x.id === id);
     if (!l) return false;
     this.held = { move: 0, turn: 0 };
@@ -1221,6 +1260,7 @@ export class FarmWalk {
 
   /** Looks round by a drag (in pixels of the canvas). */
   look(dx: number, dy: number): void {
+    this.inputAt = performance.now();
     // Like pulling the world round: drag right to look left, down to look up.
     this.walker.yaw += dx * 0.006;
     this.pitch = Math.max(-0.6, Math.min(0.35, this.pitch + dy * 0.004));
@@ -1233,6 +1273,7 @@ export class FarmWalk {
 
   /** Held buttons or keys: move forward (1) or back (-1), turn left (1) or right (-1). */
   hold(move: number, turn: number): void {
+    this.inputAt = performance.now();
     this.held = { move, turn };
     if (move || turn) this.lookAtOnArrival = null;
     if (this.o.reducedMotion()) {
@@ -1249,6 +1290,7 @@ export class FarmWalk {
    * there. Returns what was tapped.
    */
   tap(u: number, v: number): 'animal' | 'ground' | null {
+    this.inputAt = performance.now();
     this.lookAtOnArrival = null;
     this.ray.setFromCamera(new THREE.Vector2(u * 2 - 1, -(v * 2 - 1)), this.camera);
     const hitsAnimal = this.ray.intersectObjects(

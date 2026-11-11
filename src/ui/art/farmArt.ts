@@ -3,9 +3,10 @@
  * rings round a seed spiral; apple trees with a branching trunk and foliage in layers; a round bale rolled in a
  * spiral, square bales tied with twine; boards, shingles and stones on the barn and the hen house; posts with grain and
  * caps; the pond's bank of stones and its lily pads; pebbles along the path. Light, like the meadow: a few merged
- * paths per thing. Colours are the 3D walk's (`farmProps.ts`), so the two Farms match.
+ * paths per thing. Colours are the Farm's palette (`art/farmPalette.ts`), shared with the 3D walk, so the two Farms match.
  */
 
+import { FARM as F } from '../../art/farmPalette';
 import { place } from './botany';
 import { OUT, SHADOW } from './sceneKit';
 
@@ -56,7 +57,7 @@ export function sunflower(x: number, y: number, h = 30, turn = 0): string {
     const a = i * 2.39996;
     seeds += dot(tx + Math.cos(a) * rr, ty + Math.sin(a) * rr * 0.92, 0.32);
   }
-  return `<g><ellipse cx="${n(x)}" cy="${n(y + 0.4)}" rx="5" ry="1.2" fill="${SHADOW}"/><path d="M${n(x)} ${n(y)}Q${n(x + bend * 0.2)} ${n(y - h * 0.55)} ${n(tx)} ${n(ty)}" stroke="#6f8a4e" stroke-width="1.9" fill="none"/><path d="${leaf(0.38, -1)}${leaf(0.6, 1)}" fill="#6a9a48"/><path d="${rib(0.38, -1)}${rib(0.6, 1)}" stroke="#4f7a38" stroke-width="0.5" fill="none"/><path d="${ring(13, 6.6, 1.9, 14)}" fill="#e2a41c"/><path d="${ring(13, 7.2, 2, 0)}" fill="#f6c430"/><path d="${dot(tx, ty, 4)}" fill="#5a3418"/><path d="${seeds}" fill="#8a5a2a"/></g>`;
+  return `<g><ellipse cx="${n(x)}" cy="${n(y + 0.4)}" rx="5" ry="1.2" fill="${SHADOW}"/><path d="M${n(x)} ${n(y)}Q${n(x + bend * 0.2)} ${n(y - h * 0.55)} ${n(tx)} ${n(ty)}" stroke="${F.sunflower.stem}" stroke-width="1.9" fill="none"/><path d="${leaf(0.38, -1)}${leaf(0.6, 1)}" fill="${F.sunflower.leaf}"/><path d="${rib(0.38, -1)}${rib(0.6, 1)}" stroke="${F.sunflower.rib}" stroke-width="0.5" fill="none"/><path d="${ring(13, 6.6, 1.9, 14)}" fill="${F.sunflower.petalBack}"/><path d="${ring(13, 7.2, 2, 0)}" fill="${F.sunflower.petal}"/><path d="${dot(tx, ty, 4)}" fill="${F.sunflower.disc}"/><path d="${seeds}" fill="${F.sunflower.floret}"/></g>`;
 }
 
 /**
@@ -96,7 +97,7 @@ export function appleTree(x: number, y: number, s = 1): string {
     [-1, -21],
     [-7.5, -22],
   ];
-  return `<g><ellipse cx="${n(x)}" cy="${n(y + 0.5)}" rx="${n(11 * s)}" ry="${n(2.2 * s)}" fill="${SHADOW}"/><path d="${trunk}" fill="#7e5c40"/><path d="M${P(0.4, -1)}C${P(0.8, -5)} ${P(0.6, -9)} ${P(1, -12)}" stroke="#5e4330" stroke-width="${n(0.7 * s)}" fill="none"/><path d="${back}" fill="#5f9a45"/><path d="${mid}" fill="#72ae52"/><path d="${front}" fill="#86bd62"/><path d="${lights}" fill="#a2d27c" opacity="0.8"/><path d="${apples.map(([dx, dy]) => dot(x + dx * s, y + dy * s, 1.5 * s)).join('')}" fill="#d8342c"/><path d="${apples.map(([dx, dy]) => dot(x + (dx - 0.5) * s, y + (dy - 0.5) * s, 0.5 * s)).join('')}" fill="#ffd9b8" opacity="0.85"/></g>`;
+  return `<g><ellipse cx="${n(x)}" cy="${n(y + 0.5)}" rx="${n(11 * s)}" ry="${n(2.2 * s)}" fill="${SHADOW}"/><path d="${trunk}" fill="${F.tree.bark}"/><path d="M${P(0.4, -1)}C${P(0.8, -5)} ${P(0.6, -9)} ${P(1, -12)}" stroke="${F.tree.barkDark}" stroke-width="${n(0.7 * s)}" fill="none"/><path d="${back}" fill="${F.tree.leaves[0]}"/><path d="${mid}" fill="${F.tree.leaves[1]}"/><path d="${front}" fill="${F.tree.leaves[2]}"/><path d="${lights}" fill="${F.tree.highlight}" opacity="0.8"/><path d="${apples.map(([dx, dy]) => dot(x + dx * s, y + dy * s, 1.5 * s)).join('')}" fill="${F.tree.apple}"/><path d="${apples.map(([dx, dy]) => dot(x + (dx - 0.5) * s, y + (dy - 0.5) * s, 0.5 * s)).join('')}" fill="${F.tree.appleGlint}" opacity="0.85"/></g>`;
 }
 
 /** The Farm's round bale at (cx, cy): rolled straw in a spiral, strands, loose straw at its foot. */
@@ -109,7 +110,7 @@ export function roundBale(cx: number, cy: number): string {
   const strands = [-9, -5, 4, 8, -2]
     .map((dx, i) => `M${n(cx + dx)} ${n(cy - 8 + (i % 3) * 5)}l${n(2 + (i % 2))} ${n(-1.2 + (i % 2) * 2)}`)
     .join('');
-  return `<ellipse cx="${cx}" cy="${cy + 10}" rx="16" ry="3.2" fill="${SHADOW}"/><ellipse cx="${cx}" cy="${cy}" rx="13" ry="11" fill="#e8c76a" stroke="${OUT}" stroke-width="0.9"/><path d="${spiral}" stroke="#c99c44" stroke-width="0.9" fill="none" opacity="0.85"/><path d="${strands}" stroke="#fff3c4" stroke-width="0.7" fill="none"/><path d="M${cx - 12} ${cy + 10}l3 -2 1 2 2 -2.4 1.4 2.4M${cx + 6} ${cy + 10}l2 -2.2 1 2 2 -2.4" stroke="#d9b45a" stroke-width="0.8" fill="none"/>`;
+  return `<ellipse cx="${cx}" cy="${cy + 10}" rx="16" ry="3.2" fill="${SHADOW}"/><ellipse cx="${cx}" cy="${cy}" rx="13" ry="11" fill="${F.straw.bale}" stroke="${OUT}" stroke-width="0.9"/><path d="${spiral}" stroke="${F.straw.strand}" stroke-width="0.9" fill="none" opacity="0.85"/><path d="${strands}" stroke="${F.straw.light}" stroke-width="0.7" fill="none"/><path d="M${cx - 12} ${cy + 10}l3 -2 1 2 2 -2.4 1.4 2.4M${cx + 6} ${cy + 10}l2 -2.2 1 2 2 -2.4" stroke="${F.straw.loose}" stroke-width="0.8" fill="none"/>`;
 }
 
 /** Square bales stacked at the barn's side, tied with twine, straw showing. */
@@ -125,7 +126,7 @@ export function squareBales(): string {
     )
     .join('');
   const twine = bales.map(([x, y, w, h]) => `M${n(x + w * 0.28)} ${y}v${h}M${n(x + w * 0.72)} ${y}v${h}`).join('');
-  return `<ellipse cx="214" cy="189" rx="22" ry="3" fill="${SHADOW}"/><g fill="#e8c76a" stroke="${OUT}" stroke-width="0.8">${bales.map(([x, y, w, h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`).join('')}</g><path d="${straw}" stroke="#c99c44" stroke-width="0.6" fill="none"/><path d="${twine}" stroke="#a07a48" stroke-width="0.9" fill="none"/>`;
+  return `<ellipse cx="214" cy="189" rx="22" ry="3" fill="${SHADOW}"/><g fill="${F.straw.bale}" stroke="${OUT}" stroke-width="0.8">${bales.map(([x, y, w, h]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`).join('')}</g><path d="${straw}" stroke="${F.straw.strand}" stroke-width="0.6" fill="none"/><path d="${twine}" stroke="${F.straw.twine}" stroke-width="0.9" fill="none"/>`;
 }
 
 /** Boards on the barn's front (seams between them), the shingled gable, a stone footing and shade on its far side. */
@@ -141,14 +142,14 @@ export function barnDetail(): string {
     })
     .join('');
   const footing = Array.from({ length: 9 }, (_, i) => dot(246 + i * 10.6, 180.5, 1.6)).join('');
-  return `<path d="${boards}" stroke="#a83a2f" stroke-width="0.8" opacity="0.75"/><path d="${shingles}" stroke="#a83a2f" stroke-width="0.7" opacity="0.6"/><path d="M314 128 L332 128 V182 H314Z" fill="#000" opacity="0.08"/><path d="${footing}" fill="#b7b0a2" stroke="${OUT}" stroke-width="0.5"/><path d="M280 116h12v10h-12z" fill="#e8c76a" opacity="0.9"/>`;
+  return `<path d="${boards}" stroke="${F.barn.seam}" stroke-width="0.8" opacity="0.75"/><path d="${shingles}" stroke="${F.barn.seam}" stroke-width="0.7" opacity="0.6"/><path d="M314 128 L332 128 V182 H314Z" fill="#000" opacity="0.08"/><path d="${footing}" fill="${F.stone.face}" stroke="${OUT}" stroke-width="0.5"/><path d="M280 116h12v10h-12z" fill="${F.barn.loft}" opacity="0.9"/>`;
 }
 
 /** Grain down each fence post, and a pointed cap. */
 export function fenceDetail(posts: number[], y: (x: number) => number): string {
   const grain = posts.map((x) => `M${x - 0.6} ${n(y(x) - 24)}v22`).join('');
   const caps = posts.map((x) => `M${x - 2.3} ${n(y(x) - 25.6)}L${x} ${n(y(x) - 28.4)}L${x + 2.3} ${n(y(x) - 25.6)}Z`).join('');
-  return `<path d="${grain}" stroke="#9a6e46" stroke-width="0.5" opacity="0.8"/><path d="${caps}" fill="#a77a50" stroke="${OUT}" stroke-width="0.6"/>`;
+  return `<path d="${grain}" stroke="${F.wood.grain}" stroke-width="0.5" opacity="0.8"/><path d="${caps}" fill="${F.wood.cap}" stroke="${OUT}" stroke-width="0.6"/>`;
 }
 
 /** The pond's bank: damp earth and stones round the water, lily pads, one lily in flower. */
@@ -172,8 +173,8 @@ export function pondBank(cx: number, cy: number, rx: number, ry: number): { unde
   const ly = cy + ry * 0.2 - 1;
   const lily = [-50, -20, 20, 50, 0].map((a) => place(PETAL(2.6, 1), mul(T(lx, ly), R(a)))).join('');
   return {
-    under: `<ellipse cx="${cx}" cy="${cy}" rx="${n(rx + 2.6)}" ry="${n(ry + 2)}" fill="#9a8460" opacity="0.55"/>`,
-    over: `<path d="${stones}" fill="#b7b0a2" stroke="${OUT}" stroke-width="0.4"/><path d="${pads}" fill="#5c9a48"/><path d="${lily}" fill="#f6b6cf"/><path d="${dot(lx, ly - 0.6, 0.8)}" fill="#ffd84a"/>`,
+    under: `<ellipse cx="${cx}" cy="${cy}" rx="${n(rx + 2.6)}" ry="${n(ry + 2)}" fill="${F.pond.bank}" opacity="0.55"/>`,
+    over: `<path d="${stones}" fill="${F.stone.face}" stroke="${OUT}" stroke-width="0.4"/><path d="${pads}" fill="${F.pond.pad}"/><path d="${lily}" fill="${F.pond.lily}"/><path d="${dot(lx, ly - 0.6, 0.8)}" fill="${F.pond.lilyHeart}"/>`,
   };
 }
 
@@ -198,11 +199,11 @@ export function pathPebbles(path: Array<[number, number]>, width: (y: number) =>
       d += `M${n(x + nx * w * side - r * 1.4)} ${n(y + ny * w * side)}a${n(r * 1.4)} ${n(r)} 0 1 0 ${n(r * 2.8)} 0a${n(r * 1.4)} ${n(r)} 0 1 0 ${n(-r * 2.8)} 0Z`;
     }
   }
-  return `<path d="${d}" fill="#c2b9a8" stroke="#9c927f" stroke-width="0.35"/>`;
+  return `<path d="${d}" fill="${F.stone.pebble}" stroke="${F.stone.edge}" stroke-width="0.35"/>`;
 }
 
 /** Boards and shingles on the hen house. */
 export function henHouseDetail(): string {
   const boards = [98, 104, 110, 116, 122].map((x) => `M${x} 203V225`).join('');
-  return `<path d="${boards}" stroke="#d8b886" stroke-width="0.7"/><path d="M96 198 H120 M100 194 H116" stroke="#a83a2f" stroke-width="0.7" opacity="0.7"/>`;
+  return `<path d="${boards}" stroke="${F.hen.boards}" stroke-width="0.7"/><path d="M96 198 H120 M100 194 H116" stroke="${F.barn.seam}" stroke-width="0.7" opacity="0.7"/>`;
 }

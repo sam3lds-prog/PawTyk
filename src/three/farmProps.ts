@@ -10,6 +10,7 @@
 
 import * as THREE from 'three';
 import { seeded } from '../art/botany';
+import { FARM } from '../art/farmPalette';
 
 const col = (c: string) => new THREE.Color(c);
 
@@ -195,20 +196,29 @@ export function contactShadowTexture(): THREE.Texture {
 
 /** Soft shadows on the ground where things stand: one material, flat quads just above the grass's roots. */
 export class Shadows {
-  private mat: THREE.MeshBasicMaterial;
+  private map: THREE.Texture;
+  private mats = new Map<number, THREE.MeshBasicMaterial>();
   private quad: THREE.PlaneGeometry;
   constructor(
     private readonly parent: THREE.Object3D,
-    kit: PropKit,
+    private readonly kit: PropKit,
   ) {
-    const map = kit.track(contactShadowTexture());
-    this.mat = kit.track(new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, opacity: 0.9, fog: true }));
+    this.map = kit.track(contactShadowTexture());
     this.quad = kit.geo(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2));
+  }
+  /** One material per strength (tracked, so the walk frees them). */
+  private mat(strength: number): THREE.MeshBasicMaterial {
+    const k = Math.round(strength * 20) / 20;
+    let m = this.mats.get(k);
+    if (!m) {
+      m = this.kit.track(new THREE.MeshBasicMaterial({ map: this.map, transparent: true, depthWrite: false, opacity: 0.9 * k, fog: true }));
+      this.mats.set(k, m);
+    }
+    return m;
   }
   /** A shadow `w` by `d` across at (x, z), turned by `rot`; `y` the ground there. */
   add(x: number, z: number, w: number, d: number, y = 0, rot = 0, strength = 1): THREE.Mesh {
-    const m = new THREE.Mesh(this.quad, strength === 1 ? this.mat : this.mat.clone());
-    if (strength !== 1) (m.material as THREE.MeshBasicMaterial).opacity = 0.9 * strength;
+    const m = new THREE.Mesh(this.quad, this.mat(strength));
     m.position.set(x, y + 0.025, z);
     m.rotation.y = rot;
     m.scale.set(w, 1, d);
@@ -272,14 +282,14 @@ function limb(a: THREE.Vector3, b: THREE.Vector3): THREE.Matrix4 {
 export function appleTreeGeometry(seed: number): { geo: THREE.BufferGeometry; apples: THREE.Vector3[]; crown: { y: number; r: number } } {
   const r = seeded(seed);
   const m = new Merger();
-  const bark = col('#7e5c40');
-  const barkDark = col('#5e4330');
+  const bark = col(FARM.tree.bark);
+  const barkDark = col(FARM.tree.barkDark);
   const barkC = (_p: THREE.Vector3, n: THREE.Vector3) => (n.x * 0.6 + n.z * 0.3 > 0 ? bark : barkDark);
   // The trunk: a little lean, flaring at the root.
   const top = new THREE.Vector3((r() - 0.5) * 0.3, 2.1, (r() - 0.5) * 0.3);
   m.add(new THREE.CylinderGeometry(0.2, 0.32, 1, 9, 3), limb(new THREE.Vector3(0, 0, 0), top), barkC);
   m.add(new THREE.CylinderGeometry(0.34, 0.5, 0.3, 9), new THREE.Matrix4().makeTranslation(0, 0.15, 0), barkC);
-  const leaf = [col('#5f9a45'), col('#6fac4f'), col('#7fbc5c'), col('#94cc6c')];
+  const leaf = FARM.tree.leaves.map(col);
   const apples: THREE.Vector3[] = [];
   const nBranches = 3 + Math.floor(r() * 2);
   let crownTop = 0;
@@ -332,11 +342,11 @@ export function appleTreeGeometry(seed: number): { geo: THREE.BufferGeometry; ap
 export function appleGeometry(): THREE.BufferGeometry {
   const m = new Merger();
   const ball = new THREE.SphereGeometry(0.14, 12, 9);
-  const red = col('#d8342c');
-  const flush = col('#e8a03a');
+  const red = col(FARM.tree.apple);
+  const flush = col(FARM.tree.appleFlush);
   m.add(ball, new THREE.Matrix4().makeScale(1, 0.9, 1), (p) => (p.x + p.z > 0.12 ? flush : red));
-  m.add(new THREE.CylinderGeometry(0.008, 0.012, 0.08, 4), new THREE.Matrix4().makeTranslation(0, 0.15, 0), col('#5e4330'));
-  m.add(new THREE.SphereGeometry(0.04, 6, 4), new THREE.Matrix4().compose(new THREE.Vector3(0.04, 0.17, 0), new THREE.Quaternion(), new THREE.Vector3(1, 0.2, 0.5)), col('#5f9a45'));
+  m.add(new THREE.CylinderGeometry(0.008, 0.012, 0.08, 4), new THREE.Matrix4().makeTranslation(0, 0.15, 0), col(FARM.tree.barkDark));
+  m.add(new THREE.SphereGeometry(0.04, 6, 4), new THREE.Matrix4().compose(new THREE.Vector3(0.04, 0.17, 0), new THREE.Quaternion(), new THREE.Vector3(1, 0.2, 0.5)), col(FARM.tree.leaves[0]));
   return m.build();
 }
 
@@ -358,16 +368,16 @@ export function sunflowerHeadGeometry(seed: number): THREE.BufferGeometry {
   const m = new Merger();
   const sepal = petalShape(0.2, 0.06);
   const petal = petalShape(0.3, 0.085);
-  const gold = [col('#f6c430'), col('#f9d14a'), col('#efb21e')];
+  const gold = [col(FARM.sunflower.petal), col(FARM.sunflower.petalLight), col(FARM.sunflower.petalBack)];
   // The back of the head.
-  m.add(new THREE.CylinderGeometry(0.2, 0.12, 0.08, 16).rotateX(Math.PI / 2), new THREE.Matrix4().makeTranslation(0, 0, -0.05), col('#6f8a4e'));
+  m.add(new THREE.CylinderGeometry(0.2, 0.12, 0.08, 16).rotateX(Math.PI / 2), new THREE.Matrix4().makeTranslation(0, 0, -0.05), col(FARM.sunflower.stem));
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
     const mat = new THREE.Matrix4()
       .makeRotationZ(a)
       .multiply(new THREE.Matrix4().makeTranslation(0, 0.14, -0.04))
       .multiply(new THREE.Matrix4().makeRotationX(0.35));
-    m.add(new THREE.ShapeGeometry(sepal, 2), mat, col('#5e8a3e'));
+    m.add(new THREE.ShapeGeometry(sepal, 2), mat, col(FARM.sunflower.sepal));
   }
   // Two rings of petals, the front ring offset, each petal cupped forward a little and lying its own way.
   for (const [ring, off, z, k] of [
