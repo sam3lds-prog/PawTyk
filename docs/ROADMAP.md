@@ -87,6 +87,11 @@ Defects confirmed in source and fixed in Sprint 0:
   and light for 2D and 3D with an idle frame budget, warmer losing with a free retry and exactly-once reward videos,
   photo mode and postcards, opt-in usage statistics, the Welcome Rescue Pack (off in release until the App Store is
   set up), the cloud backup plan, integrated QA (`docs/screenshots/d47/`)
+- [x] **D48** — UX and haptic polish (no skipped tiles on a fast swipe, spaced ticks, safe postcards, shorter Daily
+  copy, the first board's two moves one at a time); feeding played out in the scene (thirty foods, bundles, feasts,
+  bowls, Get food → Shop → Feed); twenty-one decorations the animals use, in four Farm spots and themed sets, with a
+  preview in the player's own home; eighteen more tricks and emotes in four groups (coins for the everyday ones, group
+  acts with partners); four welcome celebrations with their own music; integration and release checks
 - [ ] Game Center and online Paw Cup leagues — not started
 - [ ] iCloud backup (CloudKit private database, no account) — decided and planned in `docs/cloud-backup.md` (D47 PR 8), not built
 - [ ] D36 device checklist (`docs/release-checklist.md`) and the five-player usability script — need a phone and people

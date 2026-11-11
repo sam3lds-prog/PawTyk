@@ -3,7 +3,7 @@
 import { app } from '../../app/app';
 import { clearSessions, resetProgress, type Settings } from '../../services/storage';
 import { ITEM_CAP, grantStarterItems } from '../../meta/items';
-import { finishOpenHomes, growActive, setPantry, skipToLevel } from '../../app/qaTools';
+import { finishOpenHomes, giveCoins, growActive, nextWelcome, setPantry, skipToLevel } from '../../app/qaTools';
 import { iap } from '../../services/iap';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
@@ -176,6 +176,8 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="finish"><span class="row__label">Finish every open home<small>Everyone comes home everywhere open; the next new place opens</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="empty"><span class="row__label">Empty extra lives and hints<small>See "no hints left" and the loss sheet without extra lives</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="fill"><span class="row__label">Fill extra lives and hints to 10<small>Earning more turns into coins</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="coins:500"><span class="row__label">Add 500 Paw Coins<small>To try the new tricks, foods, bowls and decorations</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="welcome"><span class="row__label">Watch a welcome celebration<small>Each tap plays the next of the four on the Farm: Boogie, Meadow Hop, Sparkle Surprise, Friendship Circle</small></span>${ICON.chevron}</button>
       </div>
       <div class="rows-title">Device checks</div>
       <div class="rows">
@@ -224,6 +226,19 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         const came = finishOpenHomes(app.save);
         app.persist();
         toast(`${plural(came.length, 'animal')} came home. A new place is open on the map.`);
+      } else if (what === 'coins') {
+        giveCoins(app.save, Number(arg));
+        app.persist();
+        toast(`+${arg} Paw Coins (tester gift).`, ICON.coin);
+      } else if (what === 'welcome') {
+        const w = nextWelcome(app.save);
+        if (!w) {
+          toast('Nobody is home on the Farm yet. Try "Finish every open home" first.');
+          return;
+        }
+        app.persist();
+        sh.close();
+        app.router.go({ screen: 'region', id: 'farm', welcome: [w.animal] });
       } else if (what === 'grow') {
         const came = growActive(app.save, Number(arg));
         app.persist();
