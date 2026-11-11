@@ -11,6 +11,8 @@ async function farmPage(browser, URL, errors) {
   qa.on('pageerror', (e) => errors.push(`[d46] ${e}`));
   await qa.goto(URL);
   await qa.waitForFunction(() => window.__pt);
+  // D49 PR C: animal moments come by themselves after a while; these checks need the scene exactly at rest.
+  await qa.evaluate(async () => (await import('/src/ui/components/animalMoments.ts')).setMomentsEnabled(false));
   return qa;
 }
 
