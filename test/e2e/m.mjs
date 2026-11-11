@@ -77,10 +77,10 @@ export async function mChecks({ browser, URL, check, errors }) {
   {
     const qa = await page(browser, URL, errors);
     await setUp(qa, { coins: 300, route: { screen: 'shop', sanctuary: 'farm', tab: 'decor' } });
-    await waitFor(qa, '.shop-featured .featured-card', 20000);
+    await waitFor(qa, '.shop-featured [data-featured]', 20000);
     const featured = await qa.evaluate(() => {
       const inv = window.__pt.app.save.inventory.decor;
-      const cards = [...document.querySelectorAll('.shop-featured .featured-card')];
+      const cards = [...document.querySelectorAll('.shop-featured [data-featured]')];
       return {
         n: cards.length,
         title: document.querySelector('#featured-title')?.textContent?.trim() ?? '',
@@ -90,8 +90,8 @@ export async function mChecks({ browser, URL, check, errors }) {
       };
     });
     check(
-      'M1: the Farm’s Shop shows “Featured for your Farm”, 1–4 picks, each with its price in its name, nothing owned',
-      featured.n >= 1 && featured.n <= 4 && /Featured for your/.test(featured.title) && featured.named && !featured.ownedShown.length,
+      'M1: the Farm’s Shop shows “Featured for your Farm”, 1–3 picks (D49: one large, two small), each with its price in its name, nothing owned',
+      featured.n >= 1 && featured.n <= 3 && /Featured for your/.test(featured.title) && featured.named && !featured.ownedShown.length,
       JSON.stringify(featured),
     );
 
@@ -118,7 +118,7 @@ export async function mChecks({ browser, URL, check, errors }) {
       const r = await route(qa);
       roundTrip = { id, name, price, banner, trying, reopened, after, r, same: JSON.stringify(before) === JSON.stringify(during) };
       check(
-        'M1: a featured decoration → See it in your Farm: the real scene with a “Not yours yet” banner; Back to it reopens the same card; coins and inventory unchanged',
+        'M1: a featured decoration → Try it in my Farm (D49): the real scene with a “Not yours yet” banner; Back to it reopens the same card; coins and inventory unchanged',
         banner && trying.cls && /Not yours yet/.test(trying.text) && /^Back to/.test(trying.back) && reopened && after === name && r.screen === 'shop' && roundTrip.same && /you have/.test(price),
         JSON.stringify(roundTrip),
       );

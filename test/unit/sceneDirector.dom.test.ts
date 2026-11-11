@@ -374,7 +374,7 @@ describe('a welcome on the Farm screen, and what the player does first (D46 PR A
     await vi.advanceTimersByTimeAsync(60000);
     expect(parading()).toBe(false);
     expect(offered()).toBe('Replay the parade');
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
   });
 
   it('the Tour tapped during the lead-in keeps going; the parade never cuts in, and is offered instead', async () => {
@@ -388,10 +388,10 @@ describe('a welcome on the Farm screen, and what the player does first (D46 PR A
     expect(parading()).toBe(false);
     expect(offered()).toBe('Watch Cotton’s welcome');
     // The next goal waits until the scene is free (it never lands mid-tour).
-    expect(document.querySelector('[data-next-goal]')).toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).toBeNull();
     scene().querySelector<HTMLElement>('[data-act="tour-stop"]')!.click();
     await vi.advanceTimersByTimeAsync(600);
-    expect(document.querySelector('[data-next-goal]')).not.toBeNull();
+    expect(document.querySelector('[data-welcome-card]')).not.toBeNull();
     // The offered welcome plays in full when the player asks for it, and is a replay after that.
     document.querySelector<HTMLElement>('[data-act="parade-replay"]')!.click();
     await vi.advanceTimersByTimeAsync(100);

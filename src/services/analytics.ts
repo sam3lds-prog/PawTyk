@@ -72,7 +72,12 @@ export type AnalyticsEvent =
   | 'share_opened'
   | 'share_started'
   | 'share_result'
-  | 'photo_memory_claimed';
+  | 'photo_memory_claimed'
+  // D49 PR A: which Featured pick was opened (its kind and place in the row), See all, and the arrival's follow-up.
+  | 'featured_tap'
+  | 'featured_see_all'
+  | 'welcome_card'
+  | 'welcome_snack';
 
 export type EventProps = Record<string, string | number | boolean>;
 

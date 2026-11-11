@@ -10,11 +10,15 @@
  */
 
 import { app } from '../../app/app';
-import { DECOR_BY_ID, decorHome, isDecorId, spotMates, type DecorId } from '../../meta/catalogs/decor';
+import { afterDecorChange } from '../../app/events';
+import { DECOR_BY_ID, decorHome, decorTier, isDecorId, spotMates, type DecorId } from '../../meta/catalogs/decor';
 import { isRegionId, sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { TRICK_BY_ID, isTrickId, trickCurrency, type TrickId } from '../../meta/catalogs/tricks';
-import { decorPrice, owns, walletBalance } from '../../meta/sanctuary';
-import { ownsTrick } from '../../meta/tricks';
+import { buyDecor, decorPrice, owns, walletBalance } from '../../meta/sanctuary';
+import { buyTrick, canAffordTrick, ownsTrick } from '../../meta/tricks';
+import { track } from '../../services/analytics';
+import { feel } from '../../services/feel';
+import { activityFor } from '../art/activities';
 import { esc } from '../dom';
 import { ICON } from '../icons';
 import type { Route } from '../router';
@@ -71,21 +75,65 @@ export function tryOnFacts(t: TryOn): { name: string; price: string; have: strin
   return { name: tr.name, price: cur ? `${tr.price} ${CURRENCY_NAME[cur]}` : 'free', have: cur ? `you have ${walletBalance(app.save, cur)}` : '' };
 }
 
-/** The banner over a home while something is tried on: what it is, that it isn't the player's yet, and the way back. */
+/** Whether the player has the price of what is tried on, now (D49 PR A: the banner can then buy it right there). */
+export function tryAffordable(t: TryOn): boolean {
+  if (t.kind === 'trick') return canAffordTrick(app.save, t.id);
+  const p = decorPrice(t.id);
+  return !!p && walletBalance(app.save, p.currency) >= p.amount;
+}
+
+/**
+ * The banner over a home while something is tried on: what it is, that it isn't the player's yet, and the way back.
+ * D49 PR A: a decoration's animals use it here (with **Again**, as a trick has), and when the player has the price,
+ * **Buy** is right here: it stays out, theirs, without going back to the Shop.
+ */
 export function tryBannerMarkup(t: TryOn, home: SanctuaryId): string {
   const f = tryOnFacts(t);
   const where = home === 'harmony' ? 'Pet Garden' : sanctuaryDef(home).short;
   const p = t.kind === 'decor' ? decorPrice(t.id) : null;
   const cur = t.kind === 'trick' ? trickCurrency(TRICK_BY_ID[t.id]) : (p?.currency ?? null);
   const amount = t.kind === 'trick' ? TRICK_BY_ID[t.id].price : (p?.amount ?? 0);
-  const tag = cur ? `<span class="price price--${cur}">${CURRENCY_ICON[cur]}<span class="num">${amount}</span></span>` : '';
+  const can = !!cur && tryAffordable(t);
+  const tag = cur && !can ? `<span class="price price--${cur} is-short">${CURRENCY_ICON[cur]}<span class="num">${amount}</span></span>` : '';
   const what = t.kind === 'decor' ? `Trying the ${esc(f.name)} in your ${esc(where)}` : `Trying ${esc(f.name)} in your ${esc(where)}`;
+  const again = t.kind === 'trick' || !!activityFor(t.id);
+  const buy = can
+    ? `<button class="btn btn--small" data-act="try-buy" aria-label="${esc(`${t.kind === 'trick' ? 'Learn' : 'Buy'} ${f.name} for ${f.price}`)}">${t.kind === 'trick' ? 'Learn' : 'Buy'} ${CURRENCY_ICON[cur!]}<span class="num">${amount}</span></button>`
+    : '';
   return `<div class="try-banner card" role="status" data-try-banner="${t.kind}:${t.id}">
     <span class="try-banner__text"><b>${what}</b><small>Not yours yet${f.price ? ` · ${esc(f.price)}${f.have ? ` (${esc(f.have)})` : ''}` : ''}. Nothing changes until you buy it.</small></span>
     ${tag}
     <span class="try-banner__actions">
-      ${t.kind === 'trick' ? `<button class="btn btn--quiet btn--small" data-act="try-again">${ICON.restart}Again</button>` : ''}
-      <button class="btn btn--small" data-act="try-back">${ICON.back}Back to ${esc(f.name)}</button>
+      ${again ? `<button class="btn btn--quiet btn--small" data-act="try-again">${ICON.restart}Again</button>` : ''}
+      <button class="btn btn--small ${buy ? 'btn--secondary' : ''}" data-act="try-back">${ICON.back}Back to ${esc(f.name)}</button>
+      ${buy}
     </span>
   </div>`;
+}
+
+/**
+ * D49 PR A: buys what is tried on, from the banner (the player has the price: `tryAffordable`). A decoration stays out
+ * where it was tried, now theirs; a trick is learned. Charged once by the same purchase ids the Shop uses
+ * (`buy:decor:<id>` / `buy:trick:<id>`), so a double tap can't charge twice. Returns the line to say, or null if
+ * nothing was bought (and why, in the line).
+ */
+export function buyTriedOn(t: TryOn, home: SanctuaryId): { ok: boolean; line: string } {
+  const f = tryOnFacts(t);
+  if (t.kind === 'decor') {
+    const r = buyDecor(app.save, t.id);
+    if (r !== 'ok') return { ok: false, line: r === 'insufficient' ? `Not enough ${CURRENCY_NAME[decorPrice(t.id)?.currency ?? 'coins']} yet.` : r === 'owned' ? 'Already yours.' : 'It can’t be bought here.' };
+    // Buying puts the piece out where it was tried; what shares its spot goes away, as it did while trying.
+    afterDecorChange();
+    app.persist();
+    feel('buy');
+    const p = decorPrice(t.id);
+    track('decor_bought', { item: t.id, tier: decorTier(DECOR_BY_ID[t.id]), amount: p?.amount ?? 0, surface: 'try_on' });
+    return { ok: true, line: `The ${f.name} is yours, out in your ${home === 'harmony' ? 'Pet Garden' : sanctuaryDef(home).short}.` };
+  }
+  const r = buyTrick(app.save, t.id);
+  if (r !== 'ok') return { ok: false, line: r === 'insufficient' ? 'Not enough to learn it yet.' : 'Already learned.' };
+  app.persist();
+  feel('buy');
+  track('trick_bought', { trick: t.id, surface: 'try_on' });
+  return { ok: true, line: `${f.name} learned! Tap any animal and ask for it.` };
 }

@@ -188,28 +188,38 @@ try {
   check('then Cotton settles in, with her kind and character (D41)', /Your new sheep\. Sleepy/.test((await page.textContent('.arrival')) ?? '') && !(await page.$('.arrival [data-friend="cotton"].is-waiting')));
   await page.click('.arrival [data-act="skip"]');
   check(
-    'it ends with a clear goal: Truffle, how many puzzles away, and Play level 2 (D41)',
+    'it ends with a clear goal: Truffle, how many puzzles away; then a welcome snack for Cotton and Continue to level 2 (D41, D49)',
     await page.evaluate(() => {
       const g = document.querySelector('.arrival [data-arrival-goal]');
-      return !!g && !g.hidden && /Bring Truffle the piglet home/.test(g.textContent) && /3 more puzzles/.test(g.textContent) && g.querySelector('[data-act="play"]')?.textContent === 'Play level 2';
+      return (
+        !!g &&
+        !g.hidden &&
+        /Bring Truffle the piglet home/.test(g.textContent) &&
+        /3 more puzzles/.test(g.textContent) &&
+        /Give Cotton a welcome snack/.test(g.querySelector('[data-act="snack"]')?.textContent ?? '') &&
+        /Your first treat is on us/.test(g.textContent) &&
+        g.querySelector('[data-act="play"]')?.textContent === 'Continue to level 2'
+      );
     }),
   );
   const afterFirst = await coins();
   check('first clear pays coins', afterFirst >= 45, String(afterFirst));
-  await page.click('.arrival [data-act="visit"]');
+  await page.click('.arrival [data-act="snack"]');
   await page.waitForSelector('.region');
-  // D45 PR B: Cotton's first visit gets the Welcome Parade (skippable), with no second "came home" announcement.
+  // D49 PR A: the Farm opens and Cotton eats her (free) welcome snack at once, with no second "came home"
+  // announcement; her Welcome Parade waits under the scene.
   const firstToast = await page.evaluate(() => document.querySelector('.toast')?.textContent ?? '');
-  // (The scene is marked as parading while the camera glides in; Cotton's dance starts as the glide lands.)
-  const firstParade = await page.waitForSelector('.sanctuary__scene.is-parading [data-friend="cotton"][data-trick^="dance:newcomer:"]', { timeout: 8000, state: 'attached' }).then(() => true, () => false);
-  const firstLead = await page.evaluate(() => document.querySelector('.sanctuary__scene [data-friend="cotton"]')?.dataset.trick ?? '');
-  check('the first visit from the arrival plays Cotton’s Welcome Parade, and does not announce her twice (D45)', firstParade && /^dance:newcomer:/.test(firstLead) && !/came home/.test(firstToast), JSON.stringify({ firstParade, firstLead, firstToast }));
-  await page.click('.sanctuary__scene .parade-skip');
+  const firstMeal = await page.waitForSelector('.sanctuary__scene [data-friend="cotton"][data-trick="feed"]', { timeout: 8000, state: 'attached' }).then(() => true, () => false);
+  const offered = await page.evaluate(() => document.querySelector('[data-act="parade-replay"]:not([hidden])')?.textContent ?? '');
+  check('the snack from the arrival plays at once in the Farm; Cotton isn’t announced twice; her parade is offered, not forced (D49)', firstMeal && !/came home/.test(firstToast) && /Cotton/.test(offered), JSON.stringify({ firstMeal, firstToast, offered }));
+  await page.waitForSelector('[data-welcome-card="fed"]', { timeout: 10000 });
+  check('then the card says she loved it, with Continue as its one button (D49)', await page.evaluate(() => { const c = document.querySelector('[data-welcome-card="fed"]'); return /Cotton (loved|enjoyed) the/.test(c?.textContent ?? '') && c.querySelectorAll('.btn').length === 1; }));
   await page.waitForSelector('.sheet [data-choose="wheelbarrow"]');
-  check('visiting opens the Farm, with Farm starter gifts', !!(await page.$('[data-choose="trough"]')));
+  check('visiting opens the Farm, with Farm starter gifts (after the snack)', !!(await page.$('[data-choose="trough"]')));
   check('the first visit names an animal to tap, and rings it (D40)', !!(await page.$('.sanctuary__scene .sp-cue-ring')) && /^Tap Cotton to say hello\.$/.test((await page.textContent('[data-scene-cue="tap"]').catch(() => '')) ?? ''));
   await page.click('[data-choose="wheelbarrow"]');
-  await page.click('.sheet [data-act="play"]');
+  check('no second "Ready for the next puzzle?" after the gift: the card has Continue (D49)', !(await page.$('.sheet [data-act="play"]')));
+  await page.click('[data-welcome-card] [data-act="welcome-play"]');
   check('starter flow continues to level 2', (await title()) === 'Level 2');
   check('level 2 shows the next animal on its way (Truffle)', await page.evaluate(() => window.__pt.app.active.cast.a === 'truffle'));
   // D41: the board sits in the Farm's frame; its nameplate says the goal; a pip per animal.
@@ -397,8 +407,10 @@ try {
   await page.click('[data-act="close"]');
   await page.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
   await page.click('.resident-row [data-friend-card="cotton"]');
+  // (D49: Cotton has had her welcome snack already, so the hearts are counted from here.)
+  const aff0 = await page.evaluate(() => window.__pt.app.save.sanctuary.affection.cotton ?? 0);
   await page.click('[data-feed="hay"]');
-  check('feeding a favorite food adds two hearts of affection', (await page.evaluate(() => window.__pt.app.save.sanctuary.affection.cotton)) === 2);
+  check('feeding a favorite food adds two hearts of affection', (await page.evaluate(() => window.__pt.app.save.sanctuary.affection.cotton)) === aff0 + 2, String(aff0));
   await page.keyboard.press('Escape');
 
   // Sanctuary life: a tap on an animal gets a small reaction; ambient actions come and go on their own

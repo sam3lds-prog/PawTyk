@@ -214,6 +214,11 @@ export interface SceneMealsHost {
 export interface SceneMeals {
   /** The card's feed events for an animal, wired to this scene. */
   events(animal: string, name: string): import('./feedPanel').FeedEvents;
+  /**
+   * D49 PR A: plays a meal already counted (a newcomer's welcome snack), with no card in between. Null if the scene
+   * can't show it (the animal is busy or not drawn); else settles when it has been eaten (true) or was stopped.
+   */
+  feed(m: import('./feedPanel').Meal): Promise<boolean> | null;
   readonly active: boolean;
   stop(): void;
 }
@@ -237,9 +242,9 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
   const scene = () => ({ host: h.el.querySelector<HTMLElement>('.sanctuary__scene'), svg: h.el.querySelector<SVGSVGElement>('.sanctuary__scene svg') });
 
   /** Plays meals (one, or a feast's), then gives the scene back. */
-  function play(meals: Array<Omit<FeedingOptions, 'svg' | 'host' | 'camera' | 'reducedMotion' | 'bowl'>>, closeUp: boolean): boolean {
+  function play(meals: Array<Omit<FeedingOptions, 'svg' | 'host' | 'camera' | 'reducedMotion' | 'bowl'>>, closeUp: boolean): Promise<boolean> | null {
     const { host, svg } = scene();
-    if (!host || !svg || !meals.some((m) => canFeedInScene(svg, m.animal))) return false;
+    if (!host || !svg || !meals.some((m) => canFeedInScene(svg, m.animal))) return null;
     h.director.claim('feed');
     h.director.hold('feed', true);
     const handles = meals.map((m, i) => {
@@ -277,13 +282,12 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
     });
     // Only one card under the scene for a feast: the first guest's (the others' would stack on it).
     running = handles;
-    void Promise.all(handles.map((x) => x.done)).then(() => {
+    return Promise.all(handles.map((x) => x.done)).then((ends) => {
       if (running === handles) running = [];
       h.director.hold('feed', false);
-      if (!scope.alive) return;
-      for (const m of meals) h.afterHearts(m.animal, m.before);
+      if (scope.alive) for (const m of meals) h.afterHearts(m.animal, m.before);
+      return ends[0] ?? false;
     });
-    return true;
   }
 
   return {
@@ -293,13 +297,13 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
       return {
         onPat: () => (patted = true),
         meal: (m) => {
-          const ok = play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after }], true);
+          const ok = !!play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after }], true);
           if (!ok) fedOffstage = true;
           return ok;
         },
         feast: (f) => {
           const total = f.fed.reduce((n, x) => n + x.gained, 0);
-          return play(
+          return !!play(
             f.fed.map((x, i) => ({
               animal: x.animal,
               name: x.animal,
@@ -320,6 +324,7 @@ export function sceneMeals(scope: { onDispose(fn: () => void): void; timeout(fn:
         },
       };
     },
+    feed: (m) => play([{ animal: m.animal, name: m.name, food: m.food, favorite: m.favorite, before: m.before, after: m.after }], true),
     get active() {
       return running.some((r) => r.active);
     },
