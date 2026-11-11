@@ -176,3 +176,14 @@
   width: 18px;
   height: 18px;
 }
+/* M3: the keepsake gets a line of its own under the scene's row (chat, Watch the parade, Tricks), so the row never
+   runs past a phone's width; the row wraps instead of scrolling the page sideways. */
+.sanctuary__under {
+  flex-wrap: wrap;
+  row-gap: var(--s2);
+}
+.scene-share {
+  order: 10;
+  flex: 1 1 100%;
+  justify-content: center;
+}

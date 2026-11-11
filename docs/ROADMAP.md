@@ -92,6 +92,11 @@ Defects confirmed in source and fixed in Sprint 0:
   bowls, Get food → Shop → Feed); twenty-one decorations the animals use, in four Farm spots and themed sets, with a
   preview in the player's own home; eighteen more tricks and emotes in four groups (coins for the everyday ones, group
   acts with partners); four welcome celebrations with their own music; integration and release checks
+- [x] **M** — monetization, discovery and organic growth: Featured for your home and try-ons in the home itself (M1),
+  a video token earned from the card of the thing it's for (M2), a spoiler-free Daily result card, an arrival keepsake
+  and the weekly Photo Memory (M3); friend invites reviewed, not built (`docs/referrals.md`, M4); cosmetic collections
+  and upgrades designed, not built (`docs/cosmetics.md`, M5); browser checks and tester shortcuts (`docs/screenshots/m/`)
+- [ ] Friend invites and referrals — reviewed (M4); waiting on Sam's decisions D1–D6 and the native App Check provider
 - [ ] Game Center and online Paw Cup leagues — not started
 - [ ] iCloud backup (CloudKit private database, no account) — decided and planned in `docs/cloud-backup.md` (D47 PR 8), not built
 - [ ] D36 device checklist (`docs/release-checklist.md`) and the five-player usability script — need a phone and people

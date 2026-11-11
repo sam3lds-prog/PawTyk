@@ -14,6 +14,8 @@ import type { AnimalId } from '../meta/animals';
 import { grant } from '../meta/ledger';
 import { COMPANIONS } from '../meta/catalogs/companions';
 import { CELEBRATIONS, celebrationOf, type CelebrationId } from '../meta/celebrations';
+import { localDateKey } from '../game/dates';
+import { photoMemoryWeek } from '../meta/photoMemory';
 
 /**
  * Marks levels 1..(next-1) solved (clean, three stars, one minute each) and makes `next` the next level. The skipped
@@ -85,4 +87,28 @@ export function nextWelcome(save: SaveV2): { animal: AnimalId; celebration: Cele
   const celebration = CELEBRATIONS[(i + 1) % CELEBRATIONS.length].id;
   (save.world.celebrations ??= { by: {} }).by[animal] = celebration;
   return { animal: animal as AnimalId, celebration };
+}
+
+/** M2: video tokens to exactly 0 (a tester entry in the item ledger), to see the Watch a video offer on a token item. */
+export function zeroTokens(save: SaveV2, now = new Date()): void {
+  const delta = -itemBalance(save, 'vtoken');
+  if (!delta) return;
+  save.inventory.items.push({ id: `qa:vtoken:${now.getTime()}:${Math.random().toString(36).slice(2, 8)}`, item: 'vtoken', delta, at: now.toISOString(), source: 'gift', note: 'Tester shortcut' });
+}
+
+/** M2: today's reward videos set to `used` (the daily cap to see the limit line, 0 to give them back). */
+export function setVideosUsed(save: SaveV2, used: number, now = new Date()): void {
+  save.ads = { ...save.ads, day: localDateKey(now), rewarded: used };
+}
+
+/**
+ * M3: forgets this week's Photo Memory, so the next postcard earns it again. The one place a tester tool takes an
+ * entry back out of the coin ledger: its 30 coins go with it, so the balance stays the sum of the ledger.
+ */
+export function forgetPhotoMemory(save: SaveV2, now = new Date()): boolean {
+  const id = `photo-memory:${photoMemoryWeek(now)}`;
+  const i = save.inventory.ledger.findIndex((e) => e.id === id);
+  if (i < 0) return false;
+  save.inventory.ledger.splice(i, 1);
+  return true;
 }

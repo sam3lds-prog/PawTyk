@@ -472,6 +472,10 @@ build is ready on an iPhone. Everything below is for a real device.
       it's offered again
 - [ ] Photos permission denied: Save Image fails with the Settings hint, nothing else breaks
 
+**Tester shortcuts for M** (Settings → Tester shortcuts, QA builds only): *Video tokens to 0* (M2's offer), *Use up
+today's videos* (the daily limit line; tap again to give them back), *Forget this week's Photo Memory* (the next
+postcard earns its 30 coins again, and the 30 are taken back).
+
 **M4 — friend invites** (review only; nothing to test in this release)
 - [ ] `featureFlags.friends` is still `false`; no Friends & Invites row anywhere; the go-live gate in
       `docs/referrals.md` §7 is not started until Sam approves §9
