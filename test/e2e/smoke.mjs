@@ -384,9 +384,13 @@ try {
   await page.click('[data-decor="rug"]');
   await page.click('[data-act="buy"]');
   await page.waitForTimeout(200);
-  await page.click('[data-decor="rug"]');
+  // D49 PR B: the card stays open, says it's theirs and offers to see it arrive; a second tap on Buy is gone.
+  const bought = await page.evaluate(() => ({ line: document.querySelector('.decor-sheet .bought-line')?.textContent ?? '', see: !!document.querySelector('.decor-sheet [data-act="visit"]'), buy: !!document.querySelector('.decor-sheet [data-act="buy"]') }));
+  await page.click('.decor-sheet [data-act="close"]');
+  await page.waitForTimeout(300);
+  await page.click('.shop [data-decor="rug"]');
   const buyAgain = await page.$('[data-act="buy"]');
-  check('decor costs exactly its price, once', (await coins()) === c0 - 110 && !buyAgain, `${c0} → ${await coins()}`);
+  check('decor costs exactly its price, once; its card then says it’s yours and offers to see it (D49)', (await coins()) === c0 - 110 && !buyAgain && /yours/.test(bought.line) && bought.see && !bought.buy, `${c0} → ${await coins()} ${JSON.stringify(bought)}`);
   await page.keyboard.press('Escape');
   await reload();
   check('purchased decor survives reload', await page.evaluate(() => !!window.__pt.app.save.inventory.decor.rug));
