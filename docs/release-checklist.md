@@ -472,6 +472,10 @@ build is ready on an iPhone. Everything below is for a real device.
       it's offered again
 - [ ] Photos permission denied: Save Image fails with the Settings hint, nothing else breaks
 
+**M4 — friend invites** (review only; nothing to test in this release)
+- [ ] `featureFlags.friends` is still `false`; no Friends & Invites row anywhere; the go-live gate in
+      `docs/referrals.md` §7 is not started until Sam approves §9
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall
