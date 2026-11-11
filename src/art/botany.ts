@@ -43,6 +43,43 @@ export const BUTTERFLIES: Record<ButterflyKind, ButterflyLook> = {
 
 export const BUTTERFLY_KINDS = Object.keys(BUTTERFLIES) as ButterflyKind[];
 
+/**
+ * A butterfly's right wings (the left are the mirror), as SVG path data: the drawn scenes draw them, the 3D walk paints
+ * its wing textures from them. Body along the y axis, head toward −y; about 17 units across both wings at size 1.
+ * Absolute M, L, C and Z only.
+ */
+export const WING = {
+  fore: 'M0.4 -1C1.6 -3.8 4.8 -6.4 7.6 -6C8.4 -5.8 8.6 -4.9 8.2 -4C7.4 -2.2 5.2 -0.4 0.5 0.4Z',
+  hind: 'M0.5 0.2C3.4 -0.2 6.4 0.8 6.6 2.8C6.8 4.6 5 6.2 3.2 6C1.8 5.9 0.9 4 0.4 1.6Z',
+  hindTail: 'M0.5 0.2C3.4 -0.2 6.4 0.8 6.6 2.8C6.8 4.6 5.6 5.8 4.9 6L4.8 8.6C4.6 9.1 4 9.1 3.9 8.6L3.6 6.2C2.2 6 1 4.2 0.4 1.6Z',
+  veins:
+    'M0.6 -0.4C3 -2.6 5.4 -4.4 7.4 -5.4M0.6 -0.2C3.4 -1.6 6 -3 8 -4.1M0.7 0C3 -0.6 4.8 -1 6.2 -1.5M0.8 0.6C3 1 5 1.8 6.3 2.8M0.7 0.9C2.4 2.4 3.8 4 4.7 5.5M0.6 1.1C1.4 2.6 2.2 4.2 2.8 5.6',
+  /** A dark tip at the forewing's apex. */
+  tip: 'M6.2 -5.9C7 -6.3 8.3 -5.9 8.3 -4.6C7.7 -4.3 6.8 -4.6 6.2 -5.9Z',
+  body: 'M0 -2.4C0.8 -2.2 0.75 3.4 0 4.8C-0.75 3.4 -0.8 -2.2 0 -2.4Z',
+  /** Where a species' spots sit on the right wings: [x, y, radius]. */
+  spots(kind: ButterflyKind): Array<[number, number, number]> {
+    if (kind === 'white') return [[5.4, -3.4, 0.55]];
+    if (kind === 'sulphur') return [[4.6, -2.6, 0.5]];
+    return [
+      [7.5, -5.2, 0.32],
+      [8, -4.3, 0.28],
+      [7.3, -3.2, 0.24],
+      [6.1, 3.6, 0.3],
+      [5.4, 4.9, 0.3],
+      [4.2, 5.6, 0.26],
+    ];
+  },
+  /** A dark band across the forewing at `t` (0–1 along it), clipped to the wing where it is drawn. */
+  band(t: number): string {
+    const r = (v: number) => Math.round(v * 10) / 10;
+    const x = 0.4 + t * 8;
+    return `M${r(x)} ${r(-1 - t * 5.4)}L${r(x + 1)} ${r(-1.4 - t * 5.4)}L${r(x + 1.8)} ${r(0.6 - t * 4)}L${r(x + 0.6)} ${r(0.8 - t * 3.6)}Z`;
+  },
+  /** The wings' extent: x from the body out, y from the forewing's apex to the tail's tip. */
+  bounds: { x0: 0, x1: 8.8, y0: -6.6, y1: 9.4 },
+};
+
 /** Grass from the shaded root to the sunlit tip, in a few hues so a meadow is never one green. */
 export const GRASS = {
   root: ['#4f8a3c', '#5a9442', '#4a7f3a'],

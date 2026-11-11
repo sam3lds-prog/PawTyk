@@ -17,7 +17,7 @@
  * butterflies' wings (CSS, not under reduced motion).
  */
 
-import { BUTTERFLIES, FLOWERS, GRASS, meadowNoise, pick, seeded, type ButterflyKind } from '../../art/botany';
+import { BUTTERFLIES, FLOWERS, GRASS, WING, meadowNoise, pick, seeded, type ButterflyKind } from '../../art/botany';
 
 const n = (v: number) => String(Math.round(v * 10) / 10);
 
@@ -142,22 +142,9 @@ function petalRing(k: number, rIn: number, rOut: number, narrow: number, rot = 0
 
 // ------------------------------------------------------------------ butterflies
 
-/** The right forewing and hindwing (the left is the mirror), body along the y axis; about 17 units across at size 1. */
-const FORE = 'M0.4 -1C1.6 -3.8 4.8 -6.4 7.6 -6C8.4 -5.8 8.6 -4.9 8.2 -4C7.4 -2.2 5.2 -0.4 0.5 0.4Z';
-const HIND = 'M0.5 0.2C3.4 -0.2 6.4 0.8 6.6 2.8C6.8 4.6 5 6.2 3.2 6C1.8 5.9 0.9 4 0.4 1.6Z';
-const HIND_TAIL = 'M0.5 0.2C3.4 -0.2 6.4 0.8 6.6 2.8C6.8 4.6 5.6 5.8 4.9 6L4.8 8.6C4.6 9.1 4 9.1 3.9 8.6L3.6 6.2C2.2 6 1 4.2 0.4 1.6Z';
-const VEINS =
-  'M0.6 -0.4C3 -2.6 5.4 -4.4 7.4 -5.4M0.6 -0.2C3.4 -1.6 6 -3 8 -4.1M0.7 0C3 -0.6 4.8 -1 6.2 -1.5M0.8 0.6C3 1 5 1.8 6.3 2.8M0.7 0.9C2.4 2.4 3.8 4 4.7 5.5M0.6 1.1C1.4 2.6 2.2 4.2 2.8 5.6';
-/** Where the border's spots sit, on the right wings. */
-const SPOTS: Array<[number, number, number]> = [
-  [7.5, -5.2, 0.32],
-  [8, -4.3, 0.28],
-  [7.3, -3.2, 0.24],
-  [6.1, 3.6, 0.3],
-  [5.4, 4.9, 0.3],
-  [4.2, 5.6, 0.26],
-];
-const BODY = 'M0 -2.4C0.8 -2.2 0.75 3.4 0 4.8C-0.75 3.4 -0.8 -2.2 0 -2.4Z';
+/** The wings and body (shared with the 3D walk's butterflies). */
+const { fore: FORE, hind: HIND, hindTail: HIND_TAIL, veins: VEINS, body: BODY, tip: TIP, band } = WING;
+
 /** A wing shrunk toward the body (its border shows around it). */
 const inner = (d: string, s: number) => place(d, tf(T(0.5, 0), S(s), T(-0.5, 0)));
 
@@ -167,16 +154,11 @@ function wings(kind: ButterflyKind, clip: string): string {
   const hind = b.tail ? HIND_TAIL : HIND;
   let out = `<path d="${hind}${FORE}" fill="${b.edge}"/><path d="${inner(hind, 0.84)}${inner(FORE, 0.84)}" fill="${b.fill}"/><path d="${place(FORE, tf(T(2.2, -1.6), S(0.5)))}${place(hind, tf(T(1.6, 1.4), S(0.45)))}" fill="${b.light}" opacity="0.5"/>`;
   if (b.bands.length)
-    out += `<path clip-path="url(#${clip})" fill="${b.edge}" d="${b.bands
-      .map((t) => {
-        const x = 0.4 + t * 8;
-        return `M${n(x)} ${n(-1 - t * 5.4)}L${n(x + 1)} ${n(-1.4 - t * 5.4)}L${n(x + 1.8)} ${n(0.6 - t * 4)}L${n(x + 0.6)} ${n(0.8 - t * 3.6)}Z`;
-      })
-      .join('')}"/>`;
-  if (b.tip) out += `<path d="M6.2 -5.9C7 -6.3 8.3 -5.9 8.3 -4.6C7.7 -4.3 6.8 -4.6 6.2 -5.9Z" fill="${b.tip}"/>`;
+    out += `<path clip-path="url(#${clip})" fill="${b.edge}" d="${b.bands.map(band).join('')}"/>`;
+  if (b.tip) out += `<path d="${TIP}" fill="${b.tip}"/>`;
   out += `<path d="${VEINS}" stroke="${b.vein}" stroke-width="0.22" fill="none" opacity="0.85"/>`;
   if (b.spot) {
-    const spots: Array<[number, number, number]> = b.kind === 'white' ? [[5.4, -3.4, 0.55]] : b.kind === 'sulphur' ? [[4.6, -2.6, 0.5]] : SPOTS;
+    const spots = WING.spots(b.kind);
     out += `<path d="${spots.map(([x, y, r]) => dot(x, y, r)).join('')}" fill="${b.spot}"/>`;
   }
   return out;

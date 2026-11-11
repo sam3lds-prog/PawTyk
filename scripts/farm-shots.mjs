@@ -103,16 +103,31 @@ await walkShot('12-walk-orchard', { x: -11, z: -7, yaw: 0.55, pitch: -0.02 });
 await walkShot('13-walk-barn-courtyard', { x: 6, z: 3.5, yaw: -0.3, pitch: -0.05 });
 await walkShot('14-walk-pond', { x: -6.5, z: 17, yaw: 0.75, pitch: -0.2 });
 await walkShot('15-walk-sunflowers', { x: -5.5, z: 3, yaw: 1.45, pitch: -0.12 });
-// Butterflies: motion on, the pasture's moment.
+// Butterflies at rest on the pasture's clover (still, from just outside the pasture), then rising as the player arrives.
+await walkShot('16-walk-butterflies-resting', { x: -1.8, z: 10.2, yaw: 0, pitch: -0.42 });
 await page.evaluate(() => {
   const a = window.__pt.app;
   a.save.settings.reducedMotion = 'full';
   a.applySettings();
   const w = window.__walk;
-  Object.assign(w.walker, { x: -0.5, z: 6, yaw: 0, target: null });
-  w.pitch = 0.05;
+  Object.assign(w.walker, { x: -1.2, z: 7, yaw: 0, target: null });
+  w.pitch = 0.12;
 });
-await page.waitForTimeout(1800);
-await page.screenshot({ path: `${out}/16-walk-butterflies.png` });
+await page.waitForFunction(() => window.__walk.meadowStats && window.__walk.where === 'pasture', null, { timeout: 10000 }).then((h) => h.dispose());
+await page.waitForTimeout(900);
+await page.screenshot({ path: `${out}/17-walk-butterflies-rising.png` });
+if (process.env.FLIES) {
+for (const ms of [300, 900, 2500, 6000]) {
+  const info = await page.evaluate(() => {
+    const w = window.__walk;
+    return { at: [w.walker.x, w.walker.z], where: w.where, flies: w.meadow.butterflies.flies.map((f) => [f.kind, f.state, +f.g.position.x.toFixed(2), +f.g.position.y.toFixed(2), +f.g.position.z.toFixed(2), f.g.visible]) };
+  });
+  console.log(ms, JSON.stringify(info));
+  await page.waitForTimeout(ms);
+}
+await page.evaluate(() => { window.__walk.pitch = 0.1; });
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${out}/18-walk-butterflies-later.png` });
+}
 await browser.close();
 console.log(`saved to ${out}`);
