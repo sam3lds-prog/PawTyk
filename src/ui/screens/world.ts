@@ -8,6 +8,7 @@
  * its way is the animal on your boards). Nothing here is for sale: puzzles are what grow a sanctuary.
  */
 
+import { arrivalPortrait } from '../components/eager';
 import { app } from '../../app/app';
 import { playMode } from '../../app/gameFlow';
 import { sanctuaryDef, SANCTUARY_BY_ID, isRegionId, type RegionId, type SanctuaryDef } from '../../meta/catalogs/sanctuaries';
@@ -128,7 +129,7 @@ export const worldScreen: ScreenDef = {
       const body = coming
         ? (() => {
             const a = animalInfo(coming.next.id);
-            return `<div class="coming-home"><span class="coming-home__art portrait is-shy">${animalPortrait(coming.next.id, 'idle')}</span><span class="coming-home__body"><span><b>${esc(a.name)} the ${esc(a.noun)}</b> arrives in ${plural(coming.left, 'puzzle')}.</span>${bar(coming.have, coming.from, coming.need, `${a.name} coming home`)}</span></div>`;
+            return `<div class="coming-home">${arrivalPortrait(coming.next.id, coming.left, 'coming-home__art portrait')}<span class="coming-home__body"><span><b>${esc(a.name)} the ${esc(a.noun)}</b> arrives in ${plural(coming.left, 'puzzle')}.</span>${bar(coming.have, coming.from, coming.need, `${a.name} coming home`)}</span></div>`;
           })()
         : next
           ? `<p class="muted">Next: <b>${esc(next.stage.name)}</b>. ${esc(next.stage.change)}.</p>${bar(next.have, next.from, next.need, `Progress to ${next.stage.name}`)}`

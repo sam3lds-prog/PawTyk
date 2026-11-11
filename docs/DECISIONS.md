@@ -2284,3 +2284,33 @@ pressures a player (no chores, missed-day penalties, artificial scarcity or guil
   across a re-render, gone on a later visit). Updated: the D40/D41/D45/D46 arrival tests (the card instead of the goal
   card; the first arrival's snack), M1's Featured tests, and the browser checks (the first session's snack, M1's
   1–3 picks, D48's card).
+
+### PR B — small rewards, said at once (`d49/b-micro-rewards`)
+- **A placement pops** (`board.css`, `Board.flash`): the success ring on a correct tile pops out (from 72% to a hair
+  over full size) and fades in 0.48 s (was a 0.72 s fade). Overlay only: the tile's `::before`; the animal never
+  moves (D11).
+- **A finished line ripples** (`Board.ripple`): instead of one 0.95 s wash, each tile of the finished row, column or
+  color glows for 0.3 s, starting from the tile just placed and spreading outward 30 ms per tile of distance (the
+  farthest starts by 150 ms), so the whole line is done in about 0.4 s. Two or three lines at once ripple together.
+  Under reduced motion every tile glows at once. On one-animal boards the color's own glow (0.52 s, was 0.7 s) is
+  skipped when the move finished the color as a line (the ripple says it).
+- **What a win earned, beside the success** (`showWin`): the first view of every win (ordinary and milestone) shows
+  **+35 Paw Coins** as a small pill that pops in under the stars or the hero; an errand finished by the solve says so
+  (*Errand done: Solve any board. Claim it on Journey.*); a Daily adds a warm line about tomorrow's board (*Tomorrow's
+  puzzle, a 6×6, arrives Thursday. See you then!*), with nothing to keep up. The fold's summary lists only what the
+  fold alone holds (no coins there any more).
+- **One puzzle away, it shows** (`components/eager.ts`): wherever the next arrival is pictured (the win sheet's line,
+  the Journey's goal, a home's *Coming home* row, the World's card, the next goal), an animal one puzzle away beams
+  instead of peeking shyly, with a soft pulsing halo and an **Almost home!** tag, and the line says *Truffle is one
+  puzzle away!*. A face and a glow only; no halo pulse under reduced motion.
+- **A new decoration arrives** (`components/decorReveal.ts`): no "purchase successful" toast. Bought on its card, the
+  card stays open: *It's yours! It's out in the Meadow Farm, and your animals can't wait to try it.* with **See it in
+  the Meadow Farm** as its one main button (and Done). The next time that home's scene is drawn with the piece out
+  (straight away, or the next visit this session), it pops in with a ring of little stars and a soft chime, and a
+  moment later one of the home's animals goes and uses it (the decoration's own activity: a swing, a splash, a chase);
+  a piece with nothing to do gets a curious look from the nearest animal. Bought from the try-on banner (PR A), it
+  arrives right there. Never over a welcome, a stage's dance or a try-on; once per purchase; under reduced motion the
+  sparkles only. Nothing is decided by it: the purchase already happened.
+- Tests: `test/unit/d49Rewards.dom.test.ts` (the ripple's order, timing and reduced-motion form, overlay-only CSS;
+  eager portraits and the Farm's Almost home!; the bought card, See it, the arrival once, nothing on a second visit;
+  reduced motion). Updated: the D40 first-view test (coins in view, not in the fold's summary).

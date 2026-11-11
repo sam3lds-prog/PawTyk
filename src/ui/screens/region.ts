@@ -5,6 +5,7 @@
  * on its way (D35). The animals greet you when you arrive (a bigger hello right after a solve that helped).
  */
 
+import { arrivalPortrait } from '../components/eager';
 import { app } from '../../app/app';
 import { buildHereMessage, playMode } from '../../app/gameFlow';
 import { afterDecorChange } from '../../app/events';
@@ -16,7 +17,6 @@ import { sanctuaryDef, type RegionId } from '../../meta/catalogs/sanctuaries';
 import { isShown, owns, setShown } from '../../meta/sanctuary';
 import { activeSanctuary, arrivalProgress, isComplete, isOpen, markSeen, nextStage, regionChat, setActive, stageOf } from '../../meta/world';
 import { animalInfo, isHome, nextArrivalIn, type AnimalId } from '../../meta/animals';
-import { animalPortrait } from '../art/animals';
 import { localDateKey } from '../../game/dates';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
@@ -64,6 +64,7 @@ import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
 import { welcomeFlow } from '../components/welcomeCard';
+import { playReveals, takeReveals, type RevealHost } from '../components/decorReveal';
 import { cueFigure, figureNear, ringCued, selectFigure } from '../components/selection';
 
 /** How long a stage that just appeared glows (D40). */
@@ -283,7 +284,7 @@ export const regionScreen: ScreenDef = {
             const span = Math.max(1, coming.need - coming.from);
             const pct = Math.round(((coming.have - coming.from) / span) * 100);
             return `<div class="coming-home">
-              <span class="coming-home__art portrait is-shy">${animalPortrait(coming.next.id, 'idle')}</span>
+              ${arrivalPortrait(coming.next.id, coming.left, 'coming-home__art portrait')}
               <span class="coming-home__body"><span><b>${esc(a.name)} the ${esc(a.noun)}</b> is coming home${building ? ' and is on your boards' : ''}.</span>
                 <span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${coming.from}" aria-valuemax="${coming.need}" aria-valuenow="${coming.have}"><span style="width:${pct}%"></span></span>
                 <small class="num">${plural(coming.left, 'more puzzle')}${building ? '' : ' while you build here'}</small></span>
@@ -489,6 +490,19 @@ export const regionScreen: ScreenDef = {
       welcome = scheduleParade(scope, director, parades, { delay: app.reducedMotion ? 400 : 1100, waitFor: toysReady, after: offerOwed });
     else offerOwed();
     if (import.meta.env.DEV) (window as unknown as { __welcome?: unknown }).__welcome = welcome;
+    // D49 PR B: a decoration bought since the last look here arrives now (sparkles, then an animal uses it), once the
+    // scene has settled; never over a welcome or a try-on.
+    const revealHost: RevealHost = {
+      svg: () => el.querySelector<SVGSVGElement>('.sanctuary__scene svg'),
+      reducedMotion: () => app.reducedMotion,
+      playActivity: (d) => !!acts && !acts.busy && !!acts.play(d),
+      notice: (fid) => void life?.play(fid, 'look'),
+      timeout: (fn, ms) => scope.timeout(() => scope.alive && fn(), ms),
+    };
+    if (!welcoming && !groupDance && !tryOn && isOpen(app.save, id)) {
+      const ids = takeReveals(id);
+      if (ids.length) void toysReady().then(() => scope.timeout(() => scope.alive && director.owner === null && playReveals(revealHost, ids), app.reducedMotion ? 200 : 700));
+    }
     // Back from the Shop with food for someone here (D48 PR B): their card again, to feed them.
     const feedBack = takeFeedReturn(id);
     if (feedBack && isHome(app.save, feedBack as AnimalId)) scope.timeout(() => scope.alive && openCard(feedBack as FriendId), 350);
@@ -578,7 +592,8 @@ export const regionScreen: ScreenDef = {
     };
     /** What follows a purchase in the home itself (a decoration's animals try it at once). */
     const afterTryBuy = (t: NonNullable<typeof tryOn>) => {
-      if (t.kind === 'decor') scope.timeout(() => scope.alive && acts && !acts.busy && acts.play(t.id), app.reducedMotion ? 200 : 600);
+      // D49 PR B: bought where it stands: it arrives properly (sparkles, then an animal goes and uses it).
+      if (t.kind === 'decor') scope.timeout(() => scope.alive && playReveals(revealHost, [t.id]), app.reducedMotion ? 100 : 300);
     };
 
     scope.on(el, 'click', (e) => {

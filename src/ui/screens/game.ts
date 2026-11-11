@@ -16,13 +16,13 @@ import { app } from '../../app/app';
 import { noteBands, trackFirst } from '../../app/usage';
 import { playMode, restartGame } from '../../app/gameFlow';
 import { CAT, DOG, type Species } from '../../engine/types';
-import { fmtClock } from '../../game/dates';
-import { CUP_HEARTS, modeKey, nextAfterWin, rulesFor, type ModeRef } from '../../game/modes';
+import { addDaysKey, fmtClock } from '../../game/dates';
+import { CUP_HEARTS, dailyFor, modeKey, nextAfterWin, rulesFor, type ModeRef } from '../../game/modes';
 import { shareToast, showResultCard } from '../components/resultCard';
 import { shareText } from '../../services/share';
 import { shareLink } from '../../config/links';
 import { ITEM_CAP, itemBalance, pawPoints, rankFor, useItem } from '../../meta/items';
-import { modeShortTitle, modeTitle, type SpecVersion } from '../../game/puzzles';
+import { modeShortTitle, modeTitle, sizeFor, type SpecVersion } from '../../game/puzzles';
 import { difficultyReason, profileOf } from '../../game/grading';
 import { MARK, type HintInfo, type MoveResult, type Session, type Tool, type UnitRef } from '../../game/session';
 import { recordLoss, recordWin, type WinRecord } from '../../meta/progression';
@@ -54,7 +54,8 @@ import { FaceDirector, lookToward, type Clock } from '../animation/faceDirector'
 import type { ReactionMood } from '../animation/faceMachine';
 import { isPairLesson, isTutorial, levelTip, TUTORIAL_STEPS } from '../../meta/onboarding';
 import { EMPTY } from '../../engine/types';
-import { Board, type ErrorMark } from '../components/board';
+import { Board, PLACE_RING_MS, type ErrorMark } from '../components/board';
+import { arrivalPortrait, isEager } from '../components/eager';
 import { openSheet, toast, type SheetHandle } from '../components/sheet';
 import { actionOf, capitalize, esc, h, plural, qs } from '../dom';
 import { ICON } from '../icons';
@@ -672,17 +673,19 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       onMistake(r, c, res.placed);
     } else if (res.placed) {
       feel('place');
-      board.flash([[r, c]], 'is-fresh', 720);
+      // D49 PR B: a short pop of the success ring (overlay only, the animal never moves).
+      board.flash([[r, c]], 'is-fresh', PLACE_RING_MS);
       // The why (D39) is decided before the controls note can cover the coach line on a first placement.
       const why = whyLine(r, c, res.placed, res.completed ?? []);
       maybeControlsTip();
       // One-animal boards: the color this animal settles is done; its tiles glow for a beat (overlay only).
-      if (solo && !app.reducedMotion) board.flash(s.unitCells({ kind: 'region', index: s.puzzle.regions[r][c] }), 'is-glow', 700);
+      // D49 PR B: unless the move finished it as a line too (its ripple says so), a quick glow.
+      if (solo && !app.reducedMotion && !res.completed?.some((u) => u.kind === 'region')) board.flash(s.unitCells({ kind: 'region', index: s.puzzle.regions[r][c] }), 'is-glow', 520);
       const key = keyOf(r, c);
       const half = halfwayNow();
       if (res.completed?.length) {
         const units = res.completed;
-        onUnits(units, why);
+        onUnits(units, why, [r, c]);
         // The new pet and its partner in the completed line beam with pride; when one move finishes two or three lines
         // at once, every pet in them joins in (four faces at most, D39).
         const cells = units.flatMap((u) => s.unitCells(u));
@@ -752,11 +755,12 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     }
   }
 
-  function onUnits(units: UnitRef[], why: string | null = null): void {
+  function onUnits(units: UnitRef[], why: string | null = null, from: [number, number] | null = null): void {
     feel(units.length > 1 ? 'lines' : 'line');
     const cells: Array<[number, number]> = [];
     for (const u of units) cells.push(...s.unitCells(u));
-    board.flash(cells, 'is-glow', 950);
+    // D49 PR B: a quick ripple from the tile just placed (about 0.4 s), not a long wash.
+    board.ripple(cells, from, app.reducedMotion);
     const u = units[0];
     const name = u.kind === 'region' ? `The ${board.regionName(u.index)} region` : `${capitalize(u.kind)} ${u.index + 1}`;
     const done = units.length > 1 ? `${name} and ${units.length - 1} more are complete${units.length > 2 ? ' at once!' : '.'}` : `${name} is complete.`;
@@ -1001,10 +1005,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       let reactTo: { key: string; mood: ReactionMood } | null = null;
       if (info) {
         feel('place');
-        board.flash([[info.r, info.c]], 'is-fresh', 720);
+        board.flash([[info.r, info.c]], 'is-fresh', PLACE_RING_MS);
         const units = s.completedUnitsAt(info.r, info.c);
         coach(friendlyReason(info.reason));
-        if (units.length) onUnits(units);
+        if (units.length) onUnits(units, null, [info.r, info.c]);
         reactTo = { key: keyOf(info.r, info.c), mood: 'happy' };
       }
       paint();
@@ -1536,8 +1540,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const pct0 = sameFriend ? Math.round(((before.have - before.from) / Math.max(1, before.need - before.from)) * 100) : pct;
     const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
     const step = sameFriend && before.left !== p.left ? `${esc(a.name)} the ${esc(a.noun)}: <span class="num">${before.left} → ${p.left}</span> ${p.left === 1 ? 'puzzle' : 'puzzles'} away` : `${esc(a.name)} the ${esc(a.noun)} is on the way: ${away}`;
-    const head = grew ? `<b class="win-closer">One puzzle closer to ${esc(a.name)}!</b>` : '';
-    return `${plus}<div class="win-next-friend" style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body">${head}<span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span>${grew ? `<small>${step}</small>` : `<span>${step.replace(/^([^:]+?)( is on the way|:)/, '<b>$1</b>$2')}</span>`}</span></div>`;
+    // D49 PR B: one puzzle away, the line and the portrait say so (it beams, with a halo and "Almost home!").
+    const head = grew ? `<b class="win-closer">${isEager(p.left) ? `${esc(a.name)} is one puzzle away!` : `One puzzle closer to ${esc(a.name)}!`}</b>` : '';
+    return `${plus}<div class="win-next-friend" style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body">${head}<span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span>${grew ? `<small>${step}</small>` : `<span>${step.replace(/^([^:]+?)( is on the way|:)/, '<b>$1</b>$2')}</span>`}</span></div>`;
   }
 
   /**
@@ -1554,7 +1559,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         const a = animalInfo(p.next.id);
         const pct = Math.round(((p.have - p.from) / Math.max(1, p.need - p.from)) * 100);
         const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
-        return `<div class="win-next-friend" data-up-next style="--accent:${def.accent}"><span class="win-next-friend__art is-shy">${animalPortrait(p.next.id, 'idle')}</span><span class="win-growth__body"><span>Up next at the ${esc(def.short)}: <b>${esc(a.name)} the ${esc(a.noun)}</b>, ${away}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span style="width:${pct}%"></span></span></span></div>`;
+        return `<div class="win-next-friend" data-up-next style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body"><span>Up next at the ${esc(def.short)}: <b>${esc(a.name)} the ${esc(a.noun)}</b>, ${away}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span style="width:${pct}%"></span></span></span></div>`;
       }
       if (st) {
         const left = st.need - st.have;
@@ -1637,6 +1642,19 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           : `All three stars here. Best time ${fmtClock(app.save.journey.bestTimes[`L${mode.level}`] ?? 0)}.`;
     return `<p class="win-replay">${ICON.target}${esc(text)}</p>`;
   }
+  /** D49 PR B: after a Daily, tomorrow's board in a few warm words (its size and day; nothing to keep up). */
+  function dailyTomorrowMarkup(dateKey: string): string {
+    const next = addDaysKey(dateKey, 1);
+    let size = 0;
+    try {
+      size = sizeFor(dailyFor(next, app.save.journey.nextLevel));
+    } catch {
+      size = 0;
+    }
+    const day = new Date(`${next}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long' });
+    return `<p class="win-tomorrow" data-win-tomorrow>${ICON.calendar}<span>Tomorrow's puzzle${size ? `, a ${size}×${size},` : ''} arrives ${esc(day)}. See you then!</span></p>`;
+  }
+
   /** Whether this newcomer is the first animal ever to come home (nobody else lives anywhere yet): D41's first arrival. */
   function isFirstArrival(id: AnimalId): boolean {
     const inv = app.save.inventory;
@@ -1705,6 +1723,13 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
             <div class="stat"><div class="stat__v">${s.mistakes}</div><div class="stat__k">${s.mistakes === 1 ? 'mistake' : 'mistakes'}</div></div>
             <div class="stat"><div class="stat__v">${s.hintsUsed}</div><div class="stat__k">${s.hintsUsed === 1 ? 'hint' : 'hints'}</div></div>
           </div>`;
+    // D49 PR B: what this solve earned, next to the success itself (not only in the fold): the coins, an errand done,
+    // and after a Daily, a warm word about tomorrow's.
+    const coinLine = rewards.coins && mode.kind !== 'cup' ? `<p class="win-coins" data-win-coins>${ICON.coin}<b class="num">+${rewards.coins}</b><span>Paw Coins</span></p>` : '';
+    const errandLine = news.missions.length
+      ? `<p class="win-errand" data-win-errand>${ICON.check}<span>${news.missions.length === 1 ? `Errand done: ${esc(news.missions[0].title)}. Claim it on Journey.` : `${news.missions.length} errands done. Claim them on Journey.`}</span></p>`
+      : '';
+    const tomorrowLine = mode.kind === 'daily' && rec.newDaily ? dailyTomorrowMarkup(mode.dateKey) : '';
     // What the next puzzle brings closer: the step this solve took, or (a replay, a finished home) what's up next.
     const nextLine = growth?.growth ? nextFriendMarkup(growth.sanctuary, true, step.friendBefore) : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save));
     const redirect = growth?.growth && growth.redirectedFrom ? `<p class="win-note muted">${ICON.info}The ${esc(sanctuaryDef(growth.redirectedFrom).name)} is finished, so this board helped the ${esc(sanctuaryDef(growth.sanctuary).short)} instead.</p>` : '';
@@ -1713,8 +1738,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // badges, coins, points, missions) is one tap away in a fold under the buttons, with what it holds in its summary.
     const first =
       milestone && hero && growth
-        ? `${heroMarkup(growth, hero)}${streak ? `<div class="win-badges">${streak}</div>` : ''}${growthMarkup(growth, hero)}`
-        : `${winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}${stars}${streak ? `<div class="win-badges">${streak}</div>` : ''}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}`;
+        ? `${heroMarkup(growth, hero)}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${growthMarkup(growth, hero)}${errandLine}`
+        : `${winPet ? `<div class="win-pet">${animalSvg(winPet, { mood: 'proud' })}</div>` : ''}${stars}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}${errandLine}`;
     const details = [
       milestone ? stars : '',
       stats,
@@ -1729,10 +1754,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     ].join('');
     // The fold's summary says what's inside, so nothing is hidden by surprise.
     const holds: string[] = [];
-    if (rewards.coins) holds.push(`+${rewards.coins} coins`);
+    // The coins and an errand done are already in the first view (D49 PR B): the fold lists what it alone holds.
+    if (rewards.coins && !coinLine) holds.push(`+${rewards.coins} coins`);
     if (rewards.points) holds.push(`+${rewards.points} Paw Points`);
     if (news.achievements.length) holds.push(plural(news.achievements.length, 'badge'));
-    if (news.missions.length) holds.push(news.missions.length === 1 ? 'a mission done' : `${news.missions.length} missions done`);
     if (rewards.decor.length) holds.push(rewards.decor.length === 1 ? 'a gift' : `${rewards.decor.length} gifts`);
     if (rewards.lives) holds.push(`+${plural(rewards.lives, 'extra life', 'extra lives')}`);
     if (rewards.hints) holds.push(`+${plural(rewards.hints, 'hint')}`);

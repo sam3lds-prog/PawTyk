@@ -7,7 +7,7 @@ import { app } from '../../app/app';
 import { animalInfo, type AnimalId } from '../../meta/animals';
 import { sanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { nextGoal, type NextGoal } from '../../meta/world';
-import { animalPortrait } from '../art/animals';
+import { arrivalPortrait } from './eager';
 import { esc, h } from '../dom';
 import { ICON } from '../icons';
 
@@ -29,7 +29,7 @@ export function nextGoalLine(g: NextGoal): string {
 export function nextGoalMarkup(g: NextGoal): string {
   const art =
     g.kind === 'animal'
-      ? `<span class="next-goal__art portrait is-shy">${animalPortrait(g.id as AnimalId, 'idle')}</span>`
+      ? arrivalPortrait(g.id as AnimalId, g.left, 'next-goal__art portrait')
       : `<span class="next-goal__art next-goal__art--icon">${g.kind === 'stage' ? ICON.sprout : ICON.globe}</span>`;
   return `<section class="next-goal card" data-next-goal aria-label="Next goal" style="--accent:${sanctuaryDef(g.where).accent}">
     ${art}

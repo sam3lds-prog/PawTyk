@@ -172,3 +172,178 @@
 .try-banner__actions {
   flex-wrap: wrap;
 }
+
+/* ------------------------------------------------------------------ D49 PR B: small rewards, said at once */
+
+/* What a win earned, beside the success itself. */
+.win-coins {
+  margin: 4px auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gold, #d5a04b) 16%, var(--surface));
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--t-sm);
+  animation: coin-pop 420ms var(--ease) 260ms both;
+}
+.win-coins .ico {
+  width: 20px;
+  height: 20px;
+}
+.win-coins b {
+  font-size: var(--t-md);
+}
+.win-coins span {
+  color: var(--muted-ink);
+  font-weight: 700;
+}
+@keyframes coin-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.win-errand,
+.win-tomorrow {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted-ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-align: center;
+}
+.win-errand .ico,
+.win-tomorrow .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--brand);
+}
+:root[data-motion='reduce'] .win-coins {
+  animation: none;
+}
+
+/* One puzzle away: the next animal beams, with a soft pulsing halo and a tag (a face and a glow; it never moves). */
+.is-eager {
+  position: relative;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--brand)) 40%, transparent);
+  animation: eager-halo 1.6s ease-in-out infinite;
+}
+@keyframes eager-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--brand)) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent, var(--brand)) 18%, transparent);
+  }
+}
+/* The tag only where the portrait has room for it (the win sheet's line); elsewhere the words say it. */
+.eager-tag {
+  display: none;
+}
+.win-next-friend__art .eager-tag {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  translate: -50% 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--coral, #e5546c);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+:root[data-motion='reduce'] .is-eager {
+  animation: none;
+}
+
+/* A decoration arriving in its home: it pops in, with a ring of little stars. */
+.sanctuary__scene [data-decor].is-revealing {
+  animation: reveal-pop 520ms var(--ease) both;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes reveal-pop {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.sp-reveal-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: reveal-star 820ms var(--ease) both;
+}
+@keyframes reveal-star {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(0) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.8);
+  }
+}
+.sp-reveal.is-still .sp-reveal-star {
+  animation: reveal-star-still 820ms linear both;
+}
+@keyframes reveal-star-still {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+:root[data-motion='reduce'] .sanctuary__scene [data-decor].is-revealing {
+  animation: none;
+}
+
+/* Just bought, on its card. */
+.bought-line {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--gold, #d5a04b) 14%, var(--surface));
+}
+.bought-line .ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--gold, #d5a04b);
+}
