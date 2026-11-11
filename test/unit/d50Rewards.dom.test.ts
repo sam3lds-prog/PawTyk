@@ -215,6 +215,8 @@ describe('the welcome card in focus', () => {
     expect(snack.disabled).toBe(true);
     expect(cont.disabled).toBe(true);
     expect(document.querySelector('[data-welcome-status]')?.textContent).toMatch(/Truffle is having the snack/);
+    // Focus waits on that line (a disabled button can't hold it): a keyboard or screen reader stays on the card.
+    expect(document.activeElement?.hasAttribute('data-welcome-status')).toBe(true);
     expect(document.querySelector('[data-act="welcome-look"]')).toBeNull();
     // A click dispatched at the disabled buttons (what a keyboard or screen reader would do if it could), and the
     // progress card's own Play: still on the Farm, and still one snack.

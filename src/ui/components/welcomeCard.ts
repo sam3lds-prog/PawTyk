@@ -89,7 +89,7 @@ export function welcomeCardMarkup(animal: AnimalId, home: SanctuaryId, state: We
       ? cont
       : eating
         ? `<button class="btn btn--block" data-act="welcome-snack" disabled>${ICON.heart}Give ${esc(a.name)} a welcome snack</button>
-           <small class="welcome-card__note" role="status" data-welcome-status>${esc(a.name)} is having the snack…</small>
+           <small class="welcome-card__note" role="status" tabindex="-1" data-welcome-status>${esc(a.name)} is having the snack…</small>
            ${cont}`
         : snack
           ? `<button class="btn btn--block" data-act="welcome-snack" data-autofocus>${ICON.heart}Give ${esc(a.name)} a welcome snack</button>
@@ -198,9 +198,11 @@ export function welcomeFlow(scope: Scope, host: WelcomeFlowHost): WelcomeFlow {
       track('welcome_snack', { home: host.home, gift: r.gift, favorite: r.favorite, from });
       track('animal_fed', { food: r.food, favorite: r.favorite, welcome: true });
       const fed = { food: r.food, favorite: r.favorite };
-      // The card says it's happening (its buttons disabled) while the scene plays the meal.
+      // The card says it's happening (its buttons disabled) while the scene plays the meal. Focus waits on that line
+      // (a disabled button can't hold it), so a keyboard or screen reader stays on the card and hears what's happening.
       card = { animal: who, state: 'offer', eating: true };
-      draw();
+      const busyCard = draw();
+      if (from === 'card') busyCard?.querySelector<HTMLElement>('[data-welcome-status]')?.focus({ preventScroll: true });
       let finished = false;
       const finish = () => {
         if (finished || !scope.alive) return;
