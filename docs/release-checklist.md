@@ -462,6 +462,16 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] Airplane mode: the video can't load, the message says so, nothing charged
 - [ ] After ten videos in a day: no button, "more tomorrow"
 
+**M3 — shareable moments** (on an iPhone: the share sheet's results differ by app)
+- [ ] Solve a Daily, open the fold, Share: the card shows the date, hearts, time and streak, no board; Share →
+      Messages and Save Image both work; cancelling says nothing
+- [ ] With `VITE_GAME_URL` set to the live landing page: the message ends with the link (once); the page opens in
+      Safari; without it, no link anywhere
+- [ ] A new animal's welcome: after it, "Share <name>'s arrival" under the scene; it opens photo mode on them
+- [ ] First postcard of the week: +30 Paw Coins shown on it; a second postcard, a relaunch: nothing more; next Monday
+      it's offered again
+- [ ] Photos permission denied: Save Image fails with the Settings hint, nothing else breaks
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

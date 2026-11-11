@@ -2111,3 +2111,44 @@ VIP pass, product ids unchanged, the Welcome Pack's offer and dismissal untouche
   are unchanged.
 - Tests: `rewardedM2.dom.test` (the card's wording, no button without videos or after the cap, watched, twice,
   cancelled, failed, the cap, staying on the item, a trick never learned by watching).
+
+### M3 — shareable moments, a game link, and the weekly Photo Memory
+- **Audit first**: postcards, photo mode and the system share sheet (D47 PR 5, `services/share.ts`) were reused, not
+  duplicated. D48 changed sharing only through photo framing (PR A). The win sheet's Share was text only.
+- **A Daily result to share**: the win sheet's optional Share (in its fold, as before) now shows a card
+  (`components/resultCard.ts`) with PawTyk's mark, *Daily Puzzle*, the date, hearts left, the time, the streak, a
+  decorative row of paws and sparkles, and "Can you solve today's puzzle?" (with the link when configured), plus the
+  same in a few lines of text. Spoiler-free by construction: the card and text are made from five fields only (the
+  date, hearts, max hearts, seconds, streak); anything else is refused (a test passes a board and expects an error).
+  The pattern comes from the date alone: the same for everyone that day. Other boards still share a line of text.
+- **An arrival keepsake**: after a newcomer's welcome celebration has played (never during it, never on the win sheet,
+  so nothing sits beside the Welcome Pack offer), the row under the scene offers **Share <name>'s arrival**: photo mode
+  framed on the newcomer, the card signed "<name> came home to the <home>", shared with "Meet my new PawTyk friend…
+  Come build a cozy animal sanctuary with me." (and the link). The player still chooses the framing, the shape and
+  whether to sign it. Homes with photo mode only (the Pet Garden has none yet).
+- **Postcards** keep their native share and save; their share now carries a line of text (and the link when set).
+  No account, no contacts, nothing about the player on the card or in the text.
+- **The game link** (`config/links.ts`): `VITE_GAME_URL`, a public https page, optional. Refused: http, credentials,
+  ports, localhost and private networks, `.local`/`.test`-style names, staging/preview/dev labels and tunnels (a real
+  `.dev` domain is fine). Unset (as in this repo): shared without a link, and nothing is invented; no App Store link is
+  guessed. Links carry only `?s=daily|arrival|postcard|result`, so the landing page's hosting logs can count visits
+  from shares without identifying anyone. No deep link: the landing page is the fallback for every device.
+  `release:check` refuses a non-public `VITE_GAME_URL` and reports the link in use. The site's home page gains a "Play
+  PawTyk" section: the App Store link only when `VITE_APP_STORE_URL` is a real listing, else "coming to the App Store".
+- **The share service** (`services/share.ts`): a picture can go with text and a link (the link given once); text can
+  be shared on its own (`shareText`: the system sheet, else copied, else failed). Results are what the platform
+  reports; the app never says a post was made (a finished share sheet gets no toast at all).
+- **Photo Memory** (`meta/photoMemory.ts`): "Capture a memory this week": the week's first postcard earns 30 Paw
+  Coins, for making it (saved, shared or kept private alike). Once per local Monday-to-Sunday week, by one coin-ledger
+  entry named for the week (`photo-memory:<monday>`), so repeated taps, retried callbacks and reloads can't grant it
+  twice. No streak, nothing lost by skipping a week, coins only. Shown in photo mode, on the postcard that earns it,
+  and beside the weekly errand on Journey (nothing to claim).
+- **Analytics** (opt-in as before): `share_opened`, `share_started`, `share_result` (the platform's report),
+  `photo_memory_claimed`; never a recipient, contact or account.
+- **Compliance**: no reward for posting, tagging, sharing a particular post, reviewing or rating; the only sharing-
+  adjacent reward is for making a postcard, which needs no share. Before release: re-read App Store Review Guidelines
+  (3.1, 3.2.2, 5.6.3) and the Facebook/Instagram promotion rules (summarised in `docs/referrals.md`, M4).
+- Tests: `shareM3.dom.test` (spoiler-free card and text, the date-only pattern, link validation and none configured,
+  browser, native and copy shares, cancels and failures, wording that never claims a post, one reward per week,
+  week boundaries, reload, a skipped week, the photo mode reward once, the keepsake framing and caption, analytics
+  off and no recipients, nothing opening by itself after a welcome).

@@ -18,6 +18,9 @@ import { playMode, restartGame } from '../../app/gameFlow';
 import { CAT, DOG, type Species } from '../../engine/types';
 import { fmtClock } from '../../game/dates';
 import { CUP_HEARTS, modeKey, nextAfterWin, rulesFor, type ModeRef } from '../../game/modes';
+import { shareToast, showResultCard } from '../components/resultCard';
+import { shareText } from '../../services/share';
+import { shareLink } from '../../config/links';
 import { ITEM_CAP, itemBalance, pawPoints, rankFor, useItem } from '../../meta/items';
 import { modeShortTitle, modeTitle, type SpecVersion } from '../../game/puzzles';
 import { difficultyReason, profileOf } from '../../game/grading';
@@ -1828,18 +1831,21 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     });
   }
 
+  /**
+   * The win sheet's optional Share (never offered by itself, never in the way of play). A Daily: its spoiler-free card
+   * (M3: the day, hearts left, time and streak; never the board). Other boards: a line of text. With the game's public
+   * link when one is configured.
+   */
   async function shareResult(seconds: number): Promise<void> {
-    const what = mode.kind === 'daily' ? `Daily ${mode.dateKey}` : modeTitle(mode);
-    const text = `PawTyk ${what}: solved in ${fmtClock(seconds)}${s.mistakes === 0 ? ' with no mistakes' : ''}.`;
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else {
-        await navigator.clipboard.writeText(text);
-        coach('Result copied.');
-      }
-    } catch {
-      /* cancelled */
+    if (mode.kind === 'daily') {
+      await showResultCard(scope, { dateKey: mode.dateKey, hearts: rules.hearts ? s.hearts : null, maxHearts: s.maxHearts, seconds, streak: app.save.daily.streak });
+      return;
     }
+    const text = `PawTyk ${modeTitle(mode)}: solved in ${fmtClock(seconds)}${s.mistakes === 0 ? ' with no mistakes' : ''}.`;
+    track('share_started', { surface: 'result' });
+    const r = await shareText(text, shareLink('result'));
+    track('share_result', { surface: 'result', result: r });
+    shareToast(r);
   }
 
   async function maybeInterstitial(): Promise<void> {

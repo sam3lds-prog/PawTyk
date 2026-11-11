@@ -86,11 +86,18 @@ const support = page(
 <p>Read our <a href="privacy.html">privacy policy</a>.</p>`,
 );
 
+// M3: the page shared cards link to. The App Store link only once there is a listing (never guessed); until then it says so.
+const storeUrl = /^https:\/\/apps\.apple\.com\/[^\s]+\/id\d+/.test((env.VITE_APP_STORE_URL ?? '').trim()) ? env.VITE_APP_STORE_URL!.trim() : null;
 const home = page(
   'PawTyk · a cozy logic puzzle',
   'PawTyk: one animal in every row, column and color. Solve puzzles, and sanctuaries grow.',
   `<h1>PawTyk</h1>
 <p>A cozy logic puzzle. Put one animal in every row, column and color. Every puzzle you solve grows a sanctuary, and its animals come home.</p>
+<section class="card">
+<h2>Play PawTyk</h2>
+${storeUrl ? `<p><a href="${esc(storeUrl)}">Get PawTyk on the App Store</a> for iPhone. It's free to play, with no account.</p>` : `<p>PawTyk is coming to the App Store for iPhone. It will be free to play, with no account.</p>`}
+<p>A friend sent you a Daily Puzzle result or a postcard? Everyone gets the same Daily Puzzle each day, so you can compare your hearts and time.</p>
+</section>
 <p><a href="support.html">Support</a> · <a href="privacy.html">Privacy policy</a></p>`,
 );
 

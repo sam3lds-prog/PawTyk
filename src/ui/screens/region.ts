@@ -41,7 +41,7 @@ import { sceneCloseUps } from '../components/closeup';
 import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
-import { openPhotoMode, type PhotoMode } from '../components/photoMode';
+import { openPhotoMode, type PhotoMode, type PhotoTarget } from '../components/photoMode';
 import { trackFirst } from '../../app/usage';
 import { captureScene } from '../components/sceneCapture';
 import { photoButtonMarkup, photoFrames } from '../components/photoFrames';
@@ -104,6 +104,10 @@ export const regionScreen: ScreenDef = {
     root.appendChild(el);
     // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved.
     const tryOn = route.screen === 'region' ? tryOnOf(route, id) : null;
+    /** M3: the newcomer whose arrival can be kept and shared, once their welcome has played (for the rest of the visit). */
+    let keepsake: AnimalId | null = null;
+    const keepsakeMarkup = () =>
+      keepsake ? `<button class="scene-replay scene-share" data-act="share-arrival">${ICON.share}Share ${esc(animalInfo(keepsake).name)}'s arrival</button>` : '';
 
     // Tricks: a tray under the scene for the animal you tap (kept across re-renders).
     const trayHost = h(`<div class="trick-tray-slot" hidden></div>`);
@@ -327,6 +331,7 @@ export const regionScreen: ScreenDef = {
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
           ${parades.replayMarkup()}
+          ${keepsakeMarkup()}
           <button class="scene-tricks" data-act="tricks" aria-controls="${trayHost.id}" aria-expanded="${tray.isOpen}" hidden>${trickBadge('sparkle')}Tricks</button>
         </div>
         ${freshStage && def.stages[freshStage] ? `<p class="stage-news${stageNewsShown ? '' : ' is-entering'}" data-stage-news style="--accent:${def.accent}">${ICON.sprout}<span><b>New at the ${esc(def.short)}: ${esc(def.stages[freshStage].name)}</b> ${esc(def.stages[freshStage].change)}.</span></p>` : ''}
@@ -446,6 +451,8 @@ export const regionScreen: ScreenDef = {
             goalShown = true;
             showNextGoal(el, id, true);
             offerStarterGift(scope, id, render);
+            // M3: after the celebration (never during it, never on the win sheet): an optional keepsake to share.
+            offerKeepsake(who);
           },
         });
       } else scope.timeout(() => life?.play(`friend:${newcomers[0]}`, 'greet'), app.reducedMotion ? 0 : 900);
@@ -465,6 +472,51 @@ export const regionScreen: ScreenDef = {
     if (feedBack && isHome(app.save, feedBack as AnimalId)) scope.timeout(() => scope.alive && openCard(feedBack as FriendId), 350);
     // The welcome has played: coming back here (Back from a board, a refresh) opens the place plainly (D40 review).
     if (route.welcome?.length || route.fresh) app.router.settle({ screen: 'region', id });
+    /**
+     * Photo mode on this home (D47 PR 5). M3: `frame` starts it on one animal, and `keepsake` makes the card a keepsake
+     * of a moment (signed with its line, shared with its words).
+     */
+    function openPhoto(o: { frame?: string; keepsake?: PhotoTarget['keepsake'] } = {}): void {
+      const figure = el.querySelector<HTMLElement>('.sanctuary__scene');
+      const svgEl = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
+      if (!figure || !svgEl || photo?.open) return;
+      director.claim('photo');
+      if (tray.isOpen) tray.close();
+      const was = camera.view;
+      const toys = s3d.drawing;
+      // The controls sit just under the scene, so the whole picture stays in view.
+      const dock = document.createElement('div');
+      dock.className = 'photo-dock';
+      figure.after(dock);
+      const p = openPhotoMode(
+        scope,
+        figure,
+        {
+          place: def.name,
+          home: id,
+          kind: toys ? '3d' : '2d',
+          accent: def.accent,
+          frames: photoFrames(camera, svgEl),
+          capture: () => captureScene(svgEl, { width: 2160, toys: s3d.drawing ? () => s3d.snapshot() : null }),
+          ...(o.keepsake ? { keepsake: o.keepsake } : {}),
+        },
+        { dock, frame: o.frame },
+      );
+      photo = p;
+      void p.done.then(() => {
+        dock.remove();
+        if (photo === p) photo = null;
+        if (scope.alive) void camera.moveTo(was, 500);
+        el.querySelector<HTMLElement>(o.keepsake ? '[data-act="share-arrival"]' : '[data-act="photo"]')?.focus({ preventScroll: true });
+      });
+    }
+    function offerKeepsake(who: string): void {
+      if (!isOpen(app.save, id) || !isHome(app.save, who as AnimalId)) return;
+      keepsake = who as AnimalId;
+      const under = el.querySelector('.sanctuary__under');
+      if (under && !under.querySelector('[data-act="share-arrival"]')) under.insertAdjacentHTML('beforeend', keepsakeMarkup());
+    }
+
     // M1: a trick tried on: one of the home's animals plays it, once the toys are there (again on request). A preview,
     // never an unlock; a group act brings in its partners as it would for real.
     const playTry = () => {
@@ -492,33 +544,18 @@ export const regionScreen: ScreenDef = {
         if (figP) life?.tap(figP);
         return;
       }
-      if (t.closest('[data-act="photo"]')) {
-        const figure = el.querySelector<HTMLElement>('.sanctuary__scene');
-        const svgEl = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
-        if (!figure || !svgEl) return;
-        director.claim('photo');
-        if (tray.isOpen) tray.close();
-        const was = camera.view;
-        const toys = s3d.drawing;
-        // The controls sit just under the scene, so the whole picture stays in view.
-        const dock = document.createElement('div');
-        dock.className = 'photo-dock';
-        figure.after(dock);
-        const p = openPhotoMode(scope, figure, {
-          place: def.name,
-          home: id,
-          kind: toys ? '3d' : '2d',
-          accent: def.accent,
-          frames: photoFrames(camera, svgEl),
-          capture: () => captureScene(svgEl, { width: 2160, toys: s3d.drawing ? () => s3d.snapshot() : null }),
-        }, { dock });
-        photo = p;
-        void p.done.then(() => {
-          dock.remove();
-          if (photo === p) photo = null;
-          if (scope.alive) void camera.moveTo(was, 500);
-          el.querySelector<HTMLElement>('[data-act="photo"]')?.focus({ preventScroll: true });
+      if (t.closest('[data-act="share-arrival"]') && keepsake) {
+        // M3: a keepsake of the arrival: photo mode framed on the newcomer, signed with their welcome.
+        const a = animalInfo(keepsake);
+        track('share_opened', { surface: 'arrival_button' });
+        openPhoto({
+          frame: `a:${a.name}`,
+          keepsake: { caption: `${a.name} came home to the ${def.short}`, text: `Meet my new PawTyk friend, ${a.name} the ${a.noun}! 🐾 Come build a cozy animal sanctuary with me.`, source: 'arrival' },
         });
+        return;
+      }
+      if (t.closest('[data-act="photo"]')) {
+        openPhoto();
         return;
       }
       if (parades.onClick(t)) return;

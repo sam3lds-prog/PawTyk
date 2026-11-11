@@ -17,6 +17,9 @@ import { app } from '../../app/app';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
 import { shareImage, type ShareResult } from '../../services/share';
+import { shareLink } from '../../config/links';
+import { PHOTO_MEMORY_COINS, claimPhotoMemory, photoMemoryDone } from '../../meta/photoMemory';
+import { shareToast } from './resultCard';
 import { esc, h } from '../dom';
 import { ICON } from '../icons';
 import type { Scope } from '../router';
@@ -46,6 +49,11 @@ export interface PhotoTarget {
   frames: PhotoFrame[];
   /** The picture as it is now, or null if it can't be taken. */
   capture(): Promise<HTMLCanvasElement | null>;
+  /**
+   * M3: a keepsake of a moment (an animal's arrival): the line signed on the card in place of the home's name, and
+   * the words that go with it when shared.
+   */
+  keepsake?: { caption: string; text: string; source: 'arrival' };
 }
 
 export interface PhotoMode {
@@ -65,11 +73,12 @@ const SHUTTER_ICON = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidde
  * Opens photo mode over `host` (the scene's figure, or the walk). With `dock`, the controls sit there (under a small
  * scene) instead of over the picture.
  */
-export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, o: { dock?: HTMLElement } = {}): PhotoMode {
+export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, o: { dock?: HTMLElement; frame?: string } = {}): PhotoMode {
   const scope = parent.child();
   let orientation: Orientation = 'landscape';
   let signed = true;
-  let frame = t.frames[0]?.id ?? null;
+  // M3: a keepsake starts framed on its animal.
+  let frame = (o.frame && t.frames.find((f) => f.id === o.frame)?.id) || (t.frames[0]?.id ?? null);
   let busy = false;
   let isOpen = true;
   let resolve!: () => void;
@@ -97,13 +106,17 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
             <button class="photo-chip" role="radio" aria-checked="false" data-orient="portrait">Portrait</button>
           </div>
           <button class="photo-shutter" data-act="photo-take" aria-label="Take the photo">${SHUTTER_ICON}</button>
-          <label class="photo-sign"><input type="checkbox" data-photo-sign checked /> <span>PawTyk &amp; ${esc(t.place)}</span></label>
+          <label class="photo-sign"><input type="checkbox" data-photo-sign checked /> <span>PawTyk &amp; ${esc(t.keepsake?.caption ?? t.place)}</span></label>
         </div>
+        <p class="photo-mode__memory muted" data-photo-memory>${memoryLine()}</p>
       </div>
       <div class="photo-mode__flash" data-photo-flash aria-hidden="true"></div>
     </div>`);
   host.appendChild(ui);
   host.classList.add('is-photo');
+  function memoryLine(): string {
+    return photoMemoryDone(app.save) ? `${ICON.check}This week's Photo Memory is done.` : `${ICON.coin}Photo Memory: this week's first postcard earns ${PHOTO_MEMORY_COINS} Paw Coins. Sharing it is up to you.`;
+  }
   const panel = ui.querySelector<HTMLElement>('.photo-mode__panel')!;
   if (o.dock) {
     panel.classList.add('is-docked');
@@ -174,22 +187,30 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
         toast("This picture couldn't be taken. Try again in a moment.");
         return;
       }
-      const card = composePostcard(shot, { orientation, signed, place: t.place, logo, accent: t.accent, focus: current()?.focus?.() });
+      const card = composePostcard(shot, { orientation, signed, place: t.keepsake?.caption ?? t.place, logo, accent: t.accent, focus: current()?.focus?.() });
       shot.width = 0;
       if (!card) {
         toast("This picture couldn't be made on this device.");
         return;
       }
       photoStats.made++;
-      track('postcard_created', { home: t.home, kind: t.kind, orientation, signed, frame: frame ?? 'view' });
-      await preview(card);
+      track('postcard_created', { home: t.home, kind: t.kind, orientation, signed, frame: frame ?? 'view', keepsake: t.keepsake?.source ?? 'none' });
+      // M3: this week's first postcard earns its coins, whatever the player then does with it.
+      const coins = claimPhotoMemory(app.save);
+      if (coins) {
+        app.persist();
+        track('photo_memory_claimed', { coins });
+        const m = ui.querySelector('[data-photo-memory]') ?? panel.querySelector('[data-photo-memory]');
+        if (m) m.innerHTML = memoryLine();
+      }
+      await preview(card, coins);
     } finally {
       busy = false;
     }
   }
 
   /** The postcard, and what to do with it. */
-  async function preview(card: HTMLCanvasElement): Promise<void> {
+  async function preview(card: HTMLCanvasElement, memoryCoins = 0): Promise<void> {
     const blob = await postcardBlob(card);
     card.width = 0;
     photoStats.freed++;
@@ -201,12 +222,19 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
     const url = URL.createObjectURL(blob);
     photoStats.urls++;
     const file = `pawtyk-${t.home}-${new Date().toISOString().slice(0, 10)}.png`;
+    // M3: the words that go with it (and the game's public link, when one is configured).
+    const source = t.keepsake?.source ?? 'postcard';
+    const link = shareLink(source);
+    const words = t.keepsake?.text ?? `A postcard from my ${t.place} in PawTyk. 🐾`;
+    const text = link ? `${words} ${link}` : words;
+    track('share_opened', { surface: source });
     const ps = openSheet(scope, {
-      title: 'Your postcard',
+      title: t.keepsake ? 'Your keepsake' : 'Your postcard',
       className: 'postcard-sheet',
       center: true,
       body: `
-        <img class="postcard-sheet__img ${orientation === 'portrait' ? 'is-portrait' : ''}" src="${url}" alt="A postcard of ${esc(t.place)}" />
+        <img class="postcard-sheet__img ${orientation === 'portrait' ? 'is-portrait' : ''}" src="${url}" alt="${esc(t.keepsake ? `A keepsake: ${t.keepsake.caption}` : `A postcard of ${t.place}`)}" />
+        ${memoryCoins ? `<p class="postcard-sheet__memory">${ICON.coin}<span><b>Photo Memory: +${memoryCoins} Paw Coins</b> for this week's first postcard.</span></p>` : ''}
         <div class="sheet__actions">
           <button class="btn btn--block" data-act="pc-share">${ICON.share}Share or save</button>
           <button class="btn btn--secondary btn--block" data-act="pc-again">${ICON.camera}Take another</button>
@@ -225,13 +253,14 @@ export function openPhotoMode(parent: Scope, host: HTMLElement, t: PhotoTarget, 
       if (b.dataset.act === 'pc-share') {
         sharing = true;
         b.setAttribute('aria-busy', 'true');
-        const r: ShareResult = await shareImage(blob, file, `${t.place} · PawTyk`);
+        track('share_started', { surface: source });
+        const r: ShareResult = await shareImage(blob, file, `${t.keepsake?.caption ?? t.place} · PawTyk`, { text, url: link });
         sharing = false;
         b.removeAttribute('aria-busy');
         track('postcard_shared', { home: t.home, result: r });
-        if (r === 'shared') toast('Postcard shared.', ICON.check);
-        else if (r === 'downloaded') toast('Postcard saved to your downloads.', ICON.check);
-        else if (r === 'failed') toast("It couldn't be shared or saved. If you chose Save Image, PawTyk may need permission for Photos in Settings.");
+        track('share_result', { surface: source, result: r });
+        // The share sheet says what happened itself; nothing here claims a post was made.
+        shareToast(r);
       } else if (b.dataset.act === 'pc-again') ps.close();
       else {
         ps.close();

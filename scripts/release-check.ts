@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { loadEnv } from 'vite';
 import { cleanEmail, cleanUrl } from '../src/config/legal';
+import { publicGameUrl } from '../src/config/links';
 
 const env = { ...loadEnv('production', process.cwd(), 'VITE_'), ...process.env } as Record<string, string | undefined>;
 const problems: string[] = [];
@@ -20,6 +21,14 @@ const privacyUrl = cleanUrl(env.VITE_PRIVACY_URL);
 if (!privacyUrl) problems.push('VITE_PRIVACY_URL is not set to an https:// address. Host the policy (npm run site:deploy) and put its URL here and in App Store Connect.');
 if (env.VITE_QA === '1') problems.push('VITE_QA=1 is set: that is the tester build (tester shortcuts on). Remove it for the App Store.');
 if (env.VITE_FIREBASE_EMULATORS === '1') problems.push('VITE_FIREBASE_EMULATORS=1 points the leaderboard at local emulators. Remove it.');
+
+// M3: where shared cards point. Optional; never a test or development address.
+const gameUrlSet = (env.VITE_GAME_URL ?? '').trim();
+const gameUrl = publicGameUrl(gameUrlSet);
+if (gameUrlSet && !gameUrl)
+  problems.push(`VITE_GAME_URL=${gameUrlSet} is not a public https page (a local, private, test or preview address can't go to players). Use the landing page's real address, or leave it empty.`);
+const storeUrl = (env.VITE_APP_STORE_URL ?? '').trim();
+if (storeUrl && !/^https:\/\/apps\.apple\.com\/[^\s]+\/id\d+/.test(storeUrl)) problems.push('VITE_APP_STORE_URL must be the App Store listing (https://apps.apple.com/…/id…), or empty until there is one.');
 
 const cap = readFileSync('capacitor.config.ts', 'utf8');
 if (!/appName:\s*'PawTyk'/.test(cap)) problems.push("capacitor.config.ts: appName should be 'PawTyk'.");
@@ -39,6 +48,7 @@ notes.push(
   `Welcome Rescue Pack: ${pack ? 'ON — only if pawtyk.welcomepack is set up in App Store Connect + RevenueCat and the sandbox checks passed (release-checklist D47)' : 'off — not sold (players who own it keep it)'}`,
 );
 notes.push(`Usage statistics (Firebase Analytics, opt-in): ${usage ? 'ON — add GoogleService-Info.plist (docs/analytics.md); answer the privacy label for analytics' : 'off — nothing is sent'}`);
+notes.push(`Game link on shared cards: ${gameUrl ? `${gameUrl} (with ?s=daily|arrival|postcard|result)` : 'none — cards and messages are shared without a link (set VITE_GAME_URL to the landing page once it is live)'}`);
 notes.push(
   store || videos || board || usage
     ? 'App Store privacy answers: see docs/privacy-security.md → "App Store privacy label" for each service that is ON.'
