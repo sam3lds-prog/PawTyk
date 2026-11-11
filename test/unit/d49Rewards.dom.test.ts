@@ -16,7 +16,7 @@ import { defaultSave } from '../../src/services/storage';
 import { grant } from '../../src/meta/ledger';
 import { arrivalProgress } from '../../src/meta/world';
 import { arrivalPortrait, isEager } from '../../src/ui/components/eager';
-import { noteReveal, playReveals, revealWaiting, takeReveals, REVEAL_MS } from '../../src/ui/components/decorReveal';
+import { clearReveals, noteReveal, playReveals, revealWaiting, waitingReveals, REVEAL_MS } from '../../src/ui/components/decorReveal';
 
 const NOW = new Date(2026, 10, 11, 12);
 const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
@@ -43,7 +43,7 @@ beforeEach(() => {
   grant(s, 'test:coins', 500, 'gift', NOW);
   app.replaceSave(s);
   app.settings.toys3d = false;
-  takeReveals('farm');
+  clearReveals();
 });
 afterEach(() => {
   app.settings.reducedMotion = 'system';
@@ -138,13 +138,26 @@ describe('a new decoration arrives', () => {
     expect(document.querySelector('.is-revealing, .sp-reveal')).toBeNull();
   });
 
+  it('a piece not drawn yet (or a busy scene) keeps its arrival for a later visit; it plays once when it is out', () => {
+    const host = (svg: SVGSVGElement) => ({ svg: () => svg, reducedMotion: () => true, playActivity: () => true, notice: () => {}, timeout: (fn: () => void, ms: number) => void setTimeout(fn, ms) });
+    noteReveal('flowerarch');
+    noteReveal('tireswing');
+    document.body.innerHTML = '<svg><g data-decor="tireswing"></g></svg>';
+    expect(playReveals(host(document.querySelector('svg') as unknown as SVGSVGElement), waitingReveals('farm'))).toEqual(['tireswing']);
+    // The arch wasn't out: it is still waiting; the Tire Swing has had its arrival.
+    expect(waitingReveals('farm')).toEqual(['flowerarch']);
+    document.body.innerHTML = '<svg><g data-decor="tireswing"></g><g data-decor="flowerarch"></g></svg>';
+    expect(playReveals(host(document.querySelector('svg') as unknown as SVGSVGElement), waitingReveals('farm'))).toEqual(['flowerarch']);
+    expect(revealWaiting('farm')).toBe(false);
+  });
+
   it('under reduced motion: the sparkles only, nobody runs over', () => {
     document.body.innerHTML = '<svg><g data-decor="flowerarch"></g><g class="sanctuary__pet" data-friend="cotton" data-gx="10" data-gy="10"></g></svg>';
     const played: string[] = [];
     const noticed: string[] = [];
     const svg = document.querySelector('svg') as unknown as SVGSVGElement;
     noteReveal('flowerarch');
-    const ids = takeReveals('farm');
+    const ids = waitingReveals('farm');
     playReveals({ svg: () => svg, reducedMotion: () => true, playActivity: (d) => (played.push(d), true), notice: (f) => noticed.push(f), timeout: (fn, ms) => void setTimeout(fn, ms) }, ids);
     vi.advanceTimersByTime(10);
     expect(document.querySelector('.sp-reveal.is-still')).not.toBeNull();
