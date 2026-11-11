@@ -30,6 +30,7 @@ export const TESTER_MARKERS: ReadonlyArray<[string, RegExp]> = [
   ['the 3D layer dev hooks', /__s3d|__scene3dStats|__stage3d/],
   ['the walk dev hook', /["'`]__walk["'`]/],
   ['the camera and welcome dev hooks', /\.__cam\s*=|__cam:|__welcome/],
+  ['the photo mode dev hook (D47)', /__photoStats/],
 ];
 
 /** Width, height, bit depth and colour type of a PNG (type 2: RGB, 6: RGB with alpha). */
