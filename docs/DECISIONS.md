@@ -2062,3 +2062,34 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
 - **Tester shortcuts** (QA builds only, Settings): *Add 500 Paw Coins* (a tester gift in the coin ledger) and *Watch a
   welcome celebration* (each tap plays the next of the four on the Farm, for an animal at home there; it changes only
   that animal's record, never which came last). *Listen to every tune* lists the three new welcomes.
+
+## 2026-11-11 · M — monetization, discovery and organic growth
+
+From *PawTyk — Monetization, Discovery & Organic Growth Plan*. Started from merged `main` after D48 (`d674ab8`),
+auditing what D48 already built: the Shop's decoration cards already preview the piece in the player's own home
+(D48 PR C), trick cards already play the trick first (D48 PR D), the trick card already offers a video for a token,
+postcards and the system share sheet exist (D47 PR 5). M builds on those, without new currencies, IAPs, tricks or
+decorations. Global constraints kept: three hearts and free retries, no gem revives, no interstitials or banners, no
+VIP pass, product ids unchanged, the Welcome Pack's offer and dismissal untouched, nothing required for the Journey.
+
+### M1 — Shop discovery and visual previews
+- **Featured for your <home>** (top of the Decor tab, `meta/featured.ts`): up to four picks from the existing catalog
+  for the home being browsed — the next piece of a themed set already started (else what the player can afford now,
+  else the nearest), a special piece for a currency the player already has (when this build sells it), a trick the
+  animals there could learn, and a favorite food of someone living there that the pantry has none of. Chosen from the
+  save alone, so the same save always gets the same picks; every card shows the real price and names the currency.
+  No popularity, countdowns, "limited" or "only today": the test checks the wording.
+- **See it in your <home>** (a decoration's card): the home itself opens with the piece out where it would stand
+  (whatever shares its spot set aside for the moment), framed and with a banner: what it is, *Not yours yet*, its price
+  and what the player has toward it. The real scene draws it (2D and under the 3D toys alike); the walk and photos step
+  aside while trying on. Nothing is owned, shown or spent (test: the save's inventory and ledger unchanged).
+- **Try it in your <home>** (a trick's card, from the Shop) and **Try it on <animal>** (from a home's tray, for one not
+  learned yet): one of the home's animals plays it in the scene, with partners for a group act, the close-up and its
+  tune; *Again* plays it again. A preview, never an unlock (`trick_tried` in analytics).
+- **Back to <item>**: before leaving, the Shop's own history entry is rewritten to reopen that item's card, so the
+  banner's button (or the system Back) lands on exactly what the player was looking at.
+- **Prices in words**: decoration and trick cards say "180 Paw Coins · you have 120" (or *Yours, out now*); food cards
+  say what the player has in each currency it is sold for.
+- Release builds: what the build can't sell is never featured or offered (the existing `currencyOffered`).
+- Tests: `shopM1.dom.test` (featured picks, honesty, determinism, availability; try-on lists; the Farm try-on and Back;
+  a trick tried from the Shop and from the tray, never learned).

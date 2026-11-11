@@ -445,6 +445,16 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] A week of normal play (a few levels a day): coins buy a trick or a decoration every few days; nothing feels
       out of reach or too cheap
 
+### M — monetization, discovery and growth
+
+**M1 — Shop discovery**
+- [ ] Shop → Decor on the Farm: "Featured for your Farm" shows up to four picks, each with its price and currency;
+      none is owned; in the App Store build without gem packs or videos, none costs gems or tokens
+- [ ] A decoration's card → See it in your Farm: the piece in the real scene (3D toys on and off), the banner says
+      Not yours yet; Back to <item> reopens its card; coins unchanged
+- [ ] A trick's card → Try it in your Farm: an animal plays it (a group act with partners); Again; it stays unlearned
+- [ ] In a home's tray, a trick not learned: Try it on <animal> plays it there
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

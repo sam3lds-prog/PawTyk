@@ -31,7 +31,10 @@ import { isPetId } from '../../meta/catalogs/pets';
 import { animalPortrait, animalTint } from '../art/animals';
 import { greetAll, startSceneLife, type SceneLife } from '../components/sceneLife';
 import { animalName, startSceneActivities, type ActivityRunner } from '../components/activities';
-import { mountTrickTray } from '../components/tricks';
+import { mountTrickTray, partnersFor } from '../components/tricks';
+import { shopRouteFor, tryBannerMarkup, tryDecorList, tryOnOf } from '../components/tryOn';
+import { performTrick } from '../components/trickPlay';
+import { TRICK_BY_ID } from '../../meta/catalogs/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
@@ -66,9 +69,9 @@ export function isEvening(d = new Date()): boolean {
   return isEveningAt(d);
 }
 
-/** The sanctuary picture for the current save (used here, live, and on Home, still). */
-export function sceneMarkup(id: string): string {
-  return sanctuaryScene({ decor: shownDecor(), pets: unlockedPets(app.save), companions: unlockedCompanions(app.save), evening: isEvening() }, id);
+/** The sanctuary picture for the current save (used here, live, and on Home, still); `decor` overrides what's out (M1's try-on). */
+export function sceneMarkup(id: string, decor: DecorId[] = shownDecor()): string {
+  return sanctuaryScene({ decor, pets: unlockedPets(app.save), companions: unlockedCompanions(app.save), evening: isEvening() }, id);
 }
 
 /** Portrait for a wildlife friend, matching resident portraits. */
@@ -92,6 +95,8 @@ export const sanctuaryScreen: ScreenDef = {
     for (const a of news.achievements) toast(`Badge unlocked: ${a.name}`);
 
     const el = h(`<div class="sanctuary"></div>`);
+    // M1: the Shop's try-on (a decoration out, or a trick played here), changing nothing saved.
+    const tryOn = route.screen === 'sanctuary' ? tryOnOf(route, 'harmony') : null;
     root.appendChild(el);
 
     // Tricks: a tray under the scene for the animal you tap (kept across re-renders).
@@ -231,8 +236,9 @@ export const sanctuaryScreen: ScreenDef = {
           <h1 data-autofocus>Pet Garden</h1>
           <div class="screen-head__end">${coinPill()}</div>
         </header>
-        <figure class="sanctuary__scene card is-live">
-          <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(pets, ownedDecor.length))}">${sceneMarkup('sanct')}</svg>
+        ${tryOn ? tryBannerMarkup(tryOn, 'harmony') : ''}
+        <figure class="sanctuary__scene card is-live${tryOn ? ' is-trying' : ''}">
+          <svg viewBox="${SCENE_VIEWBOX}" role="img" aria-label="${esc(sceneLabel(pets, ownedDecor.length))}">${sceneMarkup('sanct', tryDecorList(shownDecor(), tryOn))}</svg>
         </figure>
         <div class="sanctuary__under">
           <p class="sanctuary__chat" data-chat ${chat ? '' : 'hidden'}>${ICON.heart}<span>${esc(chat ?? '')}</span></p>
@@ -310,6 +316,22 @@ export const sanctuaryScreen: ScreenDef = {
     app.save.world.visited.harmony = today;
     app.persist();
     if (life) greetAll(life, (fn, ms) => scope.timeout(fn, ms), firstToday || (route.screen === 'sanctuary' && route.welcome !== undefined));
+    // M1: a trick tried on: one of the garden's animals plays it, once the toys are there (again on request). A
+    // preview, never an unlock; a group act brings in its partners as it would for real.
+    function playTry(): void {
+      if (tryOn?.kind !== 'trick' || !scope.alive) return;
+      const svg = el.querySelector<SVGSVGElement>('.sanctuary__scene svg');
+      const fig = svg?.querySelector<SVGGElement>('.sanctuary__pet:not(.is-away):not([data-trick])');
+      if (!svg || !fig) return;
+      if (tray.isOpen) tray.close();
+      if (!performTrick(svg, fig, tryOn.id, app.reducedMotion)) return;
+      const n = TRICK_BY_ID[tryOn.id].partners ?? 0;
+      if (n) partnersFor(svg, fig, n).forEach((p, i) => performTrick(svg, p, tryOn.id, app.reducedMotion, i + 1));
+      feel('trick', { cue: `trick:${tryOn.id}` });
+      director.claim('closeup');
+      closeups.play(fig, tryOn.id);
+    }
+    if (tryOn?.kind === 'trick') void Promise.race([s3d.ready, scope.wait(1500)]).then(() => scope.timeout(playTry, app.reducedMotion ? 200 : 700));
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
@@ -374,6 +396,8 @@ export const sanctuaryScreen: ScreenDef = {
       const a = actionOf(e);
       if (!a) return;
       if (a.act === 'back') app.router.back({ screen: 'world' });
+      else if (a.act === 'try-back' && tryOn) app.router.back(shopRouteFor(tryOn, 'harmony'));
+      else if (a.act === 'try-again') playTry();
       else if (a.act === 'shop') app.router.go({ screen: 'shop', sanctuary: 'harmony' });
       else if (a.act === 'play') playMode({ kind: 'level', level: app.save.journey.nextLevel });
       else if (a.act === 'build' && setActive(app.save, 'harmony')) {

@@ -3,8 +3,10 @@
  *  - **Decor**: everyday decorations for Paw Coins (earned by solving), special ones for video tokens (earned only by
  *    choosing to watch a reward video), premium ones for gems (bought on the App Store).
  *  - **Food**: food for Paw Coins, special treats for video tokens. Fed to animals from their cards.
- *  - **Tricks**: two free, everyday ones for video tokens, the most animated ones for gems (D33).
+ *  - **Tricks**: free ones, everyday ones for Paw Coins, special ones for video tokens, the most animated for gems.
  *  - **Gems**: gem packs with store prices, only when a store is connected.
+ * M1: "Featured for your <home>" at the top of Decor; a decoration's or trick's card can try it on in the home itself
+ * (`components/tryOn.ts`), and Back from there reopens the card.
  * Nothing here changes puzzles or rankings; there are no countdowns, fake discounts or random packs.
  * D43: what a build can't sell isn't shown (`app/offers.ts`): without the App Store there is no Gems tab and nothing
  * priced in gems; without reward videos nothing priced in video tokens. What the player owns always shows.
@@ -41,6 +43,10 @@ import { trickBadge } from '../art/tricks';
 import { TRICK_GROUP_NAME, TRICK_GROUPS, TRICKS, trickCurrency, trickGroup, type TrickGroup, type TrickId, type TrickTier } from '../../meta/catalogs/tricks';
 import { ownsTrick } from '../../meta/tricks';
 import { showTrickSheet } from '../components/tricks';
+import { shopRouteFor, trickHome, tryRoute, type TryOn } from '../components/tryOn';
+import { featuredFor, type Featured } from '../../meta/featured';
+import { isTrickId } from '../../meta/catalogs/tricks';
+import { animalsOf } from '../../meta/animals';
 import { openSheet, toast } from '../components/sheet';
 import { walletPills } from '../components/wallet';
 import { actionOf, esc, h, plural } from '../dom';
@@ -78,6 +84,16 @@ function goSee(id: DecorId): void {
   if (isRegionId(home)) app.router.go({ screen: 'region', id: home });
   else app.router.go({ screen: 'sanctuary' });
 }
+/**
+ * M1: try something on in a home, then come back to its card: the Shop's own entry is rewritten to reopen this item,
+ * so the home's **Back to <item>** (or the system Back) lands exactly here.
+ */
+function goTry(t: TryOn, home: SanctuaryId): void {
+  app.router.settle(shopRouteFor(t, t.kind === 'trick' ? undefined : home));
+  track('product_view', { product: `${t.kind}:${t.id}`, surface: 'try_on' });
+  app.router.go(tryRoute(t, home));
+}
+
 function whereText(id: DecorId): string {
   const home = decorHome(DECOR_BY_ID[id]);
   return home === 'harmony' ? 'the Pet Garden' : `the ${sanctuaryDef(home).name}`;
@@ -213,11 +229,51 @@ export const shopScreen: ScreenDef = {
       </section>`;
     }
 
+    /**
+     * M1: "Featured for your <home>": a few things from the catalog that fit this home and this player now
+     * (`meta/featured.ts`), each with its real price and currency. Tapping one opens its card.
+     */
+    function featuredSection(): string {
+      if (!isOpen(app.save, place)) return '';
+      const picks = featuredFor(app.save, place, (c) => offered(c));
+      if (!picks.length) return '';
+      const card = (f: Featured) => {
+        let art = '';
+        let name = '';
+        let attr = '';
+        let cur: 'coins' | 'vtoken' | 'gem' | null = null;
+        let amount = 0;
+        if (f.kind === 'decor') {
+          const d = DECOR_BY_ID[f.id];
+          const p = decorPrice(f.id)!;
+          [art, name, attr, cur, amount] = [decorIcon(f.id), d.name, `data-decor="${f.id}"`, p.currency, p.amount];
+        } else if (f.kind === 'trick') {
+          const t = TRICKS.find((x) => x.id === f.id)!;
+          [art, name, attr, cur, amount] = [trickBadge(t.emote), t.name, `data-trick-card="${f.id}"`, trickCurrency(t), t.price];
+        } else {
+          const food = FOOD_BY_ID[f.id];
+          const main = offersFor(f.id)[0] ?? mainOffer(food);
+          [art, name, attr, cur, amount] = [foodIcon(f.id), food.name, `data-food="${f.id}"`, main.currency, main.amount];
+        }
+        const what = f.kind === 'decor' ? 'Decoration' : f.kind === 'trick' ? 'Trick' : 'Food';
+        return `<li><button class="featured-card card card--tap" ${attr} data-featured="${f.kind}" aria-label="${esc(`${what}: ${name}, ${amount} ${cur ? CURRENCY_NAME[cur] : ''}. ${f.reason}.`)}">
+          <span class="featured-card__art">${art}</span>
+          <span class="featured-card__body"><span class="featured-card__kind">${what}</span><b class="featured-card__name">${esc(name)}</b><small>${esc(f.reason)}</small></span>
+          ${cur ? `<span class="featured-card__price">${priceTag(cur, amount)}<small>${CURRENCY_NAME[cur]}</small></span>` : ''}
+        </button></li>`;
+      };
+      return `<section class="shop-section shop-featured" aria-labelledby="featured-title">
+        <div class="section-head"><h2 id="featured-title">Featured for your ${esc(placeShort(place))}</h2></div>
+        <ul class="featured-row">${picks.map(card).join('')}</ul>
+      </section>`;
+    }
+
     function decorTab(): string {
       const regionLocked = !isOpen(app.save, place);
       return `
         ${placeChips()}
         ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(sanctuaryDef(place).name)} opens after level ${sanctuaryDef(place).opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
+        ${featuredSection()}
         ${decorSection('everyday', `${placeShort(place)} decor`, 'Paid for with Paw Coins, which you earn by solving puzzles.')}
         ${decorSection('video', 'Special decor', 'Only for video tokens.', videoTokenCard())}
         ${decorSection('premium', 'Premium decor', 'For gems.', place === 'farm' ? packHighlight() : '')}
@@ -466,6 +522,23 @@ export const shopScreen: ScreenDef = {
     render();
     // D48 PR C: opened on a decoration (a home's "see it in the Shop").
     if (route.screen === 'shop' && isDecorId(route.decor) && tab === 'decor') decorSheet(scope, route.decor, render);
+    // M1: back from trying a trick on in a home: its card again.
+    if (route.screen === 'shop' && isTrickId(route.trick) && tab === 'tricks') openTrick(route.trick);
+
+    /** A trick's card, with the way to try it in a home where someone lives (M1). */
+    function openTrick(id: TrickId): void {
+      const homes = SANCTUARIES.filter((sd) => isOpen(app.save, sd.id)).map((sd) => ({ id: sd.id, residents: animalsOf(sd.id).filter((a) => isHome(app.save, a)).length }));
+      const where = trickHome(homes, activeSanctuary(app.save) ?? null);
+      showTrickSheet(scope, id, {
+        onBought: render,
+        tryIn: where
+          ? {
+              label: where === 'harmony' ? 'Pet Garden' : sanctuaryDef(where).short,
+              go: () => goTry({ kind: 'trick', id }, where),
+            }
+          : undefined,
+      });
+    }
     // Shopping for an animal: its favorite in view.
     if (wanted && tab === 'food') el.querySelector<HTMLElement>('.food-card.is-wanted')?.scrollIntoView?.({ block: 'center' });
 
@@ -526,7 +599,7 @@ export const shopScreen: ScreenDef = {
       }
       const tc = t.closest('[data-trick-card]') as HTMLElement | null;
       if (tc) {
-        showTrickSheet(scope, tc.dataset.trickCard as TrickId, { onBought: render });
+        openTrick(tc.dataset.trickCard as TrickId);
         return;
       }
       const buy = t.closest('[data-buy]') as HTMLButtonElement | null;
@@ -631,6 +704,20 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     const p = setProgress(app.save, d.set);
     return `<p><span class="set-chip" style="--set:${st.accent}">${esc(st.name)} · <span class="num">${p.owned} of ${p.total}</span></span></p>`;
   };
+  /**
+   * M1: try it on in the home itself (not owned, its home open, and drawn there now: a piece waiting for the pond
+   * isn't, so its card's own preview stands in).
+   */
+  const canTry = () => !owns(app.save, id) && d.unlock.kind !== 'pack' && decorUnlocked(app.save, id) && !(d.stage && isRegionId(home) && stageOf(app.save, home) < d.stage);
+  const tryButton = () =>
+    canTry() ? `<button class="btn btn--secondary btn--block" data-act="try">${ICON.eye}See it in your ${esc(home === 'harmony' ? 'Pet Garden' : sanctuaryDef(home).short)}</button>` : '';
+  /** M1: the price in words, with what the player has toward it, and whether this build sells it. */
+  const priceLine = () => {
+    if (owns(app.save, id)) return `<p class="price-line">${ICON.check}<span>Yours${isShown(app.save, id) ? ', out now' : ', tucked away'}.</span></p>`;
+    if (!price) return '';
+    const have = walletBalance(app.save, price.currency);
+    return `<p class="price-line">${CURRENCY_ICON[price.currency]}<span><b class="num">${price.amount}</b> ${CURRENCY_NAME[price.currency]} · <span class="num">you have ${have}</span></span></p>`;
+  };
   const actions = () => {
     const have = owns(app.save, id);
     if (have) {
@@ -669,25 +756,31 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
       ${previewMarkup(id) || `<div class="decor-sheet__art">${decorIcon(id, d.name)}</div>`}
       <div data-place-line>${placeLine()}</div>
       <p class="sheet__lead">${esc(d.blurb)}</p>
+      <div data-price-line>${priceLine()}</div>
       ${setLine()}
       ${play ? `<p class="decor-sheet__play">${ICON.sparkle}<span><b>${esc(play.name)}.</b> ${esc(d.play ?? 'Your animals take turns with it, and you can tap it in the sanctuary to start one.')}</span></p><button class="btn btn--quiet btn--small" data-act="preview-play" hidden>${ICON.restart}Show me</button>` : ''}
-      <div class="sheet__actions" data-actions>${actions()}<button class="btn btn--quiet" data-act="close">Not now</button></div>`,
+      <div class="sheet__actions" data-actions>${actions()}${tryButton()}<button class="btn btn--quiet" data-act="close">Not now</button></div>`,
     onClose: rerender,
   });
   // Show me: the animals use it, in the preview (only when someone lives there to do it).
   if (bindPreview(sh.scope, sh.el, id)) sh.el.querySelector<HTMLElement>('[data-act="preview-play"]')?.removeAttribute('hidden');
   const refresh = () => {
     const a = sh.el.querySelector('[data-actions]');
-    if (a) a.innerHTML = `${actions()}<button class="btn btn--quiet" data-act="close">Not now</button>`;
+    if (a) a.innerHTML = `${actions()}${tryButton()}<button class="btn btn--quiet" data-act="close">Not now</button>`;
     const pl = sh.el.querySelector('[data-place-line]');
     if (pl) pl.innerHTML = placeLine();
+    const pr = sh.el.querySelector('[data-price-line]');
+    if (pr) pr.innerHTML = priceLine();
   };
   let busy = false;
   sh.scope.on(sh.el, 'click', (e) => {
     const a = actionOf(e);
     if (!a || busy) return;
     if (a.act === 'close') sh.close();
-    else if (a.act === 'see-pack') {
+    else if (a.act === 'try') {
+      sh.close();
+      goTry({ kind: 'decor', id }, home);
+    } else if (a.act === 'see-pack') {
       sh.close();
       app.router.go({ screen: 'shop', tab: 'gems' });
     } else if (a.act === 'visit') {
@@ -744,6 +837,9 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
           <button class="btn btn--small ${o.currency === 'gem' ? 'btn--secondary' : ''}" data-act="buy" data-offer="${o.id}" ${short || !room ? 'disabled' : ''} aria-label="${esc(`Buy ${o.qty === 1 ? 'one' : o.qty} for ${o.amount} ${CURRENCY_NAME[o.currency]}`)}">${CURRENCY_ICON[o.currency]}<span class="num">${o.amount}</span></button></div>`;
       })
       .join('');
+  /** M1: what the player has in each currency this food is sold for. */
+  const walletLine = () =>
+    [...new Set(offers().map((o) => o.currency))].map((c) => `${walletBalance(app.save, c)} ${CURRENCY_NAME[c]}`).join(' · ');
   const sh = openSheet(scope, {
     title: f.name,
     className: 'decor-sheet',
@@ -754,6 +850,7 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
       <dl class="pet-sheet__facts">
         <div><dt>${isFeast(f) ? 'Feeds' : 'Favorite of'}</dt><dd>${esc(isFeast(f) ? 'Everyone living in the home it’s served in' : favs)}</dd></div>
         <div><dt>In your pantry</dt><dd class="num" data-have>${foodCount(app.save, id)} of ${FOOD_CAP_EACH}</dd></div>
+        <div><dt>You have</dt><dd class="num" data-wallet>${walletLine()}</dd></div>
       </dl>
       <div class="food-offers" data-offers>${offerRows()}</div>
       <div class="sheet__actions"><button class="btn btn--quiet" data-act="close" data-autofocus>Done</button></div>`,
@@ -775,6 +872,8 @@ function foodSheet(scope: Scope, id: FoodId, rerender: () => void): void {
         if (have) have.textContent = `${foodCount(app.save, id)} of ${FOOD_CAP_EACH}`;
         const rows = sh.el.querySelector('[data-offers]');
         if (rows) rows.innerHTML = offerRows();
+        const w = sh.el.querySelector('[data-wallet]');
+        if (w) w.textContent = walletLine();
         toast(o && o.qty > 1 ? `${o.qty} ${f.name} added to your pantry.` : `${f.name} added to your pantry.`);
       } else toast(r === 'full' ? 'Your pantry has no room for that many.' : `Not enough ${o ? CURRENCY_NAME[o.currency] : 'coins'} yet.`);
     }
