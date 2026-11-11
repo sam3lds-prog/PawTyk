@@ -63,11 +63,12 @@ export class Actor {
   }
 
   /** A trick or emote: everything else fades out first. */
-  perform(id: string, now: number, still = false): number {
+  /** `delay` (ms): a group act's partner starts a beat after the lead (D48 PR D). */
+  perform(id: string, now: number, still = false, delay = 0): number {
     const clip = performClip(id);
     if (!clip) return 0;
     for (const l of this.layers) l.fadeFrom ??= now;
-    this.layers.push({ clip, kind: 'perform', id, start: now, ctx: this.ctx(), still });
+    this.layers.push({ clip, kind: 'perform', id, start: now + delay, ctx: this.ctx(), still });
     return clip.ms;
   }
 
@@ -114,6 +115,8 @@ export class Actor {
     this.layers = this.layers.filter((l) => now - l.start < l.clip.ms && (l.fadeFrom === undefined || now - l.fadeFrom < FADE_MS));
     for (const l of this.layers) {
       const t = (now - l.start) / l.clip.ms;
+      // Not started yet (a partner waiting for its beat): at rest until then.
+      if (t < 0) continue;
       const f = l.clip.frame(t, l.ctx);
       const fading = l.fadeFrom !== undefined;
       const w = fading ? 1 - (now - l.fadeFrom!) / FADE_MS : 1;

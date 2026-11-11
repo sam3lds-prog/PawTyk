@@ -7,9 +7,8 @@
 
 import { app } from '../../app/app';
 import { canOfferVideo, watchVideoFor } from '../../app/rewarded';
-import { TRICK_BY_ID, TRICKS, trickCurrency, type TrickId, type TrickKind } from '../../meta/catalogs/tricks';
-import { itemBalance } from '../../meta/items';
-import { buyTrick, ownsTrick } from '../../meta/tricks';
+import { TRICK_BY_ID, TRICK_GROUPS, TRICK_GROUP_NAME, TRICKS, trickCurrency, trickGroup, type TrickGroup, type TrickId } from '../../meta/catalogs/tricks';
+import { buyTrick, ownsTrick, trickWallet } from '../../meta/tricks';
 import { ads } from '../../services/ads';
 import { track } from '../../services/analytics';
 import { feel } from '../../services/feel';
@@ -32,7 +31,7 @@ import { createScene3D } from './scene3d';
 import { animalName } from './activities';
 import { avatarPortrait } from '../screens/leaderboardTab';
 
-const CURRENCY = { vtoken: { icon: () => ICON.videoToken, name: 'video tokens' }, gem: { icon: () => ICON.gem, name: 'gems' } } as const;
+const CURRENCY = { coins: { icon: () => ICON.coin, name: 'Paw Coins' }, vtoken: { icon: () => ICON.videoToken, name: 'video tokens' }, gem: { icon: () => ICON.gem, name: 'gems' } } as const;
 
 export { performTrick };
 
@@ -45,7 +44,7 @@ function priceTag(id: TrickId): string {
   const t = TRICK_BY_ID[id];
   const cur = trickCurrency(t);
   if (!cur) return '<span class="trick-chip__price">Free</span>';
-  const short = itemBalance(app.save, cur) < t.price;
+  const short = trickWallet(app.save, cur) < t.price;
   return `<span class="trick-chip__price price price--${cur} ${short ? 'is-short' : ''}">${CURRENCY[cur].icon()}<span class="num">${t.price}</span></span>`;
 }
 
@@ -71,9 +70,46 @@ function trickOffered(id: TrickId): boolean {
   return !cur || ownsTrick(app.save, id) || currencyOffered(app.save, cur);
 }
 
-/** The trick (or emote) buttons, in catalog order: free, then video, then premium. */
-export function trickChips(kind: TrickKind = 'trick'): string {
-  return TRICKS.filter((t) => t.kind === kind && trickOffered(t.id)).map((t) => `<li><button class="${chipClass(t.id)}" data-trick="${t.id}" aria-label="${esc(chipLabel(t.id))}">${chipInner(t.id)}</button></li>`).join('');
+const TIER_ORDER = { free: 0, coins: 1, video: 2, premium: 3 } as const;
+
+/**
+ * The buttons for a group (D48 PR D: emotes, tricks, dances, group acts; `trick` and `emote` as before), free first,
+ * then coins, video tokens and gems, catalog order within each.
+ */
+export function trickChips(group: TrickGroup = 'trick'): string {
+  return TRICKS.filter((t) => trickGroup(t) === group && trickOffered(t.id))
+    .sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier])
+    .map((t) => chipMarkup(t.id))
+    .join('');
+}
+
+const chipMarkup = (id: TrickId) => `<li><button class="${chipClass(id)}" data-trick="${id}" aria-label="${esc(chipLabel(id))}">${chipInner(id)}</button></li>`;
+
+/**
+ * D48 PR D: the last few played, for the top of the tray (kept for this app session, newest first; owned ones only).
+ */
+let recent: TrickId[] = [];
+export function noteRecent(id: TrickId): void {
+  recent = [id, ...recent.filter((x) => x !== id)].slice(0, 4);
+}
+export function recentTricks(): TrickId[] {
+  return recent.filter((id) => ownsTrick(app.save, id));
+}
+const recentRow = () =>
+  recentTricks().length
+    ? `<div class="trick-tray__recent" role="group" aria-label="Played lately"><span class="muted">Again:</span><ul class="trick-tray__list trick-tray__list--recent">${recentTricks().map(chipMarkup).join('')}</ul></div>`
+    : '';
+
+/**
+ * The partners a group act takes (D48 PR D): the nearest free animals in the scene (not mid-trick, not away on a
+ * decoration), up to the act's own number. A duet with nobody free is a solo; a parade marches with whoever is there.
+ */
+export function partnersFor(svg: SVGSVGElement, lead: SVGGElement, n: number): SVGGElement[] {
+  const x = Number(lead.dataset.gx);
+  return [...svg.querySelectorAll<SVGGElement>('.sanctuary__pet[data-gx]')]
+    .filter((g) => g !== lead && !g.dataset.trick && !g.classList.contains('is-away'))
+    .sort((a, b) => Math.abs(Number(a.dataset.gx) - x) - Math.abs(Number(b.dataset.gx) - x))
+    .slice(0, n);
 }
 
 /** Updates the chips in place (after a purchase), so focus and scroll stay where they are. */
@@ -116,7 +152,7 @@ export interface TrickTrayOptions {
  */
 export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSVGElement | null, opts: TrickTrayOptions = {}): TrickTray {
   let target: Who | null = null;
-  let tab: TrickKind = 'trick';
+  let tab: TrickGroup = 'trick';
   host.id ||= `trick-tray-${Math.random().toString(36).slice(2, 8)}`;
 
   const cast = (): Who[] => {
@@ -159,8 +195,9 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
         ${opts.onFeed ? `<button class="btn btn--small btn--secondary trick-tray__feed" data-act="tray-feed" aria-label="${esc(`Feed ${name}`)}">${ICON.heart}Feed</button>` : ''}
         <button class="icon-btn icon-btn--small" data-act="tray-close" aria-label="Close tricks">${ICON.close}</button>
       </div>
-      <div class="seg seg--small trick-tray__tabs" role="tablist" aria-label="Tricks or emotes">
-        ${(['trick', 'emote'] as const).map((k) => `<button role="tab" class="seg__btn" data-tray-tab="${k}" aria-selected="${k === tab}">${k === 'trick' ? 'Tricks' : 'Emotes'}</button>`).join('')}
+      ${recentRow()}
+      <div class="seg seg--small trick-tray__tabs" role="tablist" aria-label="Kinds of tricks">
+        ${TRICK_GROUPS.map((k) => `<button role="tab" class="seg__btn" data-tray-tab="${k}" aria-selected="${k === tab}">${TRICK_GROUP_NAME[k]}</button>`).join('')}
       </div>
       ${
         everyone.length > 1
@@ -169,7 +206,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
               .join('')}</div>`
           : ''
       }
-      <ul class="trick-tray__list" role="tabpanel" aria-label="${tab === 'trick' ? 'Tricks' : 'Emotes'}">${trickChips(tab)}</ul>
+      <ul class="trick-tray__list" role="tabpanel" aria-label="${TRICK_GROUP_NAME[tab]}">${trickChips(tab)}</ul>
       <p class="sr-only" aria-live="polite" data-tray-status></p>
     </div>`;
   }
@@ -187,7 +224,7 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     }
     const tb = t.closest('[data-tray-tab]') as HTMLElement | null;
     if (tb) {
-      tab = tb.dataset.trayTab as TrickKind;
+      tab = tb.dataset.trayTab as TrickGroup;
       render();
       host.querySelector<HTMLElement>(`[data-tray-tab="${tab}"]`)?.focus({ preventScroll: true });
       return;
@@ -211,11 +248,23 @@ export function mountTrickTray(scope: Scope, host: HTMLElement, svg: () => SVGSV
     const status = host.querySelector('[data-tray-status]');
     const name = animalName(target.id);
     if (s && fig && performTrick(s, fig, id, app.reducedMotion)) {
+      // D48 PR D: a group act brings in the nearest free friends (a duet's partner, a parade's marchers).
+      const n = TRICK_BY_ID[id].partners ?? 0;
+      const partners = n ? partnersFor(s, fig, n) : [];
+      partners.forEach((p, i) => performTrick(s, p, id, app.reducedMotion, i + 1));
       // The tune, with this animal's own rhythm under it (D45 PR D): a sheep's wave and a piglet's don't sound alike.
       feel('trick', { cue: `trick:${id}`, rhythm: rhythmOf(target.id) });
-      track('trick_played', { trick: id });
+      track('trick_played', { trick: id, partners: partners.length });
+      noteRecent(id);
+      // The "Again" row, redrawn in place (focus stays on the chip that was tapped).
+      const row = host.querySelector('.trick-tray__recent');
+      const fresh = recentRow();
+      const fromRow = !!chip.closest('.trick-tray__recent');
+      if (row) row.outerHTML = fresh;
+      else host.querySelector('.trick-tray__tabs')?.insertAdjacentHTML('beforebegin', fresh);
+      if (fromRow) host.querySelector<HTMLElement>(`.trick-tray__recent [data-trick="${id}"]`)?.focus({ preventScroll: true });
       opts.onPlayed?.(fig, id);
-      if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!`;
+      if (status) status.textContent = `${name}: ${TRICK_BY_ID[id].name}!${partners.length ? ` With ${partners.map((p) => p.dataset.name ?? '').filter(Boolean).join(' and ')}.` : ''}`;
     } else if (fig) {
       const msg = fig.classList.contains('is-away') ? `${name} is busy right now. Ask again in a moment.` : `${name} is still finishing a trick.`;
       if (fig.classList.contains('is-away')) toast(msg);
@@ -256,10 +305,16 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
   const owned = ownsTrick(app.save, id);
 
   const body = () => {
-    const have = cur ? itemBalance(app.save, cur) : 0;
+    const have = cur ? trickWallet(app.save, cur) : 0;
     const short = cur ? Math.max(0, t.price - have) : 0;
     let actions = '';
     if (owned || ownsTrick(app.save, id)) actions = `<p class="trick-sheet__owned">${ICON.check}Yours. In a sanctuary, tap an animal or Tricks and ask for it.</p>`;
+    else if (cur === 'coins')
+      // D48 PR D: the everyday ones, for Paw Coins (earned by solving).
+      actions = short
+        ? `<button class="btn btn--block" disabled aria-label="${esc(`Costs ${t.price} Paw Coins`)}">${ICON.coin}<span class="num">${t.price}</span></button>
+           <p class="muted">You have ${plural(have, 'Paw Coin')}. Solving a new level earns 35.</p>`
+        : `<button class="btn btn--block" data-act="buy" data-autofocus>Learn it for ${ICON.coin}<span class="num">${t.price}</span></button>`;
     else if (cur === 'vtoken')
       actions = short
         ? `<button class="btn btn--block" disabled aria-label="${esc(`Costs ${t.price} video tokens`)}">${ICON.videoToken}<span class="num">${t.price}</span></button>
@@ -273,9 +328,9 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
            ${iap.available ? `<button class="btn btn--secondary btn--block" data-act="gems">${ICON.gem}See gem packs</button>` : ''}`
         : `<button class="btn btn--block" data-act="buy" data-autofocus>Buy for ${ICON.gem}<span class="num">${t.price}</span></button>`;
     return `
-      ${t.tier !== 'free' ? `<span class="chip ${t.tier === 'premium' ? 'chip--gem' : 'chip--video'}">${t.tier === 'premium' ? `${ICON.gem}Premium ${t.kind}` : `${ICON.videoToken}Video-token ${t.kind}`}</span>` : ''}
+      ${t.tier === 'premium' || t.tier === 'video' ? `<span class="chip ${t.tier === 'premium' ? 'chip--gem' : 'chip--video'}">${t.tier === 'premium' ? `${ICON.gem}Premium` : `${ICON.videoToken}Video-token`} ${TRICK_GROUP_NAME[trickGroup(t)].toLowerCase().replace(/s$/, '')}</span>` : `<span class="chip">${TRICK_GROUP_NAME[trickGroup(t)].replace(/s$/, '')}</span>`}
       <figure class="trick-sheet__stage sanctuary__scene is-live" aria-label="${esc(`${whoName} showing ${t.name}`)}">
-        <svg viewBox="0 0 120 104" role="img"><rect width="120" height="104" rx="14" fill="#e6f2df"/><path d="M0 84 Q60 74 120 84 V90 A14 14 0 0 1 106 104 H14 A14 14 0 0 1 0 90 Z" fill="#cfe3c4"/>${stageFigure(who)}</svg>
+        <svg viewBox="0 0 120 104" role="img"><rect width="120" height="104" rx="14" fill="#e6f2df"/><path d="M0 84 Q60 74 120 84 V90 A14 14 0 0 1 106 104 H14 A14 14 0 0 1 0 90 Z" fill="#cfe3c4"/>${t.partners ? stagePartners(who, t.partners) : stageFigure(who)}</svg>
       </figure>
       <button class="btn btn--quiet btn--small trick-sheet__again" data-act="preview">${ICON.restart}Show me again</button>
       <p class="sheet__lead">${esc(t.blurb)}</p>
@@ -284,10 +339,14 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
   };
 
   const sh = openSheet(scope, { title: t.name, className: 'trick-sheet', body: body() });
+  // A preview, never an unlock: it plays on the card's own little stage (a group act with its partners there too).
   const preview = () => {
     const s = sh.el.querySelector<SVGSVGElement>('.trick-sheet__stage svg');
-    const fig = s?.querySelector<SVGGElement>('.sanctuary__pet');
-    if (s && fig && performTrick(s, fig, id, app.reducedMotion)) feel('trick', { cue: `trick:${id}` });
+    const figs = [...(s?.querySelectorAll<SVGGElement>('.sanctuary__pet') ?? [])];
+    if (s && figs[0] && performTrick(s, figs[0], id, app.reducedMotion)) {
+      figs.slice(1).forEach((f, i) => performTrick(s, f, id, app.reducedMotion, i + 1));
+      feel('trick', { cue: `trick:${id}` });
+    }
   };
   // The preview animal is a 3D toy too (D34), when the sanctuary's are.
   const s3d = createScene3D();
@@ -340,6 +399,7 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
           rerender();
           preview();
         } else toast(r === 'insufficient' ? `Not enough ${cur ? CURRENCY[cur].name : 'tokens'} yet.` : 'Already yours.');
+        busy = false;
         break;
       }
     }
@@ -353,6 +413,21 @@ export function showTrickSheet(scope: Scope, id: TrickId, opts: { who?: string; 
     const now = sh.el.querySelector('.sheet__actions');
     if (next && now) now.replaceWith(next);
   }
+}
+
+/** A group act's preview (D48 PR D): the animal and a friend or two, smaller, side by side. */
+function stagePartners(id: string, n: number): string {
+  const friends = ['mochi', 'biscuit', 'pip'].filter((x) => x !== id).slice(0, Math.min(2, n));
+  const all = [id, ...friends];
+  const H = 26;
+  return all
+    .map((who, i) => {
+      const x = 60 + (i - (all.length - 1) / 2) * 34;
+      if (isPetId(who)) return residentFigure(who, x, 90, H + 2, 'happy');
+      if (isCompanionId(who) || isWildId(who)) return companionFigure(who, x, 90, H, 'happy');
+      return residentFigure('mochi', x, 90, H + 2, 'happy');
+    })
+    .join('');
 }
 
 /** A preview figure on the little stage in the trick card (a scene figure, so the trick plays on it). */

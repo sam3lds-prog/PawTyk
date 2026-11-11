@@ -69,9 +69,10 @@ export class Effects {
   }
 
   /** A trick or emote: the emote bubble, and its props unless `still`. It replaces the actor's previous one. */
-  perform(id: string, actor: Actor, now: number, ms: number, still: boolean): void {
+  perform(id: string, actor: Actor, now: number, ms: number, still: boolean, bubble = true): void {
     this.clearFor(actor, 'perform');
-    if (isTrickId(id)) this.live.push({ e: emoteBubble({ fx: this, actor, start: now, ms, u: unit(actor), still }, TRICK_BY_ID[id].emote, still), actor, kind: 'perform' });
+    // A group act's partners (D48 PR D) join in without bubbles of their own: the lead has the one.
+    if (bubble && isTrickId(id)) this.live.push({ e: emoteBubble({ fx: this, actor, start: now, ms, u: unit(actor), still }, TRICK_BY_ID[id].emote, still), actor, kind: 'perform' });
     // A group dance's props are its role's (D44 PR D): the finish's confetti and stars.
     const key = id.startsWith('dance:') ? `perform:dance:${parseDanceId(id)?.role ?? 'group'}` : `perform:${id}`;
     if (!still) this.run(key, 'perform', actor, now, ms, still, id);
@@ -814,3 +815,139 @@ defineEffect('perform:party', (c) => {
     },
   };
 });
+
+// ------------------------------------------------------------------ eighteen more (D48 PR D)
+
+/** Several effects that live together; done when all are. */
+function together(...es: Array<Effect | null>): Effect {
+  const live = es.filter((e): e is Effect => !!e);
+  return {
+    // Every one every frame: one finishing early must not stop the others drawing.
+    update: (now) => live.map((e) => e.update(now)).some(Boolean),
+    dispose: () => live.forEach((e) => e.dispose()),
+  };
+}
+
+const say = (c: FxCtx, words: string[], color: string, from: number, every = 0.2, size = 0.34) =>
+  floaters(c, (i) => c.fx.sprite(textTexture(c.fx, words[i % words.length], color)), words.length, { from, every, life: 0.36, spread: 0.36, rise: 0.3, size, sway: 0.03 });
+
+const notes = (c: FxCtx, from: number, n = 3) =>
+  floaters(c, (i) => c.fx.sprite(textTexture(c.fx, i % 2 ? '♫' : '♪', ['#287b70', '#c96f8a', '#5b6b8a'][i % 3])), n, { from, every: 0.22, life: 0.4, spread: 0.34, rise: 0.42, size: 0.2, sway: 0.05 });
+
+const head = (c: FxCtx) => (o: THREE.Vector3) => c.actor.toy.headTop(o);
+const middle = (c: FxCtx) => (o: THREE.Vector3) => c.actor.toy.centerAt(o);
+
+defineEffect('perform:wiggle', (c) => sparkles(c, 0.12, 0.86, middle(c), 4, ['#F7C534', '#F4A6D0', '#9FE0E6']));
+defineEffect('perform:peekaboo', (c) => together(say(c, ['boo!'], '#c96f8a', 0.58, 0.2, 0.4), sparkles(c, 0.58, 0.9, head(c), 3)));
+defineEffect('perform:headtilt', (c) => say(c, ['?', '?'], '#5b6b8a', 0.12, 0.4, 0.3));
+defineEffect('perform:sneeze', (c) => {
+  // A soft white puff out in front of the nose, then the word.
+  const puff = floaters(
+    c,
+    () => {
+      const m = new THREE.Mesh(c.fx.kit.lowSphere, new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 1, transparent: true, depthWrite: false }));
+      c.fx.scene.add(m);
+      return m;
+    },
+    5,
+    { from: 0.5, every: 0.015, life: 0.3, spread: 0.12, rise: 0.12, size: 0.07, sway: 0.08 },
+  );
+  return together(puff, say(c, ['achoo!'], '#c98a2a', 0.52, 0.2, 0.42));
+});
+defineEffect('perform:stretch', (c) => say(c, ['mmm'], '#5b6b8a', 0.2, 0.2, 0.36));
+defineEffect('perform:confetti', (c) => confetti(c, [0.1, 0.3], head(c), 18));
+defineEffect('perform:highfive', (c) => together(starFan(c, 0.42), say(c, ['yes!'], '#287b70', 0.46, 0.2, 0.36)));
+defineEffect('perform:tailchase', (c) => together(dust(c, [0.2, 0.38, 0.56]), sparkles(c, 0.72, 1, head(c), 4, ['#F7C534', '#FFF3B0', '#9FE0E6'])));
+defineEffect('perform:somersault', (c) => together(dust(c, [0.16, 0.68]), sparkles(c, 0.66, 0.98, head(c), 3)));
+defineEffect('perform:balloon', (c) => {
+  // Three balloons on strings over the animal's raised paw, carrying it up a little.
+  const cols = ['#E8707A', '#F2C230', '#5B9BC4'];
+  const balloons = cols.map((col) => {
+    const m = new THREE.Mesh(c.fx.kit.sphere, c.fx.shiny(col, 0.2));
+    m.scale.setScalar(1);
+    c.fx.scene.add(m);
+    return m;
+  });
+  const strings = cols.map(() => {
+    const m = new THREE.Mesh(c.fx.shape('string', () => new THREE.CylinderGeometry(0.01, 0.01, 1, 4)), new THREE.MeshBasicMaterial({ color: '#8a7a6a', transparent: true }));
+    c.fx.scene.add(m);
+    return m;
+  });
+  return group([...balloons, ...strings], (t) => {
+    c.actor.toy.headTop(tmp);
+    const on = easeOutBack(seg(t, 0.03, 0.12)) * (1 - easeInOut(seg(t, 0.9, 0.99)));
+    balloons.forEach((b, i) => {
+      const dx = (i - 1) * 0.16 + Math.sin(t * 9 + i) * 0.02;
+      const dy = 0.62 + (i === 1 ? 0.1 : 0) + Math.sin(t * 7 + i * 2) * 0.02;
+      b.visible = on > 0.01;
+      b.position.set(tmp.x + c.u * (0.2 + dx), tmp.y + c.u * dy, tmp.z + c.u * 0.05);
+      b.scale.set(c.u * 0.11 * on, c.u * 0.13 * on, c.u * 0.11 * on);
+      const s = strings[i];
+      s.visible = b.visible;
+      s.position.set(tmp.x + c.u * (0.2 + dx * 0.5), tmp.y + c.u * (dy * 0.5 + 0.02), tmp.z + c.u * 0.05);
+      s.scale.set(c.u, c.u * dy * 0.95 * on, c.u);
+      s.rotation.z = -dx * 1.2;
+    });
+  }, c);
+});
+defineEffect('perform:drumsolo', (c) => {
+  // A little drum in front of the animal, notes coming faster, and a crash at the end.
+  const drum = new THREE.Group();
+  const shell = new THREE.Mesh(c.fx.shape('drum', () => new THREE.CylinderGeometry(1, 1, 0.8, 24)), c.fx.shiny('#C8473C', 0.15));
+  const skin = new THREE.Mesh(c.fx.shape('drumskin', () => new THREE.CylinderGeometry(1.02, 1.02, 0.06, 24)), c.fx.shiny('#F4EFE4', 0.1));
+  skin.position.y = 0.42;
+  drum.add(shell, skin);
+  c.fx.scene.add(drum);
+  const body: Effect = {
+    update(now) {
+      const t = (now - c.start) / c.ms;
+      if (t >= 1) return false;
+      c.actor.toy.groundAt(tmp);
+      const on = easeOutBack(seg(t, 0.02, 0.1)) * (1 - easeInOut(seg(t, 0.9, 0.99)));
+      drum.visible = on > 0.01;
+      drum.position.set(tmp.x, tmp.y + c.u * 0.16, tmp.z + c.u * 0.42);
+      drum.scale.setScalar(Math.max(0.0001, c.u * 0.17 * on));
+      return true;
+    },
+    dispose() {
+      drum.removeFromParent();
+      (shell.material as THREE.Material).dispose();
+      (skin.material as THREE.Material).dispose();
+    },
+  };
+  return together(body, notes(c, 0.1, 4), starFan(c, 0.82));
+});
+defineEffect('perform:moonwalk', (c) => together(dust(c, [0.2, 0.36, 0.52, 0.68]), sparkles(c, 0.84, 1, head(c), 3, ['#FFF3B0', '#9FE0E6', '#FFFFFF'])));
+defineEffect('perform:disco', (c) => {
+  // A spinning mirror ball over the animal; coloured glints dance round it.
+  const ball = new THREE.Mesh(c.fx.shape('discoball', () => new THREE.IcosahedronGeometry(1, 1)), new THREE.MeshStandardMaterial({ color: '#E6EAF0', emissive: '#AFC2D8', emissiveIntensity: 0.45, metalness: 0.15, roughness: 0.25, flatShading: true, transparent: true }));
+  c.fx.scene.add(ball);
+  const ballFx = group([ball], (t) => {
+    c.actor.toy.headTop(tmp);
+    const on = easeOutBack(seg(t, 0.02, 0.12)) * (1 - easeInOut(seg(t, 0.9, 0.99)));
+    ball.visible = on > 0.01;
+    ball.position.set(tmp.x, tmp.y + c.u * 0.55, tmp.z);
+    ball.scale.setScalar(c.u * 0.12 * on);
+    ball.rotation.y = t * 14;
+  }, c);
+  return together(ballFx, sparkles(c, 0.1, 0.9, head(c), 6, ['#F4A6D0', '#9FE0E6', '#F7C534', '#B8F0B0']));
+});
+defineEffect('perform:chickendance', (c) => together(say(c, ['bawk!', 'bawk!'], '#c98a2a', 0.06, 0.4, 0.38), notes(c, 0.3, 3)));
+defineEffect('perform:startwirl', (c) => sparkles(c, 0.06, 0.94, middle(c), 8, ['#F7C534', '#FFF3B0', '#F4A6D0', '#9FE0E6']));
+defineEffect('perform:boogie', (c) => together(notes(c, 0.04, 4), confetti(c, [0.8], head(c), 16)));
+defineEffect('perform:duet', (c) =>
+  together(
+    notes(c, 0.04, 3),
+    floaters(
+      c,
+      (i) => {
+        const m = new THREE.Mesh(c.fx.shape('heart', heartGeometry), c.fx.shiny(i % 2 ? '#F28BA0' : '#E8556A', 0.3));
+        c.fx.scene.add(m);
+        return m;
+      },
+      2,
+      { from: 0.78, every: 0.08, life: 0.22, spread: 0.24, rise: 0.3, size: 0.06, spin: true },
+    ),
+  ),
+);
+defineEffect('perform:miniparade', (c) => together(notes(c, 0.04, 4), confetti(c, [0.86], head(c), 10)));

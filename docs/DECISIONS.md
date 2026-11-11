@@ -1985,3 +1985,30 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
   spots or the animals, the pond's wait, sets and the badge, the preview, older saves, the Shop card's preview, spot,
   set and show/hide, the sets section, the stage's dance and the bell); `walkPlaces` and `toys` updated for spots and
   motions.
+
+### PR D — eighteen more tricks and emotes, in four groups, for coins too
+- **36 in all.** Emotes: Happy Wiggle (free), Peekaboo (80 coins), Head Tilt (60), Little Sneeze (70), Sleepy Stretch
+  (60), Confetti Pop (2 tokens). Tricks: High Five (free), Tail Chase (100 coins), Somersault (2 tokens), Balloon Float
+  (50 gems), Drum Solo (55 gems). Dances: Moonwalk, Disco Paws, Silly Chicken Dance (3 tokens each), Star Twirl (45
+  gems), Barnyard Boogie (70 gems). Group acts: Buddy Duet (60 gems), Mini Parade (80 gems). Prices are starting points
+  for PR F's economy check.
+- **Paw Coins learn the everyday ones** (`tier: 'coins'`): earned by playing, so they're on sale in every build, a
+  release build without a store included. The spend goes through the coin ledger (`buy:trick:<id>`), once.
+- **Four groups** (`group`, else by kind): Emotes, Tricks, Dances, Group acts — the tray's tabs and the Shop's headings,
+  each split by how it's learned (free, coins, video tokens, gems). The tray has an **Again** row: the last four played
+  this session (owned ones only), redrawn in place so focus stays put.
+- **Group acts** take partners (`partners`: a duet one, the parade three): the nearest free animals in the scene (not
+  mid-trick, not away on a decoration) join a beat (160 ms) behind each other, with no bubble of their own; with nobody
+  free it's a solo. In 3D the partner's clip starts that beat later too (`Actor.perform(…, delay)`).
+- **Bodies do their own version**: big and tall animals roll on their side instead of a somersault and float lower under
+  the balloons; birds give a wing five and stretch their wings; seals bob through the dances (drawn: `data-trick-body`;
+  3D: the clip reads the body).
+- Every one has: drawn motion and a bubble exactly as long as it (`styles/tricks-d48.css`), a 3D clip of the same length
+  built from the same primitives (`D48_CLIPS`), 3D props (confetti, balloons, a drum, a mirror ball, a sneeze puff,
+  notes, words), drawn props for the showpieces (none under Reduce Motion), and **its own tune** of exactly its length
+  with a band no other tune has (`audio/scores.ts`; the phone-speaker levels within the D45 span, test + e2e).
+- **Preview before buying**: the Shop's card plays it on its own little stage (with partners for a group act) before
+  any price; *Show me again*.
+- Tests: `tricksD48.dom.test` (catalog and tiers, groups and partners, coins once through the ledger, drawn and 3D
+  length and rest, body versions, props and reduced motion, tunes, the tray's tabs and Again row, the Shop's groups and
+  buying with coins); `tricks.test` and `releaseBuild` updated for the new tiers.

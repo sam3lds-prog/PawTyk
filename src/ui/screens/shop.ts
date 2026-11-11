@@ -38,7 +38,7 @@ import { decorIcon } from '../art/sanctuary';
 import { activityFor } from '../art/activities';
 import { bowlIcon, foodIcon } from '../art/foods';
 import { trickBadge } from '../art/tricks';
-import { TRICKS, trickCurrency, type TrickId, type TrickKind, type TrickTier } from '../../meta/catalogs/tricks';
+import { TRICK_GROUP_NAME, TRICK_GROUPS, TRICKS, trickCurrency, trickGroup, type TrickGroup, type TrickId, type TrickTier } from '../../meta/catalogs/tricks';
 import { ownsTrick } from '../../meta/tricks';
 import { showTrickSheet } from '../components/tricks';
 import { openSheet, toast } from '../components/sheet';
@@ -372,11 +372,11 @@ export const shopScreen: ScreenDef = {
       </button></li>`;
     }
 
-    function trickSection(kind: TrickKind, tier: TrickTier, title: string, note: string, extra = ''): string {
-      const items = TRICKS.filter((t) => t.kind === kind && t.tier === tier && (ownsTrick(app.save, t.id) || offered(trickCurrency(t))));
+    function trickSection(group: TrickGroup, tier: TrickTier, title: string, note: string, extra = ''): string {
+      const items = TRICKS.filter((t) => trickGroup(t) === group && t.tier === tier && (ownsTrick(app.save, t.id) || offered(trickCurrency(t))));
       if (!items.length) return '';
       const owned = items.filter((t) => ownsTrick(app.save, t.id)).length;
-      return `<section class="shop-section shop-section--${tier === 'free' ? 'everyday' : tier}">
+      return `<section class="shop-section shop-section--${tier === 'free' ? 'everyday' : tier}" data-trick-group="${group}" data-trick-tier="${tier}">
         <div class="section-head"><h2>${esc(title)}</h2>${tier === 'free' ? '' : `<span class="muted num">${owned} of ${items.length} learned</span>`}</div>
         <p class="muted shop__note">${note}</p>
         ${extra}
@@ -384,18 +384,30 @@ export const shopScreen: ScreenDef = {
       </section>`;
     }
 
+    /** D48 PR D: what each kind of performance is, and what each way of learning it means. */
+    const GROUP_NOTE: Record<TrickGroup, string> = {
+      emote: 'Little feelings, with a bubble and a face to match.',
+      trick: 'Moves an animal does on its own.',
+      dance: 'Whole routines, with a tune of their own.',
+      group: 'The animal and its neighbours together: a duet or a little parade.',
+    };
+    const TIER_TITLE: Record<TrickTier, string> = { free: 'Everyone knows', coins: 'For coins', video: 'For video tokens', premium: 'Premium' };
+    const TIER_NOTE: Record<TrickTier, string> = {
+      free: 'Every resident and wildlife friend can do these.',
+      coins: 'Learned with the coins you earn from puzzles.',
+      video: 'Only for video tokens.',
+      premium: 'The most animated ones, with props, for gems.',
+    };
+    const TIERS: readonly TrickTier[] = ['free', 'coins', 'video', 'premium'];
+
     function tricksTab(): string {
       return `
-        <p class="muted shop__note">In a sanctuary, tap an animal (or the Tricks button) and ask for a trick or an emote. They are just for fun: they change nothing in your puzzles.</p>
+        <p class="muted shop__note">In a sanctuary, tap an animal (or the Tricks button) and ask for a trick or an emote. Tap one here to watch it first. They are just for fun: they change nothing in your puzzles.</p>
         ${videoTokenCard()}
-        <h2 class="shop__group">Tricks</h2>
-        ${trickSection('trick', 'free', 'Everyone knows', 'Every resident and wildlife friend can do these.')}
-        ${trickSection('trick', 'video', 'Video-token tricks', 'Only for video tokens.')}
-        ${trickSection('trick', 'premium', 'Premium tricks', 'The most animated tricks, for gems.')}
-        <h2 class="shop__group">Emotes</h2>
-        ${trickSection('emote', 'free', 'Everyone feels', 'Heart eyes and giggles, free for everyone.')}
-        ${trickSection('emote', 'video', 'Video-token emotes', 'Only for video tokens.')}
-        ${trickSection('emote', 'premium', 'Premium emotes', 'The most fun ones, with props, for gems.')}`;
+        ${TRICK_GROUPS.map((g) => {
+          const sections = TIERS.map((tier) => trickSection(g, tier, TIER_TITLE[tier], TIER_NOTE[tier])).join('');
+          return sections ? `<h2 class="shop__group">${TRICK_GROUP_NAME[g]}</h2><p class="muted shop__note">${GROUP_NOTE[g]}</p>${sections}` : '';
+        }).join('')}`;
     }
 
     function gemsTab(): string {
