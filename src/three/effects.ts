@@ -689,7 +689,62 @@ function finishAt(c: FxCtx): number {
 
 // The Welcome Parade (D44 PR D): the newcomer's finish throws the big confetti and a fan of stars; each guest a small
 // handful, so the shower is full but never a blizzard.
+/**
+ * The finish of a welcome celebration other than the Boogie (D48 PR E), from the preset in the dance's id: petals and
+ * flowers for the Meadow Hop, a fan and a shower of stars for the Sparkle Surprise, hearts rising for the Friendship
+ * Circle. The newcomer's is the biggest.
+ */
+function celebrationFinish(c: FxCtx, lead: boolean): Effect | null {
+  const d = c.id ? parseDanceId(c.id) : null;
+  if (!d?.preset) return null;
+  const at = finishAt(c);
+  if (d.preset === 'meadowhop') {
+    const petals = petalShower(c, at, lead ? 16 : 6);
+    return lead ? together(petals, dust(c, [at])) : petals;
+  }
+  if (d.preset === 'sparkle') return lead ? together(starFan(c, at), sparkles(c, at, 1, (o) => c.actor.toy.headTop(o), 6, ['#F7C534', '#FFF3B0', '#F4A6D0', '#9FE0E6'])) : sparkles(c, at, 1, (o) => c.actor.toy.headTop(o), 3);
+  return floaters(
+    c,
+    (i) => {
+      const m = new THREE.Mesh(c.fx.shape('heart', heartGeometry), c.fx.shiny(i % 2 ? '#F28BA0' : '#E8556A', 0.3));
+      c.fx.scene.add(m);
+      return m;
+    },
+    lead ? 5 : 2,
+    { from: at, every: 0.03, life: Math.max(0.1, 1 - at - 0.02), spread: 0.3, rise: 0.5, size: lead ? 0.09 : 0.07, spin: true },
+  );
+}
+
+/** Petals (pink, white and yellow ovals) that burst up a little and drift down, turning. */
+function petalShower(c: FxCtx, at: number, n: number): Effect {
+  const cols = ['#F6A6C8', '#FFFFFF', '#FFE08A', '#F9C5D9'];
+  const petals = Array.from({ length: n }, (_, i) => {
+    const m = new THREE.Mesh(c.fx.kit.lowSphere, c.fx.shiny(cols[i % cols.length], 0.25));
+    c.fx.scene.add(m);
+    return { m, a: (i / n) * Math.PI * 2 + i * 0.7, r: 0.25 + (i % 3) * 0.12, spin: 2 + (i % 4) };
+  });
+  return group(
+    petals.map((p) => p.m),
+    (t) => {
+      c.actor.toy.headTop(tmp);
+      const life = (t - at) / (1 - at);
+      for (const p of petals) {
+        p.m.visible = life > 0;
+        if (!p.m.visible) continue;
+        const up = Math.sin(Math.min(1, life * 2.2) * Math.PI) * 0.35 - life * 0.5;
+        p.m.position.set(tmp.x + Math.cos(p.a) * c.u * p.r * (0.6 + life), tmp.y + c.u * (0.1 + up), tmp.z + Math.sin(p.a) * c.u * p.r * 0.6 + c.u * 0.15);
+        p.m.scale.set(c.u * 0.045, c.u * 0.02, c.u * 0.03);
+        p.m.rotation.set(life * p.spin * 3, life * p.spin * 2, p.a);
+        (p.m.material as THREE.MeshStandardMaterial).opacity = fadeOut(life, 0.6);
+      }
+    },
+    c,
+  );
+}
+
 defineEffect('perform:dance:newcomer', (c) => {
+  const own = celebrationFinish(c, true);
+  if (own) return own;
   const at = finishAt(c);
   const pop = confetti(c, [at, at + 0.04], (o) => c.actor.toy.headTop(o), 20, finishConfetti(at));
   const fan = starFan(c, at);
@@ -706,7 +761,7 @@ defineEffect('perform:dance:newcomer', (c) => {
     },
   };
 });
-defineEffect('perform:dance:guest', (c) => confetti(c, [finishAt(c)], (o) => c.actor.toy.headTop(o), 8, finishConfetti(finishAt(c))));
+defineEffect('perform:dance:guest', (c) => celebrationFinish(c, false) ?? confetti(c, [finishAt(c)], (o) => c.actor.toy.headTop(o), 8, finishConfetti(finishAt(c))));
 defineEffect('perform:dance:group', (c) => confetti(c, [finishAt(c)], (o) => c.actor.toy.headTop(o), 12, finishConfetti(finishAt(c))));
 /** A dance's finish is seen from the whole scene, not a close-up: bigger pieces, and they fade only near the end. */
 const finishConfetti = (at: number) => ({ size: 2.2, fadeFrom: at + (1 - at) * 0.65 });

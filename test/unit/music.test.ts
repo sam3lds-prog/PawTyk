@@ -17,8 +17,9 @@ const KNOWN = new Set(['bass', 'pluck', 'marimba', 'bell', 'brass', 'whistle', '
 
 describe('the scores', () => {
   it('are well-formed: known instruments, notes inside the cue (with a little ring), real pitches and loudness', () => {
-    // The win, Welcome Home, the parade, the jig, the ambient tune (D45), and a tune per trick.
-    expect(all.length).toBe(5 + TRICKS.length);
+    // The win, Welcome Home, the parade, the jig, the ambient tune (D45), the three other welcomes (D48), and a tune
+    // per trick.
+    expect(all.length).toBe(8 + TRICKS.length);
     for (const s of all) {
       expect(s.bpm).toBeGreaterThan(40);
       expect(s.bpm).toBeLessThan(260);

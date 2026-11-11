@@ -130,7 +130,7 @@ export async function d46Checks({ browser, URL, check, errors }) {
   await tapAt(qa, '.parade-skip');
   await qa.waitForTimeout(900);
   const watched = await sceneState(qa);
-  check('the offered welcome plays when the player asks for it, then offers a replay (D46)', watching.parading && watching.music === 'bounce' && atRest(watched) && watched.offered === 'Replay the parade', JSON.stringify({ watching, watched }));
+  check('the offered welcome plays when the player asks for it, then offers a replay (D46)', watching.parading && ['bounce', 'hopalong', 'sparkle', 'circle'].includes(watching.music) && atRest(watched) && watched.offered === 'Replay the parade', JSON.stringify({ watching, watched }));
 
   // Tour tapped during the lead-in: the tour keeps its stops.
   await arriveThen(qa, 'tour');

@@ -12,7 +12,7 @@
  * confetti, still. Stopping (a skip, leaving the screen) puts every dancer back at once.
  */
 
-import { danceId, danceSections, type DanceRole, type DanceSpec, type DanceStyle } from '../../three/dance';
+import { danceId, danceSections, type DancePreset, type DanceRole, type DanceSpec, type DanceStyle } from '../../three/dance';
 import { toySpec } from '../../three/species';
 import { animalInfo, isAnimalId } from '../../meta/animals';
 import { temperamentOf } from '../../meta/temperament';
@@ -67,11 +67,27 @@ export function danceStyleFor(animal: string): DanceStyle {
 const figureAnimal = (g: SVGGElement) => g.dataset.pet ?? g.dataset.friend ?? '';
 
 /**
+ * How each celebration (D48 PR E) dances: everyone hops for the Meadow Hop and ends in a leap; the Sparkle Surprise's
+ * newcomer twirls while the others bob in wonder and cheer; the Friendship Circle sways together and everyone leans in
+ * toward the newcomer at the end. The Boogie (no preset) is the D44 parade: each its own style, poses in turn.
+ */
+function presetStep(preset: DancePreset, role: DanceRole, own: DanceStyle): DanceStyle {
+  if (preset === 'meadowhop') return 'hop';
+  if (preset === 'sparkle') return role === 'newcomer' ? 'twirl' : own === 'flap' ? 'flap' : 'bob';
+  return 'sway';
+}
+function presetPose(preset: DancePreset, role: DanceRole): number {
+  if (preset === 'meadowhop') return 3;
+  if (preset === 'sparkle') return role === 'newcomer' ? 2 : 0;
+  return 1;
+}
+
+/**
  * Who dances and how: every animal in the scene (not one away on a decoration). With a `newcomer`, it gets the
  * newcomer's part and everyone else turns toward it; without, all dance as a group. Finishing poses go round in order
- * across the scene, so neighbours always strike different ones.
+ * across the scene, so neighbours always strike different ones (a celebration's `preset` sets them its own way).
  */
-export function planDance(svg: SVGSVGElement, o: { bpm: number; beats: number; newcomer?: string; only?: string[] }): Dancer[] {
+export function planDance(svg: SVGSVGElement, o: { bpm: number; beats: number; newcomer?: string; only?: string[]; preset?: DancePreset }): Dancer[] {
   const figs = [...svg.querySelectorAll<SVGGElement>('.sanctuary__pet[data-gx]')]
     .filter((g) => !g.classList.contains('is-away') && !g.dataset.trick)
     .filter((g) => !o.only || o.only.includes(figureAnimal(g)))
@@ -85,13 +101,17 @@ export function planDance(svg: SVGSVGElement, o: { bpm: number; beats: number; n
     const x = Number(fig.dataset.gx);
     const role: DanceRole = lead ? (fig === lead ? 'newcomer' : 'guest') : 'group';
     const side = role === 'guest' ? (leadX! >= x ? 'R' : 'L') : x < mid ? 'R' : 'L';
+    const own = danceStyleFor(animal);
+    // A celebration with no newcomer in the scene (it left, say) is the D44 group dance.
+    const preset = lead ? o.preset : undefined;
     const spec: DanceSpec = {
       role,
-      style: danceStyleFor(animal),
-      variant: (i + seed) % 4,
+      style: preset ? presetStep(preset, role, own) : own,
+      variant: preset ? presetPose(preset, role) : (i + seed) % 4,
       side,
       bpm: o.bpm,
       beats: o.beats,
+      ...(preset ? { preset } : {}),
     };
     return { fig, animal, spec, id: danceId(spec) };
   });
@@ -116,7 +136,8 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
   const first = dancers[0]?.spec;
   const sec = first ? danceSections(first) : { intro: 0, finish: 0, end: 0 };
 
-  const partClasses = (d: Dancer) => [`is-dance-${d.spec.style}`, 'is-dance-enter', 'is-dance-invite', ...[0, 1, 2, 3].map((n) => `is-dance-pose-${n}`)];
+  const partClasses = (d: Dancer) => [`is-dance-${d.spec.style}`, 'is-dance-enter', 'is-dance-invite', ...[0, 1, 2, 3].map((n) => `is-dance-pose-${n}`), ...(d.spec.preset ? [`is-dance-${d.spec.preset}`] : [])];
+  const preset = dancers.find((d) => d.spec.preset)?.spec.preset;
 
   // The stage (D45 PR D): one wide wash of warm light on the ground under the whole group, so the dancers share a
   // floor instead of standing in separate puddles. It brightens for the final pose.
@@ -138,6 +159,20 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
     const firstFig = dancers.map((d) => d.fig).find((f) => f.parentNode);
     firstFig?.parentNode?.insertBefore(floor, firstFig.parentNode.querySelector('.sanctuary__pet') ?? firstFig);
     overlays.push(floor);
+    // The Friendship Circle (D48 PR E): a ring of little hearts on the ground round everyone.
+    if (preset === 'circle') {
+      const cx = (x0 + x1) / 2;
+      const cy = (y0 + y1) / 2 + 2;
+      const rx = (x1 - x0) / 2 + 12;
+      const ry = Math.max(11, (y1 - y0) / 2 + 11);
+      const n = Math.max(10, Math.min(22, Math.round(rx / 6)));
+      const hearts = Array.from({ length: n }, (_, i) => {
+        const a = (i / n) * Math.PI * 2;
+        return `<path style="animation-delay:${Math.round((i / n) * 600)}ms" d="${heartPath(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry, 2.4)}" fill="${i % 2 ? '#F28BA0' : '#E8556A'}"/>`;
+      }).join('');
+      floor.insertAdjacentHTML('afterend', `<g class="sp-dance-ring${o.reducedMotion ? ' is-still' : ''}" aria-hidden="true">${hearts}</g>`);
+      overlays.push(floor.nextElementSibling!);
+    }
   }
   // The dance floor (D44 PR G): a soft pool of light on the ground under each dancer, for the dance's length.
   for (const d of dancers) {
@@ -168,6 +203,7 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
     f.style.setProperty('--beat', `${beat}ms`);
     f.style.setProperty('--side', d.spec.side === 'R' ? '1' : '-1');
     f.classList.add('is-dancing');
+    if (d.spec.preset) f.classList.add(`is-dance-${d.spec.preset}`);
     if (o.reducedMotion) f.classList.add('is-dance-still');
     else {
       // The 3D stage plays the clip moving only with this class (as for a trick).
@@ -199,7 +235,7 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
     o.onPart?.('finish');
     // The lights come up for the final pose.
     for (const n of overlays) n.classList.add('is-finale');
-    if (!in3d()) overlays.push(...confettiOverlay(svg, dancers, o.reducedMotion));
+    if (!in3d()) overlays.push(...confettiOverlay(svg, dancers, o.reducedMotion, preset));
   });
   at(sec.end, () => finish(true));
 
@@ -222,8 +258,11 @@ export function startDance(svg: SVGSVGElement, dancers: Dancer[], clock: Pick<Pl
   return { dancers, done, stop: () => finish(false) };
 }
 
-/** The finish's confetti and stars over the dancers, for drawn scenes (the 3D stage throws its own). */
-function confettiOverlay(svg: SVGSVGElement, dancers: Dancer[], still: boolean): Element[] {
+/**
+ * The finish over the dancers, for drawn scenes (the 3D stage throws its own): confetti and stars for the Boogie,
+ * petals for the Meadow Hop, a shower of stars for the Sparkle Surprise, hearts rising for the Friendship Circle.
+ */
+function confettiOverlay(svg: SVGSVGElement, dancers: Dancer[], still: boolean, preset?: DancePreset): Element[] {
   if (!dancers.length) return [];
   const xs = dancers.map((d) => Number(d.fig.dataset.gx));
   const ys = dancers.map((d) => Number(d.fig.dataset.gy) - Number(d.fig.dataset.gh ?? 30));
@@ -240,14 +279,33 @@ function confettiOverlay(svg: SVGSVGElement, dancers: Dancer[], still: boolean):
     const rot = Math.round(rnd() * 180);
     const delay = Math.round(rnd() * 260);
     const col = cols[i % cols.length];
-    bits.push(
-      i % 5 === 0
-        ? `<path class="sp-confetti sp-confetti--star" style="animation-delay:${delay}ms" d="${star(x, y, 3.2)}" fill="#F7C534"/>`
-        : `<rect class="sp-confetti" style="animation-delay:${delay}ms" x="${(x - 1.6).toFixed(1)}" y="${(y - 1).toFixed(1)}" width="3.2" height="2" rx="0.4" fill="${col}" transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"/>`,
-    );
+    const at = `style="animation-delay:${delay}ms"`;
+    if (preset === 'meadowhop')
+      bits.push(
+        i % 4 === 0
+          ? `<g class="sp-confetti sp-confetti--flower" ${at}>${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(x + Math.cos((a * Math.PI) / 180) * 1.6).toFixed(1)}" cy="${(y + Math.sin((a * Math.PI) / 180) * 1.6).toFixed(1)}" r="1.2" fill="${i % 8 ? '#FFFFFF' : '#F6A6C8'}"/>`).join('')}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="0.9" fill="#F2C230"/></g>`
+          : `<ellipse class="sp-confetti sp-confetti--petal" ${at} cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="1.8" ry="1" fill="${['#F6A6C8', '#FFFFFF', '#FFE08A', '#F9C5D9'][i % 4]}" transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"/>`,
+      );
+    else if (preset === 'sparkle')
+      bits.push(`<path class="sp-confetti sp-confetti--star" ${at} d="${star(x, y, 2.2 + (i % 3))}" fill="${['#F7C534', '#FFF3B0', '#F4A6D0', '#9FE0E6'][i % 4]}"/>`);
+    else if (preset === 'circle') {
+      if (i % 2) continue;
+      bits.push(`<path class="sp-confetti sp-confetti--heart" ${at} d="${heartPath(x, y + 18, 2.6 + (i % 3) * 0.6)}" fill="${i % 4 ? '#F28BA0' : '#E8556A'}"/>`);
+    } else
+      bits.push(
+        i % 5 === 0
+          ? `<path class="sp-confetti sp-confetti--star" ${at} d="${star(x, y, 3.2)}" fill="#F7C534"/>`
+          : `<rect class="sp-confetti" ${at} x="${(x - 1.6).toFixed(1)}" y="${(y - 1).toFixed(1)}" width="3.2" height="2" rx="0.4" fill="${col}" transform="rotate(${rot} ${x.toFixed(1)} ${y.toFixed(1)})"/>`,
+      );
   }
-  svg.insertAdjacentHTML('beforeend', `<g class="sp-dance-confetti${still ? ' is-still' : ''}" aria-hidden="true">${bits.join('')}</g>`);
+  svg.insertAdjacentHTML('beforeend', `<g class="sp-dance-confetti${preset ? ` sp-dance-confetti--${preset}` : ''}${still ? ' is-still' : ''}" aria-hidden="true">${bits.join('')}</g>`);
   return [svg.lastElementChild!];
+}
+
+/** A small heart centred on (x, y), `r` across half its width. */
+function heartPath(x: number, y: number, r: number): string {
+  const f = (n: number) => n.toFixed(1);
+  return `M${f(x)} ${f(y + r)} C${f(x - r * 1.6)} ${f(y)} ${f(x - r * 0.9)} ${f(y - r * 1.1)} ${f(x)} ${f(y - r * 0.35)} C${f(x + r * 0.9)} ${f(y - r * 1.1)} ${f(x + r * 1.6)} ${f(y)} ${f(x)} ${f(y + r)} Z`;
 }
 
 function star(x: number, y: number, r: number): string {

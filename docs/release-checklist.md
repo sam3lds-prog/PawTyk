@@ -427,6 +427,14 @@ build is ready on an iPhone. Everything below is for a real device.
 - [ ] Each new tune on a phone speaker, sound on: none much louder or quieter than Wave or Love
 - [ ] Reduce Motion: the bubble only, still; no props
 
+**PR E — welcome celebrations**
+- [ ] Bring four animals home one after another (Settings → Celebrations: Always full): four welcomes, no two in a
+      row the same; each sounds and looks like itself (Meadow Hop, Sparkle Surprise, Friendship Circle, Boogie)
+- [ ] Replay under the scene and from the animal's card: the same celebration; coins, hearts and food unchanged
+- [ ] Skip each part-way; Escape; leave the app mid-celebration: everyone back at rest, music stops
+- [ ] Reduce Motion: still happy faces; the hearts ring and the finish shown still; 3D toys off: the same, drawn
+- [ ] On a phone speaker: the three new tunes about as loud as Barnyard Bounce
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

@@ -35,6 +35,7 @@ import { mountTrickTray } from '../components/tricks';
 import { createScene3D } from '../components/scene3d';
 import { SceneCamera } from '../components/camera';
 import { missedWelcome, sceneParades, scheduleParade } from '../components/parade';
+import { CELEBRATION_BY_ID, assignCelebration, celebrationFor, celebrationOf } from '../../meta/celebrations';
 import { createSceneDirector } from '../components/sceneDirector';
 import { startAmbient, stopAmbient, stopMusic } from '../../services/music';
 import { celebrationLength } from '../../meta/celebration';
@@ -133,6 +134,13 @@ export const sanctuaryScreen: ScreenDef = {
       reducedMotion: () => app.reducedMotion,
       // D46 PR B: a parade waits for the toys of the renderer there is now (rebuilt after the walk, say).
       toysReady: () => s3d.ready,
+      // D48 PR E: the newcomer's welcome celebration, settled the first time it plays.
+      celebration: (newcomer) => {
+        const had = celebrationOf(app.save, newcomer);
+        const c = assignCelebration(app.save, newcomer);
+        if (!had) app.persist();
+        return c;
+      },
     });
     const closeups = sceneCloseUps({
       host: () => el.querySelector<HTMLElement>('.sanctuary__scene'),
@@ -157,8 +165,14 @@ export const sanctuaryScreen: ScreenDef = {
     });
     /** An animal's card (a resident's or a friend's), its feeding played out in the garden. */
     function openCard(id: string): void {
-      if (isPetId(id)) showPetSheet(scope, id, { showVisit: false, ...meals.events(id, animalInfo(id).name) });
-      else if (isHome(app.save, id as AnimalId)) showFriendSheet(scope, id as CompanionId, meals.events(id, animalInfo(id as AnimalId).name));
+      if (isPetId(id)) showPetSheet(scope, id, { showVisit: false, ...meals.events(id, animalInfo(id).name), welcome: welcomeFor(id) });
+      else if (isHome(app.save, id as AnimalId)) showFriendSheet(scope, id as CompanionId, { ...meals.events(id, animalInfo(id as AnimalId).name), welcome: welcomeFor(id) });
+    }
+    /** D48 PR E: an animal's card replays its welcome celebration in the garden (it grants nothing). */
+    function welcomeFor(animal: string): { label: string; play: () => void } | undefined {
+      if (!el.querySelector(`.sanctuary__scene [data-friend="${animal}"], .sanctuary__scene [data-pet="${animal}"]`)) return undefined;
+      const c = CELEBRATION_BY_ID[celebrationFor(app.save, animal)];
+      return { label: `Replay the welcome: ${c.name}`, play: () => void parades.play(animal) };
     }
     // The home's ambient tune (D45 PR D), if the player has turned it on: after the hellos, and gone with the screen.
     if (app.settings.ambientMusic && true) scope.timeout(() => scope.alive && startAmbient('harmony'), 1800);

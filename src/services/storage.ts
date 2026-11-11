@@ -228,6 +228,11 @@ export interface SaveV2 {
     grown: Record<string, string>;
     /** The growth policy this save is on: 1 = every solve counted (D35); 2 = each puzzle once (D38). Missing = 1. */
     policy?: number;
+    /**
+     * The welcome celebration each animal has had (D48 PR E, `meta/celebrations.ts`), and the latest one: the next
+     * newcomer's is never the same. Ids are kept as they are, so an older build's save and a newer one's both round-trip.
+     */
+    celebrations?: { last?: string; by: Record<string, string> };
   };
   /** The online leaderboard (opt-in). Solved boards wait here until the server has checked them. */
   leaderboard: LeaderboardSave;
@@ -788,6 +793,14 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
         : {},
       grown: isObj(x.world) ? rec(x.world.grown, strItem) : {},
       ...(isObj(x.world) && typeof x.world.policy === 'number' && Number.isFinite(x.world.policy) ? { policy: Math.round(x.world.policy) } : {}),
+      ...(isObj(x.world) && isObj(x.world.celebrations)
+        ? {
+            celebrations: {
+              ...(typeof x.world.celebrations.last === 'string' ? { last: x.world.celebrations.last } : {}),
+              by: rec(x.world.celebrations.by, strItem),
+            },
+          }
+        : {}),
     },
     leaderboard: normLeaderboard(x.leaderboard),
     missions: {

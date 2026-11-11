@@ -18,7 +18,8 @@ import { groupView, PARADE_CLOSE_ZOOM, startParade } from '../../src/ui/componen
 import type { SceneCamera, View } from '../../src/ui/components/camera';
 import { nowPlaying, stopMusic } from '../../src/services/music';
 
-const PARADE_MS = cueMs(SCORES.bounce) + 600;
+// The longest of the four welcomes (D48 PR E: an animal's may be any of them).
+const PARADE_MS = Math.max(...(['bounce', 'hopalong', 'sparkle', 'circle'] as const).map((c) => cueMs(SCORES[c]))) + 600;
 const JIG_MS = cueMs(SCORES.jig) + 600;
 
 const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
@@ -233,7 +234,8 @@ describe('level 3: the parade', () => {
 });
 
 describe('the parade on Meet, and a group dance at a new stage', () => {
-  const saveNow = () => JSON.stringify({ ...app.save, world: { ...app.save.world, visited: {} } });
+  // (D48 PR E: which welcome celebration an animal has had is kept, so a replay is the same one. It pays nothing.)
+  const saveNow = () => JSON.stringify({ ...app.save, world: { ...app.save.world, visited: {}, celebrations: undefined } });
 
   it('Meet plays the parade; Replay plays it again and pays nothing either time', async () => {
     app.settings.reducedMotion = 'reduce';

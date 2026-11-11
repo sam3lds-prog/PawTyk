@@ -318,7 +318,7 @@ interface Listen {
   label: string;
 }
 
-/** Every tune worth hearing on a phone speaker: the signature cues, the theme in each home, every trick tune. */
+/** Every tune worth hearing on a phone speaker: the signature cues, the theme in each home, the welcomes, every trick tune. */
 export function listeningList(): { title: string; items: Listen[] }[] {
   const homeName: Record<string, string> = { farm: 'Farm', harmony: 'Pet Garden', outback: 'Outback', savanna: 'Savanna', arctic: 'Arctic', amazon: 'Rainforest' };
   return [
@@ -327,6 +327,8 @@ export function listeningList(): { title: string; items: Listen[] }[] {
       items: (['triumph', 'welcome', 'bounce', 'jig', 'meadow'] as const).map((id) => ({ id, label: SCORES[id].title })),
     },
     { title: 'The parade in every home', items: THEME_HOMES.map((h) => ({ id: 'bounce' as CueId, home: h, label: `Barnyard Bounce · ${homeName[h] ?? h}` })) },
+    // D48 PR E: the other three welcomes.
+    { title: 'The welcome celebrations', items: (['hopalong', 'sparkle', 'circle'] as const).map((id) => ({ id, label: SCORES[id].title })) },
     { title: 'Trick tunes', items: TRICKS.map((t) => ({ id: `trick:${t.id}` as CueId, label: `${t.name} · ${SCORES[`trick:${t.id}`]?.title ?? ''}` })) },
   ];
 }
@@ -340,7 +342,7 @@ export function showListeningCheck(parent: Scope): void {
     className: 'qa-listen',
     body: `
       <p class="sheet__lead">${musicEnabled() ? 'Through the phone’s own speaker, ringer on, at a normal volume. Each should sound clear, never harsh or buzzy, and about as loud as the others.' : 'Music is off in Settings: turn it on to hear these.'}</p>
-      <button class="btn btn--block" data-listen-all>Play all in order (about two minutes)</button>
+      <button class="btn btn--block" data-listen-all>Play all in order (about four minutes)</button>
       ${groups
         .map(
           (g) => `<div class="rows-title">${esc(g.title)}</div><div class="rows">${g.items
