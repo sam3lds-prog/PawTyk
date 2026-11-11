@@ -154,3 +154,19 @@ describe('D48 saves', () => {
     expect(setProgress(back, 'camp')).toMatchObject({ complete: true, together: true });
   });
 });
+
+describe('tester shortcuts for D48 (QA builds only)', () => {
+  it('Add 500 Paw Coins adds them once per tap; Watch a welcome steps a Farm animal through the four, never moving "last"', async () => {
+    const { giveCoins, nextWelcome } = await import('../../src/app/qaTools');
+    const s = defaultSave(NOW);
+    expect(nextWelcome(s)).toBeNull();
+    giveCoins(s, 500, NOW);
+    giveCoins(s, 500, new Date(NOW.getTime() + 1));
+    expect(balance(s)).toBe(1000);
+    s.inventory.companions.cotton = { unlockedAt: '2026-10-01T11:00:00.000Z' };
+    const seen = [1, 2, 3, 4, 5].map(() => nextWelcome(s)!);
+    expect(seen.every((w) => w.animal === 'cotton')).toBe(true);
+    expect(seen.map((w) => w.celebration)).toEqual(['boogie', 'meadowhop', 'sparkle', 'circle', 'boogie']);
+    expect(s.world.celebrations?.last).toBeUndefined();
+  });
+});

@@ -2059,3 +2059,6 @@ Nothing here touches puzzles, hearts, hints, rankings or the Paw Cup.
   hearts), Skip, the replay from the animal's card, and nothing in the save changed; every new control has a name; no
   stalls during a drawn celebration (with 3D toys the test browser renders in software, so it is only reported).
 - The music checks now count 44 cues and hold the three new welcomes to the signature cues' loudness (e2e).
+- **Tester shortcuts** (QA builds only, Settings): *Add 500 Paw Coins* (a tester gift in the coin ledger) and *Watch a
+  welcome celebration* (each tap plays the next of the four on the Farm, for an animal at home there; it changes only
+  that animal's record, never which came last). *Listen to every tune* lists the three new welcomes.
