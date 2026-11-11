@@ -12,6 +12,7 @@
  */
 
 import { FIREBASE, TEST_BUILD, firebaseConfigured } from '../config/services';
+import { firebaseApp } from './firebaseApp';
 import { utcWeekKey } from '../game/dates';
 import type { SubmitResult } from '../leaderboard/server';
 import type { PendingSolve } from './storage';
@@ -187,8 +188,8 @@ class FirebaseLeaderboard implements LeaderboardService {
 
   private load(): Promise<FirebaseKit> {
     this.kit ??= (async () => {
-      const [appMod, authMod, fs, fns] = await Promise.all([import('firebase/app'), import('firebase/auth'), import('firebase/firestore'), import('firebase/functions')]);
-      const app = appMod.initializeApp({ apiKey: FIREBASE.apiKey, authDomain: FIREBASE.authDomain || undefined, projectId: FIREBASE.projectId, appId: FIREBASE.appId });
+      // D47: the shared Firebase app (web analytics may have made it first).
+      const [app, authMod, fs, fns] = await Promise.all([firebaseApp(), import('firebase/auth'), import('firebase/firestore'), import('firebase/functions')]);
       // No popup/redirect resolver: anonymous sign-in only, which also keeps Auth working inside the iOS web view.
       const auth = authMod.initializeAuth(app, { persistence: [authMod.indexedDBLocalPersistence, authMod.browserLocalPersistence] });
       const db = fs.getFirestore(app);

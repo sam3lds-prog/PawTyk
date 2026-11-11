@@ -70,6 +70,8 @@ export const FIREBASE = {
   authDomain: (env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined) ?? '',
   projectId: (env.VITE_FIREBASE_PROJECT_ID as string | undefined) ?? '',
   appId: (env.VITE_FIREBASE_APP_ID as string | undefined) ?? '',
+  /** Google Analytics for Firebase on the web (dev and tester builds; the app itself uses the native SDK). */
+  measurementId: (env.VITE_FIREBASE_MEASUREMENT_ID as string | undefined) ?? '',
   /** Region the Cloud Functions are deployed in. */
   functionsRegion: (env.VITE_FIREBASE_REGION as string | undefined) || 'us-central1',
   /** Point the client at local emulators (development only). */
@@ -77,3 +79,13 @@ export const FIREBASE = {
 } as const;
 
 export const firebaseConfigured = (): boolean => !!(FIREBASE.apiKey && FIREBASE.projectId && FIREBASE.appId);
+
+/**
+ * Usage statistics through Google Analytics for Firebase (D47 PR 6). Off until configured (`VITE_FIREBASE_ANALYTICS=1`
+ * and, in the iOS app, GoogleService-Info.plist; see docs/native-setup.md), and even then nothing is sent unless the
+ * player turns on "Share anonymous usage stats" (Settings, or the one-time ask). No user id, no advertising id, no
+ * ad storage or ad personalization: aggregate product statistics only (docs/analytics.md).
+ */
+export const ANALYTICS = {
+  enabled: env.VITE_FIREBASE_ANALYTICS === '1',
+} as const;

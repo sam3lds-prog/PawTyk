@@ -20,7 +20,7 @@ describe('the privacy policy', () => {
     const text = JSON.stringify(privacyPolicy('hi@example.com'));
     // src/boot.ts calls app.reconcilePurchases() at launch, which reaches RevenueCat whenever a key is set.
     expect(text).toMatch(/Each time PawTyk starts, it asks RevenueCat/);
-    expect(text).toMatch(/leaderboard and reward videos stay off until you choose/);
+    expect(text).toMatch(/leaderboard, reward videos and usage statistics stay off until you choose/);
     expect(text).not.toMatch(/Each one stays off until you choose/);
     expect(text).not.toMatch(/Nothing leaves your device unless you choose/);
   });
@@ -51,5 +51,14 @@ describe('the privacy policy', () => {
     expect(cleanUrl('https://pawtyk.web.app/privacy.html')).toBe('https://pawtyk.web.app/privacy.html');
     expect(cleanUrl('http://pawtyk.web.app/privacy.html')).toBeNull();
     expect(cleanUrl('https://x.y/"onload=')).toBeNull();
+  });
+
+  it('describes usage statistics (D47 PR 6): off unless turned on, what is sent, what never is, and how to stop', () => {
+    const text = JSON.stringify(privacyPolicy('hi@example.com'));
+    expect(text).toMatch(/Usage statistics \(Google Analytics for Firebase\)\. Off unless you turn on/);
+    expect(text).toMatch(/never send a user id/);
+    expect(text).toMatch(/advertising identifier/);
+    expect(text).toMatch(/Turn it off any time in Settings/);
+    expect(text).not.toMatch(/we don’t send analytics/);
   });
 });

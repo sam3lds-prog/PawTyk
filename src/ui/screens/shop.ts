@@ -87,6 +87,7 @@ export const shopScreen: ScreenDef = {
     if (route.screen === 'shop' && route.tab) tab = lastTab = route.tab;
     const tabs = (): Tab[] => (gemPacksOnSale() ? ['decor', 'food', 'tricks', 'gems'] : ['decor', 'food', 'tricks']);
     if (!tabs().includes(tab)) tab = lastTab = 'decor';
+    track('store_open', { tab });
     // The sanctuary you're building comes first, until you pick another.
     let place: BaseSanctuaryId = lastPlace ?? shopHome(activeSanctuary(app.save) ?? 'farm');
     let products: ProductInfo[] = PRODUCT_CATALOG.map((p) => ({ ...p, price: null }));
@@ -355,7 +356,9 @@ export const shopScreen: ScreenDef = {
           track('iap_success', { product: id });
           toast(gems ? `+${gems} gems. Thank you for supporting PawTyk!` : 'Thank you for supporting PawTyk!', ICON.gem);
         } else {
-          track('iap_failed', { product: id, reason: r.reason });
+          // D47 PR 6: a cancel is the player's choice, not a failure.
+          if (r.reason === 'cancelled') track('iap_cancelled', { product: id });
+          else track('iap_failed', { product: id, reason: r.reason });
           if (r.reason !== 'cancelled') toast('The purchase did not go through. You were not charged.');
         }
         if (scope.alive) render();

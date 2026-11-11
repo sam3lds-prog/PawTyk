@@ -17,6 +17,7 @@ import { app } from '../../app/app';
 import { homeState } from '../../meta/homeState';
 import { DECOR_PLACES, LANDMARKS, PLACES, landmarksAt, mapPoint, type LandmarkId } from '../../three/walkMath';
 import { feel } from '../../services/feel';
+import { track } from '../../services/analytics';
 import { cameraQuality } from './camera';
 import { wants3D } from './scene3d';
 import { esc, h } from '../dom';
@@ -83,6 +84,7 @@ export function showFarmWalk(parent: Scope, opts: { returnFocus?: () => HTMLElem
     </div>`);
   document.body.appendChild(el);
   document.body.classList.add('has-walk');
+  track('walk_start', { stage: farm.stage });
   // Modal: the screen underneath can't be tabbed to or tapped while walking (D44 PR I review).
   const under = document.getElementById('app');
   const wasInert = !!under?.inert;

@@ -36,6 +36,7 @@ import { openLandmark } from '../components/landmarks';
 import { sceneTour, tourButtonMarkup } from '../components/tour';
 import { canWalk, showFarmWalk, walkButtonMarkup, type WalkHandle } from '../components/walk';
 import { openPhotoMode, type PhotoMode } from '../components/photoMode';
+import { trackFirst } from '../../app/usage';
 import { captureScene } from '../components/sceneCapture';
 import { photoButtonMarkup, photoFrames } from '../components/photoFrames';
 import { HOME_SCENERY } from '../art/homeScenery';
@@ -80,6 +81,10 @@ export const regionScreen: ScreenDef = {
       app.persist();
     } else if (news) app.persist();
     track('region_open', { region: id, stage: stageOf(app.save, id) });
+    // D47 PR 6: home visits (the first to each home on its own) and how long the player stays.
+    if (!trackFirst(app.save, `visit:${id}`, 'home_visit', { home: id, first: true })) track('home_visit', { home: id, first: false });
+    const cameAt = Date.now();
+    scope.onDispose(() => track('home_time', { home: id, seconds: Math.min(3600, Math.round((Date.now() - cameAt) / 1000)) }));
     // Who came home, just now (a win's Meet) or while the player was elsewhere (the "New" marker): their cards say New
     // and the first one's figure gets a moment in the light (D39).
     const newcomers = [...new Set([...(route.welcome ?? []), ...((news?.animals ?? []) as AnimalId[])])].filter((w) => isHome(app.save, w));

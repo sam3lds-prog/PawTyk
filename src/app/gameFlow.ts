@@ -9,6 +9,7 @@
  */
 
 import { app } from './app';
+import { trackFirst } from './usage';
 import { modeKey, playsSolo, rulesFor, type ModeRef } from '../game/modes';
 import { currentSpec, modeTitle, puzzleFor, sizeFor } from '../game/puzzles';
 import { displayDifficulty } from '../game/grading';
@@ -58,6 +59,8 @@ export function startGame(mode: ModeRef): boolean {
   // Which animals this board shows is decided once, when it starts, and kept with it (D35).
   app.active = { mode, session, spec, cast: castFor(app.save, session.rule, puzzle.seed), boardId: newBoardId(mode) };
   track('puzzle_start', { mode: mode.kind, size: puzzle.size, difficulty: displayDifficulty(puzzle) });
+  // D47 PR 6: the funnel's first step, once.
+  trackFirst(app.save, 'puzzle_start', 'first_puzzle_start', { mode: mode.kind, ...(mode.kind === 'level' ? { level: mode.level } : {}) });
   app.router.go({ screen: 'game' });
   return true;
 }

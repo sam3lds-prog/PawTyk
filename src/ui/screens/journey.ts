@@ -9,6 +9,7 @@
  */
 
 import { app } from '../../app/app';
+import { applyUsageChoice, shouldAskUsage } from '../../app/usage';
 import { nextZenMode, playMode, resumableMode, resumableSessions, resumeGame, savedBoardLine, savedFor, startGame } from '../../app/gameFlow';
 import { hasMeaningfulProgress } from '../../game/sessionPersistence';
 import { addDaysKey, localDateKey, localWeekStart } from '../../game/dates';
@@ -323,9 +324,21 @@ function mountHub(root: HTMLElement, scope: Scope): void {
       </section>`
           : ''
       }
+      <div data-usage-ask></div>
       <section class="missions card" aria-labelledby="missions-title" data-missions></section>
     </div>`);
   root.appendChild(el);
+  // D47 PR 6: once, in a build that can send them, after a few sessions: would the player share anonymous usage stats?
+  // Nothing is sent unless they say yes; no answer is the same as no (and Settings has the switch either way).
+  void shouldAskUsage(save).then((ask) => {
+    const slot = el.querySelector<HTMLElement>('[data-usage-ask]');
+    if (!ask || !slot || !scope.alive) return;
+    slot.innerHTML = `<section class="card usage-ask" aria-labelledby="usage-title">
+        <h2 id="usage-title">Help make PawTyk better?</h2>
+        <p class="muted">Share anonymous usage stats: which features get used and where puzzles get tricky. Never who you are, no advertising id, nothing sold. You can change this any time in Settings.</p>
+        <div class="usage-ask__actions"><button class="btn btn--secondary" data-act="usage-yes">Share stats</button><button class="btn btn--quiet" data-act="usage-no">No thanks</button></div>
+      </section>`;
+  });
 
   // The thumbnail needs the board's regions; build it after first paint so the screen appears instantly.
   scope.timeout(() => {
@@ -458,6 +471,15 @@ function mountHub(root: HTMLElement, scope: Scope): void {
         app.save.onboarding.seenPantryIntro = true;
         app.persist();
         el.querySelector('[data-pantry-intro]')?.remove();
+        break;
+      case 'usage-yes':
+      case 'usage-no':
+        app.save.onboarding.usageAsked = true;
+        app.save.settings.shareUsage = a.act === 'usage-yes';
+        app.persist();
+        void applyUsageChoice(app.save);
+        el.querySelector('[data-usage-ask]')?.replaceChildren();
+        if (a.act === 'usage-yes') toast('Thank you! Change it any time in Settings.');
         break;
       case 'continue':
         if (resumeLevel) {

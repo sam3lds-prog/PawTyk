@@ -112,6 +112,29 @@ Players are never signed in automatically: nothing reaches Firebase until a play
 Without the Firebase settings a release build has no Leaderboard tab at all (D43); development builds and the tester
 preview run the same server logic on the device (a table with only you on it).
 
+## 3b. Usage statistics — Google Analytics for Firebase (`@capacitor-firebase/analytics`, D47)
+
+Off until you turn it on here, and then still off for each player until they choose "Share anonymous usage stats"
+(Settings, or a one-time card on Journey after a few sessions). What is sent: `docs/analytics.md`.
+
+1. In the Firebase console (the same project as the leaderboard, or a new one), add an **iOS app** with the bundle id
+   `com.sam3lds.catsvsdogs` and download **GoogleService-Info.plist**. Drag it into Xcode under `App/App` (copy items,
+   target App). It is not a secret, but keep it out of git like `.env.local`.
+2. In `ios/App/App/Info.plist` add (so nothing advertising-related is collected, whatever the player chooses):
+   - `GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED` = NO
+   - `GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED` = NO
+   - `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS` = NO
+   - `FIREBASE_ANALYTICS_COLLECTION_ENABLED` = NO (the app switches collection on only for players who chose it)
+3. `npx cap sync ios` (adds the plugin and the Firebase iOS SDK). The plugin's npm package asks for Firebase JS 12;
+   `package.json` overrides that to the app's Firebase 13 (only its web half uses it).
+4. In `.env.local`: `VITE_FIREBASE_ANALYTICS=1` (and, for the web tester page, `VITE_FIREBASE_MEASUREMENT_ID=G-…` from
+   the Firebase web app).
+5. App Store Connect privacy label: add **Usage Data → Product Interaction** and **Identifiers → Device ID**, not
+   linked to identity, not tracking, purpose Analytics (`docs/privacy-security.md`). The in-app policy already
+   describes it.
+6. Check in the Firebase console's **DebugView** (run once with `-FIRDebugEnabled` in the scheme's arguments) that
+   events arrive only after turning the switch on, and stop when it is turned off.
+
 ## 4. Privacy policy, support page and contact (D43)
 
 App Store Connect needs a **privacy policy URL** and a **support URL**, and the app must show the policy too (it does:
