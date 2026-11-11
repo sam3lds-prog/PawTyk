@@ -27,13 +27,20 @@ if (!/appName:\s*'PawTyk'/.test(cap)) problems.push("capacitor.config.ts: appNam
 const store = !!env.VITE_REVENUECAT_IOS_KEY;
 const videos = env.VITE_ADMOB_ENABLED === '1';
 const board = !!(env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_PROJECT_ID && env.VITE_FIREBASE_APP_ID);
+const pack = env.VITE_WELCOME_PACK === '1';
+if (pack && !store) problems.push('VITE_WELCOME_PACK=1 without VITE_REVENUECAT_IOS_KEY: the Welcome Rescue Pack needs the App Store. Set the key or remove the flag.');
+const usage = env.VITE_FIREBASE_ANALYTICS === '1';
 if (videos && !env.VITE_ADMOB_REWARDED_IOS) problems.push('VITE_ADMOB_ENABLED=1 without VITE_ADMOB_REWARDED_IOS would show Google test videos. Set your ad unit id.');
 
 notes.push(`Gems (App Store via RevenueCat): ${store ? 'ON — the Gems tab and premium items show' : 'off — no Gems tab, nothing sold for gems'}`);
 notes.push(`Reward videos (AdMob): ${videos ? 'ON — check Info.plist has GADApplicationIdentifier, SKAdNetworkItems and NSUserTrackingUsageDescription' : 'off — no videos, nothing sold for video tokens'}`);
 notes.push(`Leaderboard (Firebase): ${board ? 'ON — deploy functions and rules first (npm run fb:deploy)' : 'off — no Leaderboard tab'}`);
 notes.push(
-  store || videos || board
+  `Welcome Rescue Pack: ${pack ? 'ON — only if pawtyk.welcomepack is set up in App Store Connect + RevenueCat and the sandbox checks passed (release-checklist D47)' : 'off — not sold (players who own it keep it)'}`,
+);
+notes.push(`Usage statistics (Firebase Analytics, opt-in): ${usage ? 'ON — add GoogleService-Info.plist (docs/analytics.md); answer the privacy label for analytics' : 'off — nothing is sent'}`);
+notes.push(
+  store || videos || board || usage
     ? 'App Store privacy answers: see docs/privacy-security.md → "App Store privacy label" for each service that is ON.'
     : 'App Store privacy answers: "Data Not Collected" (nothing leaves the device).',
 );

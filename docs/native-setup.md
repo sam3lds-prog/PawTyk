@@ -75,16 +75,29 @@ Daily cap: 10 reward videos per player per day, shared by all rewards (`src/app/
    | `pawtopia.gems.60` | Consumable | 60 gems |
    | `pawtopia.gems.160` | Consumable | 160 gems |
    | `pawtopia.gems.420` | Consumable | 420 gems |
-   | `pawtopia.removeads` | Non-consumable | entitlement `remove_ads` (for v1 owners; no forced ads exist) |
-   Suggested price tiers: $0.99 / $1.99 / $4.99. Prices always come from the store.
-2. Create a RevenueCat project, add the iOS app (App Store Connect shared secret / in-app purchase key), import the four
-   products, and create an entitlement `remove_ads` attached to `pawtopia.removeads`.
+   | `pawtopia.removeads` | Non-consumable | entitlement `remove_ads` (for v1 owners only; not on sale, never marketed) |
+   | `pawtyk.welcomepack` | Non-consumable | the Welcome Rescue Pack: 180 gems + the Rescue Wagon (entitlement `welcome_pack`) |
+   Suggested price tiers: $0.99 / $1.99 / $4.99 for gems, $2.99 for the Welcome Rescue Pack. Prices always come from the
+   store. The existing ids keep their old `pawtopia.` prefix (they already exist); only the new pack uses `pawtyk.`.
+2. Create a RevenueCat project, add the iOS app (App Store Connect shared secret / in-app purchase key), import the
+   products, and create the entitlements `remove_ads` (attached to `pawtopia.removeads`) and `welcome_pack` (attached to
+   `pawtyk.welcomepack`).
 3. Put RevenueCat's **public iOS SDK key** in `.env.local`: `VITE_REVENUECAT_IOS_KEY=appl_…`.
 4. In Xcode enable the **In-App Purchase** capability. Test with a sandbox account.
+5. **Welcome Rescue Pack (D47 PR 7):** it is sold only when `VITE_WELCOME_PACK=1` (test builds always show it with the
+   free test store). Leave it unset in a release build until all of these are true: the product is *Ready to Submit* in
+   App Store Connect with its review screenshot and description, it is attached to `welcome_pack` in RevenueCat, and the
+   sandbox checks in `docs/release-checklist.md` (D47 section) pass on an iPhone. Nothing else needs changing to turn it
+   on or off; a player who owns it keeps it either way.
 
 How grants stay safe: gems are granted once per store transaction id; on launch the app asks RevenueCat for all
 consumable transactions and grants any it missed (a crash between paying and saving). Restore Purchases restores
-`remove_ads`. Gems only buy premium decorations — never hearts, hints or rankings.
+`remove_ads` and the Welcome Rescue Pack. The pack is granted by its transaction id too (its 180 gems once, the wagon
+owned and out on the Farm); at launch the app reads RevenueCat's record and grants a pack it never recorded (a closed
+app mid-purchase, a new install after Restore). If RevenueCat answers and no longer has the pack (refunded, or moved to
+another install by a Restore there), the wagon is put away and up to 180 unspent gems are taken back; if the same
+purchase comes back, so do they. An unanswered store never changes anything. Gems only buy premium decorations and
+tricks — never hearts, hints or rankings, and nothing in the Paw Cup.
 
 ## 3. Leaderboards — Firebase (see `functions/README.md`)
 

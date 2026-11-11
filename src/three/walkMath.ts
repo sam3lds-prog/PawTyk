@@ -44,13 +44,15 @@ export const PLACES = {
  * Where the Farm's decorations stand when the player has them out (D45 PR C): the same five as the drawn Farm. Each
  * is solid (a circle's `r`, or a box's half sizes).
  */
-export type FarmDecor = 'scarecrow' | 'wheelbarrow' | 'trough' | 'tireswing' | 'tractor';
+export type FarmDecor = 'scarecrow' | 'wheelbarrow' | 'trough' | 'tireswing' | 'tractor' | 'rescuewagon';
 export const DECOR_PLACES: Record<FarmDecor, { x: number; z: number; rot: number; r?: number; hw?: number; hd?: number }> = {
   scarecrow: { x: -6.2, z: -9.5, rot: 0.5, r: 0.45 },
   wheelbarrow: { x: 8.6, z: 10.2, rot: -0.7, r: 0.95 },
   trough: { x: 11.5, z: 2.6, rot: 0.25, hw: 1.3, hd: 0.55 },
   tireswing: { x: -8.5, z: 16.5, rot: 0, r: 0.6 },
   tractor: { x: -2.2, z: -12.5, rot: 0.9, hw: 1.5, hd: 1.0 },
+  // D47 PR 7: the Welcome Rescue Pack's wagon, up by the orchard (as in the drawn Farm).
+  rescuewagon: { x: -15.5, z: -13.5, rot: 0.6, hw: 1.1, hd: 0.7 },
 };
 export const isFarmDecor = (id: string): id is FarmDecor => id in DECOR_PLACES;
 

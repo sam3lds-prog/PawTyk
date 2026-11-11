@@ -44,6 +44,8 @@ describe('the game is called PawTyk (D42)', () => {
       gems_60: 'pawtopia.gems.60',
       gems_160: 'pawtopia.gems.160',
       gems_420: 'pawtopia.gems.420',
+      // New in D47, so it takes the new name; the ones above already exist in App Store Connect and keep theirs.
+      welcome_pack: 'pawtyk.welcomepack',
     });
     // Generated places are pinned by the places fixture (places.test.ts); chapter names past the hand-named ones come
     // from a seed with the old name too, so a few are pinned here: a changed seed would rename them in every save.

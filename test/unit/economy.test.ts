@@ -118,7 +118,7 @@ describe('sanctuary decor', () => {
       DECOR.filter((d) => decorHome(d) === 'farm')
         .map(decorTier)
         .sort(),
-    ).toEqual(['coins', 'coins', 'coins', 'premium', 'video']);
+    ).toEqual(['coins', 'coins', 'coins', 'premium', 'premium', 'video']); // + the Welcome Pack's Rescue Wagon (D47)
     for (const d of DECOR) {
       const currencies = [d.cost !== null, !!d.tokens, !!d.gems].filter(Boolean).length;
       if (d.unlock.kind === 'shop') {

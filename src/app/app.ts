@@ -19,6 +19,8 @@ import { balance } from '../meta/ledger';
 import { grantStarterItems, setTestEntriesCount } from '../meta/items';
 import { TEST_BUILD } from '../config/services';
 import { iap } from '../services/iap';
+import { reconcileWelcomePack } from '../meta/welcomePack';
+import { track } from '../services/analytics';
 import { reconcileGemPurchases } from '../meta/gems';
 import { packedLevelTier } from '../game/puzzles';
 import { reconcileWorld } from '../meta/world';
@@ -89,8 +91,13 @@ class App {
   async reconcilePurchases(): Promise<number> {
     if (!iap.available || iap.isStub) return 0;
     const txs = await iap.consumableTransactions();
-    const n = reconcileGemPurchases(this.save, txs);
-    if (n > 0) this.persist();
+    let n = reconcileGemPurchases(this.save, txs);
+    // D47 PR 7: the Welcome Rescue Pack: granted if a purchase was cut off (or restored on a new install), taken back
+    // if the store refunded it. An unanswered store changes nothing.
+    const pack = reconcileWelcomePack(this.save, await iap.purchaseRecord(), 'store');
+    n += pack.granted;
+    if (n > 0 || pack.revoked) this.persist();
+    if (pack.revoked) track('iap_refunded', { product: 'welcome_pack' });
     return n;
   }
 

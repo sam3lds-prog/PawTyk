@@ -32,6 +32,7 @@ export type AnalyticsEvent =
   | 'iap_success'
   | 'iap_failed'
   | 'iap_cancelled'
+  | 'iap_refunded'
   | 'screen_view'
   | 'animation_reduced_mode'
   | 'mission_claimed'

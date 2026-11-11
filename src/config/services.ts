@@ -36,6 +36,8 @@ export const REVENUECAT = {
   iosKey: (env.VITE_REVENUECAT_IOS_KEY as string | undefined) ?? '',
   /** The RevenueCat entitlement that removes interstitials (none are shown today; kept for the v1 purchase). */
   removeAdsEntitlement: 'remove_ads',
+  /** D47 PR 7: the RevenueCat entitlement attached to the Welcome Rescue Pack (a non-consumable). */
+  welcomePackEntitlement: 'welcome_pack',
 } as const;
 
 /**
@@ -49,7 +51,16 @@ export const STORE_PRODUCTS = {
   gems_60: 'pawtopia.gems.60',
   gems_160: 'pawtopia.gems.160',
   gems_420: 'pawtopia.gems.420',
+  /** D47 PR 7: the Welcome Rescue Pack, a non-consumable (180 gems and the Rescue Wagon, once). Suggested $2.99 (Tier 3). */
+  welcome_pack: 'pawtyk.welcomepack',
 } as const;
+
+/**
+ * Whether the Welcome Rescue Pack is sold in this build (D47 PR 7). Test builds always (the test store); a release
+ * build only with `VITE_WELCOME_PACK=1`, set once the product exists in App Store Connect, is attached in RevenueCat to
+ * the `welcome_pack` entitlement, and has been bought, restored and refunded in the sandbox (docs/release-checklist.md).
+ */
+export const WELCOME_PACK_ON_SALE = TEST_BUILD || env.VITE_WELCOME_PACK === '1';
 
 export const ADMOB = {
   /**

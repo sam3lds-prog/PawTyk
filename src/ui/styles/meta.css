@@ -1657,3 +1657,66 @@ ul.rows {
   line-height: 1.4;
   pointer-events: none;
 }
+
+/* The Welcome Rescue Pack in the Shop (D47 PR 7): plain and clear, no countdowns, no pressure. */
+.welcome-pack {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+}
+.welcome-pack > .btn,
+.welcome-pack > .shop-card__state,
+.welcome-pack > .chip {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+}
+.welcome-pack__art svg {
+  width: 84px;
+  height: 84px;
+}
+.welcome-pack h2 {
+  margin: 0 0 6px;
+  font-size: var(--t-md, 17px);
+}
+.welcome-pack__list {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: var(--t-sm);
+}
+.welcome-pack__list li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.welcome-pack__list .ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.pack-highlight {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.pack-highlight__art svg {
+  width: 52px;
+  height: 52px;
+}
+.pack-highlight__body {
+  display: grid;
+  gap: 2px;
+  font-size: var(--t-sm);
+}
+.pack-highlight__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}

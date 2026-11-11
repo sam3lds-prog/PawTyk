@@ -54,7 +54,7 @@ interface Entry {
 /** Decoration parts drawn in front of a rider. */
 const CUTS: Record<string, string[]> = { balloon: ['.sp-basket'], tireswing: ['.sp-tire-front'] };
 /** Activities where the rider travels, and turns to face where it goes. */
-const TRAVELS: ReadonlySet<string> = new Set(['kite', 'icelanterns', 'waterfall', 'tractor']);
+const TRAVELS: ReadonlySet<string> = new Set(['kite', 'icelanterns', 'waterfall', 'tractor', 'rescuewagon']);
 
 const TRACKED = /^is-(blink|look|yawn|wag|stretch|hop|love|greet|stroll|flutter)$/;
 

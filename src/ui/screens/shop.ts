@@ -20,6 +20,8 @@ import { activeSanctuary, isOpen } from '../../meta/world';
 import { BIOMES } from '../../meta/catalogs/places';
 import { buyFood, foodCount, FOOD_CAP_EACH } from '../../meta/feeding';
 import { grantGemPurchase, isGemPack } from '../../meta/gems';
+import { WELCOME_PACK, dismissWelcomeHighlight, grantWelcomePack, mayHighlightWelcomePack, noteWelcomeHighlight, ownsWelcomePack, readyForWelcomeOffer, reconcileWelcomePack } from '../../meta/welcomePack';
+import { WELCOME_PACK_ON_SALE } from '../../config/services';
 import { track } from '../../services/analytics';
 import { afterDecorChange } from '../../app/events';
 import { canOfferVideo, videosLeftToday, watchVideoFor } from '../../app/rewarded';
@@ -41,6 +43,8 @@ import { ICON } from '../icons';
 import type { Scope, ScreenDef } from '../router';
 
 type Tab = 'decor' | 'food' | 'tricks' | 'gems';
+/** A purchase is waiting on the store (D47 PR 7): nothing else starts meanwhile. */
+let purchasing = false;
 const TAB_LABEL: Record<Tab, string> = { decor: 'Decor', food: 'Food', tricks: 'Tricks', gems: 'Gems' };
 /** The tab and sanctuary the player last looked at, for this app session. */
 let lastTab: Tab = 'decor';
@@ -114,6 +118,7 @@ export const shopScreen: ScreenDef = {
       else if (locked) action = `<span class="shop-card__state">${ICON.lock}Level ${sanctuaryDef(decorHome(d)).opensAfterLevel}</span>`;
       else if (d.unlock.kind === 'chapter')
         action = `<span class="shop-card__state shop-card__state--gift">${ICON.gift}Finish ${esc(chapterAt(d.unlock.chapter - 1).name)}</span>`;
+      else if (d.unlock.kind === 'pack') action = `<span class="shop-card__state shop-card__state--pack">${ICON.gift}In the Welcome Pack</span>`;
       else action = price ? priceTag(price.currency, price.amount) : '';
       const label = have
         ? `${d.name}, owned`
@@ -121,7 +126,9 @@ export const shopScreen: ScreenDef = {
           ? `${d.name}, opens with the ${sanctuaryDef(decorHome(d)).name}`
           : d.unlock.kind === 'chapter'
             ? `${d.name}, chapter gift`
-            : price
+            : d.unlock.kind === 'pack'
+              ? `${d.name}, only in the Welcome Rescue Pack`
+              : price
               ? `${d.name}, ${price.amount} ${CURRENCY_NAME[price.currency]}`
               : d.name;
       return `<li><button class="shop-card card card--tap ${have ? 'is-owned' : ''} ${locked ? 'is-locked' : ''} shop-card--${decorTier(d)}" data-decor="${id}" aria-label="${esc(label)}">
@@ -134,7 +141,7 @@ export const shopScreen: ScreenDef = {
     function decorSection(tier: DecorTier | 'everyday', title: string, note: string, extra = ''): string {
       const items = DECOR.filter(
         (d) => decorHome(d) === place && (tier === 'everyday' ? decorTier(d) === 'coins' || decorTier(d) === 'gift' : decorTier(d) === tier),
-      ).filter((d) => owns(app.save, d.id) || offered(decorPrice(d.id)?.currency));
+      ).filter((d) => owns(app.save, d.id) || (d.unlock.kind === 'pack' ? packOffered() : offered(decorPrice(d.id)?.currency)));
       if (!items.length) return '';
       const owned = items.filter((d) => owns(app.save, d.id)).length;
       return `<section class="shop-section shop-section--${tier}">
@@ -174,7 +181,57 @@ export const shopScreen: ScreenDef = {
         ${regionLocked ? `<p class="notice">${ICON.lock}The ${esc(sanctuaryDef(place).name)} opens after level ${sanctuaryDef(place).opensAfterLevel}. Its decorations can be bought once it opens.</p>` : ''}
         ${decorSection('everyday', `${placeShort(place)} decor`, 'Paid for with Paw Coins, which you earn by solving puzzles.')}
         ${decorSection('video', 'Special decor', 'Only for video tokens.', videoTokenCard())}
-        ${decorSection('premium', 'Premium decor', 'For gems.')}`;
+        ${decorSection('premium', 'Premium decor', 'For gems.', place === 'farm' ? packHighlight() : '')}`;
+    }
+
+    /** D47 PR 7: whether the Welcome Rescue Pack is for sale here and now (sold in this build, the player ready). */
+    function packOffered(): boolean {
+      return WELCOME_PACK_ON_SALE && iap.available && !ownsWelcomePack(app.save) && readyForWelcomeOffer(app.save);
+    }
+
+    /** With the Farm's decorations, now and then (every few days, three times in all, never after "Not now"). */
+    let highlighted = false;
+    function packHighlight(): string {
+      if (!packOffered() || (!highlighted && !mayHighlightWelcomePack(app.save))) return '';
+      if (!highlighted) {
+        highlighted = true;
+        noteWelcomeHighlight(app.save);
+        app.persist();
+        track('starter_pack_offer', { where: 'farm_decor' });
+      }
+      return `<div class="pack-highlight card" data-pack-highlight>
+        <span class="pack-highlight__art" aria-hidden="true">${decorIcon('rescuewagon')}</span>
+        <span class="pack-highlight__body"><b>Welcome Rescue Pack</b><small>The Rescue Wagon, only in this pack, and ${WELCOME_PACK.gems} gems. Once per player.</small></span>
+        <span class="pack-highlight__actions"><button class="btn btn--small" data-act="pack-look">Take a look</button><button class="btn btn--quiet btn--small" data-act="pack-later">Not now</button></span>
+      </div>`;
+    }
+
+    /** The pack in the Gems tab: what is in it, its App Store price, and once bought, a thank-you. */
+    let packSeen = false;
+    function packCard(): string {
+      if (!WELCOME_PACK_ON_SALE || !iap.available) return '';
+      const owned = ownsWelcomePack(app.save);
+      if (!owned && !readyForWelcomeOffer(app.save)) return '';
+      const p = products.find((x) => x.id === 'welcome_pack');
+      if (!owned && pricesIn && !p?.price) return '';
+      if (!owned && !packSeen) {
+        packSeen = true;
+        track('starter_pack_view', { where: 'gems' });
+      }
+      return `<section class="shop-section">
+        <div class="welcome-pack card ${owned ? 'is-owned' : ''}" data-welcome-pack>
+          <span class="welcome-pack__art" aria-hidden="true">${decorIcon('rescuewagon')}</span>
+          <div class="welcome-pack__body">
+            <h2>Welcome Rescue Pack</h2>
+            <ul class="welcome-pack__list">
+              <li>${ICON.gift}<span><b>Rescue Wagon</b>: a Farm decoration found only in this pack</span></li>
+              <li>${ICON.gem}<span><b>${WELCOME_PACK.gems} gems</b> for premium decorations and tricks</span></li>
+            </ul>
+            <small class="muted">${owned ? 'Yours. Thank you for supporting PawTyk!' : 'Once per player. No hints, hearts or anything that helps win.'}</small>
+          </div>
+          ${owned ? `<span class="shop-card__state">${ICON.check}Owned</span>` : p?.price ? `<button class="btn" data-buy="welcome_pack">${esc(p.price)}</button>` : `<span class="chip chip--preview" aria-label="Loading the price">…</span>`}
+        </div>
+      </section>`;
     }
 
     function foodCard(id: FoodId): string {
@@ -258,6 +315,7 @@ export const shopScreen: ScreenDef = {
       // Only reached when a store is connected (D43).
       const status = iap.isStub ? `<p class="notice notice--dev">${ICON.info}Test store: nothing is charged, and test gems never carry into a release build.</p>` : '';
       return `
+        ${packCard()}
         <section class="shop-section">
           <div class="section-head"><h2>Gems</h2><span class="muted num">${ICON.gem}${walletBalance(app.save, 'gem')}</span></div>
           <p class="muted shop__note">Gems buy premium decorations and tricks. They never buy hearts, hints or anything that helps win.</p>
@@ -341,10 +399,29 @@ export const shopScreen: ScreenDef = {
       }
       const buy = t.closest('[data-buy]') as HTMLButtonElement | null;
       if (buy && !buy.disabled) {
+        // One purchase at a time, whatever is tapped meanwhile (D47 PR 7).
+        if (purchasing) return;
         const id = buy.dataset.buy as ProductId;
+        if (id === 'welcome_pack' && ownsWelcomePack(app.save)) return;
+        purchasing = true;
+        track('product_view', { product: id });
         track('iap_started', { product: id });
         buy.disabled = true;
-        const r = await iap.purchase(id);
+        let r: Awaited<ReturnType<typeof iap.purchase>>;
+        try {
+          r = await iap.purchase(id);
+        } finally {
+          purchasing = false;
+        }
+        if (r.ok && r.id === 'welcome_pack') {
+          // The gems once (by the store's transaction id) and the wagon out on the Farm, even if the player left.
+          grantWelcomePack(app.save, r.transactionId, r.source);
+          app.persist();
+          track('iap_success', { product: id });
+          toast(`Welcome Rescue Pack: +${WELCOME_PACK.gems} gems, and the Rescue Wagon is out on your Farm. Thank you!`, ICON.gift);
+          if (scope.alive) render();
+          return;
+        }
         if (r.ok) {
           // Granted by transaction id, once, even if the player already left the shop.
           const gems = grantGemPurchase(app.save, r.id, r.transactionId, r.source === 'store' ? 'store' : 'test');
@@ -365,6 +442,17 @@ export const shopScreen: ScreenDef = {
         return;
       }
       const a = actionOf(e);
+      if (a?.act === 'pack-look') {
+        tab = lastTab = 'gems';
+        render();
+        return;
+      }
+      if (a?.act === 'pack-later') {
+        dismissWelcomeHighlight(app.save);
+        app.persist();
+        el.querySelector('[data-pack-highlight]')?.remove();
+        return;
+      }
       if (a?.act === 'watch-token') {
         const b = t.closest('button') as HTMLButtonElement;
         b.disabled = true;
@@ -378,7 +466,9 @@ export const shopScreen: ScreenDef = {
         if (r.ok && r.source) {
           for (const id of r.owned) app.save.purchases.owned[id] = { source: r.source, at: new Date().toISOString() };
           if (r.owned.includes('remove_ads')) app.save.purchases.removeAds = { active: true, source: r.source, verifiedAt: new Date().toISOString() };
-          const gems = await app.reconcilePurchases();
+          let gems = await app.reconcilePurchases();
+          // The test store keeps its pack for the session: a restore there grants it from that record.
+          if (r.source === 'dev' && r.owned.includes('welcome_pack')) gems += reconcileWelcomePack(app.save, await iap.purchaseRecord(), 'dev').granted;
           app.persist();
           toast(r.owned.length || gems ? 'Purchases restored.' : 'No purchases to restore.');
           render();
@@ -400,6 +490,9 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     actions = `<p class="muted">For the ${esc(sd.name)}, which opens after level ${sd.opensAfterLevel}. You can buy it once it opens.</p>`;
   } else if (d.unlock.kind === 'chapter')
     actions = `<p class="muted">A gift for finishing ${esc(chapterAt(d.unlock.chapter - 1).name)} (level ${d.unlock.chapter * 20}).</p>`;
+  else if (d.unlock.kind === 'pack')
+    // D47 PR 7: only in the Welcome Rescue Pack (never sold on its own).
+    actions = `<p class="muted">Only in the Welcome Rescue Pack, with ${WELCOME_PACK.gems} gems. Once per player.</p><button class="btn btn--block" data-act="see-pack" data-autofocus>${ICON.gift}See the Welcome Rescue Pack</button>`;
   else if (price) {
     const short = price.amount - walletBalance(app.save, price.currency);
     const how =
@@ -432,7 +525,10 @@ function decorSheet(scope: Scope, id: DecorId, rerender: () => void): void {
     const a = actionOf(e);
     if (!a || busy) return;
     if (a.act === 'close') sh.close();
-    else if (a.act === 'visit') {
+    else if (a.act === 'see-pack') {
+      sh.close();
+      app.router.go({ screen: 'shop', tab: 'gems' });
+    } else if (a.act === 'visit') {
       sh.close();
       goSee(id);
     } else if (a.act === 'buy') {

@@ -18,8 +18,12 @@ describe('decor in three currencies', () => {
   it('every shop item has exactly one price; special items cost video tokens, premium items cost gems', () => {
     for (const d of DECOR) {
       const p = decorPrice(d.id);
-      if (d.unlock.kind === 'chapter') expect(p).toBeNull();
-      else expect(p, d.id).not.toBeNull();
+      // Chapter gifts and the Welcome Pack's own decoration (D47) have no price in the shop.
+      if (d.unlock.kind !== 'shop') {
+        expect(p, d.id).toBeNull();
+        continue;
+      }
+      expect(p, d.id).not.toBeNull();
       if (decorTier(d) === 'video') expect(p?.currency).toBe('vtoken');
       if (decorTier(d) === 'premium') expect(p?.currency).toBe('gem');
     }

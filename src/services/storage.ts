@@ -245,7 +245,15 @@ export interface SaveV2 {
   purchases: {
     removeAds: { active: boolean; source: 'legacy-v1' | 'store' | 'dev' | null; verifiedAt: string | null };
     owned: Record<string, { source: 'store' | 'dev'; at: string }>;
+    /** Bundles bought (D47 PR 7: the Welcome Rescue Pack), with the store transaction that granted them. */
+    /**
+     * D47 PR 7: the Welcome Rescue Pack, once granted; `revoked` remembers what a refund (or the store moving the
+     * purchase to another install) took back, so a later restore of the same transaction gives it back.
+     */
+    packs?: { welcome?: { tx: string; source: 'store' | 'dev'; at: string }; revoked?: { tx: string; gems: number; at: string } };
   };
+  /** How often an optional offer has been highlighted (D47 PR 7), so it never nags. */
+  offers?: { welcome?: { shown: number; lastAt: string | null; dismissed: boolean } };
   onboarding: {
     seenRules: boolean;
     tutorialDone: boolean;
@@ -475,7 +483,8 @@ export function defaultSave(now = new Date()): SaveV2 {
     achievements: {},
     stats: { solved: 0, clean: 0, hintFree: 0, losses: 0, comebacks: 0, bestBySize: {}, sizesThisWeek: {}, playDays: {}, lastWin: null },
     settings: defaultSettings(),
-    purchases: { removeAds: { active: false, source: null, verifiedAt: null }, owned: {} },
+    purchases: { removeAds: { active: false, source: null, verifiedAt: null }, owned: {}, packs: {} },
+    offers: {},
     onboarding: {
       seenRules: false,
       tutorialDone: false,
@@ -801,7 +810,21 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
         verifiedAt: strOrNull(ra.verifiedAt),
       },
       owned: rec(pu.owned, (v) => (isObj(v) && (v.source === 'store' || v.source === 'dev') ? { source: v.source, at: str(v.at, '') } : undefined)),
+      packs: isObj(pu.packs)
+        ? {
+            ...(isObj(pu.packs.welcome) && typeof pu.packs.welcome.tx === 'string' && (pu.packs.welcome.source === 'store' || pu.packs.welcome.source === 'dev')
+              ? { welcome: { tx: pu.packs.welcome.tx, source: pu.packs.welcome.source, at: str(pu.packs.welcome.at, '') } }
+              : {}),
+            ...(isObj(pu.packs.revoked) && typeof pu.packs.revoked.tx === 'string'
+              ? { revoked: { tx: pu.packs.revoked.tx, gems: int(pu.packs.revoked.gems, 0, 0, 1000), at: str(pu.packs.revoked.at, '') } }
+              : {}),
+          }
+        : {},
     },
+    offers:
+      isObj(x.offers) && isObj(x.offers.welcome)
+        ? { welcome: { shown: int(x.offers.welcome.shown, 0, 0, 1000), lastAt: strOrNull(x.offers.welcome.lastAt), dismissed: bool(x.offers.welcome.dismissed, false) } }
+        : {},
     onboarding: {
       seenRules: bool(ob.seenRules, false),
       tutorialDone: bool(ob.tutorialDone, false),
