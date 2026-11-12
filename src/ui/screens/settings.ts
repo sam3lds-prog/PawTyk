@@ -247,7 +247,8 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       } else if (what === 'listen') {
         showListeningCheck(sh.scope);
       } else if (what === 'places') {
-        showPlaceBrowser(sh.scope, { inGame: !!opts.inGame });
+        // A sandbox visit closes Settings first: its own close may redraw the screen under it (D52 review).
+        showPlaceBrowser(sh.scope, { inGame: !!opts.inGame, beforeSandbox: () => sh.close() });
       } else if (what === 'finish') {
         const came = finishOpenHomes(app.save);
         app.persist();
