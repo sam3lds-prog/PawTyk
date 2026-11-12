@@ -102,6 +102,12 @@ Defects confirmed in source and fixed in Sprint 0:
   TestFlight gate (`docs/screenshots/d50/`)
 - [x] **D51-A/B** — board ergonomics audited (`docs/board-ergonomics.md`: nothing to rebuild; a five-player test decides
   any change); the economy model (`docs/economy-model.md`, `npm run economy:model`)
+- [x] **D52** — one sentence for who comes home next (*Hazel comes home in 4 more puzzles.*); the World says the six
+  homes are only the beginning; tester-only Browse future places (1–9,999) and a sandbox visit that saves nothing; an
+  optional Animal question (twenty checked facts, no rewards); reward videos that say what they earn first and why they
+  didn't, Report a video; the public-launch gate (`docs/release-checklist.md` → D52, `docs/screenshots/d52/`)
+- [ ] Trivia link on the Daily results — after the Animal question pilot, if players choose it
+- [ ] Skippable interstitials — not planned; only if measured retention supports a test (rules in the D52 gate)
 - [ ] **D51-C** — a small cosmetic pilot (upgraded interactive decorations, one themed bundle): after launch, only if the
   beta's data shows demand
 - [ ] Friend invites and referrals — reviewed (M4); waiting on Sam's decisions D1–D6 and the native App Check provider

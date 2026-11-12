@@ -36,7 +36,7 @@ export function placeDetailsMarkup(k: number, stage: number): string {
     .map(
       (r) => `<li class="qa-place__resident${st.home.includes(r.w) ? ' is-home' : ''}">
         <span class="qa-place__face portrait" aria-hidden="true">${animalPortrait(r.w.id, 'idle')}</span>
-        <span class="qa-place__who"><b>${esc(r.w.name)}</b> · ${esc(r.coatKind)}<small>Comes home at ${r.w.at} puzzles · ${esc(r.from)}</small><small class="qa-place__fact">${esc(r.fact)}</small></span>
+        <span class="qa-place__who"><span><b>${esc(r.w.name)}</b> · ${esc(r.coatKind)}</span><small>Comes home at ${r.w.at} puzzles · ${esc(r.from)}</small><small class="qa-place__fact">${esc(r.fact)}</small></span>
       </li>`,
     )
     .join('');

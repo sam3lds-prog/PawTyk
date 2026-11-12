@@ -22,7 +22,7 @@ import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
-import { bare, comesHome, stageCountdown } from '../components/comesHome';
+import { bare, comesHome, morePuzzles, stageCountdown } from '../components/comesHome';
 import { dismissLoopCoach, loopCoachMarkup, shouldShowLoopCoach } from '../components/loopCoach';
 import { sceneMarkup } from './sanctuary';
 import { wireFolds } from '../components/fold';
@@ -56,8 +56,11 @@ function statusLine(def: SanctuaryDef): string {
   const coming = arrivalProgress(app.save, def.id);
   const lead = st === 'building' ? 'Building here · ' : 'Build here · ';
   const tail = st === 'building' ? '' : ' while you build here';
-  // D52 PR A: "comes home", as on the win and the Journey.
-  if (coming) return `${lead}${bare(comesHome(animalInfo(coming.next.id), coming.left).text)}${tail}`;
+  // D52 PR A: "comes home", as on the win and the Journey. A home not being built says the count is of puzzles there.
+  if (coming)
+    return st === 'building'
+      ? `${lead}${bare(comesHome(animalInfo(coming.next.id), coming.left).text)}`
+      : `${lead}${animalInfo(coming.next.id).name} comes home after ${morePuzzles(coming.left)} here`;
   const next = nextStage(app.save, def.id);
   return next ? `${lead}${bare(stageCountdown(next.stage.name, next.need - next.have))}${tail}` : `${lead}almost complete`;
 }
