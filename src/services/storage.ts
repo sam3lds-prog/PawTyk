@@ -282,6 +282,8 @@ export interface SaveV2 {
      */
     tried?: string[];
   };
+  /** D52 PR C: where the player is in the Animal question rotation, and the last one asked (never asked twice running). */
+  trivia?: { cursor: number; last: string | null };
   onboarding: {
     seenRules: boolean;
     tutorialDone: boolean;
@@ -878,6 +880,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
         ? { tried: [...new Set(x.offers.tried.filter((t): t is string => typeof t === 'string' && /^(decor|trick):[a-z0-9]+$/.test(t)))].slice(0, TRIED_MAX) }
         : {}),
     },
+    ...(isObj(x.trivia) ? { trivia: { cursor: int(x.trivia.cursor, 0, 0, 1000), last: strOrNull(x.trivia.last) } } : {}),
     onboarding: {
       seenRules: bool(ob.seenRules, false),
       tutorialDone: bool(ob.tutorialDone, false),

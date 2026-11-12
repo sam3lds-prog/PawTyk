@@ -11,6 +11,7 @@ import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
+import { showAnimalQuestion, triviaEntryMarkup } from '../components/triviaCard';
 import type { CompanionId } from '../../meta/catalogs/companions';
 import { sanctuaryDef, type SanctuaryDef, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { wireFolds } from '../components/fold';
@@ -139,6 +140,7 @@ export const petsScreen: ScreenDef = {
               })()
             : ''
         }
+        ${triviaEntryMarkup()}
         ${portraitsMarkup()}
         <div class="segmented" role="tablist" aria-label="Filter animals">
           ${filters.map(([f, l]) => `<button role="tab" data-filter="${f}" aria-selected="${lastFilter === f}">${l}</button>`).join('')}
@@ -158,6 +160,11 @@ export const petsScreen: ScreenDef = {
       }
       if (t.closest('[data-act="back"]')) {
         app.router.back({ screen: 'world' });
+        return;
+      }
+      // D52 PR C: an optional question about the animals, never in the way.
+      if (t.closest('[data-act="trivia"]')) {
+        showAnimalQuestion(scope, { from: 'album' });
         return;
       }
       const friend = t.closest('[data-friend]') as HTMLElement | null;

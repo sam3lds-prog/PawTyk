@@ -87,7 +87,10 @@ export type AnalyticsEvent =
   | 'win_next_action'
   | 'first_meal'
   // D50 PR B: an animal said hello at the start of a visit (what it was about: a friendship, a newcomer, a win…).
-  | 'animal_greeting';
+  | 'animal_greeting'
+  // D52 PR C: an Animal question asked (which one, from the Farm or the album) and answered (right or not). Nothing is paid.
+  | 'trivia_question'
+  | 'trivia_answer';
 
 export type EventProps = Record<string, string | number | boolean>;
 

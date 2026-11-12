@@ -60,6 +60,7 @@ import { afterHearts } from '../components/bonding';
 import { sayHello } from '../components/hello';
 import { bowlInUse } from '../../meta/feeding';
 import { coinPill } from '../components/wallet';
+import { showAnimalQuestion, triviaEntryMarkup } from '../components/triviaCard';
 import { NEW_CHIP, spotlightNewcomer } from '../components/newcomer';
 import { greetInScene } from '../components/bonding';
 import { showNextGoal } from '../components/nextGoal';
@@ -379,6 +380,7 @@ export const regionScreen: ScreenDef = {
               .join('')}
           </ul>
         </section>
+        ${id === 'farm' && open && welcomed.length && !tryOn ? triviaEntryMarkup() : ''}
         ${hasDecor ? `<section aria-labelledby="rdecor-title">
           <div class="section-head"><h2 id="rdecor-title">Decorations</h2><span class="muted num">${ownedDecor.length} of ${decorOf(id).length}</span></div>
           ${
@@ -777,6 +779,10 @@ export const regionScreen: ScreenDef = {
           break;
         case 'shop':
           app.router.go({ screen: 'shop', sanctuary: id });
+          break;
+        case 'trivia':
+          // D52 PR C: an optional question about the animals (from the Farm), never in the way of anything.
+          showAnimalQuestion(scope, { from: 'farm' });
           break;
       }
     });

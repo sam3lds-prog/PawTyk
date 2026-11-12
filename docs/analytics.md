@@ -131,3 +131,16 @@ Reads for the beta (with the D49 pilot measures above):
   `friendship_level`) in the same visit.
 - **The economy model**: each `EconomyScenario` field in `src/meta/economyModel.ts` names the event that replaces its
   assumption (`docs/economy-model.md`).
+
+## D52 — what changed for measurement
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `trivia_question` | an Animal question is shown | `question` (its id), `from` (farm, album) |
+| `trivia_answer` | the player picks an answer | `question`, `correct` (true/false) |
+
+Nothing is paid for an answer, so these measure delight only. Reads for the pilot:
+- **Does anyone choose it?** Players with a `trivia_question` per week, as a share of players with `home_visit`.
+- **Is it in the way?** `win_next_action{action=next}` share and session length before and after D52; trivia should
+  change neither (it is never on the win sheet).
+- **Too hard or too easy?** `trivia_answer.correct` share per question; a question most players miss gets reworded.
