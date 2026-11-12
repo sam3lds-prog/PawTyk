@@ -14,6 +14,7 @@ import { d48Checks } from './d48.mjs';
 import { mChecks } from './m.mjs';
 import { d49Checks } from './d49.mjs';
 import { d50Checks } from './d50.mjs';
+import { d52Checks } from './d52.mjs';
 
 let chromium;
 try {
@@ -1429,6 +1430,7 @@ try {
   await mChecks({ browser, URL, check, errors });
   await d49Checks({ browser, URL, check, errors });
   await d50Checks({ browser, URL, check, errors });
+  await d52Checks({ browser, URL, check, errors });
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {

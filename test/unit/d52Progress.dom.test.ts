@@ -194,6 +194,8 @@ describe('the Journey and the World say the same', () => {
     app.router.go({ screen: 'world' });
     expect(document.querySelector('.world-focus [data-comes-home]')?.textContent).toBe('Hazel the pony comes home in 5 more puzzles.');
     expect(document.querySelector('.world-card[data-go="farm"] .world-card__status')?.textContent).toMatch(/Building here · Hazel comes home in 5 more puzzles$/);
+    // A home not being built: its count is of puzzles there.
+    expect(document.querySelector('.world-card[data-go="harmony"] .world-card__status')?.textContent).toMatch(/Build here · Juniper comes home after one more puzzle here$/);
     expect(document.querySelector('.world')!.textContent).not.toMatch(/arrives in|joins in/);
   });
 });

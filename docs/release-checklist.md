@@ -577,6 +577,67 @@ VoiceOver. Write down the device and iOS version.
 
 **Tester shortcuts for D50**: *Say hello again* (the Farm; every home may say hello again).
 
+### D52 — player clarity, the world ahead, animal questions, honest videos (the public-launch gate)
+
+Required before a public release. Browser checks don't establish iPhone readiness: tick each line on real hardware, in
+a TestFlight build, on a recent iPhone and a small one (SE-sized). Write down the device and iOS version beside it.
+
+**Builds and saves**
+- [ ] `npm test`, `npm run build`, `gen:check`, `pack:check`, `places:check`, `icons:check`, `release:bundle` and
+      `npm run e2e` all green (CI on the merge commit)
+- [ ] A fresh install, and an upgrade over a D50 TestFlight save (play a little first): coins, levels, animals,
+      decorations and a saved board are all there; nothing is credited twice after a relaunch
+- [ ] Five first-time players solve the first board without coaching (`docs/board-ergonomics.md`); record it there
+
+**Who comes home next** (PR A)
+- [ ] Wins counting Hazel down read *Hazel the pony comes home in 6 more puzzles.* → *Hazel comes home in 4 more
+      puzzles.* → *One more puzzle and Hazel is home!* → *Hazel is home!*; no arrows, no "one puzzle closer"
+- [ ] A replay says *… in N more new puzzles.* with no +1, beside the replay note
+- [ ] The first ordinary win shows the note on which puzzles grow a home, once
+- [ ] The line fits at 320 points; VoiceOver reads it once, as one sentence (the bar is silent)
+- [ ] Player test: show five people a win screen; at least four answer "How many more puzzles until Hazel comes home?"
+      without help
+
+**The world ahead** (PR B)
+- [ ] World before level 60: *Your first six homes are just the beginning…*; after: *A new place opens after level 80
+      — or sooner…*; past level 80: the next place's level
+- [ ] Tester build only: Settings → Tester shortcuts → Browse future places opens places 1, 12, 100 and 9999; relaunch:
+      the save is exactly as it was. A sandbox visit (Empty, Partly grown, Complete) shows its banner; Leave preview,
+      Back or a tab brings the own save back unchanged
+- [ ] App Store build: no Tester shortcuts, no Browse future places, no sandbox (`release:bundle` checks this too)
+
+**Animal question** (PR C)
+- [ ] From the Farm and the album; ignoring it changes nothing; a wrong answer is friendly; Another question never
+      repeats the last one
+- [ ] VoiceOver reads the question, the lettered choices and the answer; Reduce Motion: no sparkle
+- [ ] Boards load as fast as before; no coins, hearts or hints change from answering
+
+**Videos and purchases** (PR D; only what this build enables)
+- [ ] Every video offer says what it earns before it starts; nothing plays without a tap
+- [ ] Close a video early: no reward, *The video ended early…*, and play goes on
+- [ ] Airplane mode: *Videos need an internet connection…*; no video, nothing used
+- [ ] Background the app during a video and come back: the board isn't stuck; within 3 minutes the button works again
+- [ ] Deny the consent form and Apple's tracking prompt: the game still works; Settings → Ad privacy choices opens
+      Google's form; Report a video opens an email (or copies the report)
+- [ ] A watched video grants once (count the hints or lives), and the daily limit holds at 10
+- [ ] StoreKit sandbox, for every product this build sells: buy, cancel, restore on a second device, refund; gems and
+      the Welcome Rescue Pack are granted once and never taken back by a guess (`REVOKE_WHEN_MISSING = false`)
+- [ ] An older *Remove ads* purchase is still honoured
+
+**Everything else on the device**
+- [ ] Sound, haptics, small-screen layouts, 3D frame rate (five minutes with the counter), background and resume
+- [ ] Postcard saving, with the Photos permission text (`NSPhotoLibraryAddUsageDescription`) set
+- [ ] Privacy disclosures (App Store Connect's privacy answers match what this build turns on), support and privacy
+      URLs, App Store metadata and screenshots, and naming clearance for PawTyk
+- [ ] Tester shortcuts and the test store, test videos and test leaderboard are absent (Settings → see the App Store
+      build in a tester build; `release:bundle` for the archive)
+
+**Not in D52, recorded for later: skippable interstitials.** Only if real retention and revenue data justify a test.
+Never in the first session; never during a puzzle, a welcome, a Farm visit, the Walk, the Tour or Photo; never after a
+loss or in Paw Cup; only at a natural break after a finished result. No more often than the existing policy (four boards
+apart, eight minutes apart, at most three a day; `AD_POLICY`). Every *Remove ads* purchase honoured. An SDK-supported
+format with its own compliant close, never a PawTyk timer or overlay, and no promised five-second skip.
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

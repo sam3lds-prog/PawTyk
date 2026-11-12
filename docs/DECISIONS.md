@@ -2718,3 +2718,27 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   reward granted once; the test video's close; the out-of-hints offer and that nothing starts before the tap; a video
   closed early on a board with the board playing on; Report a video from Settings, its text and the copy fallback). The
   M2 token test now expects the plain reason.
+
+### PR E — the public-launch gate, browser checks, pictures (`d52/e-gate`)
+- **The TestFlight gate** (`docs/release-checklist.md` → D52): builds and an upgrade over a D50 save; five first-time
+  players; the Hazel countdown and its five-person question; the World's lines; the place browser and sandbox in a
+  tester build and their absence in the App Store build; the Animal question with VoiceOver and Reduce Motion; every
+  video path on a phone (closed early, airplane mode, backgrounding, consent and tracking denied, the daily limit,
+  Report a video); StoreKit sandbox for every product the build sells, older *Remove ads* honoured; sound, haptics,
+  small screens, 3D, postcards and the Photos text; privacy answers, URLs, metadata and naming. It also records the
+  rules for any future skippable-interstitial test (not built).
+- **Browser checks** (`test/e2e/d52.mjs`, in `npm run e2e`; 7 checks): Hazel counted 6 → 4 → 1 in one sentence that
+  fits 320 points with a silent bar and no arrow, and the once-only growth note; the World's line before and after the
+  sixth home; Browse future places to 9,999 and place 12 at stage 3 with the save and storage untouched, also across a
+  reload; a sandbox visit that writes nothing and gives the own save back; an Animal question from the album that
+  answers kindly, moves on and pays nothing; the out-of-hints offer and a test video closed early, with the board
+  playing on.
+- **Pictures** (`docs/screenshots/d52/`): the win at 320 before and after; the World at 390 before and after; the place
+  browser, a sandbox visit, an Animal question and the out-of-hints offer, after. (The *before* pictures came from a
+  separate dev server of `main`, which drew with the fallback font.)
+- Found while taking them: the place browser's resident line wrapped its kind under the name (fixed), and a World card
+  for a home not being built read *… One more puzzle and Juniper is home while you build here* (now *Build here ·
+  Juniper comes home after one more puzzle here*).
+- **Not verified here** (needs a phone or people): VoiceOver and Switch Control, Reduce Motion on iOS, sound and
+  haptics, real AdMob videos and their failures, consent and tracking prompts, StoreKit sandbox, 3D frame rate,
+  postcard saving, and the five-person tests.
