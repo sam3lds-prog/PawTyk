@@ -56,7 +56,7 @@ export function placeDetailsMarkup(k: number, stage: number): string {
 }
 
 /** Opens the browser at place `start`. `inGame` leaves out the sandbox (a board is on screen). */
-export function showPlaceBrowser(scope: Scope, o: { start?: number; inGame?: boolean } = {}): void {
+export function showPlaceBrowser(scope: Scope, o: { start?: number; inGame?: boolean; beforeSandbox?: () => void } = {}): void {
   if (!featureFlags.qaTools) return;
   let k = clampPlace(o.start ?? 1);
   let stage = 0;
@@ -112,8 +112,13 @@ export function showPlaceBrowser(scope: Scope, o: { start?: number; inGame?: boo
     }
     const sb = t.closest('[data-sandbox]') as HTMLElement | null;
     if (sb && !o.inGame) {
+      const place = k;
+      const state = sb.dataset.sandbox as SandboxState;
       sh.close();
-      enterSandbox(k, sb.dataset.sandbox as SandboxState);
+      // Whatever sheet opened the browser (Settings) closes before the preview starts, so nothing it does on closing
+      // (a redraw of the screen under it) lands inside the preview.
+      o.beforeSandbox?.();
+      enterSandbox(place, state);
     }
   });
 }

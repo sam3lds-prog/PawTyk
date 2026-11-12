@@ -2649,6 +2649,14 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   tester shortcuts wait until the preview is left. No `skipToLevel` loop: the copy's level is set once, and only the
   previewed place's arrivals are recorded, so place 9,999 opens as fast as place 1.
 - **Not in the App Store build**: `release:bundle` now also fails on *Browse future places* or the sandbox banner.
+- **Found in code review (Codex, #79)**, both fixed with a test that fails without the fix:
+  - From Journey → Settings → Browse future places, entering a sandbox disposed Settings, whose close redraws the
+    Journey; that redraw went through the new router guard and ended the preview at once, so the place opened on the
+    real save with no banner and writes on. Settings now closes before the preview starts (`beforeSandbox`), and a
+    redraw while the way in is being drawn passes the guard.
+  - A preview of a place the player already has residents in kept them all (residents come from the inventory, not
+    the growth count), so *Empty* showed a full home. The copy now clears the place's residents before adding the ones
+    the chosen state has.
 - Tests: `test/unit/d52World.dom.test.ts` (the World's line before, at and after the sixth home, and the count;
   places 1, 12, 100 and 9,999 inspected; the sheet's controls, one place drawn, the save and storage unchanged;
   stage previews; no sandbox in a board; the sandbox copy for 9,999, 12 and 100 without touching the real save;
