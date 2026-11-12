@@ -332,3 +332,27 @@ describe('a new stage is its own hello', () => {
     expect(document.querySelector('.sanctuary__chat.is-greeting')).toBeNull();
   });
 });
+
+describe('tester shortcut: Say hello again', () => {
+  it('opens a calm Farm (its news counted as seen) where someone says hello; with nobody home it says so', async () => {
+    const { showSettings } = await import('../../src/ui/screens/settings');
+    const { Scope } = await import('../../src/ui/router');
+    const router = mount();
+    // Someone came home while the player was away: that visit would be the newcomer's own hello.
+    app.save.world.unseen = { farm: { animals: ['truffle'] } } as never;
+    router.go({ screen: 'journey' });
+    showSettings(new Scope());
+    (document.querySelector('[data-qa="greet"]') as HTMLElement).click();
+    expect(router.route).toMatchObject({ screen: 'region', id: 'farm' });
+    expect(app.save.world.unseen?.farm).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(GREET_AFTER_MS + 300);
+    expect(document.querySelector('.sanctuary__chat.is-greeting')).not.toBeNull();
+    // Nobody home: a word instead of an empty Farm.
+    app.replaceSave(defaultSave(NOW));
+    router.go({ screen: 'journey' });
+    showSettings(new Scope());
+    (document.querySelector('[data-qa="greet"]') as HTMLElement).click();
+    expect(router.route).toMatchObject({ screen: 'journey' });
+    expect(document.querySelector('.toast')?.textContent).toMatch(/Nobody is home on the Farm yet/);
+  });
+});
