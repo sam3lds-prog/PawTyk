@@ -29,6 +29,8 @@ import { analyticsAvailable } from '../../services/firebaseAnalytics';
 import { applyUsageChoice } from '../../app/usage';
 import { animalSvg } from '../art/animals';
 import { fpsCounterOn, setFpsCounter, showListeningCheck, startFarmCheck } from '../components/deviceChecks';
+import { showPlaceBrowser } from '../components/placeBrowser';
+import { inSandbox } from '../../app/qaSandbox';
 import { ICON } from '../icons';
 
 type BoolKey = 'autoMark' | 'explainMoves' | 'showTimer' | 'largeBoard' | 'music' | 'ambientMusic' | 'sound' | 'haptics' | 'highContrast' | 'regionPatterns' | 'leftHanded' | 'toys3d' | 'shareUsage';
@@ -197,6 +199,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="moment"><span class="row__label">Show an animal moment<small>Opens the Farm; an animal does something small on its own in a couple of seconds (D49)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="greet"><span class="row__label">Say hello again<small>Opens a calm Farm (its news counted as seen); someone comes over to say hello a couple of seconds in (every home may again, D50)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="meals"><span class="row__label">Forget first meals<small>Every animal's next meal plays in full again, then quick ones after (D49)</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="places"><span class="row__label">Browse future places<small>Any place from 1 to 9,999: its animals, stages and when it opens. Read-only; a sandbox visit saves nothing (D52)</small></span>${ICON.chevron}</button>
       </div>
       <div class="rows-title">Device checks</div>
       <div class="rows">
@@ -215,6 +218,8 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
     const qa = t.closest('[data-qa]') as HTMLElement | null;
     if (qa && featureFlags.qaTools) {
       const [what, arg] = (qa.dataset.qa ?? '').split(':');
+      // D52 PR B: the other shortcuts change a save, and the one in front is the sandbox's: leave it first.
+      if (inSandbox() && what !== 'places' && what !== 'fps' && what !== 'listen') return void toast('Leave the sandbox preview first.');
       if (what === 'release') {
         try {
           if (RELEASE_VIEW) localStorage.removeItem(QA_RELEASE_VIEW_KEY);
@@ -241,6 +246,8 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         qa.querySelector('.switch')?.setAttribute('aria-checked', String(on));
       } else if (what === 'listen') {
         showListeningCheck(sh.scope);
+      } else if (what === 'places') {
+        showPlaceBrowser(sh.scope, { inGame: !!opts.inGame });
       } else if (what === 'finish') {
         const came = finishOpenHomes(app.save);
         app.persist();
@@ -373,6 +380,8 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
       sh.close();
       app.router.go({ screen: 'gallery' });
     } else if (a.act === 'reset') {
+      // D52 PR B: never while a sandbox preview is in front (it would erase the player's own stored save).
+      if (featureFlags.qaTools && inSandbox()) return void toast('Leave the sandbox preview first.');
       confirmErase(sh.scope, () => sh.close());
     }
   });

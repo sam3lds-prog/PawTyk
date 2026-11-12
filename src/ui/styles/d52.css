@@ -21,3 +21,187 @@
   font-size: var(--t-xs);
   text-align: left;
 }
+
+/* PR B: the World says the six hand-made homes are only the beginning. */
+.world-ahead {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 var(--s3);
+  font-size: var(--t-sm);
+  color: var(--muted-ink);
+  font-weight: 700;
+}
+.world-ahead .ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--brand);
+}
+
+/* PR B: Tester shortcuts → Browse future places (tester builds only). */
+.qa-places__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: var(--s3) 0 var(--s2);
+}
+.qa-places__label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.qa-places__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.qa-places__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--s3);
+}
+.qa-places__quick .chip {
+  min-height: 34px;
+  min-width: 44px;
+  justify-content: center;
+}
+.qa-place {
+  display: grid;
+  gap: 6px;
+}
+.qa-place > p,
+.qa-place h3 {
+  margin: 0;
+}
+.qa-place__eyebrow {
+  font-size: var(--t-xs);
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.qa-place__name {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+}
+.qa-place__opens {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: var(--t-sm);
+}
+.qa-place__opens .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 2px;
+}
+.qa-place__stage {
+  font-size: var(--t-sm);
+}
+.qa-place__scene {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 360 / 300;
+}
+.qa-place__scene svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.qa-place__residents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.qa-place__resident {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: var(--canvas-deep);
+  opacity: 0.7;
+}
+.qa-place__resident.is-home {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.qa-place__face {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+.qa-place__face svg {
+  width: 100%;
+  height: 100%;
+}
+.qa-place__who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-sm);
+  min-width: 0;
+}
+.qa-place__who small {
+  color: var(--muted-ink);
+  font-size: var(--t-xs);
+}
+.qa-places__sandbox {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+.qa-places__sandbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--s2);
+}
+/* The sandbox banner, above everything while a preview is in front. */
+.qa-sandbox {
+  position: fixed;
+  z-index: 90;
+  left: 8px;
+  right: 8px;
+  top: calc(var(--safe-top, 0px) + 6px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 14px;
+  background: #2b2440;
+  color: #fff;
+  font-size: var(--t-xs);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+.qa-sandbox__text {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.qa-sandbox__text .ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.qa-sandbox__leave {
+  flex: none;
+}

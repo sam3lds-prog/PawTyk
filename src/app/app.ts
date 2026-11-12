@@ -101,8 +101,14 @@ class App {
     return n;
   }
 
+  /**
+   * D52 PR B: while a tester previews a place in a sandbox save (`app/qaSandbox.ts`, tester builds only), nothing is
+   * written: `persist` and `saveActive` still tell their listeners, but the player's stored save is left exactly as it was.
+   */
+  holdWrites = false;
+
   persist(): void {
-    saveSave(this.save);
+    if (!this.holdWrites) saveSave(this.save);
     for (const fn of this.listeners) fn();
   }
 
@@ -160,7 +166,7 @@ class App {
     const { mode, session, spec, cast, boardId } = this.active;
     const snap = captureSession(mode, session, new Date(), spec, cast, boardId);
     setSavedSession(this.save, mode, snap);
-    saveSave(this.save);
+    if (!this.holdWrites) saveSave(this.save);
   }
 
   /** Forgets the saved board for `mode` (finished, lost, or abandoned), leaving every other saved board alone. */

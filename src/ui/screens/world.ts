@@ -11,9 +11,9 @@
 import { arrivalPortrait } from '../components/eager';
 import { app } from '../../app/app';
 import { playMode } from '../../app/gameFlow';
-import { sanctuaryDef, SANCTUARY_BY_ID, isRegionId, type RegionId, type SanctuaryDef } from '../../meta/catalogs/sanctuaries';
+import { sanctuaryDef, SANCTUARIES, SANCTUARY_BY_ID, isRegionId, type RegionId, type SanctuaryDef } from '../../meta/catalogs/sanctuaries';
 import { isPlaceId } from '../../meta/catalogs/places';
-import { activeSanctuary, arrivalProgress, isComplete, isOpen, nextStage, nextToOpen, progressOf, stageOf, unseenIn, worldIds } from '../../meta/world';
+import { activeSanctuary, arrivalProgress, isComplete, isOpen, nextStage, nextToOpen, openPlaceCount, progressOf, stageOf, unseenIn, worldIds } from '../../meta/world';
 import { animalInfo, homeAnimals } from '../../meta/animals';
 import { animalPortrait } from '../art/animals';
 import { regionThumb } from '../art/regions';
@@ -62,6 +62,18 @@ function statusLine(def: SanctuaryDef): string {
   return next ? `${lead}${bare(stageCountdown(next.stage.name, next.need - next.have))}${tail}` : `${lead}almost complete`;
 }
 
+/**
+ * D52 PR B: the six hand-made homes are not the end, said on the World. Before they are all open: more places are
+ * waiting. Once they are: when the next new place of the endless world opens (its real level, from `nextToOpen`), or
+ * sooner, the moment every home before it is finished.
+ */
+export function worldAheadLine(save: typeof app.save): string {
+  if (!SANCTUARIES.every((s) => isOpen(save, s.id))) return 'Your first six homes are just the beginning. More places are waiting to be discovered.';
+  const up = nextToOpen(save);
+  if (!up) return '';
+  return `${openPlaceCount(save) === 0 ? 'A new place' : 'The next new place'} opens after level ${up.def.opensAfterLevel} — or sooner if you finish your current homes.`;
+}
+
 /** The friend who stands for a sanctuary on its map pin: the first one home there, if any. */
 function pinFace(def: SanctuaryDef): string {
   const st = statusOf(def.id);
@@ -108,6 +120,7 @@ export const worldScreen: ScreenDef = {
     const openCount = homes.filter((d) => statusOf(d.id) !== 'locked').length;
     const finishedCount = homes.filter((d) => statusOf(d.id) === 'complete').length;
     const level = save.journey.nextLevel;
+    const ahead = worldAheadLine(save);
 
     const pins = homes.map((d) => {
       const p = pinPercent(d.lon, d.lat);
@@ -249,7 +262,8 @@ export const worldScreen: ScreenDef = {
           <button class="world-map__expand" data-act="expand" aria-pressed="false" aria-label="Expand the map">${ICON.globe}<span>Expand map</span></button>
         </div>
         <section aria-labelledby="sanct-title">
-          <div class="section-head"><h2 id="sanct-title">Homes</h2><span class="muted num">${homes.length > 6 ? `${openCount} open${finishedCount ? ` · ${finishedCount} finished` : ''}` : `${openCount} of ${homes.length} open`}</span></div>
+          <div class="section-head"><h2 id="sanct-title">Homes</h2><span class="muted num">${openCount} open${finishedCount ? ` · ${finishedCount} finished` : ''}</span></div>
+          ${ahead ? `<p class="world-ahead" data-world-ahead>${ICON.globe}<span>${esc(ahead)}</span></p>` : ''}
           <ul class="world-list">${cards}</ul>
           ${finished}
         </section>
