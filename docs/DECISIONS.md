@@ -2574,6 +2574,9 @@ tester page built (the plan itself says not to merge silently; his explicit requ
   - A decoration tapped while the hello played found its only animal busy, so nobody rode the tractor (CI's smoke
     check). The tap now ends an animal's own moment first, as tricks and meals already did (D49). The test fails
     without the fix.
+  - D47's postcard check, run on `main` after the merge, found a D49 animal moment starting just after *Done*. A
+    postcard session can outlast the first moment's wait, and the moment starts when the camera is free. D47's checks
+    now turn the scene's own moments off, as D46's do, since they need the Farm exactly at rest.
 - **Local browser runs**: a dev server that hot-reloads an edited module serves it under a new URL, and a check that
   imports the module by its plain path then gets a second copy. `setMomentsEnabled(false)` and `requestMomentSoon`
   were landing on that copy, which made D46, D44 and D49 checks fail locally and only locally. Restart the dev server
