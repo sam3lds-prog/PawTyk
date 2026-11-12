@@ -149,12 +149,15 @@ export function featuredFor(save: SaveV2, home: SanctuaryId, offered: (c: Curren
     });
     const can = (t: (typeof TRICKS)[number]) => t.price <= have(trickCurrency(t)!);
     const order = (t: (typeof TRICKS)[number]) => ({ coins: 0, vtoken: 1, gem: 2 })[trickCurrency(t)!];
-    // Tried on and still not learned: first, when the player can have it (or it's for coins, so they can work toward it).
-    const tried = learnable.filter((t) => wasTried(save, 'trick', t.id) && (can(t) || trickCurrency(t) === 'coins')).sort((a, b) => Number(can(b)) - Number(can(a)) || order(a) - order(b) || a.price - b.price)[0];
-    const now = learnable.filter(can).sort((a, b) => order(a) - order(b) || a.price - b.price)[0];
-    // Not affordable yet: only ever one for coins (gems and tokens only when there are enough of them).
+    // Affordable first (as for decorations): a trick tried on that the player can have now, else any they can have now;
+    // only then one to work toward, the one they tried on first (for coins: gems and tokens only when there are enough).
+    const byOrder = (a: (typeof TRICKS)[number], b: (typeof TRICKS)[number]) => order(a) - order(b) || a.price - b.price;
+    const triedNow = learnable.filter((t) => wasTried(save, 'trick', t.id) && can(t)).sort(byOrder)[0];
+    const now = learnable.filter(can).sort(byOrder)[0];
+    const triedLater = learnable.filter((t) => wasTried(save, 'trick', t.id) && trickCurrency(t) === 'coins').sort(byOrder)[0];
     const near = learnable.filter((t) => trickCurrency(t) === 'coins').sort((a, b) => a.price - b.price)[0];
-    const t = tried ?? now ?? near;
+    const tried = triedNow ?? (now ? undefined : triedLater);
+    const t = triedNow ?? now ?? triedLater ?? near;
     const who = animalInfo(newestFirst[0]).name;
     if (t) {
       const w: FeaturedWhy = t === tried ? 'interest' : t === now ? 'learn' : 'near';
