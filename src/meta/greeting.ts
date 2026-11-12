@@ -99,7 +99,9 @@ export function pickGreeting(cast: readonly GreetCast[], ctx: GreetContext): Gre
     .filter((c) => c.since && ctx.now.getTime() - Date.parse(c.since) >= 0 && ctx.now.getTime() - Date.parse(c.since) < NEWCOMER_MS)
     .sort((a, b) => Date.parse(b.since!) - Date.parse(a.since!));
   if (fresh.length) return of(fresh[0], 'newcomer');
-  // 3–5. Anyone else, taking turns.
-  const who = others[ctx.turn % others.length];
-  return of(who, ctx.justSolved ? 'solved' : ctx.evening ? 'evening' : 'hello');
+  // 3–5. Anyone else, taking turns round the whole cast (stepping past whoever said hello last), so every animal gets
+  // its turn. (Counting through `others`, whose order shifts with each pick, would skip one of three for ever.)
+  let i = ((ctx.turn % cast.length) + cast.length) % cast.length;
+  if (cast.length > 1 && cast[i].id === ctx.last) i = (i + 1) % cast.length;
+  return of(cast[i], ctx.justSolved ? 'solved' : ctx.evening ? 'evening' : 'hello');
 }

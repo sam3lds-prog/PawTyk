@@ -90,6 +90,18 @@ describe('who says hello, and why (pure)', () => {
     expect(pickGreeting([], ctx)).toBeNull();
   });
 
+  it('every animal gets its turn (Codex review on #74: with three, one was skipped for ever)', () => {
+    const who = [cast({ id: 'cotton' }), cast({ id: 'truffle' }), cast({ id: 'buttercup' })];
+    const seen: string[] = [];
+    let last: string | undefined;
+    for (let turn = 0; turn < 6; turn++) {
+      const g = pickGreeting(who, { ...ctx, last, turn })!;
+      seen.push(g.who.id);
+      last = g.who.id;
+    }
+    for (const id of ['cotton', 'truffle', 'buttercup']) expect(seen.filter((x) => x === id), id).toHaveLength(2);
+  });
+
   it('takes turns: never the same animal twice running when there is a choice', () => {
     const who = [cast({ id: 'cotton' }), cast({ id: 'truffle' }), cast({ id: 'buttercup' })];
     let last: string | undefined;
