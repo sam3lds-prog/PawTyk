@@ -42,6 +42,9 @@ export function sandboxSave(real: SaveV2, k: number, state: SandboxState, now = 
   // Open by its own level (an empty place has not grown, so growth alone wouldn't open it).
   s.journey.nextLevel = Math.max(s.journey.nextLevel, def.opensAfterLevel + 1);
   s.world.growth[def.id] = growth;
+  // Residents follow the chosen state, not the player's own progress there (review of D52 PR B): an Empty preview of a
+  // place the player finished shows nobody home.
+  for (const a of def.arrivals) delete s.inventory.companions[a.id];
   for (const a of def.arrivals) if (a.at <= growth) welcomeAnimal(s, a.id, now);
   s.world.active = def.id;
   return s;
@@ -74,6 +77,9 @@ export function enterSandbox(k: number, state: SandboxState): boolean {
   app.active = null;
   app.save = sandboxSave(real, def.index, state);
   document.body.appendChild(banner);
+  // While the way in is being drawn, a redraw of the screen being left (a sheet's close asking for a refresh as it is
+  // disposed) must not end the preview it is part of (review of D52 PR B).
+  let entering = true;
   banner.querySelector('[data-act="leave-sandbox"]')!.addEventListener('click', () => {
     leaveSandbox();
     app.router.go({ screen: 'world' });
@@ -81,11 +87,15 @@ export function enterSandbox(k: number, state: SandboxState): boolean {
   // Anywhere but this home ends the preview first; a board started in the sandbox is the sandbox's, so it lands on
   // the World instead.
   app.router.guard = (route: CanonicalRoute): CanonicalRoute => {
-    if (route.screen === 'region' && route.id === def.id) return route;
+    if (entering || (route.screen === 'region' && route.id === def.id)) return route;
     leaveSandbox();
     return route.screen === 'game' ? { screen: 'world' } : route;
   };
-  app.router.go({ screen: 'region', id: def.id });
+  try {
+    app.router.go({ screen: 'region', id: def.id });
+  } finally {
+    entering = false;
+  }
   return true;
 }
 

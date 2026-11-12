@@ -46,13 +46,19 @@ export function showAnimalQuestion(scope: Scope, o: { from: TriviaFrom }): void 
     title: 'Animal question',
     className: 'trivia-sheet',
     body: `<div data-trivia-body></div>
-      <div class="sheet__actions">
-        <button class="btn btn--block" data-act="another" hidden>Another question</button>
+      <div class="sheet__actions" data-trivia-actions>
         <button class="btn btn--quiet" data-act="done">${esc(back)}</button>
       </div>`,
   });
   const body = sh.el.querySelector<HTMLElement>('[data-trivia-body]')!;
-  const another = sh.el.querySelector<HTMLButtonElement>('[data-act="another"]')!;
+  const actions = sh.el.querySelector<HTMLElement>('[data-trivia-actions]')!;
+  // *Another question* is only there once the question has been answered (review of D52 PR C: a `hidden` attribute
+  // lost to the block button's own display, so it could be pressed before answering and skip the question).
+  const setAnother = (on: boolean) => {
+    const b = actions.querySelector('[data-act="another"]');
+    if (on && !b) actions.insertAdjacentHTML('afterbegin', '<button class="btn btn--block" data-act="another">Another question</button>');
+    else if (!on) b?.remove();
+  };
   let q: TriviaQuestion;
   let answered = false;
   const ask = () => {
@@ -60,7 +66,7 @@ export function showAnimalQuestion(scope: Scope, o: { from: TriviaFrom }): void 
     app.persist();
     answered = false;
     body.innerHTML = questionMarkup(q, uid);
-    another.hidden = true;
+    setAnother(false);
     track('trivia_question', { question: q.id, from: o.from });
     body.querySelector<HTMLElement>('[data-choice="0"]')?.focus({ preventScroll: true });
   };
@@ -86,7 +92,7 @@ export function showAnimalQuestion(scope: Scope, o: { from: TriviaFrom }): void 
     const res = body.querySelector<HTMLElement>('[data-trivia-result]')!;
     res.classList.toggle('is-right', r.correct);
     res.innerHTML = `<b>${esc(r.head)}</b> ${esc(r.text)}`;
-    another.hidden = false;
+    setAnother(true);
     track('trivia_answer', { question: q.id, correct: r.correct });
     res.focus({ preventScroll: true });
   };
@@ -96,7 +102,7 @@ export function showAnimalQuestion(scope: Scope, o: { from: TriviaFrom }): void 
     const c = t.closest('[data-choice]') as HTMLButtonElement | null;
     if (c && !c.disabled) return answer(Number(c.dataset.choice));
     const act = (t.closest('[data-act]') as HTMLElement | null)?.dataset.act;
-    if (act === 'another') ask();
+    if (act === 'another' && answered) ask();
     else if (act === 'done') sh.close();
   });
 }

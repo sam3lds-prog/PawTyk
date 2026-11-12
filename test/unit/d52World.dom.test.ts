@@ -18,6 +18,8 @@ import { enterSandbox, inSandbox, leaveSandbox, sandboxSave } from '../../src/ap
 import { activeSanctuary, isComplete, isOpen, stageOf } from '../../src/meta/world';
 import { grant } from '../../src/meta/ledger';
 import { featureFlags } from '../../src/config/featureFlags';
+import { openSheet } from '../../src/ui/components/sheet';
+import { isHome } from '../../src/meta/animals';
 
 const blank: ScreenDef = { tab: null, title: 'x', mount: () => {} };
 let router: Router;
@@ -198,6 +200,37 @@ describe('a sandbox visit saves nothing and gives the save back unchanged', () =
     expect(inSandbox()).toBe(false);
     expect(router.route?.screen).toBe('world');
     expect(JSON.stringify(app.save)).toBe(before);
+  });
+
+  it('review: a sheet that redraws the screen as it closes (Settings on the Journey) does not end the preview it opened', () => {
+    router.go({ screen: 'world' });
+    const settings = openSheet(router.scope!, { title: 'Settings', body: '', onClose: () => app.router.refresh() });
+    showPlaceBrowser(settings.scope);
+    (document.querySelector('.qa-places-sheet [data-sandbox="growing"]') as HTMLElement).click();
+    expect(inSandbox()).toBe(true);
+    expect(router.route).toEqual({ screen: 'region', id: 'p1' });
+    expect(app.holdWrites).toBe(true);
+    leaveSandbox({ quiet: true });
+    // And from Settings itself, the sheet is closed before the preview starts.
+    router.go({ screen: 'world' });
+    const s2 = openSheet(router.scope!, { title: 'Settings', body: '', onClose: () => app.router.refresh() });
+    showPlaceBrowser(s2.scope, { start: 12, beforeSandbox: () => s2.close() });
+    (document.querySelector('.qa-places-sheet [data-sandbox="empty"]') as HTMLElement).click();
+    expect(inSandbox()).toBe(true);
+    expect(router.route).toEqual({ screen: 'region', id: 'p12' });
+    expect(document.querySelector('.qa-places-sheet')).toBeNull();
+  });
+
+  it('review: residents follow the chosen state, not the player’s own progress in that place', () => {
+    const p = placeDef(12);
+    app.save.world.growth.p12 = 25;
+    for (const w of p.animals) app.save.inventory.companions[w.id] = { unlockedAt: at };
+    expect(p.animals.filter((w) => isHome(sandboxSave(app.save, 12, 'empty'), w.id))).toHaveLength(0);
+    const grow = sandboxSave(app.save, 12, 'growing');
+    expect(p.animals.filter((w) => isHome(grow, w.id)).map((w) => w.id)).toEqual(p.animals.filter((w) => w.at <= 8).map((w) => w.id));
+    expect(p.animals.every((w) => isHome(sandboxSave(app.save, 12, 'complete'), w.id))).toBe(true);
+    // The player's own save keeps them all.
+    expect(p.animals.every((w) => isHome(app.save, w.id))).toBe(true);
   });
 
   it('a release build has neither the browser nor the sandbox', () => {

@@ -2649,6 +2649,14 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   tester shortcuts wait until the preview is left. No `skipToLevel` loop: the copy's level is set once, and only the
   previewed place's arrivals are recorded, so place 9,999 opens as fast as place 1.
 - **Not in the App Store build**: `release:bundle` now also fails on *Browse future places* or the sandbox banner.
+- **Found in code review (Codex, #79)**, both fixed with a test that fails without the fix:
+  - From Journey → Settings → Browse future places, entering a sandbox disposed Settings, whose close redraws the
+    Journey; that redraw went through the new router guard and ended the preview at once, so the place opened on the
+    real save with no banner and writes on. Settings now closes before the preview starts (`beforeSandbox`), and a
+    redraw while the way in is being drawn passes the guard.
+  - A preview of a place the player already has residents in kept them all (residents come from the inventory, not
+    the growth count), so *Empty* showed a full home. The copy now clears the place's residents before adding the ones
+    the chosen state has.
 - Tests: `test/unit/d52World.dom.test.ts` (the World's line before, at and after the sixth home, and the count;
   places 1, 12, 100 and 9,999 inspected; the sheet's controls, one place drawn, the save and storage unchanged;
   stage previews; no sandbox in a board; the sandbox copy for 9,999, 12 and 100 without touching the real save;
@@ -2674,6 +2682,9 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
 - **Measured, opt-in**: `trivia_question` (which, from where) and `trivia_answer` (which, right or not)
   (`docs/analytics.md` → D52).
 - Not built: a trivia link on the Daily results (the plan says to consider it after the pilot), and any reward.
+- **Found in code review (Codex, #80)**: *Another question* carried a `hidden` attribute that the block button's own
+  `display: flex` overrode, so it showed (and skipped the question) before an answer. It is now added only once the
+  question is answered; the test checks it isn't in the sheet before then.
 - Tests: `test/unit/d52Trivia.dom.test.ts` (twenty questions on species in the game, three distinct choices, answers in
   every position, a face for each; the fennec example word for word; the rotation with friends at home, no repeats, kept
   across a save round trip; a right answer with its sparkle and nothing paid or taken; a wrong one with *Good guess!*
@@ -2700,9 +2711,9 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   (*The video ended early, so there's no hint this time. Nothing was used.*, *Videos need an internet connection…*),
   nothing is used, and the board goes on. Grants are unchanged: only on the network's reward, once per video by its
   ledger id, within the daily cap of 10.
-- **A video that never reports back** (a lost close after backgrounding, say) frees its button after 3 minutes
-  (`VIDEO_WATCHDOG_MS`), so a video can never block play or the next video. A reward the network confirms later is
-  still granted, once.
+- **A video that never reports back** (a lost close after backgrounding, say) is given up after 3 minutes
+  (`VIDEO_WATCHDOG_MS`), so a video can never block play or the next video. Giving up removes its listeners
+  (`abandonRewarded`) and ignores anything it reports later.
 - **The test video has a visible close** (*Close (no reward)*), so testers can try the "closed early" path; waiting it
   out earns the reward as before.
 - **Report a video** (Settings → Your data, whenever videos are part of the build): *Not right for children*, *Scary or
@@ -2713,9 +2724,19 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
 - **Purchases**: unchanged. Gems and the Welcome Rescue Pack show only when a store is configured (D43, D47), and the
   pack stays off in release until `VITE_WELCOME_PACK=1`. Their sandbox checks are part of the D52 TestFlight gate.
   Free hints and lives are not reduced (D51-B's economy model advises against it).
+- **Found in code review (Codex, #81)**, fixed with tests that fail without the fix (`test/unit/d52AdMob.test.ts`, a
+  stand-in plugin):
+  - P1: the watchdog freed the button but left the timed-out video's reward listener in place, so the next video's
+    one reward event paid both (a hint and a heart). Each video's listeners now live for that video only, and giving
+    up on one removes them and ignores its late reports.
+  - P2: a video that failed to present (after loading) was reported as closed early. Reading the plugin showed more:
+    on iOS its show call settles only when the reward is earned, never on an early close or a failure to present. The
+    service now ends a video from the plugin's events: the reward, the dismissal (*closed* only without the reward)
+    and a failure to show (a failure, or no fill / no connection from its code); a rejected show call is a failure.
+    Before this, an early close on iOS would have kept *showing* set until the watchdog.
 - Tests: `test/unit/d52Videos.dom.test.ts` (SDK codes to outcomes; each message; interstitials off; closed early, no
   fill and a thrown failure earn nothing and keep the day's count; offline before trying; the watchdog, with a late
-  reward granted once; the test video's close; the out-of-hints offer and that nothing starts before the tap; a video
+  report ignored; the test video's close; the out-of-hints offer and that nothing starts before the tap; a video
   closed early on a board with the board playing on; Report a video from Settings, its text and the copy fallback). The
   M2 token test now expects the plain reason.
 

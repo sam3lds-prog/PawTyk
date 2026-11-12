@@ -108,20 +108,24 @@ describe('watching a video', () => {
     if (stub) Object.defineProperty(ads, 'isStub', stub);
   });
 
-  it('a video that never reports back frees the button after a while; a reward the network confirms later is still granted once', async () => {
+  it('a video that never reports back is given up after a while: the button works again, the service lets go of it, and a late report grants nothing', async () => {
     let earn: (() => void) | undefined;
     vi.spyOn(ads, 'showRewarded').mockImplementation((_p, onEarned) => {
       earn = onEarned;
       return new Promise(() => {});
     });
+    const abandon = vi.fn();
+    (ads as { abandonRewarded?: () => void }).abandonRewarded = abandon;
     const before = hints();
     const first = watchVideoFor('hint');
     expect(await watchVideoFor('hint')).toBe('busy');
     await vi.advanceTimersByTimeAsync(VIDEO_WATCHDOG_MS + 10);
     expect(await first).toBe('error');
+    expect(abandon).toHaveBeenCalledTimes(1);
+    // Review (P1): a reward reported after the video was given up is never credited to it.
     earn?.();
-    earn?.();
-    expect(hints()).toBe(before + 1);
+    expect(hints()).toBe(before);
+    delete (ads as { abandonRewarded?: () => void }).abandonRewarded;
   });
 
   it('the test video has a visible close; closing it earns nothing', async () => {
