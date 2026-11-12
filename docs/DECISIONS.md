@@ -2662,3 +2662,31 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   stage previews; no sandbox in a board; the sandbox copy for 9,999, 12 and 100 without touching the real save;
   enter → change things → leave, with nothing stored and the same object back; a board started there; a touched save
   restored from its snapshot; a release build with neither; `PLACES_VERSION`).
+
+### PR C — Animal question, optional delight (`d52/c-animal-question`)
+- **A card, never in the way** (`components/triviaCard.ts`, `meta/trivia.ts`). *Animal question · A quick question
+  about the animals. Just for fun.* is offered in the album and on the Farm (under *Animals*, once someone is home, not
+  during a try-on). It opens a sheet with one question, three lettered choices, then the answer:
+  - right: *That's right!* and the fact; the friend smiles and a small sparkle passes (none under Reduce Motion);
+  - wrong: *Good guess!* and the same fact; the right choice is marked, the guess shown with a dashed edge (no red);
+  - then *Another question* and *Back to my Farm* (or *Back to the album*).
+  No coins, hearts, streaks, retries or penalties. It is never between a win and the next puzzle, never on the win
+  sheet, never over an ad, and it does nothing to boards or their loading.
+- **Twenty questions, checked** (`docs/trivia.md` lists a source for each): Cotton's, Truffle's, Buttercup's, Pepper's,
+  Marigold's and Hazel's kinds on the Farm, Juniper's in the Pet Garden, the Outback's, the Savanna's, the Arctic's and
+  the Rainforest's friends, and the fennec fox from the desert places (the plan's own example, asked by the first fennec
+  out in the world). Each is about a species already in the game. Where the game's own fact was looser than its source,
+  the question follows the source (a harp seal pup's *baby coat* is white; it can be yellow-stained at birth).
+- **The rotation** asks about friends who are home first (and the wider world's fennec), never repeats the question just
+  asked, and keeps its place in the save (`save.trivia`, new and optional), so the next visit goes on from there.
+- **Measured, opt-in**: `trivia_question` (which, from where) and `trivia_answer` (which, right or not)
+  (`docs/analytics.md` → D52).
+- Not built: a trivia link on the Daily results (the plan says to consider it after the pilot), and any reward.
+- **Found in code review (Codex, #80)**: *Another question* carried a `hidden` attribute that the block button's own
+  `display: flex` overrode, so it showed (and skipped the question) before an answer. It is now added only once the
+  question is answered; the test checks it isn't in the sheet before then.
+- Tests: `test/unit/d52Trivia.dom.test.ts` (twenty questions on species in the game, three distinct choices, answers in
+  every position, a face for each; the fennec example word for word; the rotation with friends at home, no repeats, kept
+  across a save round trip; a right answer with its sparkle and nothing paid or taken; a wrong one with *Good guess!*
+  and the answer marked; Another question; Reduce Motion; the screen-reader labels and live region; the two events; the
+  album's and the Farm's entry points).
