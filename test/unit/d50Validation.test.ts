@@ -10,7 +10,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSave, normalizeSave, TRIED_MAX } from '../../src/services/storage';
 import { noteTried } from '../../src/meta/featured';
-import { SCENARIOS, errandYield, gameCatalog, runScenario } from '../../src/meta/economyModel';
+import { SCENARIOS, daysToSave, errandYield, gameCatalog, runScenario } from '../../src/meta/economyModel';
+import { ITEM_CAP, OVERFLOW_COINS, STARTER_ITEMS } from '../../src/meta/items';
 import { DAILY_POOL } from '../../src/meta/missions';
 import { ECONOMY } from '../../src/config/economy';
 import { activityFor } from '../../src/ui/art/activities';
@@ -66,6 +67,20 @@ describe('the economy model (D51-B)', () => {
     expect(errandYield(0).coins).toBe(0);
     expect(errandYield(1).coins).toBe(DAILY_POOL[0].coins);
     expect(errandYield(3).coins).toBeCloseTo(DAILY_POOL[0].coins + 2 * avg, 5);
+  });
+
+  it('a full pantry pays its overflow as coins, from the day it fills (Codex review on #76)', () => {
+    for (const r of [low, base, high]) {
+      const n = r.scenario.name;
+      expect(r.pantry.overflowPerDay, n).toBeCloseTo(Math.max(0, r.lives.net) * OVERFLOW_COINS + Math.max(0, r.hints.net) * OVERFLOW_COINS, 0);
+      expect(r.pantry.coinsPerDayOnceFull, n).toBeCloseTo(r.coins.total + r.pantry.overflowPerDay, 0);
+      expect(r.pantry.livesFullInDays, n).toBeCloseTo((ITEM_CAP.life - STARTER_ITEMS.life) / r.lives.net, 0);
+    }
+    // Saving up: the slower rate until the switch, the faster one after.
+    expect(daysToSave(100, 10, 20, 5)).toBe(7.5);
+    expect(daysToSave(40, 10, 20, 5)).toBe(4);
+    expect(daysToSave(100, 10, 20, null)).toBe(10);
+    expect(daysToSave(100, 0, 0, null)).toBe(Infinity);
   });
 
   it('three patterns, in order: more play earns more and gets there sooner', () => {

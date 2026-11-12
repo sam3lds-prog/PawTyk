@@ -18,7 +18,7 @@ import { TRICKS, trickCurrency } from './catalogs/tricks';
 import { BOWLS, FOODS, isFeast } from './catalogs/foods';
 import { REGIONS, SANCTUARIES } from './catalogs/sanctuaries';
 import { DAILY_POOL, WEEKLY } from './missions';
-import { CLEAR_LIVES, HINT_EVERY, ITEM_CAP } from './items';
+import { CLEAR_LIVES, HINT_EVERY, ITEM_CAP, OVERFLOW_COINS, STARTER_ITEMS } from './items';
 import { FOOD_AFFECTION_PER_DAY } from './feeding';
 import { LEVELS_PER_CHAPTER } from './chapters';
 
@@ -155,9 +155,15 @@ export interface EconomyResult {
   /** Paw Coins earned a day, by source. */
   coins: { firstClears: number; clean: number; daily: number; chapters: number; errands: number; weekly: number; homes: number; total: number };
   coinsPerSession: number;
+  /**
+   * The pantry (Codex review on #76): extra lives and hints over the cap of 10 arrive as coins (`OVERFLOW_COINS` each).
+   * Days until each fills from the starter pantry (null: never, it is used as fast as it's earned), and coins a day
+   * once both are full (the day's total plus the overflow).
+   */
+  pantry: { livesFullInDays: number | null; hintsFullInDays: number | null; overflowPerDay: number; coinsPerDayOnceFull: number };
   /** Paw Coins spent a day on food (at the typical meal price), and its share of the day's earnings. */
   food: { perDay: number; share: number };
-  /** Days until the player can afford, from nothing (and spending only on food). */
+  /** Days until the player can afford, from nothing (spending only on food; the pantry's overflow counted once full). */
   daysTo: { firstInteractiveFarmPiece: number; anyFarmPiece: number; allFarmCoinDecor: number; allCoinTricks: number; everythingForCoins: number };
   /** Extra lives and hints a day: earned, used, and the difference (the pantry caps at ITEM_CAP). */
   lives: { earned: number; used: number; net: number };
@@ -169,7 +175,16 @@ export interface EconomyResult {
 }
 
 const round = (n: number, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
-const days = (cost: number, perDay: number) => (perDay > 0 ? round(cost / perDay) : Infinity);
+
+/** Days to save `cost` at `before` a day, which becomes `after` a day from day `switchAt` (the pantry full). */
+export function daysToSave(cost: number, before: number, after: number, switchAt: number | null): number {
+  if (cost <= 0) return 0;
+  const at = switchAt ?? Infinity;
+  if (before > 0 && cost <= before * at) return round(cost / before);
+  const saved = before > 0 && Number.isFinite(at) ? before * at : 0;
+  if (!Number.isFinite(at) || after <= 0) return before > 0 ? round(cost / before) : Infinity;
+  return round(at + (cost - saved) / after);
+}
 
 /** Expected coins (and items) from finishing `n` of the day's three errands. "Solve any board" is always one of them. */
 export function errandYield(n: number): { coins: number; lives: number; hints: number } {
@@ -219,19 +234,31 @@ export function runScenario(sc: EconomyScenario, cat: EconomyCatalog): EconomyRe
     net: 0,
   };
   hints.net = hints.earned - hints.used;
+  // The pantry fills from the starter pantry at its net rate; after that, every extra one arrives as coins.
+  const fullIn = (start: number, net: number) => (net > 0 ? round(Math.max(0, ITEM_CAP.life - start) / net) : null);
+  const livesFullInDays = fullIn(STARTER_ITEMS.life, lives.net);
+  const hintsFullInDays = fullIn(STARTER_ITEMS.hint, hints.net);
+  // Once full, the day's surplus (what's earned beyond what's used) comes as coins instead.
+  const overflowPerDay = Math.max(0, lives.net) * OVERFLOW_COINS + Math.max(0, hints.net) * OVERFLOW_COINS;
+  const coinsOnceFull = coins.total + overflowPerDay;
+  // The model's horizon switches to the "full" rate when the later of the two is full (a conservative simplification).
+  const fullAt = livesFullInDays === null && hintsFullInDays === null ? null : Math.max(livesFullInDays ?? 0, hintsFullInDays ?? 0);
+  const spendableFull = Math.max(0, coinsOnceFull - food);
+  const save = (cost: number) => daysToSave(cost, spendable, spendableFull, overflowPerDay > 0 ? fullAt : null);
   const dearestToken = cat.tokenPrices.length ? Math.max(...cat.tokenPrices) : 0;
   return {
     scenario: sc,
     boards: { level: round(level), daily: round(daily, 2), zen: round(zen, 2), total: round(total) },
     coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, round(v)])) as EconomyResult['coins'],
     coinsPerSession: round(coins.total / sc.sessionsPerDay),
+    pantry: { livesFullInDays, hintsFullInDays, overflowPerDay: round(overflowPerDay), coinsPerDayOnceFull: round(coinsOnceFull) },
     food: { perDay: round(food), share: round(coins.total ? food / coins.total : 0, 2) },
     daysTo: {
-      firstInteractiveFarmPiece: interactive.length ? days(Math.min(...interactive), spendable) : Infinity,
-      anyFarmPiece: cat.farmDecor.length ? days(Math.min(...cat.farmDecor.map((d) => d.coins)), spendable) : Infinity,
-      allFarmCoinDecor: days(sum(cat.farmDecor.map((d) => d.coins)), spendable),
-      allCoinTricks: days(sum(cat.coinTricks), spendable),
-      everythingForCoins: days(sum(cat.allCoinDecor) + sum(cat.coinTricks) + sum(cat.coinBowls), spendable),
+      firstInteractiveFarmPiece: interactive.length ? save(Math.min(...interactive)) : Infinity,
+      anyFarmPiece: cat.farmDecor.length ? save(Math.min(...cat.farmDecor.map((d) => d.coins))) : Infinity,
+      allFarmCoinDecor: save(sum(cat.farmDecor.map((d) => d.coins))),
+      allCoinTricks: save(sum(cat.coinTricks)),
+      everythingForCoins: save(sum(cat.allCoinDecor) + sum(cat.coinTricks) + sum(cat.coinBowls)),
     },
     lives: { earned: round(lives.earned, 2), used: round(lives.used, 2), net: round(lives.net, 2) },
     hints: { earned: round(hints.earned, 2), used: round(hints.used, 2), net: round(hints.net, 2) },

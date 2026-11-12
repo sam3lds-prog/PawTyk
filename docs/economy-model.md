@@ -30,7 +30,9 @@ the play patterns are assumptions. Each one names the opt-in analytics event tha
 - **Everything sold for coins is a long goal, not a wall:** weeks for a conservative player, days for an engaged one.
   Anything new for coins should keep that shape (D48 measured new items in levels played; this measures in days).
 - **Extra lives and hints are earned faster than they are used**, in every pattern. The pantry caps at 10 of each,
-  and anything over the cap arrives as coins. So today a player rarely runs short, and there is no case for selling
+  and fills from the starter pantry in about one to twenty days. After that, anything over the cap arrives as coins
+  (10 each): about 16 more coins a day for a conservative player and about 100 for an engaged one. The model counts
+  this from the day the later of the two fills. So today a player rarely runs short, and there is no case for selling
   revives. If the beta shows lives piling up unused, that is a sign boards are comfortable, not that lives should
   be cut.
 - **Video tokens:** the dearest token item takes about eight days at one video every other day (base), and is never reached
@@ -68,6 +70,7 @@ the play patterns are assumptions. Each one names the opt-in analytics event tha
 | Farm coin decorations (animals use) | 12 (9) |
 | Cheapest Farm piece the animals use | 90 coins |
 | Typical coin meal (median portion) | 15 coins |
+| Starter pantry (lives, hints) · overflow | 3, 5 · 10 coins each over the cap |
 | Video-token prices | 2–4 |
 | Gem prices | 15–120 |
 
@@ -99,11 +102,15 @@ the play patterns are assumptions. Each one names the opt-in analytics event tha
 | … weekly errand | 1.3 | 4.3 | 7.7 |
 | … finished homes | 10.3 | 27.4 | 52.6 |
 | Paw Coins a session | 109.1 | 135.1 | 165.4 |
+| Pantry full in (days): lives · hints | 5.1 · 20 | 1.9 · 3.8 | 1 · 1.7 |
+| Overflow once full (coins a day) | 16.2 | 50.7 | 101.8 |
+| **Paw Coins a day once the pantry is full** | **125.3** | **320.9** | **597.8** |
 | Food a day (share of earnings) | 6 (5%) | 15 (6%) | 30 (6%) |
 | Days to the first Farm piece the animals use | 0.9 | 0.4 | 0.2 |
-| Days to every Farm coin decoration | 16.5 | 6.7 | 3.6 |
+| Days to any Farm piece | 0.7 | 0.3 | 0.2 |
+| Days to every Farm coin decoration | 16.5 | 6.2 | 3.3 |
 | Days to every coin trick | 3.6 | 1.5 | 0.8 |
-| Days to everything sold for coins | 51.2 | 20.7 | 11.3 |
+| Days to everything sold for coins | 47 | 17.9 | 9.6 |
 | Extra lives a day: earned · used · net | 1.55 · 0.19 · 1.37 | 4.24 · 0.48 · 3.76 | 7.93 · 0.67 · 7.26 |
 | Hints a day: earned · used · net | 0.8 · 0.56 · 0.25 | 2.24 · 0.92 · 1.32 | 4.18 · 1.26 · 2.92 |
 | Days to the dearest video-token item | never | 8 | 2 |

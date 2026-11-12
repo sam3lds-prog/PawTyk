@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { SCENARIOS, gameCatalog, rulesSummary, runScenario, type EconomyResult } from '../src/meta/economyModel';
 import { activityFor } from '../src/ui/art/activities';
+import { OVERFLOW_COINS, STARTER_ITEMS } from '../src/meta/items';
 
 const cat = gameCatalog((id) => !!activityFor(id));
 const results = SCENARIOS.map((s) => runScenario(s, cat));
@@ -27,6 +28,7 @@ const md = [
   `| Farm coin decorations (animals use) | ${cat.farmDecor.length} (${cat.farmDecor.filter((d) => d.interactive).length}) |`,
   `| Cheapest Farm piece the animals use | ${Math.min(...cat.farmDecor.filter((d) => d.interactive).map((d) => d.coins))} coins |`,
   `| Typical coin meal (median portion) | ${cat.typicalMeal} coins |`,
+  `| Starter pantry (lives, hints) · overflow | ${STARTER_ITEMS.life}, ${STARTER_ITEMS.hint} · ${OVERFLOW_COINS} coins each over the cap |`,
   `| Video-token prices | ${Math.min(...cat.tokenPrices)}–${Math.max(...cat.tokenPrices)} |`,
   `| Gem prices | ${Math.min(...cat.gemPrices)}–${Math.max(...cat.gemPrices)} |`,
   '',
@@ -58,8 +60,12 @@ const md = [
   row('… weekly errand', (r) => r.coins.weekly),
   row('… finished homes', (r) => r.coins.homes),
   row('Paw Coins a session', (r) => r.coinsPerSession),
+  row('Pantry full in (days): lives · hints', (r) => `${n(r.pantry.livesFullInDays)} · ${n(r.pantry.hintsFullInDays)}`),
+  row('Overflow once full (coins a day)', (r) => r.pantry.overflowPerDay),
+  row('**Paw Coins a day once the pantry is full**', (r) => `**${r.pantry.coinsPerDayOnceFull}**`),
   row('Food a day (share of earnings)', (r) => `${r.food.perDay} (${Math.round(r.food.share * 100)}%)`),
   row('Days to the first Farm piece the animals use', (r) => n(r.daysTo.firstInteractiveFarmPiece)),
+  row('Days to any Farm piece', (r) => n(r.daysTo.anyFarmPiece)),
   row('Days to every Farm coin decoration', (r) => n(r.daysTo.allFarmCoinDecor)),
   row('Days to every coin trick', (r) => n(r.daysTo.allCoinTricks)),
   row('Days to everything sold for coins', (r) => n(r.daysTo.everythingForCoins)),

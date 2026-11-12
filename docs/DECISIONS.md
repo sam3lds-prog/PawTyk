@@ -2537,12 +2537,39 @@ tester page built (the plan itself says not to merge silently; his explicit requ
   finds that:
   - the first Farm piece the animals use is within a day's play;
   - everything for coins is weeks (conservative) to days (engaged);
-  - lives and hints are earned well faster than used;
+  - lives and hints are earned well faster than used, so once the pantry is full (in 1–20 days) the surplus arrives
+    as 16–100 more coins a day;
   - food is about 5–6% of earnings.
   
   It changes nothing, and it records what the plan rules out: cutting free lives, paid streaks, a VIP pass, renaming
   ids, demand-only gem sinks.
 - **D51-C** (cosmetic pilot): not built, by the plan. It waits for D51-B with real data.
+- **Found and fixed by the checks**:
+  - PR A: Tab and Enter while the snack was eaten reached the progress card's Play. Play now waits too. The redraw
+    used to drop focus to the page, so focus now waits on the status line.
+  - PR A: D49's win check expected a coin figure in the errand line; it now expects the errand named without one.
+  - PR B: a D49 moment could start while the hello played, and its handle replaced the hello's, so the hello could
+    no longer be ended by the director. It's one animal at a time now.
+  - PR B: the hello's line was marked as a moment, and D49's moment check read it as one. It has its own class now.
+  - PR B: a hello could play in front of a tester's requested moment, or over a welcome still owed. Neither happens
+    now.
+  - PR B: a hello could follow a new stage's group dance that was skipped early (D44's dance check). A new stage is
+    now its visit's hello. The unit test fails without the fix.
+  - PR B: D44's hand-started dance check (outside the scene director) counted the visit's own hello, which began as
+    the dance stopped, as a toy left dancing. The check turns moments off around itself.
+  - PR C: without the Daily card, the week strip (positioned inside that card's padding) overlapped the new line. The
+    week now sits on a small card of its own.
+- **Found and fixed in code review** (Codex on the PRs; each thread has a reply):
+  - PR B (#74): the hello's turns counted through a list whose order shifted with each pick, so one of three animals
+    never said hello. Turns now step round the whole cast.
+  - PR C (#75): a tried-on trick the player couldn't afford yet pushed out an affordable one. It's affordable first
+    now, then the tried-on one to work toward.
+  - PR D (#76): the economy model left out the pantry's overflow (10 coins for each life or hint over the cap). It now
+    reports when each fills, the coins a day once full, and saves up at the faster rate from then on.
+- **Local browser runs**: a dev server that hot-reloads an edited module serves it under a new URL, and a check that
+  imports the module by its plain path then gets a second copy. `setMomentsEnabled(false)` and `requestMomentSoon`
+  were landing on that copy, which made D46, D44 and D49 checks fail locally and only locally. Restart the dev server
+  after editing before running `npm run e2e` (CI always starts fresh).
 - Before and after: `docs/screenshots/d50/`, captured from `main` (`66df26f`) and the D50 stack: the win at 320, the
   welcome card at 390, Journey's *Also today* and fold at 320, Featured at 390, and the hello at 390.
 - Not established here: real iPhones (haptics, speaker sound, VoiceOver, 3D frame rate, Reduce Motion), and real
