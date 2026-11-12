@@ -2585,3 +2585,38 @@ tester page built (the plan itself says not to merge silently; his explicit requ
   welcome card at 390, Journey's *Also today* and fold at 320, Featured at 390, and the hello at 390.
 - Not established here: real iPhones (haptics, speaker sound, VoiceOver, 3D frame rate, Reduce Motion), and real
   players. The TestFlight gate is in `docs/release-checklist.md` → D50.
+
+## 2026-11-11 · D52 — Player clarity, the world ahead, animal questions, respectful videos
+
+From *PawTyk D52 — Player Clarity, Future-World Preview, Animal Trivia and Respectful Monetization* (shared by Sam),
+written against `main` @ `219a3de`. Principles: the player always knows who comes home next and how close; playing
+another puzzle stays easier than a shop, a video or a question; ads and questions are optional; saves, animal ids,
+world generation, purchase ids and earned rewards stay compatible; nothing is rebuilt that D50 already has (the
+endless world, D51-A's audit, D51-B's economy model). Interstitials stay off (`INTERSTITIALS_ENABLED = false`), and
+there is no custom overlay over a native ad. Sam asked for the stack to be merged and a tester page built.
+
+### PR A — one sentence for who comes home next (`d52/a-progress-copy`)
+- **The win's countdown, in one sentence** (`components/comesHome.ts`, `screens/game.ts`). Before, an ordinary win
+  said *One puzzle closer to Hazel!* and then *Hazel the pony: 7 → 6 puzzles away*: two countdowns, and an arrow to
+  subtract. Now it says one thing:
+  - *Hazel the pony comes home in 6 more puzzles.* The first time an animal is presented (the first solve toward it,
+    or the win after the one before it came home), with its kind.
+  - *Hazel comes home in 4 more puzzles.* After that, by name.
+  - *One more puzzle and Hazel is home!* When the next puzzle brings it (its portrait still beams, D49).
+  - *Hazel is home!* Its arrival is the arrival's own moment (spotlight, hero, Meet), never "0 puzzles".
+  - A replay, which grows nothing: *Hazel comes home in 4 more new puzzles.*, with no +1, beside the replay's existing
+    explanation.
+  - A home with no animal left but a stage to reach: *3 more puzzles until the next stage: Duck pond.*
+  The count is `arrivalProgress(…).left`; the progression is unchanged. The bar still slides from before to after
+  (D38), so the step is shown, not said. The bar is `aria-hidden`: a screen reader reads the sentence once.
+- **One verb everywhere: comes home.** The Journey's goal (*joins in 5 puzzles* → *comes home in 5 more puzzles*),
+  the World's focus card (*arrives in*) and status lines, the first arrival's goal (*3 more puzzles, and Truffle moves
+  in* → *Truffle comes home in 3 more puzzles.*), the album's next-arrival card, and *Up next at the Pet Garden: one
+  more puzzle and Juniper is home!* on a win in a finished home. The Journey's stage line uses the stage sentence.
+- **Which puzzles grow a home, said once**: under the first ordinary win that grows a home, a small note: *New
+  Journey, Daily and Zen puzzles grow your homes. Replays and Paw Cup don't.* (`onboarding.growthNoteSeen`, new,
+  optional; a save without it loads as unseen.)
+- Tests: `test/unit/d52Progress.dom.test.ts` (the sentence at 6, 4, 1 and replay; Hazel counted down on real wins
+  6 → 4 → 1 → home with no arrows and no "closer"; the bar hidden from screen readers; a replay with no +1 and *new*
+  puzzles; the stage countdown; the note once; the Journey and the World; an older save). The D38–D40 win tests and
+  the smoke check were updated to the new words.

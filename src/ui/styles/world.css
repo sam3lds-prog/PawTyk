@@ -757,12 +757,6 @@
   font-size: var(--t-sm);
   padding: 3px 12px;
 }
-.win-closer {
-  font-family: var(--font-display);
-  font-size: 17px;
-  line-height: 1.25;
-  color: var(--ink);
-}
 .win-growth__body small {
   color: var(--muted-ink);
   font-weight: 700;

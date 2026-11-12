@@ -24,6 +24,7 @@ import { regionScene } from '../art/regions';
 import { SCENE_VIEWBOX } from '../art/sanctuary';
 import type { FriendId } from '../art/companions';
 import { esc, h } from '../dom';
+import { comesHome } from './comesHome';
 import { ICON } from '../icons';
 import type { Scope } from '../router';
 import { startSceneLife } from './sceneLife';
@@ -89,7 +90,7 @@ export function showFirstArrival(scope: Scope, root: HTMLElement, o: ArrivalOpti
                 <span class="arrival__next-body">
                   <b>Bring ${esc(nextInfo.name)} the ${esc(nextInfo.noun)} home</b>
                   <span class="progress world-progress" role="progressbar" aria-label="${esc(nextInfo.name)} coming home" aria-valuemin="${next.from}" aria-valuemax="${next.need}" aria-valuenow="${next.have}"><span style="width:${pct}%"></span></span>
-                  <small>${next.left === 1 ? 'One more puzzle' : `${next.left} more puzzles`}, and ${esc(nextInfo.name)} moves in.</small>
+                  <small>${esc(comesHome(nextInfo, next.left).text)}</small>
                 </span>
               </div>`
             : `<p class="arrival__line">Every puzzle grows the ${esc(def.short)}.</p>`

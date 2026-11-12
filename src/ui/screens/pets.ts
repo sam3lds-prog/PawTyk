@@ -131,7 +131,7 @@ export const petsScreen: ScreenDef = {
                 return `<div class="next-arrival card">
                   ${isPetId(coming.next.id) ? portrait(coming.next.id, 'idle') : friendPortrait(coming.next.id as CompanionId)}
                   <div class="next-arrival__body">
-                    <b>${esc(a.name)} the ${esc(a.noun)} is on the way</b>
+                    <b>${esc(a.name)} the ${esc(a.noun)} comes home next</b>
                     <span class="muted">${plural(coming.left, 'more puzzle')} while you build the ${esc(sanctuaryDef(building).short)}.</span>
                     <div class="progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${coming.from}" aria-valuemax="${coming.need}" aria-valuenow="${coming.have}"><span style="width:${Math.round(((coming.have - coming.from) / span) * 100)}%"></span></div>
                   </div>
