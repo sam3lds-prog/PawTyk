@@ -480,6 +480,11 @@ try {
   const danced = await page.evaluate(async () => {
     const { planDance, startDance } = await import('/src/ui/components/dance.ts');
     const { playCue } = await import('/src/services/music.ts');
+    // D50 PR B: this dance is started by hand (the scene director doesn't know of it), so the visit's own hello could
+    // start the moment it stops: the scene's own moments are off for this check, and any already playing ends first.
+    const moments = await import('/src/ui/components/animalMoments.ts');
+    moments.setMomentsEnabled(false);
+    window.__director?.end('moment');
     const svg = document.querySelector('.sanctuary__scene svg');
     const st = window.__stage3d;
     const key = (d) => d.fig.dataset.pet ?? `friend:${d.fig.dataset.friend}`;
@@ -493,6 +498,7 @@ try {
     await new Promise((r) => setTimeout(r, 300));
     const after = plan.map((d) => st?.actor(key(d))?.performing(performance.now()) ?? null);
     const busy = plan.filter((d) => d.fig.dataset.trick).length;
+    moments.setMomentsEnabled(true);
     return { n: plan.length, during, after, busy };
   });
   check(
