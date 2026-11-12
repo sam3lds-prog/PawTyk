@@ -81,6 +81,11 @@ export interface SceneMoments {
   readonly played: number;
   /** D50 PR B: the hello this visit gave, if any (tests and QA). */
   readonly greeting: Greeting | null;
+  /**
+   * The player has started doing something on the screen (a tap anywhere on it): this visit's hello, if it hasn't
+   * come yet, won't. Its moment would land on top of theirs (the barn's doors, a card, a toggle).
+   */
+  skipGreeting(): void;
   readonly active: boolean;
   dispose(): void;
 }
@@ -154,6 +159,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
    */
   const freeToGreet = () => enabled && !disposed && !document.hidden && host.director.owner === null && !host.director.paused && host.director.waiting === 0 && !host.busy() && !active();
   let greeting: Greeting | null = null;
+  let greetSkipped = false;
 
   function cast(svg: SVGSVGElement): Array<MomentCast & { fig: SVGGElement }> {
     return [...svg.querySelectorAll<SVGGElement>('.sanctuary__pet:not([data-trick]):not(.is-away)')]
@@ -238,7 +244,7 @@ export function sceneMoments(host: MomentHost): SceneMoments {
   function greet(): Greeting | null {
     const g = host.greet;
     const svg = host.svg();
-    if (!g || !svg || greeting || greetedRecently(g.home) || !freeToGreet() || g.welcoming?.()) return null;
+    if (!g || !svg || greeting || greetSkipped || greetedRecently(g.home) || !freeToGreet() || g.welcoming?.()) return null;
     const who = greetCast(svg);
     const lastWin = app.save.stats.lastWin;
     const justSolved = !!lastWin && Date.now() - Date.parse(lastWin.at) < GREET_SOLVED_MS;
@@ -291,6 +297,9 @@ export function sceneMoments(host: MomentHost): SceneMoments {
     },
     get greeting() {
       return greeting;
+    },
+    skipGreeting() {
+      greetSkipped = true;
     },
     get active() {
       return active();

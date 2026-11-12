@@ -633,6 +633,8 @@ export const regionScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      // D50: the player has started something of their own; the visit's hello, if it hasn't come yet, stays away.
+      moments?.skipGreeting();
       // Photo mode's own controls; and while framing, a tap on an animal only says hello (a pose for the picture).
       if (t.closest('.photo-mode')) return;
       if (photo?.open) {
@@ -713,6 +715,8 @@ export const regionScreen: ScreenDef = {
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;
       if (dec) {
         if (!app.save.onboarding.decorTipSeen) dismissSceneCue(el, 'decor');
+        // D50: the player's pick wins: an animal's own moment (the visit's hello, say) ends before anyone is asked.
+        director.end('moment');
         // D48 PR C: the Festival Stage hosts the Farm's big dance: everyone, together (a solo show with one animal).
         if (dec.dataset.decor === 'festivalstage' && el.querySelectorAll('.sanctuary__scene .sanctuary__pet').length > 1 && !parades.active) {
           acts?.stop();

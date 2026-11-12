@@ -397,6 +397,8 @@ export const sanctuaryScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      // D50: the player has started something of their own; the visit's hello, if it hasn't come yet, stays away.
+      moments.skipGreeting();
       if (parades.onClick(t)) return;
       if (welcomes.onClick(t)) return;
       // A meal is playing: the scene is its stage until it's eaten (a moment; anything else the player starts ends it).
@@ -432,6 +434,8 @@ export const sanctuaryScreen: ScreenDef = {
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;
       if (dec) {
         if (!app.save.onboarding.decorTipSeen) dismissSceneCue(el, 'decor');
+        // D50: the player's pick wins: an animal's own moment (the visit's hello, say) ends before anyone is asked.
+        director.end('moment');
         if (acts && !acts.busy && !acts.play(dec.dataset.decor!)) {
           const anyone = !!el.querySelector('.sanctuary__scene .sanctuary__pet');
           toast(anyone ? 'Everyone’s busy with a trick. Try again in a moment.' : 'Once someone lives here, they’ll love this.');

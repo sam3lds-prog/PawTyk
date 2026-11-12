@@ -12,6 +12,10 @@ async function page(browser, URL, errors, size = { width: 320, height: 568 }) {
   qa.on('pageerror', (e) => errors.push(`[d47] ${e}`));
   await qa.goto(URL);
   await qa.waitForFunction(() => window.__pt).then((h) => h.dispose());
+  // D49/D50: the scene's own moments (a hello, an animal moment) come by themselves; these checks need the Farm
+  // exactly at rest after each thing the player does (a postcard session can outlast the first moment's wait), so they
+  // are off here, as in D46's checks. Their own checks are in d49.mjs and d50.mjs.
+  await qa.evaluate(async () => (await import('/src/ui/components/animalMoments.ts')).setMomentsEnabled(false));
   return qa;
 }
 
