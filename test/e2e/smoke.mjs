@@ -479,6 +479,11 @@ try {
   const danced = await page.evaluate(async () => {
     const { planDance, startDance } = await import('/src/ui/components/dance.ts');
     const { playCue } = await import('/src/services/music.ts');
+    // D50 PR B: this dance is started by hand (the scene director doesn't know of it), so the visit's own hello could
+    // start the moment it stops: the scene's own moments are off for this check, and any already playing ends first.
+    const moments = await import('/src/ui/components/animalMoments.ts');
+    moments.setMomentsEnabled(false);
+    window.__director?.end('moment');
     const svg = document.querySelector('.sanctuary__scene svg');
     const st = window.__stage3d;
     const key = (d) => d.fig.dataset.pet ?? `friend:${d.fig.dataset.friend}`;
@@ -492,6 +497,7 @@ try {
     await new Promise((r) => setTimeout(r, 300));
     const after = plan.map((d) => st?.actor(key(d))?.performing(performance.now()) ?? null);
     const busy = plan.filter((d) => d.fig.dataset.trick).length;
+    moments.setMomentsEnabled(true);
     return { n: plan.length, during, after, busy };
   });
   check(
@@ -1135,11 +1141,11 @@ try {
     return { out, arranged };
   });
   const badLevels = [...levels.out, ...levels.arranged].filter((l) => !(l.peak < 0.9) || !(l.rms > 0.006));
-  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 44 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
+  check(`every music cue renders, never clips and can be heard (${levels.out.length} cues and ${levels.arranged.length} arrangements, D44/D45)`, levels.out.length === 46 && levels.arranged.length === 13 && badLevels.length === 0, JSON.stringify(badLevels));
   const span = (ls) => Math.max(...ls.map((l) => l.phone)) - Math.min(...ls.map((l) => l.phone));
   const trickLv = levels.out.filter((l) => l.id.startsWith('trick:') && l.id !== 'trick:party');
-  // D48 PR E: the three new welcomes are signature cues too.
-  const bigLv = levels.out.filter((l) => ['triumph', 'welcome', 'bounce', 'jig', 'trick:party', 'hopalong', 'sparkle', 'circle'].includes(l.id));
+  // D48 PR E: the three new welcomes are signature cues too. D50 PR B: so are the win's two other turns.
+  const bigLv = levels.out.filter((l) => ['triumph', 'triumph2', 'triumph3', 'welcome', 'bounce', 'jig', 'trick:party', 'hopalong', 'sparkle', 'circle'].includes(l.id));
   const meadowLv = levels.out.find((l) => l.id === 'meadow');
   const avg = (ls) => ls.reduce((a, l) => a + l.phone, 0) / ls.length;
   check(

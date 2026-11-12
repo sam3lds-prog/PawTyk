@@ -247,6 +247,8 @@ export async function d49Checks({ browser, URL, check, errors }) {
     await qa.evaluate(() => window.__pt.go({ screen: 'region', id: 'farm' }));
     await atRest(qa);
     await qa.waitForTimeout(1500);
+    // D50 PR B: a calm visit's hello may be playing (a live moment, not something left behind): let it finish.
+    await until(qa, () => !window.__moments?.active, null, 6000);
     const rest = await qa.evaluate(() => ({ owner: window.__director?.owner ?? null, waiting: window.__director?.waiting ?? 0, stuck: document.querySelectorAll('.sanctuary__scene [data-trick]:not([data-trick^="dance"])').length, sheets: document.querySelectorAll('.overlay').length }));
     check('D49: quick back-and-forth between Journey, the Farm and the Shop leaves the scene at rest (no moment, meal or trick left behind)', rest.owner === null && rest.waiting === 0 && rest.stuck === 0, JSON.stringify(rest));
     await qa.close();

@@ -85,7 +85,9 @@ export type AnalyticsEvent =
   | 'today_tap'
   // D49 PR E: how long after a win (or the first arrival) the player chose what to do next, and the first meal ever.
   | 'win_next_action'
-  | 'first_meal';
+  | 'first_meal'
+  // D50 PR B: an animal said hello at the start of a visit (what it was about: a friendship, a newcomer, a win…).
+  | 'animal_greeting';
 
 export type EventProps = Record<string, string | number | boolean>;
 

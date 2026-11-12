@@ -324,7 +324,7 @@ export function listeningList(): { title: string; items: Listen[] }[] {
   return [
     {
       title: 'The big moments',
-      items: (['triumph', 'welcome', 'bounce', 'jig', 'meadow'] as const).map((id) => ({ id, label: SCORES[id].title })),
+      items: (['triumph', 'triumph2', 'triumph3', 'welcome', 'bounce', 'jig', 'meadow'] as const).map((id) => ({ id, label: SCORES[id].title })),
     },
     { title: 'The parade in every home', items: THEME_HOMES.map((h) => ({ id: 'bounce' as CueId, home: h, label: `Barnyard Bounce · ${homeName[h] ?? h}` })) },
     // D48 PR E: the other three welcomes.

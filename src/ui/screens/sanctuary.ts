@@ -187,6 +187,9 @@ export const sanctuaryScreen: ScreenDef = {
       director,
       reducedMotion: () => app.reducedMotion,
       busy: () => !!tryOn || tray.isOpen || meals.active || parades.active || !!document.querySelector('.overlay') || !!acts?.busy,
+      // D50 PR B: someone says hello a couple of seconds into a calm visit (never over a welcome or anything else).
+      // (Not when a newcomer is the visit's news, or a welcome is owed: that is the hello.)
+      greet: { home: 'harmony', evening: () => isEvening(), welcoming: () => !!welcomes.animal || welcome.length > 0 || !!parades.offered?.unplayed },
     });
     scope.onDispose(() => moments.dispose());
     // D49 PR A: the arrival's follow-up card (a welcome snack, then the Journey); the starter gift waits for the snack.

@@ -1,6 +1,6 @@
 /** Settings sheet: play, comfort & accessibility, purchases, data. */
 
-import { requestMomentSoon } from '../components/animalMoments';
+import { forgetGreetings, requestMomentSoon } from '../components/animalMoments';
 import { app } from '../../app/app';
 import { clearSessions, resetProgress, type Settings } from '../../services/storage';
 import { ITEM_CAP, grantStarterItems } from '../../meta/items';
@@ -193,6 +193,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="memory"><span class="row__label">Forget this week's Photo Memory<small>The next postcard earns its 30 Paw Coins again; takes the 30 back (M3)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="welcome"><span class="row__label">Watch a welcome celebration<small>Each tap plays the next of the four on the Farm: Boogie, Meadow Hop, Sparkle Surprise, Friendship Circle</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="moment"><span class="row__label">Show an animal moment<small>Opens the Farm; an animal does something small on its own in a couple of seconds (D49)</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="greet"><span class="row__label">Say hello again<small>Opens the Farm; someone comes over to say hello a couple of seconds in (every home may again, D50)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="meals"><span class="row__label">Forget first meals<small>Every animal's next meal plays in full again, then quick ones after (D49)</small></span>${ICON.chevron}</button>
       </div>
       <div class="rows-title">Device checks</div>
@@ -270,6 +271,11 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         app.router.go({ screen: 'region', id: 'farm', welcome: [w.animal] });
       } else if (what === 'moment') {
         requestMomentSoon();
+        sh.close();
+        app.router.go({ screen: 'region', id: 'farm' });
+      } else if (what === 'greet') {
+        // D50 PR B: every home may say hello again; the Farm, where someone comes over in a couple of seconds.
+        forgetGreetings();
         sh.close();
         app.router.go({ screen: 'region', id: 'farm' });
       } else if (what === 'meals') {
