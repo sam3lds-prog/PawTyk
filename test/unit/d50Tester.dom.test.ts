@@ -65,3 +65,27 @@ describe('tester shortcut: Say hello again', () => {
     expect(document.querySelector('.toast')?.textContent).toMatch(/Nobody is home on the Farm yet/);
   });
 });
+
+describe('a tap in the first seconds is the player’s own start', () => {
+  it('tapping the barn before the hello: the barn’s moment keeps its line, and no hello lands on top of it', async () => {
+    app.save.world.growth.farm = 9; // the barn is up
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm' });
+    await vi.advanceTimersByTimeAsync(800);
+    const barn = document.querySelector('.sanctuary__scene [data-landmark]')!;
+    expect(barn).not.toBeNull();
+    barn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const line = document.querySelector('[data-chat] span')?.textContent ?? '';
+    await vi.advanceTimersByTimeAsync(GREET_AFTER_MS + 200);
+    expect(document.querySelector('.sanctuary__chat.is-greeting')).toBeNull();
+    expect(document.querySelector('[data-chat] span')?.textContent).not.toMatch(/say hello|says hi|bounds over|blinks a slow hello/);
+    expect(line.length).toBeGreaterThan(0);
+  });
+
+  it('without a tap, the same calm visit gets its hello', async () => {
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm' });
+    await vi.advanceTimersByTimeAsync(GREET_AFTER_MS + 300);
+    expect(document.querySelector('.sanctuary__chat.is-greeting')).not.toBeNull();
+  });
+});

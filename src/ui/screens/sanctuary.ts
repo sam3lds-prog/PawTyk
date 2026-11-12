@@ -397,6 +397,8 @@ export const sanctuaryScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      // D50: the player has started something of their own; the visit's hello, if it hasn't come yet, stays away.
+      moments.skipGreeting();
       if (parades.onClick(t)) return;
       if (welcomes.onClick(t)) return;
       // A meal is playing: the scene is its stage until it's eaten (a moment; anything else the player starts ends it).

@@ -633,6 +633,8 @@ export const regionScreen: ScreenDef = {
 
     scope.on(el, 'click', (e) => {
       const t = e.target as HTMLElement;
+      // D50: the player has started something of their own; the visit's hello, if it hasn't come yet, stays away.
+      moments?.skipGreeting();
       // Photo mode's own controls; and while framing, a tap on an animal only says hello (a pose for the picture).
       if (t.closest('.photo-mode')) return;
       if (photo?.open) {

@@ -2566,6 +2566,11 @@ tester page built (the plan itself says not to merge silently; his explicit requ
     now, then the tried-on one to work toward.
   - PR D (#76): the economy model left out the pantry's overflow (10 coins for each life or hint over the cap). It now
     reports when each fills, the coins a day once full, and saves up at the faster rate from then on.
+- **Follow-up (#77)**, found while checking the tester page and in a local browser run:
+  - *Say hello again* showed nothing after *Finish every open home*, because the first visit is the newcomers'. It
+    now counts the Farm's news as seen first, and says so when nobody is home.
+  - A tap on the barn in the first two seconds could have the hello's line land on top of the barn's own. Any tap on
+    a home's screen now means the visit's hello stays away (`skipGreeting`). Tests fail without the fix.
 - **Local browser runs**: a dev server that hot-reloads an edited module serves it under a new URL, and a check that
   imports the module by its plain path then gets a second copy. `setMomentsEnabled(false)` and `requestMomentSoon`
   were landing on that copy, which made D46, D44 and D49 checks fail locally and only locally. Restart the dev server
