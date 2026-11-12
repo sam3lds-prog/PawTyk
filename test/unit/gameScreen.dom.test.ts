@@ -536,7 +536,7 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
   });
 
   describe('the reward first, the accounting folded (D40 PR C)', () => {
-    it("an ordinary win's first view: Puzzle solved!, small stars, Meadow Farm +1, one puzzle closer, Play next", () => {
+    it("an ordinary win's first view: Puzzle solved!, small stars, Meadow Farm +1, when the next animal comes home, Play next", () => {
       app.save.world.growth.farm = 1;
       app.save.inventory.companions.cotton = { unlockedAt: '2026-10-30T00:00:00.000Z' };
       start(6);
@@ -546,7 +546,8 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       const first = w.querySelector('.win-stage-1')!;
       expect(first.querySelector('.win-stars--small')).not.toBeNull();
       expect(first.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
-      expect(first.textContent).toMatch(/One puzzle closer to Truffle!/);
+      // D52 PR A: the first solve toward Truffle names her kind too.
+      expect(first.querySelector('.win-comes-home')?.textContent).toBe('Truffle the piglet comes home in 2 more puzzles.');
       // Time, badges, points and the coins' breakdown are not in the first view…
       for (const sel of ['.stats', '.win-points', '.win-rewards', '.win-skill', '[data-act="share"]']) expect(first.querySelector(sel), sel).toBeNull();
       // …but what the solve earned is, beside the success (D49 PR B).
@@ -615,7 +616,7 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       const w = sheet()!;
       expect(w.querySelector('h2')?.textContent).toBe('Hazel is home!');
       expect(w.textContent).toMatch(/The Meadow Farm is complete!/);
-      expect(w.querySelector('[data-up-next]')?.textContent).toMatch(/Up next at the Pet Garden: Juniper the bunny, one more puzzle/);
+      expect(w.querySelector('[data-up-next]')?.textContent).toMatch(/Up next at the Pet Garden: one more puzzle and Juniper is home!/);
     });
 
     it('with every open home finished, it names the next home to open and how many levels away', () => {
@@ -637,7 +638,7 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       start(4); // a replay, on a board cast for the Pet Garden now
       solveBoard();
       expect(sheet()!.querySelector('[data-replay-note]')).not.toBeNull();
-      expect(sheet()!.querySelector('.win-next-friend')?.textContent).toMatch(/Juniper the bunny/);
+      expect(sheet()!.querySelector('.win-next-friend .win-comes-home')?.textContent).toBe('Juniper comes home in one more new puzzle.');
     });
   });
 
@@ -650,8 +651,9 @@ describe('the win sheet: milestones first, ordinary wins quick (PR 4)', () => {
       const w = sheet()!;
       expect(w.querySelector('.win-hero')).toBeNull();
       expect(w.querySelector('.win-plus')?.textContent).toBe('Meadow Farm +1');
-      expect(w.querySelector('.win-next-friend')?.textContent).toMatch(/One puzzle closer to Truffle!/);
-      expect(w.querySelector('.win-next-friend')?.textContent).toMatch(/Truffle the piglet: 3 → 2 puzzles away/);
+      // D52 PR A: one sentence, no before → after step; the bar shows the step.
+      expect(w.querySelector('.win-next-friend .win-comes-home')?.textContent).toBe('Truffle the piglet comes home in 2 more puzzles.');
+      expect(w.querySelector('.win-next-friend')?.textContent).not.toMatch(/→|closer|away/);
       const bar = w.querySelector<HTMLElement>('[data-grow-bar]')!;
       // Starts where it was (0 of 3), settles where it is now (1 of 3) a beat later; a tap settles it at once.
       expect(bar.style.width).toBe('0%');
@@ -1163,7 +1165,7 @@ describe('the first arrival, shown happening (D41 PR A)', () => {
     const goal = arrival()!.querySelector<HTMLElement>('[data-arrival-goal]')!;
     expect(goal.hidden).toBe(false);
     expect(goal.textContent).toMatch(/Bring Truffle the piglet home/);
-    expect(goal.textContent).toMatch(/3 more puzzles, and Truffle moves in/);
+    expect(goal.textContent).toMatch(/Truffle comes home in 3 more puzzles\./);
     // D49 PR A: an interaction with Cotton first (the first treat is free), then the Journey.
     expect(goal.querySelector('[data-act="snack"]')?.textContent).toMatch(/Give Cotton a welcome snack/);
     expect(goal.textContent).toMatch(/Your first treat is on us/);

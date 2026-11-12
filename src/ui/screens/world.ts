@@ -22,6 +22,7 @@ import { esc, h, plural } from '../dom';
 import { ICON } from '../icons';
 import type { ScreenDef } from '../router';
 import { coinPill } from '../components/wallet';
+import { bare, comesHome, stageCountdown } from '../components/comesHome';
 import { dismissLoopCoach, loopCoachMarkup, shouldShowLoopCoach } from '../components/loopCoach';
 import { sceneMarkup } from './sanctuary';
 import { wireFolds } from '../components/fold';
@@ -55,9 +56,10 @@ function statusLine(def: SanctuaryDef): string {
   const coming = arrivalProgress(app.save, def.id);
   const lead = st === 'building' ? 'Building here · ' : 'Build here · ';
   const tail = st === 'building' ? '' : ' while you build here';
-  if (coming) return `${lead}${animalInfo(coming.next.id).name} comes home in ${plural(coming.left, 'puzzle')}${tail}`;
+  // D52 PR A: "comes home", as on the win and the Journey.
+  if (coming) return `${lead}${bare(comesHome(animalInfo(coming.next.id), coming.left).text)}${tail}`;
   const next = nextStage(app.save, def.id);
-  return next ? `${lead}${plural(next.need - next.have, 'puzzle')} to ${next.stage.name.toLowerCase()}${tail}` : `${lead}almost complete`;
+  return next ? `${lead}${bare(stageCountdown(next.stage.name, next.need - next.have))}${tail}` : `${lead}almost complete`;
 }
 
 /** The friend who stands for a sanctuary on its map pin: the first one home there, if any. */
@@ -129,7 +131,8 @@ export const worldScreen: ScreenDef = {
       const body = coming
         ? (() => {
             const a = animalInfo(coming.next.id);
-            return `<div class="coming-home">${arrivalPortrait(coming.next.id, coming.left, 'coming-home__art portrait')}<span class="coming-home__body"><span><b>${esc(a.name)} the ${esc(a.noun)}</b> arrives in ${plural(coming.left, 'puzzle')}.</span>${bar(coming.have, coming.from, coming.need, `${a.name} coming home`)}</span></div>`;
+            const line = comesHome(a, coming.left, { full: true });
+            return `<div class="coming-home">${arrivalPortrait(coming.next.id, coming.left, 'coming-home__art portrait')}<span class="coming-home__body"><span data-comes-home>${line.html}</span>${bar(coming.have, coming.from, coming.need, `${a.name} coming home`)}</span></div>`;
           })()
         : next
           ? `<p class="muted">Next: <b>${esc(next.stage.name)}</b>. ${esc(next.stage.change)}.</p>${bar(next.have, next.from, next.need, `Progress to ${next.stage.name}`)}`

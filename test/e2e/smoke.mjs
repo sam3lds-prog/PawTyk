@@ -869,7 +869,7 @@ try {
   await solveActive();
   const g1 = await page.evaluate(() => window.__pt.app.save.world.growth.farm ?? 0);
   check('solving a puzzle grows the sanctuary being built by one', g1 === g0 + 1, `${g0} → ${g1}`);
-  check('the win sheet says who is coming home next', /is on the way/.test((await page.textContent('.win-sheet')) ?? ''));
+  check('the win sheet says who comes home next (D52)', /comes home in \d+ more puzzles?\.|One more puzzle and \w+ is home!/.test((await page.textContent('.win-sheet')) ?? ''));
   check('the win sheet credits the sanctuary by name (+1)', /Farm \+1/.test((await page.textContent('.win-sheet')) ?? ''));
   await page.click('[data-act="next"]');
   await page.waitForTimeout(200);

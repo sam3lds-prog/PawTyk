@@ -13,7 +13,8 @@
  * tap away in **More to play**. No chores, no missed-day warnings, nothing that expires.
  */
 
-import { arrivalPortrait, isEager } from '../components/eager';
+import { arrivalPortrait } from '../components/eager';
+import { comesHome, morePuzzles } from '../components/comesHome';
 import { animalPortrait } from '../art/animals';
 import { app } from '../../app/app';
 import { applyUsageChoice, closeUsageAsk, noteUsageAsked, shouldAskUsage } from '../../app/usage';
@@ -113,12 +114,13 @@ function heroGoalMarkup(): { markup: string; accent: string; visit: string; sanc
       const span = Math.max(1, coming.need - coming.from);
       const pct = Math.round(((coming.have - coming.from) / span) * 100);
       // D49 PR B: one puzzle away, it says so, and its portrait beams.
-      line = isEager(coming.left) ? `<b>${esc(a.name)} the ${esc(a.noun)}</b> is one puzzle away!` : `<b>${esc(a.name)} the ${esc(a.noun)}</b> joins in ${plural(coming.left, 'puzzle')}`;
+      // D52 PR A: the same sentence as the win and the World ("comes home"); one puzzle away, "One more puzzle and … is home!".
+      line = comesHome(a, coming.left, { full: true }).html;
       art = arrivalPortrait(coming.next.id, coming.left, 'hero__friend portrait', ' aria-hidden="true"');
       bar = `<span class="progress hero__bar" role="progressbar" aria-label="${esc(a.name)} coming home: ${coming.have - coming.from} of ${span} puzzles" aria-valuemin="${coming.from}" aria-valuemax="${coming.need}" aria-valuenow="${coming.have}"><span style="width:${pct}%"></span></span>`;
     } else if (next) {
       const pct = Math.round(((next.have - next.from) / Math.max(1, next.need - next.from)) * 100);
-      line = `<b>${esc(next.stage.name)}</b> in ${plural(next.need - next.have, 'puzzle')}`;
+      line = `${esc(capitalize(morePuzzles(next.need - next.have)))} until the next stage: <b>${esc(next.stage.name)}</b>.`;
       bar = `<span class="progress hero__bar" role="progressbar" aria-label="Progress to ${esc(next.stage.name)}" aria-valuemin="${next.from}" aria-valuemax="${next.need}" aria-valuenow="${next.have}"><span style="width:${pct}%"></span></span>`;
     }
     const markup = `<div class="hero__goal" data-goal="${id}">

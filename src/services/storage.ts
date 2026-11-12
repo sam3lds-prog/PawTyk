@@ -300,6 +300,8 @@ export interface SaveV2 {
     ladderNotice: boolean;
     /** The World's one-line explanation (one home grows at a time) has been dismissed. */
     worldTipSeen: boolean;
+    /** The win sheet's one-time note on which puzzles grow a home (new Journey, Daily, Zen; not replays or Paw Cup) has been shown (D52). */
+    growthNoteSeen?: boolean;
     /** The sanctuary's "try tapping an animal" cue has been acted on or dismissed. */
     sceneTapTipSeen: boolean;
     /** The sanctuary's "tap a decoration, the animals use it" cue has been acted on or dismissed. */
@@ -528,6 +530,7 @@ export function defaultSave(now = new Date()): SaveV2 {
       pairLessonDone: false,
       ladderNotice: false,
       worldTipSeen: false,
+      growthNoteSeen: false,
       sceneTapTipSeen: false,
       decorTipSeen: false,
       controlsTipSeen: false,
@@ -888,6 +891,7 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
       pairLessonDone: bool(ob.pairLessonDone, isObj(x.journey) && int(x.journey.nextLevel, 1) > 21),
       ladderNotice: bool(ob.ladderNotice, false),
       worldTipSeen: bool(ob.worldTipSeen, false),
+      growthNoteSeen: bool(ob.growthNoteSeen, false),
       sceneTapTipSeen: bool(ob.sceneTapTipSeen, false),
       decorTipSeen: bool(ob.decorTipSeen, false),
       controlsTipSeen: bool(ob.controlsTipSeen, false),

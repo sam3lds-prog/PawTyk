@@ -57,11 +57,12 @@ import type { ReactionMood } from '../animation/faceMachine';
 import { isPairLesson, isTutorial, levelTip, TUTORIAL_STEPS } from '../../meta/onboarding';
 import { EMPTY } from '../../engine/types';
 import { Board, PLACE_RING_MS, type ErrorMark } from '../components/board';
-import { arrivalPortrait, isEager } from '../components/eager';
+import { arrivalPortrait } from '../components/eager';
 import { openSheet, toast, type SheetHandle } from '../components/sheet';
 import { actionOf, capitalize, esc, h, plural, qs } from '../dom';
 import { ICON } from '../icons';
 import type { Scope, ScreenDef } from '../router';
+import { afterColon, comesHome, GROWTH_NOTE, morePuzzles, stageCountdown } from '../components/comesHome';
 import { showRules } from './rules';
 import { showSettings } from './settings';
 
@@ -1514,44 +1515,44 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
 
   /**
    * A replay of a puzzle that already grew the world (D38): say so plainly, and show where the sanctuary's next animal
-   * stands, with no "+1". The stars and the best time are what a replay is for (replayMarkup says which).
+   * stands, with no "+1". The stars and the best time are what a replay is for (replayMarkup says which). D52 PR A: the
+   * count says *new* puzzles, so a replay never reads as progress.
    */
   function replayWorldMarkup(): string {
     if (mode.kind === 'cup') return '';
     const def = sanctuaryDef(cast.sanctuary);
-    return `<div class="win-world"><p class="win-note muted" data-replay-note>${ICON.info}A replay: it already grew the ${esc(def.short)} once. New levels, the Daily and Zen boards grow it.</p>${nextFriendMarkup(cast.sanctuary)}</div>`;
+    return `<div class="win-world"><p class="win-note muted" data-replay-note>${ICON.info}A replay: it already grew the ${esc(def.short)} once. New levels, the Daily and Zen boards grow it.</p>${nextFriendMarkup(cast.sanctuary, false, null, true)}</div>`;
   }
 
   /**
    * The animal on its way to a sanctuary and how many puzzles until it arrives; `grew` says this solve counted for it.
-   * With `before` (the same animal's progress before the solve), the line says the step — "3 → 2 puzzles away" — and the
-   * bar starts where it was and fills to where it is now (one short move, skipped under reduced motion or a tap; D38).
+   * D52 PR A: one sentence — "Hazel the pony comes home in 6 more puzzles.", "One more puzzle and Hazel is home!" — and
+   * the bar. With `before` (the same animal's progress before the solve), the bar starts where it was and fills to where
+   * it is now (one short move, skipped under reduced motion or a tap; D38): the bar shows the step, so the words don't.
+   * The animal is named with its kind the first time it is presented (the first solve toward it, or just after the one
+   * before it came home), then by name. The bar is a picture of the sentence, so a screen reader reads the sentence once.
    */
-  function nextFriendMarkup(where: SanctuaryId | null, grew = false, before: ReturnType<typeof arrivalProgress> = null): string {
+  function nextFriendMarkup(where: SanctuaryId | null, grew = false, before: ReturnType<typeof arrivalProgress> = null, replay = false): string {
     if (mode.kind === 'cup') return '';
     if (!where) return upNextMarkup(null);
     const p = arrivalProgress(app.save, where);
     const def = sanctuaryDef(where);
-    // D40: the step is its own small celebration ("Meadow Farm +1"), then what it brought closer, in a few words.
+    // D40: the step is its own small celebration ("Meadow Farm +1").
     const plus = grew ? `<p class="win-plus-line" style="--accent:${def.accent}"><b class="win-plus">${esc(def.name)} +1</b></p>` : '';
     if (!p) {
       const st = nextStage(app.save, where);
       // Finished here: the line points at what the next puzzle helps instead (D39), so a win always says what's next.
       if (!st) return plus + upNextMarkup(where);
-      const left = st.need - st.have;
-      const away = left === 1 ? 'one more puzzle' : `${left} more puzzles`;
-      return `${plus}<div class="win-growth" style="--accent:${def.accent}">${ICON.sprout}<span class="win-growth__body">${grew ? `<b class="win-closer">One puzzle closer to ${esc(st.stage.name)}!</b><small>${esc(capitalize(away))} to go</small>` : `<span>${esc(capitalize(away))} to ${esc(st.stage.name.toLowerCase())}</span>`}</span></div>`;
+      return `${plus}<div class="win-growth" data-comes-home style="--accent:${def.accent}">${ICON.sprout}<span class="win-growth__body"><span class="win-comes-home">${esc(stageCountdown(st.stage.name, st.need - st.have, { replay }))}</span></span></div>`;
     }
     const a = animalInfo(p.next.id);
     const span = Math.max(1, p.need - p.from);
     const pct = Math.round(((p.have - p.from) / span) * 100);
     const sameFriend = grew && before && before.next.id === p.next.id;
     const pct0 = sameFriend ? Math.round(((before.have - before.from) / Math.max(1, before.need - before.from)) * 100) : pct;
-    const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
-    const step = sameFriend && before.left !== p.left ? `${esc(a.name)} the ${esc(a.noun)}: <span class="num">${before.left} → ${p.left}</span> ${p.left === 1 ? 'puzzle' : 'puzzles'} away` : `${esc(a.name)} the ${esc(a.noun)} is on the way: ${away}`;
-    // D49 PR B: one puzzle away, the line and the portrait say so (it beams, with a halo and "Almost home!").
-    const head = grew ? `<b class="win-closer">${isEager(p.left) ? `${esc(a.name)} is one puzzle away!` : `One puzzle closer to ${esc(a.name)}!`}</b>` : '';
-    return `${plus}<div class="win-next-friend" style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body">${head}<span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span>${grew ? `<small>${step}</small>` : `<span>${step.replace(/^([^:]+?)( is on the way|:)/, '<b>$1</b>$2')}</span>`}</span></div>`;
+    const full = !replay && (!sameFriend || p.have - p.from <= 1);
+    const line = comesHome(a, p.left, { full, replay });
+    return `${plus}<div class="win-next-friend" data-comes-home style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body"><span class="win-comes-home">${line.html}</span><span class="progress world-progress" aria-hidden="true"><span data-grow-bar data-to="${pct}" style="width:${pct0}%"></span></span></span></div>`;
   }
 
   /**
@@ -1567,12 +1568,10 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       if (p) {
         const a = animalInfo(p.next.id);
         const pct = Math.round(((p.have - p.from) / Math.max(1, p.need - p.from)) * 100);
-        const away = p.left === 1 ? 'one more puzzle' : `${p.left} more puzzles`;
-        return `<div class="win-next-friend" data-up-next style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body"><span>Up next at the ${esc(def.short)}: <b>${esc(a.name)} the ${esc(a.noun)}</b>, ${away}</span><span class="progress world-progress" role="progressbar" aria-label="${esc(a.name)} coming home" aria-valuemin="${p.from}" aria-valuemax="${p.need}" aria-valuenow="${p.have}"><span style="width:${pct}%"></span></span></span></div>`;
+        return `<div class="win-next-friend" data-up-next data-comes-home style="--accent:${def.accent}">${arrivalPortrait(p.next.id, p.left, 'win-next-friend__art')}<span class="win-growth__body"><span class="win-comes-home">Up next at the ${esc(def.short)}: ${afterColon(comesHome(a, p.left, { full: true }).html)}</span><span class="progress world-progress" aria-hidden="true"><span style="width:${pct}%"></span></span></span></div>`;
       }
       if (st) {
-        const left = st.need - st.have;
-        return `<div class="win-growth" data-up-next style="--accent:${def.accent}">${ICON.sprout}<span>Up next at the ${esc(def.short)}: ${left === 1 ? 'one more puzzle' : `${left} more puzzles`} to ${esc(st.stage.name.toLowerCase())}</span></div>`;
+        return `<div class="win-growth" data-up-next data-comes-home style="--accent:${def.accent}">${ICON.sprout}<span class="win-comes-home">Up next at the ${esc(def.short)}: ${esc(st.stage.name)} in ${morePuzzles(st.need - st.have)}.</span></div>`;
       }
     }
     const up = nextToOpen(app.save);
@@ -1765,6 +1764,15 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const tomorrowLine = mode.kind === 'daily' && rec.newDaily ? dailyTomorrowMarkup(mode.dateKey) : '';
     // What the next puzzle brings closer: the step this solve took, or (a replay, a finished home) what's up next.
     const nextLine = growth?.growth ? nextFriendMarkup(growth.sanctuary, true, step.friendBefore) : step.replay ? replayWorldMarkup() : nextFriendMarkup(activeSanctuary(app.save));
+    // D52 PR A: once, under the first ordinary win that grew a home, which puzzles do (and which don't).
+    const growthNote =
+      !milestone && growth?.growth && mode.kind !== 'cup' && !app.save.onboarding.growthNoteSeen
+        ? `<p class="win-note win-note--help muted" data-growth-note>${ICON.info}${esc(GROWTH_NOTE)}</p>`
+        : '';
+    if (growthNote) {
+      app.save.onboarding.growthNoteSeen = true;
+      app.persist();
+    }
     const redirect = growth?.growth && growth.redirectedFrom ? `<p class="win-note muted">${ICON.info}The ${esc(sanctuaryDef(growth.redirectedFrom).name)} is finished, so this board helped the ${esc(sanctuaryDef(growth.sanctuary).short)} instead.</p>` : '';
     // D40: the first view is the reward. A milestone: the event itself (the newcomer, a new home), and any other news of
     // this solve. An ordinary win: the stars, the step the world took, and what it brought closer. Everything else (time,
@@ -1772,7 +1780,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     const first =
       milestone && hero && growth
         ? `${heroMarkup(growth, hero)}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${growthMarkup(growth, hero)}${errandLine}`
-        : `${winPet ? `<div class="win-pet" data-win-mood="${flavor.mood}">${animalSvg(winPet, { mood: flavor.mood })}</div>` : ''}${stars}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}${errandLine}`;
+        : `${winPet ? `<div class="win-pet" data-win-mood="${flavor.mood}">${animalSvg(winPet, { mood: flavor.mood })}</div>` : ''}${stars}${coinLine}${streak ? `<div class="win-badges">${streak}</div>` : ''}${tomorrowLine}${cupMarkup(cupScore)}${step.replay ? replayMarkup(rec, seconds) : ''}${redirect}${mode.kind === 'cup' || step.replay ? '' : nextLine}${growthNote}${errandLine}`;
     const details = [
       milestone ? stars : '',
       stats,
