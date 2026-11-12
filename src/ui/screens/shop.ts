@@ -45,6 +45,7 @@ import { TRICK_GROUP_NAME, TRICK_GROUPS, TRICKS, trickCurrency, trickGroup, type
 import { ownsTrick } from '../../meta/tricks';
 import { showTrickSheet } from '../components/tricks';
 import { earnMessage, earnToken, tokenNeedMarkup } from '../components/earnToken';
+import { videoOfferLine } from '../components/videoOffer';
 import { shopRouteFor, trickHome, tryRoute, type TryOn } from '../components/tryOn';
 import { featuredFor, noteTried, type Featured } from '../../meta/featured';
 import { isTrickId } from '../../meta/catalogs/tricks';
@@ -203,8 +204,8 @@ export const shopScreen: ScreenDef = {
       const left = videosLeftToday(app.save);
       return `<div class="earn-card card">
         <span class="earn-card__icon">${ICON.videoToken}</span>
-        <span class="earn-card__body"><b>Earn a video token</b><small>${left ? `Watch a short video when you like. ${plural(left, 'video')} left today.` : 'That’s all the videos for today. More tomorrow.'}</small></span>
-        <button class="btn btn--small" data-act="watch-token" ${left && canOfferVideo() ? '' : 'disabled'}>Watch</button>
+        <span class="earn-card__body"><b>Earn a video token</b><small>${left ? `${videoOfferLine('vtoken')} ${plural(left, 'video')} left today.` : 'That’s all the videos for today. More tomorrow.'}</small></span>
+        <button class="btn btn--small" data-act="watch-token" aria-label="${esc(`Watch video. ${videoOfferLine('vtoken')}`)}" ${left && canOfferVideo() ? '' : 'disabled'}>Watch video</button>
       </div>`;
     }
 

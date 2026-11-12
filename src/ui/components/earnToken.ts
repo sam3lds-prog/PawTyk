@@ -16,6 +16,7 @@ import { ads } from '../../services/ads';
 import { plural } from '../dom';
 import { ICON } from '../icons';
 import { toast } from './sheet';
+import { videoResultMessage } from './videoOffer';
 
 /** What the card says when tokens are short, and the optional button (when a video can be offered now). */
 export function tokenNeedMarkup(need: number): string {
@@ -30,24 +31,14 @@ export function tokenNeedMarkup(need: number): string {
     return `<p class="token-need muted" data-token-need>${head} That's all ${REWARDED_DAILY_CAP} videos for today; more tomorrow.</p>`;
   return `<div class="token-need" data-token-need>
     <p class="muted">${head} Each short video you choose to watch earns one${short > 1 ? ` (${short} to go)` : ''}. ${plural(left, 'video')} left today.</p>
-    <button class="btn btn--secondary btn--block" data-act="earn-token" ${canOfferVideo() ? '' : 'disabled'}>${ICON.videoToken}Watch a video: +1 token</button>
+    <button class="btn btn--secondary btn--block" data-act="earn-token" ${canOfferVideo() ? '' : 'disabled'}>${ICON.videoToken}Watch an optional video: +1 token</button>
   </div>`;
 }
 
 /** What to tell the player after a video (nothing on "busy": a video is already showing). */
 export function earnMessage(r: WatchResult): string | null {
-  switch (r) {
-    case 'granted':
-      return '+1 video token';
-    case 'cap':
-      return "That's all the videos for today. More tomorrow.";
-    case 'unavailable':
-      return "Videos aren't available right now. Nothing was charged.";
-    case 'no-video':
-      return "No token this time: the video didn't play to the end, or none was ready. Nothing was charged.";
-    default:
-      return null;
-  }
+  // D52 PR D: the real reason (closed early, no video ready, no connection…), said the way every video offer says it.
+  return r === 'granted' ? '+1 video token' : videoResultMessage(r, 'vtoken', 'Nothing was charged.');
 }
 
 let earning = false;

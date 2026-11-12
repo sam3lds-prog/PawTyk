@@ -2690,3 +2690,52 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   across a save round trip; a right answer with its sparkle and nothing paid or taken; a wrong one with *Good guess!*
   and the answer marked; Another question; Reduce Motion; the screen-reader labels and live region; the two events; the
   album's and the Farm's entry points).
+
+### PR D — reward videos, said honestly; no forced ads (`d52/d-videos`)
+- **Interstitials stay off** (`INTERSTITIALS_ENABLED = false`) and nothing new is shown between boards. There is no
+  PawTyk overlay, timer, countdown or question over a video: the ad network draws a video and its own close, and the
+  app can't promise a five-second skip. The plan's "future experiment" rules for skippable interstitials are recorded in
+  `docs/release-checklist.md` → D52, not built.
+- **An offer says what it earns before anything starts** (`components/videoOffer.ts`):
+  - out of hints: *Need one more hint? Watch an optional video to earn +1 hint.* with **Watch video** and **Keep
+    thinking**;
+  - hearts: *Need one more heart? Watch an optional video to earn +1 heart.* with **Watch video** and **Back to the
+    board**;
+  - the loss sheet: *Watch an optional video: +1 heart*; an item's card: *Watch an optional video: +1 token*; the
+    Shop's earn card: *Watch an optional video to earn +1 video token.* and **Watch video**.
+  Each Watch button's accessible name repeats the reward. A video starts only on that tap (unchanged).
+- **The real reason when a video earns nothing** (`services/ads.ts` → `RewardedOutcome`, `app/rewarded.ts`). The AdMob
+  service now says how a video ended: earned; closed before its end; no fill (code 3); no connection (code 2); the
+  privacy question unanswered (`canRequestAds` false after the consent form, asked again next time); or another
+  failure. A real network with no connection is caught before trying. The player hears one plain line each time
+  (*The video ended early, so there's no hint this time. Nothing was used.*, *Videos need an internet connection…*),
+  nothing is used, and the board goes on. Grants are unchanged: only on the network's reward, once per video by its
+  ledger id, within the daily cap of 10.
+- **A video that never reports back** (a lost close after backgrounding, say) is given up after 3 minutes
+  (`VIDEO_WATCHDOG_MS`), so a video can never block play or the next video. Giving up removes its listeners
+  (`abandonRewarded`) and ignores anything it reports later.
+- **The test video has a visible close** (*Close (no reward)*), so testers can try the "closed early" path; waiting it
+  out earns the reward as before.
+- **Report a video** (Settings → Your data, whenever videos are part of the build): *Not right for children*, *Scary or
+  upsetting*, *Rude or offensive*, *Misleading* or *Something else*, then **Email the report** (to the contact address)
+  or **Copy the report** when there is none yet. The report says what was wrong, when the last video played and what it
+  was for, and the app version; nothing about the player. App Store guideline 2.5.18 asks apps with ads for this.
+  *Ad privacy choices* (Google's privacy options form) stays beside it for real videos.
+- **Purchases**: unchanged. Gems and the Welcome Rescue Pack show only when a store is configured (D43, D47), and the
+  pack stays off in release until `VITE_WELCOME_PACK=1`. Their sandbox checks are part of the D52 TestFlight gate.
+  Free hints and lives are not reduced (D51-B's economy model advises against it).
+- **Found in code review (Codex, #81)**, fixed with tests that fail without the fix (`test/unit/d52AdMob.test.ts`, a
+  stand-in plugin):
+  - P1: the watchdog freed the button but left the timed-out video's reward listener in place, so the next video's
+    one reward event paid both (a hint and a heart). Each video's listeners now live for that video only, and giving
+    up on one removes them and ignores its late reports.
+  - P2: a video that failed to present (after loading) was reported as closed early. Reading the plugin showed more:
+    on iOS its show call settles only when the reward is earned, never on an early close or a failure to present. The
+    service now ends a video from the plugin's events: the reward, the dismissal (*closed* only without the reward)
+    and a failure to show (a failure, or no fill / no connection from its code); a rejected show call is a failure.
+    Before this, an early close on iOS would have kept *showing* set until the watchdog.
+- Tests: `test/unit/d52Videos.dom.test.ts` (SDK codes to outcomes; each message; interstitials off; closed early, no
+  fill and a thrown failure earn nothing and keep the day's count; offline before trying; the watchdog, with a late
+  report ignored; the test video's close; the out-of-hints offer and that nothing starts before the tap; a video
+  closed early on a board with the board playing on; Report a video from Settings, its text and the copy fallback). The
+  M2 token test now expects the plain reason.

@@ -349,3 +349,31 @@
 .trivia__result.is-right {
   background: color-mix(in srgb, var(--brand) 10%, var(--surface));
 }
+
+/* PR D: a reward video's offer says what it earns before anything starts. */
+.video-offer {
+  margin: var(--s2) 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--canvas-deep);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+}
+/* The test video's own close, as a real one has (test builds only). */
+.fake-ad__close {
+  margin-top: 14px;
+  color: inherit;
+}
+/* Report a video: one reason at a time. */
+.video-report-sheet .radio {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  box-sizing: border-box;
+}
+.video-report-sheet [aria-checked='true'] .radio {
+  border-color: var(--brand);
+  background: radial-gradient(circle, var(--brand) 0 45%, transparent 50%);
+}

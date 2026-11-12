@@ -63,6 +63,7 @@ import { actionOf, capitalize, esc, h, plural, qs } from '../dom';
 import { ICON } from '../icons';
 import type { Scope, ScreenDef } from '../router';
 import { afterColon, comesHome, GROWTH_NOTE, morePuzzles, stageCountdown } from '../components/comesHome';
+import { videoOfferLine, videoOfferMarkup, videoResultMessage } from '../components/videoOffer';
 import { showRules } from './rules';
 import { showSettings } from './settings';
 
@@ -890,8 +891,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       title: 'No hints left',
       body: `
         <p class="sheet__lead">This board's free look is used. You earn a hint for every second new Journey level and from some of the day's errands. Zen Garden hints are always free.</p>
+        ${canWatch ? videoOfferMarkup('hint') : ''}
         <div class="sheet__actions">
-          ${canWatch ? `<button class="btn btn--block" data-act="watch">${ICON.videoToken}Watch a short video: +1 hint</button>` : ''}
+          ${canWatch ? `<button class="btn btn--block" data-act="watch" aria-label="${esc(`Watch video. ${videoOfferLine('hint')}`)}">${ICON.videoToken}Watch video</button>` : ''}
           <button class="btn ${canWatch ? 'btn--quiet' : 'btn--block'}" data-act="close" data-autofocus>Keep thinking</button>
         </div>`,
       onClose: () => {
@@ -909,7 +911,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         const r = await watchVideoFor('hint');
         busy = false;
         if (r === 'granted') toast('+1 hint', ICON.bulb);
-        else toast(videoMessage(r));
+        else sayVideo(r, 'hint');
         if (!scope.alive || !ns.scope.alive) return;
         ns.close();
         paint();
@@ -929,10 +931,11 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       body: `
         <p class="sheet__lead">${plural(s.hearts, 'heart')} of ${s.maxHearts} left on this board. Hearts start fresh on every board; extra lives keep between boards.</p>
         <div class="pantry-row"><span class="pantry-chip">${ICON.lifePlus}<b class="num">${have}</b><small>of ${ITEM_CAP.life} extra lives</small></span><span class="pantry-chip">${ICON.bulb}<b class="num">${tickets()}</b><small>hints</small></span></div>
+        ${watch ? videoOfferMarkup('life') : ''}
         <div class="sheet__actions">
           ${
             watch
-              ? `<button class="btn btn--block" data-act="watch">${ICON.videoToken}Watch a short video: +1 heart</button>`
+              ? `<button class="btn btn--block" data-act="watch" aria-label="${esc(`Watch video. ${videoOfferLine('life')}`)}">${ICON.videoToken}Watch video</button>`
               : `<button class="btn btn--block" data-act="life" ${have < 1 || full ? 'disabled' : ''}>${ICON.lifePlus}${full ? 'Hearts are full' : have < 1 ? 'No extra lives yet' : 'Use an extra life: +1 heart'}</button>`
           }
           <button class="btn btn--quiet" data-act="close" data-autofocus>Back to the board</button>
@@ -956,7 +959,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         busy = false;
         // The extra life is the player's either way; it's used right away if they're still on this board.
         if (r === 'granted' && scope.alive && useLife()) coach(`Thanks for watching! ${plural(s.hearts, 'heart')} left.`);
-        else if (r !== 'granted') toast(videoMessage(r));
+        else if (r !== 'granted') sayVideo(r, 'life');
         if (!hs.scope.alive) return;
       }
       hs.close();
@@ -1981,7 +1984,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         <p class="sheet__lead">${cup ? `${capitalize(wrongs)} end a Paw Cup attempt.` : canLife || canRevive ? `${so}Your board is just as you left it: keep going with one heart back, or start it fresh.` : `${so}Start this board fresh, free: a new look often shows the way.`}</p>
         <div class="sheet__actions">
           ${canLife ? `<button class="btn btn--block" data-act="life">${ICON.lifePlus}Use an extra life: +1 heart<span class="btn__price">${lives()} left</span></button>` : ''}
-          ${canRevive ? `<button class="btn ${canLife ? 'btn--secondary' : ''} btn--block" data-act="revive">${ICON.videoToken}Watch a short video: +1 heart</button>` : ''}
+          ${canRevive ? `<button class="btn ${canLife ? 'btn--secondary' : ''} btn--block" data-act="revive">${ICON.videoToken}Watch an optional video: +1 heart</button>` : ''}
           ${cup ? '' : `<button class="btn ${canRevive || canLife ? 'btn--secondary' : ''} btn--block" data-act="restart">${ICON.restart}Try again, free</button>`}
           <button class="btn btn--quiet" data-act="leave">${back}</button>
         </div>
@@ -2011,7 +2014,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         busy = false;
         if (ls.scope.alive) for (const b of ls.el.querySelectorAll<HTMLButtonElement>('button')) b.disabled = false;
         if (r !== 'granted') {
-          toast(videoMessage(r));
+          sayVideo(r, 'life');
           return;
         }
         // The extra life is the player's once granted: kept in the pantry if they left meanwhile, otherwise it brings
@@ -2101,9 +2104,8 @@ function numberWord(n: number): string {
   return NUMBER_WORDS[n] ?? String(n);
 }
 
-function videoMessage(r: WatchResult): string {
-  if (r === 'cap') return "That's all the videos for today. More tomorrow.";
-  if (r === 'busy') return 'A video is already playing.';
-  if (r === 'unavailable') return 'Videos are not available in this version.';
-  return 'No video is available right now. Nothing was used; try again in a little while.';
+/** D52 PR D: what a video that earned nothing says (the real reason, and that nothing was used); play goes on. */
+function sayVideo(r: WatchResult, reward: 'hint' | 'life'): void {
+  const msg = videoResultMessage(r, reward);
+  if (msg) toast(msg);
 }

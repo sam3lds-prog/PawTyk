@@ -30,6 +30,7 @@ import { applyUsageChoice } from '../../app/usage';
 import { animalSvg } from '../art/animals';
 import { fpsCounterOn, setFpsCounter, showListeningCheck, startFarmCheck } from '../components/deviceChecks';
 import { showPlaceBrowser } from '../components/placeBrowser';
+import { showVideoReport } from '../components/videoOffer';
 import { inSandbox } from '../../app/qaSandbox';
 import { ICON } from '../icons';
 
@@ -171,6 +172,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         }
         <div class="row"><span class="row__label">${ads.available ? 'Reward videos' : 'Ads'}<small>${ads.available ? (ads.isStub ? 'Test videos only, clearly labeled.' : 'Only when you choose one, for an extra life, a hint or a video token. Never between boards, never in Paw Cup.') : 'PawTyk shows no ads.'}</small></span></div>
         ${ads.available && !ads.isStub ? `<button class="row" data-act="ad-privacy"><span class="row__label">Ad privacy choices<small>Change what the video network may use</small></span>${ICON.chevron}</button>` : ''}
+        ${ads.available ? `<button class="row" data-act="video-report"><span class="row__label">Report a video<small>Tell us about a video that wasn't right for children, or upset you</small></span>${ICON.chevron}</button>` : ''}
         <button class="row" data-act="privacy"><span class="row__label">Privacy policy<small>What PawTyk keeps, and what it never asks for</small></span>${ICON.chevron}</button>
         <button class="row" data-act="reset"><span class="row__label" style="color:var(--error)">Erase progress<small>Purchases and settings are kept</small></span></button>
       </div>
@@ -192,7 +194,7 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
         <button class="row" data-qa="empty"><span class="row__label">Empty extra lives and hints<small>See "no hints left" and the loss sheet without extra lives</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="fill"><span class="row__label">Fill extra lives and hints to 10<small>Earning more turns into coins</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="coins:500"><span class="row__label">Add 500 Paw Coins<small>To try the new tricks, foods, bowls and decorations</small></span>${ICON.chevron}</button>
-        <button class="row" data-qa="tokens0"><span class="row__label">Video tokens to 0<small>See "Watch a video: +1 token" on a token decoration, trick or treat (M2)</small></span>${ICON.chevron}</button>
+        <button class="row" data-qa="tokens0"><span class="row__label">Video tokens to 0<small>See "Watch an optional video: +1 token" on a token decoration, trick or treat (M2)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="videos"><span class="row__label">Use up today's videos<small>See the daily limit line instead of the video button; tap again to give them back (M2)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="memory"><span class="row__label">Forget this week's Photo Memory<small>The next postcard earns its 30 Paw Coins again; takes the 30 back (M3)</small></span>${ICON.chevron}</button>
         <button class="row" data-qa="welcome"><span class="row__label">Watch a welcome celebration<small>Each tap plays the next of the four on the Farm: Boogie, Meadow Hop, Sparkle Surprise, Friendship Circle</small></span>${ICON.chevron}</button>
@@ -354,6 +356,10 @@ export function showSettings(scope: Scope, opts: SettingsOptions = {}): void {
     if (a.act === 'leaderboard') {
       sh.close();
       app.router.go({ screen: 'challenges', tab: 'leaderboard' });
+      return;
+    }
+    if (a.act === 'video-report') {
+      showVideoReport(sh.scope);
       return;
     }
     if (a.act === 'ad-privacy') {
