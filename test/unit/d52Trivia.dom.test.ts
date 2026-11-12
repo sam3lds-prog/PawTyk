@@ -102,13 +102,14 @@ describe('the card', () => {
     showAnimalQuestion(scope, { from: 'farm' });
     const id = sheet().querySelector<HTMLElement>('[data-trivia]')!.dataset.trivia!;
     const q = triviaQuestions().find((x) => x.id === id)!;
-    expect(sheet().querySelector('[data-act="another"]')!.hasAttribute('hidden')).toBe(true);
+    // Review: nothing to skip with before answering (not just hidden: not there).
+    expect(sheet().querySelector('[data-act="another"]')).toBeNull();
     expect(sheet().querySelector('[data-act="done"]')?.textContent).toBe('Back to my Farm');
     (sheet().querySelector(`[data-choice="${q.answer}"]`) as HTMLElement).click();
     expect(sheet().querySelector('[data-trivia-result]')?.textContent).toBe(`That's right! ${q.explain}`);
     expect(sheet().querySelector('[data-trivia-face]')!.classList.contains('is-sparkle')).toBe(true);
     expect(sheet().querySelectorAll('[data-choice]:disabled')).toHaveLength(3);
-    expect(sheet().querySelector('[data-act="another"]')!.hasAttribute('hidden')).toBe(false);
+    expect(sheet().querySelector('[data-act="another"]')).not.toBeNull();
     expect(balance(app.save)).toBe(coins);
     expect(itemBalance(app.save, 'life')).toBe(lives);
     scope.dispose();

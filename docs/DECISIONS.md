@@ -2682,6 +2682,9 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
 - **Measured, opt-in**: `trivia_question` (which, from where) and `trivia_answer` (which, right or not)
   (`docs/analytics.md` → D52).
 - Not built: a trivia link on the Daily results (the plan says to consider it after the pilot), and any reward.
+- **Found in code review (Codex, #80)**: *Another question* carried a `hidden` attribute that the block button's own
+  `display: flex` overrode, so it showed (and skipped the question) before an answer. It is now added only once the
+  question is answered; the test checks it isn't in the sheet before then.
 - Tests: `test/unit/d52Trivia.dom.test.ts` (twenty questions on species in the game, three distinct choices, answers in
   every position, a face for each; the fennec example word for word; the rotation with friends at home, no repeats, kept
   across a save round trip; a right answer with its sparkle and nothing paid or taken; a wrong one with *Good guess!*
