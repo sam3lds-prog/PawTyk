@@ -46,7 +46,7 @@ import { ownsTrick } from '../../meta/tricks';
 import { showTrickSheet } from '../components/tricks';
 import { earnMessage, earnToken, tokenNeedMarkup } from '../components/earnToken';
 import { shopRouteFor, trickHome, tryRoute, type TryOn } from '../components/tryOn';
-import { featuredFor, type Featured } from '../../meta/featured';
+import { featuredFor, noteTried, type Featured } from '../../meta/featured';
 import { isTrickId } from '../../meta/catalogs/tricks';
 import { animalsOf } from '../../meta/animals';
 import { openSheet, toast } from '../components/sheet';
@@ -91,6 +91,9 @@ function goSee(id: DecorId): void {
  * so the home's **Back to <item>** (or the system Back) lands exactly here.
  */
 function goTry(t: TryOn, home: SanctuaryId): void {
+  // D50 PR C: remembered (the last few, nothing else) so Featured can bring it back while it isn't the player's yet.
+  noteTried(app.save, t.kind, t.id);
+  app.persist();
   app.router.settle(shopRouteFor(t, t.kind === 'trick' ? undefined : home));
   track('product_view', { product: `${t.kind}:${t.id}`, surface: 'try_on' });
   app.router.go(tryRoute(t, home));
@@ -239,7 +242,8 @@ export const shopScreen: ScreenDef = {
      */
     function featuredSection(): string {
       if (!isOpen(app.save, place)) return '';
-      const picks = featuredFor(app.save, place, (c) => offered(c));
+      // D50 PR C: a decoration the animals use ranks above one that only stands (its activity says so).
+      const picks = featuredFor(app.save, place, (c) => offered(c), { interactive: (id) => !!activityFor(id) });
       if (!picks.length) return '';
       const facts = (f: Featured) => {
         if (f.kind === 'decor') {

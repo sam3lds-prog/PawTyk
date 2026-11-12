@@ -17,6 +17,8 @@ import type { ModeRef } from '../game/modes';
 import { localDateKey } from '../game/dates';
 import { animalInfo, homeAnimals, type AnimalId } from './animals';
 import { nextUnlock } from './bonds';
+import { friendship } from './feeding';
+import { pattedToday } from './sanctuary';
 import { isOpen, unseenIn, worldIds } from './world';
 import type { SanctuaryId } from './catalogs/sanctuaries';
 
@@ -28,7 +30,17 @@ export const NEAR_HEARTS = 2;
 export type TodayItem =
   | { kind: 'resume'; mode: ModeRef }
   | { kind: 'daily' }
-  | { kind: 'friend'; animal: AnimalId; home: SanctuaryId; unlock: string; hearts: number }
+  | {
+      kind: 'friend';
+      animal: AnimalId;
+      home: SanctuaryId;
+      unlock: string;
+      hearts: number;
+      /** D50 PR C: the friendship level it reaches ("Friend", "Good friend"…). */
+      level: string;
+      /** D50 PR C: what today takes, in the order to do it: a hello in the scene, then a pat on its card. */
+      needs: ReadonlyArray<'hello' | 'pat'>;
+    }
   | { kind: 'news'; home: SanctuaryId };
 
 export interface TodayInput {
@@ -40,7 +52,11 @@ export interface TodayInput {
   now?: Date;
 }
 
-/** An animal at home that hasn't had today's hello, closest to what friendship brings next. */
+/**
+ * An animal at home that hasn't had today's hello, closest to what friendship brings next, **and close enough that today
+ * gets it there**: a hello in the scene is one heart and a pat on its card another (each once a day, D40), so the row
+ * only promises what the player can actually do now. D50 PR C: it says which of the two it takes.
+ */
 export function friendToGreet(save: SaveV2, now = new Date()): Extract<TodayItem, { kind: 'friend' }> | null {
   const today = localDateKey(now);
   let best: Extract<TodayItem, { kind: 'friend' }> | null = null;
@@ -50,10 +66,26 @@ export function friendToGreet(save: SaveV2, now = new Date()): Extract<TodayItem
       if (save.sanctuary.greeted[a] === today) continue;
       const n = nextUnlock(save, a);
       if (!n || n.hearts > NEAR_HEARTS) continue;
-      if (!best || n.hearts < best.hearts) best = { kind: 'friend', animal: a, home: animalInfo(a).sanctuary, unlock: n.name, hearts: n.hearts };
+      const canPat = !pattedToday(save, a, now);
+      const needs: Array<'hello' | 'pat'> = n.hearts === 1 ? ['hello'] : canPat ? ['hello', 'pat'] : [];
+      if (needs.length < n.hearts) continue;
+      const level = friendship((save.sanctuary.affection[a] ?? 0) + n.hearts).name;
+      if (!best || n.hearts < best.hearts) best = { kind: 'friend', animal: a, home: animalInfo(a).sanctuary, unlock: n.name, hearts: n.hearts, level, needs };
     }
   }
   return best;
+}
+
+/**
+ * D50 PR C: the friend row's words, saying what the next thing to do accomplishes:
+ * "Say hello to Truffle" / "One hello at the Farm and you're Friends: a warmer hello."
+ */
+export function friendRowText(it: Extract<TodayItem, { kind: 'friend' }>, place: string): { title: string; sub: string } {
+  const a = animalInfo(it.animal);
+  const what = it.unlock.charAt(0).toLowerCase() + it.unlock.slice(1);
+  const takes = it.needs.length === 1 ? `One hello at the ${place}` : `A hello at the ${place} and a pat on ${a.name}’s card`;
+  const level = it.level === 'Family' ? 'family' : `${it.level.toLowerCase()}s`;
+  return { title: `Say hello to ${a.name}`, sub: `${takes} and you’re ${level}: ${what}.` };
 }
 
 export function todayItems(save: SaveV2, o: TodayInput): TodayItem[] {

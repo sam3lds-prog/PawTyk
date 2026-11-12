@@ -274,7 +274,14 @@ export interface SaveV2 {
     packs?: { welcome?: { tx: string; source: 'store' | 'dev'; at: string }; revoked?: { tx: string; gems: number; at: string } };
   };
   /** How often an optional offer has been highlighted (D47 PR 7), so it never nags. */
-  offers?: { welcome?: { shown: number; lastAt: string | null; dismissed: boolean } };
+  offers?: {
+    welcome?: { shown: number; lastAt: string | null; dismissed: boolean };
+    /**
+     * D50 PR C: what the player has tried on in a home from the Shop and not bought (`decor:<id>`, `trick:<id>`), most
+     * recent first, at most `TRIED_MAX`: the one bit of local interest Featured uses. Nothing else about browsing is kept.
+     */
+    tried?: string[];
+  };
   onboarding: {
     seenRules: boolean;
     tutorialDone: boolean;
@@ -444,6 +451,8 @@ export interface LeaderboardSave {
 
 /** Most solved boards kept waiting to be sent (the oldest are dropped first). */
 export const LB_PENDING_MAX = 30;
+/** D50 PR C: how many tried-on items the Shop remembers (`offers.tried`). */
+export const TRIED_MAX = 6;
 
 export function defaultLeaderboard(): LeaderboardSave {
   return { joined: false, nickname: '', avatar: 'mochi', joinedAt: null, pending: [], awarded: {}, last: null };
@@ -858,10 +867,14 @@ export function normalizeSave(x: unknown, now = new Date()): SaveV2 {
           }
         : {},
     },
-    offers:
-      isObj(x.offers) && isObj(x.offers.welcome)
+    offers: {
+      ...(isObj(x.offers) && isObj(x.offers.welcome)
         ? { welcome: { shown: int(x.offers.welcome.shown, 0, 0, 1000), lastAt: strOrNull(x.offers.welcome.lastAt), dismissed: bool(x.offers.welcome.dismissed, false) } }
-        : {},
+        : {}),
+      ...(isObj(x.offers) && Array.isArray(x.offers.tried)
+        ? { tried: [...new Set(x.offers.tried.filter((t): t is string => typeof t === 'string' && /^(decor|trick):[a-z0-9]+$/.test(t)))].slice(0, TRIED_MAX) }
+        : {}),
+    },
     onboarding: {
       seenRules: bool(ob.seenRules, false),
       tutorialDone: bool(ob.tutorialDone, false),

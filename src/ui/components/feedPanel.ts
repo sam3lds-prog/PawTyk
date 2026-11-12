@@ -27,6 +27,7 @@ import { esc } from '../dom';
 import { ICON } from '../icons';
 import type { Scope } from '../router';
 import { toast } from './sheet';
+import { localDateKey } from '../../game/dates';
 
 /** A meal just counted (D48 PR B), for the scene to play out. */
 export interface Meal {
@@ -92,6 +93,17 @@ export function takeFeedReturn(home: SanctuaryId): string | null {
 
 const homeOf = (animal: string): SanctuaryId | null => (isAnimalId(animal) ? animalInfo(animal).sanctuary : null);
 
+/**
+ * D50 PR C: when today's hello or pat is all it takes for the next level, the card says so (each is one heart, once a
+ * day). Nothing when it's further off: no to-do list.
+ */
+function nearLine(animal: string, hearts: number, patted: boolean): string {
+  const helloLeft = app.save.sanctuary.greeted[animal] !== localDateKey();
+  if (hearts === 1 && (helloLeft || !patted)) return `. ${helloLeft && !patted ? 'A hello or a pat' : helloLeft ? 'A hello in the scene' : 'A pat'} today gets you there.`;
+  if (hearts === 2 && helloLeft && !patted) return '. A hello and a pat today get you there.';
+  return '';
+}
+
 export function friendPanelMarkup(animal: string, name: string): string {
   const aff = app.save.sanctuary.affection[animal] ?? 0;
   const f = friendship(aff);
@@ -133,7 +145,7 @@ export function friendPanelMarkup(animal: string, name: string): string {
     <p class="friend-panel__temper"><span class="chip chip--temper" data-temper="${temperamentOf(animal)}">${esc(t.label)}</span><span>${esc(name)} ${esc(t.greets)}.</span></p>
     <div class="friend-panel__level">
       <span class="affection">${ICON.heart}<span class="num">${aff}</span></span>
-      <span class="friend-panel__name"><b>${esc(f.name)}</b>${next ? `<small>${next.hearts} ${next.hearts === 1 ? 'heart' : 'hearts'} to ${esc(next.level)}: ${esc(next.name.charAt(0).toLowerCase() + next.name.slice(1))}</small>` : '<small>As close as can be</small>'}</span>
+      <span class="friend-panel__name"><b>${esc(f.name)}</b>${next ? `<small>${next.hearts} ${next.hearts === 1 ? 'heart' : 'hearts'} to ${esc(next.level)}: ${esc(next.name.charAt(0).toLowerCase() + next.name.slice(1))}${nearLine(animal, next.hearts, patted)}</small>` : '<small>As close as can be</small>'}</span>
     </div>
     <span class="rank-bar" role="progressbar" aria-label="${esc(name)} friendship" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></span>
     <ul class="friend-panel__unlocks" aria-label="What friendship brings">${unlocks}</ul>

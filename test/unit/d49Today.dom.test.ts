@@ -78,14 +78,19 @@ describe('the Journey: one goal, at most two things, the rest folded', () => {
     const rows = [...document.querySelectorAll<HTMLElement>('.today .today-row')];
     expect(rows.length).toBeLessThanOrEqual(2);
     expect(rows.map((r) => r.dataset.today)).toEqual(['daily', 'friend']);
-    expect(rows[1].textContent).toMatch(/Cotton has a warmer hello to share/);
+    // D50 PR C: the row says what the next thing to do accomplishes.
+    expect(rows[1].textContent).toMatch(/Say hello to Cotton/);
+    expect(rows[1].textContent).toMatch(/One hello at the Farm and you’re friends: a warmer hello\./);
     expect(rows[1].textContent).not.toMatch(/miss|lose|before it|expires|hurry/i);
     // The hero comes before Today, Today before the fold.
     const order = [...document.querySelectorAll('.hero, .today, .more-play')].map((e) => e.className.split(' ')[0]);
     expect(order).toEqual(['hero', 'today', 'more-play']);
     const fold = document.querySelector<HTMLDetailsElement>('[data-more-play]')!;
     expect(fold.open).toBe(false);
-    expect(fold.querySelector('summary')?.textContent).toMatch(/Daily · Zen Garden · Errands 0 of 3/);
+    // D50 PR C: today's Daily is a row above, so the fold keeps the week and doesn't offer it a second time.
+    expect(fold.querySelector('summary')?.textContent).toMatch(/This week · Zen Garden · Errands 0 of 3/);
+    expect(fold.querySelector('.daily-card')).toBeNull();
+    expect(fold.querySelector('[data-daily-above]')).not.toBeNull();
     expect(fold.querySelector('.zen-card')).not.toBeNull();
     expect(fold.querySelector('[data-missions]')).not.toBeNull();
   });
