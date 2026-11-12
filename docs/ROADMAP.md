@@ -96,6 +96,14 @@ Defects confirmed in source and fixed in Sprint 0:
   a video token earned from the card of the thing it's for (M2), a spoiler-free Daily result card, an arrival keepsake
   and the weekly Photo Memory (M3); friend invites reviewed, not built (`docs/referrals.md`, M4); cosmetic collections
   and upgrades designed, not built (`docs/cosmetics.md`, M5); browser checks and tester shortcuts (`docs/screenshots/m/`)
+- [x] **D50** — one coin headline per win (the wallet's own number); the welcome card in focus and guarded while the
+  snack is eaten; a hello at the start of a calm visit; three restrained turns of an ordinary win; the Daily said once
+  on Journey; friendship copy that says what a hello does; Featured by what it would do here; browser checks and the
+  TestFlight gate (`docs/screenshots/d50/`)
+- [x] **D51-A/B** — board ergonomics audited (`docs/board-ergonomics.md`: nothing to rebuild; a five-player test decides
+  any change); the economy model (`docs/economy-model.md`, `npm run economy:model`)
+- [ ] **D51-C** — a small cosmetic pilot (upgraded interactive decorations, one themed bundle): after launch, only if the
+  beta's data shows demand
 - [ ] Friend invites and referrals — reviewed (M4); waiting on Sam's decisions D1–D6 and the native App Check provider
 - [ ] Game Center and online Paw Cup leagues — not started
 - [ ] iCloud backup (CloudKit private database, no account) — decided and planned in `docs/cloud-backup.md` (D47 PR 8), not built

@@ -531,6 +531,52 @@ ways, haptics on. Where a line says *observe*, watch a player who hasn't seen th
 **Tester shortcuts for D49**: *Show an animal moment* (the Farm, one in 2.5 s), *Forget first meals* (every next meal
 plays in full again).
 
+### D50 — reward clarity, short-visit delight, a focused return (the TestFlight gate)
+
+D50 is complete only when this passes on real hardware, in a TestFlight build. Don't tick a line from the browser.
+Run on a recent iPhone and a small one (SE-sized), sound on, haptics on, then again with Reduce Motion and with
+VoiceOver. Write down the device and iOS version.
+
+**Builds and saves**
+- [ ] `npm test`, `npm run build`, `gen:check`, `pack:check`, `places:check`, `icons:check`, `release:bundle` and
+      `npm run e2e` all green (CI on the merge commit)
+- [ ] A fresh install: level 1 → Cotton's arrival → the snack → Continue, without help
+- [ ] An existing save (TestFlight D49 build, play a little, install D50 over it): coins, levels, animals, decorations
+      and a saved board are all there; nothing is credited twice after a relaunch
+
+**Rewards and arrivals** (PR A)
+- [ ] A win that finishes errands: *+N Paw Coins* once, N = the coin pill's rise; the line under it names the puzzle
+      and the errands; the errand line has no second coin figure
+- [ ] After a welcome: only the card (snack, Continue, next goal, *Look around first*); Replay/Share/Tricks/Tour/Walk/
+      Photo come back after the snack, a hello, a tap on an animal, or Look around first
+- [ ] Double-tap the snack fast, then tap Continue at once: one snack, still on the Farm until it's eaten, then Continue
+- [ ] VoiceOver: the snack's button, then *<Name> is having the snack…* is read and holds focus; then Continue
+- [ ] Reduce Motion: the meal is still, the card still moves on to Continue
+
+**Short visits** (PR B)
+- [ ] Open the Farm after a win: someone comes over within about two seconds with a line that fits (a friend near a
+      gift, a newcomer, the win); back and forth to the Shop: no second hello for a few minutes
+- [ ] The hello never plays during a parade, a meal, the Tour, the Walk, Photo or a sheet; Reduce Motion: a still
+      emote and the line
+- [ ] Three ordinary wins in a row: three different faces; with Music on, three turns of Tiny Triumph, none louder or
+      longer than the others on the phone speaker; an arrival still plays the original then Welcome Home
+- [ ] Five minutes in the Farm with the frame-rate counter: no drop when the hello or a moment plays
+
+**A focused return** (PR C)
+- [ ] Journey with the Daily unsolved: one Daily (the row), the fold shows the week only; solved: the fold's card
+- [ ] A friend one heart from a gift: *Say hello to <Name>* → the Farm → tap it → the row is gone, the card says Friend
+- [ ] Shop → Featured: a piece the animals use leads; try another on, come back (and after relaunching): it leads with
+      *You tried it on in your Farm*; never a gem or token thing you can't buy now
+
+**Store and release** (only what this build enables)
+- [ ] Purchases restore (if the App Store is on); reward videos grant once (if AdMob is on); otherwise none of it shows
+- [ ] Privacy and support URLs open; App Store metadata and screenshots are current; asset rights (`docs/ASSETS.md`);
+      trademark clearance for PawTyk
+
+**Usability** (`docs/board-ergonomics.md`): the five-player small-iPhone test; record the results there.
+
+**Tester shortcuts for D50**: *Say hello again* (the Farm; every home may say hello again).
+
 ## Store integration (only when ready; see roadmap)
 - [ ] StoreKit products created (remove_ads, starter_decor, cozy_theme, pet_portraits, supporter); verified entitlement
       + restore via a maintained bridge (e.g. RevenueCat Capacitor SDK); sandbox buy, restore, refund, reinstall

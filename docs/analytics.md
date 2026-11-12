@@ -114,3 +114,20 @@ sessions (`docs/release-checklist.md` → D49) before trusting any number.
 Supporting reads: `welcome_snack` ÷ `welcome_card{action=shown}` (does the snack get used?), `today_tap` by kind
 (which nudge helps), `meal_played{style=quick}` share over time, `animal_moment{first=1}` per player (how many
 moments are discovered), `featured_tap{pos=0}` against the small ones.
+
+## D50 — what changed for measurement
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `animal_greeting` | an animal says hello a couple of seconds into a calm visit | `reason` (unlock, newcomer, solved, evening, hello), `home` |
+| `welcome_card` | now also when the player taps *Look around first* | `action: look` |
+
+Reads for the beta (with the D49 pilot measures above):
+- **Voluntary revisits**: `home_visit{first=0}` that don't follow a win's Visit or Meet (`win_next_action{action=region|meet}`
+  in the same minute), per player per day. Does the player come back to see the animals with nothing telling them to?
+- **One more puzzle**: after an ordinary win, `win_next_action{action=next}` share, and how many sessions end on a win
+  sheet. Compare a session ending right after a win that felt complete with one ending after a loss or a long pause.
+- **Does the hello land?** Share of visits with `animal_greeting{reason=unlock}` followed by a hello (the friend's
+  `friendship_level`) in the same visit.
+- **The economy model**: each `EconomyScenario` field in `src/meta/economyModel.ts` names the event that replaces its
+  assumption (`docs/economy-model.md`).
