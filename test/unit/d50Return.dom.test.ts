@@ -191,6 +191,20 @@ describe('Featured, ranked by what it would do here', () => {
     expect(special!.kind === 'decor' && (DECOR_BY_ID[special!.id as keyof typeof DECOR_BY_ID].gems || DECOR_BY_ID[special!.id as keyof typeof DECOR_BY_ID].tokens)).toBeTruthy();
   });
 
+  it('a tried-on trick the player can’t afford yet never pushes out one they can (Codex review on #75)', () => {
+    const s = farmSave(80);
+    noteTried(s, 'trick', 'tailchase'); // 100 coins
+    const t = featuredFor(s, 'farm', all, { interactive }).find((p) => p.kind === 'trick')!;
+    expect(t.afford).toBe(true);
+    expect(t.id).not.toBe('tailchase');
+    // With nothing affordable, the tried one is what to work toward.
+    const poor = farmSave(0);
+    noteTried(poor, 'trick', 'tailchase');
+    const p = featuredFor(poor, 'farm', all, { interactive }).find((x) => x.kind === 'trick')!;
+    expect(p.id).toBe('tailchase');
+    expect(p.reason).toBe('You tried it on with Truffle');
+  });
+
   it('a trick tried on and not learned comes back, named for who tried it', () => {
     const s = farmSave(200);
     noteTried(s, 'trick', 'tailchase');
