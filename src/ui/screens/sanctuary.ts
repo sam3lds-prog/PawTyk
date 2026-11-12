@@ -416,6 +416,8 @@ export const sanctuaryScreen: ScreenDef = {
         (svgEl && !t.closest('[data-decor].has-act') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
+        // D50 PR A: the player is with the animals now: a welcome card holding the focus lets the scene's controls back.
+        welcomes.release();
         // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
         greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
         selectFigure(scope, el.querySelector<HTMLElement>('.sanctuary__scene')!, fig);
@@ -460,7 +462,8 @@ export const sanctuaryScreen: ScreenDef = {
       else if (a.act === 'try-again') tryOn?.kind === 'decor' ? playTryDecor() : playTry();
       else if (a.act === 'try-buy') buyTry();
       else if (a.act === 'shop') app.router.go({ screen: 'shop', sanctuary: 'harmony' });
-      else if (a.act === 'play') playMode({ kind: 'level', level: app.save.journey.nextLevel });
+      // D50 PR A: not in the middle of the newcomer's welcome snack (the card's own Continue waits too).
+      else if (a.act === 'play' && !welcomes.eating) playMode({ kind: 'level', level: app.save.journey.nextLevel });
       else if (a.act === 'build' && setActive(app.save, 'harmony')) {
         app.persist();
         feel('coin');
@@ -489,11 +492,11 @@ export const sanctuaryScreen: ScreenDef = {
           delay: app.reducedMotion ? 200 : 500,
           waitFor: () => Promise.race([s3d.ready, new Promise<boolean>((r) => scope.timeout(() => r(false), 1500))]),
           short: celebrationLength(app.save, app.settings.celebrations, who, 'harmony') === 'short',
-          after: () => {
+          after: (played) => {
             goalShown = true;
             // D49 PR A: the welcome ends with one card (a snack for the newcomer, then the Journey); the starter gift
-            // waits for the snack, or the next visit.
-            welcomes.show(who, true);
+            // waits for the snack, or the next visit. D50 PR A: in focus only after a welcome that played.
+            welcomes.show(who, true, { focus: played });
           },
         });
       });

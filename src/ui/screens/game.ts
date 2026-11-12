@@ -30,6 +30,7 @@ import { rewardsForWin, type RewardSummary } from '../../meta/rewards';
 import { finishAttempt } from '../../competitions/localCup';
 import type { ScoreBreakdown } from '../../competitions/scoring';
 import { afterSolve, claimedLine, type MetaNews } from '../../app/events';
+import { coinPartsLine, winCoins, type WinCoins } from '../../meta/winCoins';
 import { DECOR_BY_ID } from '../../meta/catalogs/decor';
 import { sanctuaryDef, isRegionId, type RegionId, type SanctuaryId } from '../../meta/catalogs/sanctuaries';
 import { showFirstArrival } from '../components/arrival';
@@ -1390,8 +1391,9 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
         ? `<div class="reward-item"><span class="reward-item__art reward-item__art--pantry">${ICON.bulb}</span><span><b>+${plural(r.hints, 'hint')}</b><small>Pays for one hint, whichever step you need</small></span></div>`
         : '',
     ].join('');
+    // D50 PR A: the fold's coin row is the puzzle's own share, said so (the headline above is the whole win's total).
     const coins = r.coins
-      ? `<div class="reward-coins"><span class="reward-coins__amt">${ICON.coin}<b class="num">+${r.coins}</b></span><span class="muted">${esc(r.lines.map((l) => l.label).join(' · '))}</span></div>`
+      ? `<div class="reward-coins"><span class="reward-coins__amt">${ICON.coin}<b class="num">+${r.coins}</b></span><span class="muted">For the puzzle: ${esc(r.lines.map((l) => l.label).join(' · '))}</span></div>`
       : '';
     const decor = r.decor
       .map(
@@ -1454,7 +1456,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       case 'completed':
         return `<div class="win-hero win-hero--stage" style="--accent:${def.accent}" data-hero="completed">
           <div class="win-hero__icon">${ICON.sparkle}</div>
-          <p class="win-hero__sub">Every friend has a home.${g.coins ? ` <b class="num">+${g.coins}</b> Paw Coins.` : ''}</p>
+          <p class="win-hero__sub">Every friend has a home.</p>
         </div>`;
       case 'stage':
         return `<div class="win-hero win-hero--stage" style="--accent:${def.accent}" data-hero="stage">
@@ -1493,7 +1495,8 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
       }
       if (g.completed && hero?.kind !== 'completed')
         parts.push(
-          `<div class="win-growth is-up" style="--accent:${def.accent}">${ICON.sparkle}<span><b>The ${esc(def.name)} is complete!</b>${g.coins ? ` <span class="num">+${g.coins}</span> Paw Coins` : ''}</span></div>`,
+          // D50 PR A: its coins are in the win's one coin headline ("100 for finishing the Farm"), not said again here.
+          `<div class="win-growth is-up" style="--accent:${def.accent}">${ICON.sparkle}<span><b>The ${esc(def.name)} is complete!</b></span></div>`,
         );
       else if (g.stageUp && hero?.kind !== 'stage' && hero?.kind !== 'completed')
         parts.push(
@@ -1571,20 +1574,29 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     return `<div class="win-growth" data-up-next style="--accent:${up.def.accent}">${ICON.globe}<span>Next home: the <b>${esc(up.def.name)}</b> opens after level ${up.def.opensAfterLevel} · ${up.left === 1 ? 'one more level' : `${up.left} levels to go`}</span></div>`;
   }
 
+  /**
+   * The fold's badges. D50 PR A: errands are said once, in the first view (`errandLine`), and what they paid is in the
+   * coin headline, so the fold no longer repeats them.
+   */
   function newsMarkup(nw: MetaNews): string {
-    if (!nw.achievements.length && !nw.missions.length && !nw.claimed.length) return '';
+    if (!nw.achievements.length) return '';
     const badges = nw.achievements
       .map(
         (a) =>
           `<div class="reward-item"><span class="reward-item__art reward-item__art--badge">${ICON[a.icon]}</span><span><b>Badge: ${esc(a.name)}</b><small>${esc(a.description)} +${a.coins} coins</small></span></div>`,
       )
       .join('');
-    const missions = nw.claimed.length
-      ? `<p class="win-missions">${ICON.check}${nw.claimed.length === 1 ? `Errand done: ${esc(nw.claimed[0].def.title)}` : `${nw.claimed.length} errands done`}: ${esc(claimedLine(nw.claimed))}.</p>`
-      : nw.missions.length
-        ? `<p class="win-missions">${ICON.check}${nw.missions.length === 1 ? `Mission done: ${esc(nw.missions[0].title)}` : `${nw.missions.length} missions done`}. Claim on Journey.</p>`
-        : '';
-    return `<div class="win-news">${badges}${missions}</div>`;
+    return `<div class="win-news">${badges}</div>`;
+  }
+
+  /** D50 PR A: everything this win paid in coins, as one number (credited already; this only adds it up). */
+  function winCoinsOf(rewards: RewardSummary, news: MetaNews, growth: GrowthNews | null): WinCoins {
+    return winCoins({
+      puzzle: rewards.coins,
+      errands: news.claimed,
+      badges: news.achievements,
+      home: growth?.completed && growth.coins ? { coins: growth.coins, name: sanctuaryDef(growth.sanctuary).short } : null,
+    });
   }
 
   function cupMarkup(sc: ScoreBreakdown | null): string {
@@ -1677,9 +1689,11 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // D41: the very first animal to come home (the first puzzle's Cotton) is shown happening, not reported: the Farm as
     // it was, the change growing in, the newcomer settling in, then the goal for the next animal. Skippable. Journey
     // levels only: a Daily solved first keeps its own results (streak, time, Share), with Cotton's Meet on them.
+    // D50 PR A: one total for every coin this win paid (the puzzle, errands, badges, a finished home).
+    const paidCoins = winCoinsOf(rewards, news, growth);
     if (growth && hero?.kind === 'arrived' && isFirstArrival(hero.animal) && isRegionId(growth.sanctuary) && mode.kind === 'level') {
       const holds: string[] = [];
-      if (rewards.coins) holds.push(`+${rewards.coins} coins`);
+      if (paidCoins.total) holds.push(`+${paidCoins.total} coins`);
       if (rewards.points) holds.push(`+${rewards.points} Paw Points`);
       if (news.achievements.length) holds.push(plural(news.achievements.length, 'badge'));
       showFirstArrival(scope, el, {
@@ -1727,9 +1741,16 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
           </div>`;
     // D49 PR B: what this solve earned, next to the success itself (not only in the fold): the coins, an errand done,
     // and after a Daily, a warm word about tomorrow's.
-    const coinLine = rewards.coins && mode.kind !== 'cup' ? `<p class="win-coins" data-win-coins>${ICON.coin}<b class="num">+${rewards.coins}</b> <span>Paw Coins</span></p>` : '';
-    // D49 PR D: an errand finished by this solve has already paid (claimed by itself): it says what it gave.
-    const paid = claimedLine(news.claimed);
+    // D50 PR A: one headline for the whole win (the number the wallet went up by), and where it came from in a few
+    // words when it came from more than one place: "+90 Paw Coins · 45 for the puzzle · 45 from 2 errands".
+    const partsLine = coinPartsLine(paidCoins);
+    const coinLine =
+      paidCoins.total && mode.kind !== 'cup'
+        ? `<div class="win-coins" data-win-coins data-total="${paidCoins.total}"><p class="win-coins__total">${ICON.coin}<b class="num">+${paidCoins.total}</b> <span>Paw Coins</span></p>${partsLine ? `<small class="win-coins__parts" data-win-coin-parts>${esc(partsLine)}</small>` : ''}</div>`
+        : '';
+    // D49 PR D: an errand finished by this solve has already paid (claimed by itself): it says what it gave. D50 PR A:
+    // its coins are in the headline above; the line names the errand and anything else it gave (a life, a hint).
+    const paid = claimedLine(news.claimed, { coins: !coinLine });
     const errandLine = news.claimed.length
       ? `<p class="win-errand" data-win-errand>${ICON.check}<span>${news.claimed.length === 1 ? `Errand done: ${esc(news.claimed[0].def.title)}` : `${news.claimed.length} errands done`}${paid ? ` · <b>${esc(paid)}</b>` : ''}</span></p>`
       : news.missions.length
@@ -1761,7 +1782,7 @@ function mountGame(root: HTMLElement, scope: Scope, mode: ModeRef, s: Session, s
     // The fold's summary says what's inside, so nothing is hidden by surprise.
     const holds: string[] = [];
     // The coins and an errand done are already in the first view (D49 PR B): the fold lists what it alone holds.
-    if (rewards.coins && !coinLine) holds.push(`+${rewards.coins} coins`);
+    if (paidCoins.total && !coinLine) holds.push(`+${paidCoins.total} coins`);
     if (rewards.points) holds.push(`+${rewards.points} Paw Points`);
     if (news.achievements.length) holds.push(plural(news.achievements.length, 'badge'));
     if (rewards.decor.length) holds.push(rewards.decor.length === 1 ? 'a gift' : `${rewards.decor.length} gifts`);

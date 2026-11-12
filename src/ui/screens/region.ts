@@ -471,11 +471,13 @@ export const regionScreen: ScreenDef = {
           delay: app.reducedMotion ? 300 : 600,
           waitFor: toysReady,
           short: celebrationLength(app.save, app.settings.celebrations, who, id) === 'short',
-          after: () => {
+          after: (played) => {
             goalShown = true;
             // D49 PR A: the welcome ends with one card: a snack for the newcomer, then the Journey. The Farm's
             // starter gift (after the first board) waits until the snack has been eaten, or the next visit.
-            welcomes.show(who, true);
+            // D50 PR A: the card holds the focus after a welcome that played; one the player set aside for something
+            // of their own (offered under the scene instead) leaves the scene's controls, and that offer, in view.
+            welcomes.show(who, true, { focus: played });
             // M3: after the celebration (never during it, never on the win sheet): an optional keepsake to share.
             offerKeepsake(who);
           },
@@ -494,7 +496,8 @@ export const regionScreen: ScreenDef = {
       const offerInstead = () => {
         if (offered || !scope.alive || !isHome(app.save, who)) return;
         offered = true;
-        welcomes.show(who);
+        // The player is busy with something of their own (a photo, the tour, a walk): the card doesn't take the focus.
+        welcomes.show(who, false, { focus: false });
         offerKeepsake(who);
       };
       const snack = director.pending('feed', offerInstead);
@@ -689,6 +692,8 @@ export const regionScreen: ScreenDef = {
         (svgEl && !t.closest('[data-decor].has-act, [data-landmark]') ? figureNear(svgEl, (e as MouseEvent).clientX, (e as MouseEvent).clientY) : null);
       if (fig) {
         if (!app.save.onboarding.sceneTapTipSeen) dismissSceneCue(el, 'tap');
+        // D50 PR A: the player is with the animals now: a welcome card holding the focus lets the scene's controls back.
+        welcomes.release();
         // The hello counts a heart once a day (D40 PR B) before the animal answers, so a new level shows at once.
         greetInScene(scope, fig.dataset.pet ?? fig.dataset.friend ?? '');
         selectFigure(scope, el.querySelector<HTMLElement>('.sanctuary__scene')!, fig);
@@ -750,6 +755,8 @@ export const regionScreen: ScreenDef = {
           buyTry();
           break;
         case 'play':
+          // D50 PR A: not in the middle of the newcomer's welcome snack (the card's own Continue waits too).
+          if (welcomes.eating) break;
           playMode({ kind: 'level', level: app.save.journey.nextLevel });
           break;
         case 'build':

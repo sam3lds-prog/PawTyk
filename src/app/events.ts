@@ -28,8 +28,9 @@ function finish(missions: MissionDef[]): MetaNews {
 }
 
 /** D49 PR D: what errands just claimed themselves gave, in a few words ("+20 Paw Coins · +1 hint"), or ''. */
-export function claimedLine(claimed: readonly AutoClaim[]): string {
-  const coins = claimed.reduce((n, c) => n + c.coins + c.overflowCoins, 0);
+export function claimedLine(claimed: readonly AutoClaim[], o: { coins?: boolean } = {}): string {
+  // D50 PR A: the win sheet's coin headline already counts what errands paid, so its errand line leaves coins out.
+  const coins = o.coins === false ? 0 : claimed.reduce((n, c) => n + c.coins + c.overflowCoins, 0);
   const lives = claimed.reduce((n, c) => n + c.lives, 0);
   const hints = claimed.reduce((n, c) => n + c.hints, 0);
   return [coins ? `+${coins} Paw Coins` : '', lives ? `+${lives} extra ${lives === 1 ? 'life' : 'lives'}` : '', hints ? `+${hints} ${hints === 1 ? 'hint' : 'hints'}` : ''].filter(Boolean).join(' · ');
