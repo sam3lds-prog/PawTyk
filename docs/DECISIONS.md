@@ -2620,3 +2620,45 @@ there is no custom overlay over a native ad. Sam asked for the stack to be merge
   6 → 4 → 1 → home with no arrows and no "closer"; the bar hidden from screen readers; a replay with no +1 and *new*
   puzzles; the stage countdown; the note once; the Journey and the World; an older save). The D38–D40 win tests and
   the smoke check were updated to the new words.
+
+### PR B — the world continues, and safe previews of places ahead (`d52/b-world-ahead`)
+- **The first six homes are not the end, said on the World** (`screens/world.ts`, `worldAheadLine`). The code already
+  had six hand-made homes and up to 9,999 generated places across fifteen landscapes (D39); the World didn't say so.
+  Under *Homes* there is now one line:
+  - before the six are open: *Your first six homes are just the beginning. More places are waiting to be
+    discovered.*
+  - once the sixth is open: *A new place opens after level 80 — or sooner if you finish your current homes.*
+  - in the endless world: *The next new place opens after level N — …*, with N from `nextToOpen` (the real rule).
+  The count beside *Homes* says *2 open*, no longer *2 of 6 open*, which read as a total. Gemini's mastery tiers were
+  not built: they would duplicate the endless world.
+- **Settings → Tester shortcuts → Browse future places** (`components/placeBrowser.ts`, `meta/placePreview.ts`; tester
+  builds only, `featureFlags.qaTools`). A place number (1–9,999) with Previous and Next, and quick examples 1, 2, 12,
+  40, 100 and 9,999. It shows the place's name, landscape and where it is, its blurb, when it opens (and whether it is
+  open in this save), its residents (name, coat and kind, when each comes home, where the kind lives, its fact), and
+  its five growth stages, each drawn with the game's own scene art and who is home by then. One place at a time, from
+  `placeDef(k)`; nothing is renamed or regenerated (`PLACES_VERSION` and the place fixtures are unchanged). Browsing
+  never touches `app.save`, never persists, grants, unlocks or buys. 2D only: the 3D toys would need a renderer per
+  stage, so the preview stays on the drawn scene, which every place has.
+- **Visit in a sandbox** (`app/qaSandbox.ts`): from the browser (outside a board), *Empty*, *Partly grown* or
+  *Complete* opens the place for real on a temporary copy of the save, in which it is open and being built. While the
+  sandbox is in front, `app.holdWrites` stops every write to storage (`persist` and `saveActive` still notify), and a
+  banner says *Sandbox preview · Place 12, … · nothing here is saved* with *Leave preview*. Leaving the home in any way
+  (the banner, Back, a tab; a board started there lands on the World) ends the preview through a router guard, and the
+  player's own save comes back: the same object, checked against the snapshot taken on the way in, and restored from
+  the snapshot if anything had reached it. A reload ends it too (nothing was written). Erase progress and the other
+  tester shortcuts wait until the preview is left. No `skipToLevel` loop: the copy's level is set once, and only the
+  previewed place's arrivals are recorded, so place 9,999 opens as fast as place 1.
+- **Not in the App Store build**: `release:bundle` now also fails on *Browse future places* or the sandbox banner.
+- **Found in code review (Codex, #79)**, both fixed with a test that fails without the fix:
+  - From Journey → Settings → Browse future places, entering a sandbox disposed Settings, whose close redraws the
+    Journey; that redraw went through the new router guard and ended the preview at once, so the place opened on the
+    real save with no banner and writes on. Settings now closes before the preview starts (`beforeSandbox`), and a
+    redraw while the way in is being drawn passes the guard.
+  - A preview of a place the player already has residents in kept them all (residents come from the inventory, not
+    the growth count), so *Empty* showed a full home. The copy now clears the place's residents before adding the ones
+    the chosen state has.
+- Tests: `test/unit/d52World.dom.test.ts` (the World's line before, at and after the sixth home, and the count;
+  places 1, 12, 100 and 9,999 inspected; the sheet's controls, one place drawn, the save and storage unchanged;
+  stage previews; no sandbox in a board; the sandbox copy for 9,999, 12 and 100 without touching the real save;
+  enter → change things → leave, with nothing stored and the same object back; a board started there; a touched save
+  restored from its snapshot; a release build with neither; `PLACES_VERSION`).

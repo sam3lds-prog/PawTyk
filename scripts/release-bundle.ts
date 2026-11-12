@@ -31,6 +31,8 @@ export const TESTER_MARKERS: ReadonlyArray<[string, RegExp]> = [
   ['the walk dev hook', /["'`]__walk["'`]/],
   ['the camera and welcome dev hooks', /\.__cam\s*=|__cam:|__welcome/],
   ['the photo mode dev hook (D47)', /__photoStats/],
+  ['Browse future places (D52)', /Browse future places/],
+  ['the sandbox preview (D52)', /Sandbox preview|qa-sandbox/],
 ];
 
 /** Width, height, bit depth and colour type of a PNG (type 2: RGB, 6: RGB with alpha). */

@@ -171,6 +171,12 @@ export class Router {
    */
   private history: HistoryEntry[] = [];
 
+  /**
+   * D52 PR B: a chance to change where a navigation lands, asked before every mount (tester builds use it to end a
+   * sandbox preview when the player leaves the previewed home). Null almost always.
+   */
+  guard: ((route: CanonicalRoute) => CanonicalRoute) | null = null;
+
   constructor(private readonly root: HTMLElement) {}
 
   register(reg: Registry): void {
@@ -237,6 +243,7 @@ export class Router {
 
   private mount(route: CanonicalRoute, scroll: number): void {
     if (!this.registry) throw new Error('router not registered');
+    if (this.guard) route = this.guard(route);
     const def = this.registry[route.screen];
     this.scope_?.dispose();
     this.root.replaceChildren();
