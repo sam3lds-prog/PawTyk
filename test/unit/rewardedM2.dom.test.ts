@@ -131,7 +131,8 @@ describe('on a decoration’s card', () => {
     (sheet.querySelector('[data-act="earn-token"]') as HTMLElement).click();
     await vi.advanceTimersByTimeAsync(10);
     expect(itemBalance(app.save, 'vtoken')).toBe(1);
-    expect(document.querySelector('.toast')?.textContent).toMatch(/No token this time/);
+    // D52 PR D: the service gave no reason, so the plain one; nothing charged either way.
+    expect(document.querySelector('.toast')?.textContent).toMatch(/No video is ready right now\. Nothing was charged\./);
     expect(document.querySelector('.decor-sheet')).toBe(sheet);
     spy.mockImplementation(async () => {
       throw new Error('network');

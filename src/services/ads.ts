@@ -19,6 +19,22 @@ import type { ModeKind } from '../game/modes';
 
 export type RewardedPlacement = 'life' | 'hint' | 'token';
 
+/**
+ * D52 PR D: how a reward video ended, so the player hears the real reason (and nothing is granted unless `earned`):
+ * the reward was earned; the video was closed before its end; no video was available (no fill); there was no
+ * connection; the privacy question hasn't been answered, so no ad may be requested; or something else went wrong.
+ */
+export type RewardedOutcome = 'earned' | 'closed' | 'no-fill' | 'offline' | 'consent' | 'error';
+
+/** An SDK load or show failure, as an outcome (Google Mobile Ads codes: 2 network, 3 no fill). */
+export function outcomeOfError(e: unknown): RewardedOutcome {
+  const code = String((e as { code?: unknown } | null)?.code ?? '');
+  const msg = String((e as { message?: unknown } | null)?.message ?? '');
+  if (code === '2' || /network|offline|internet/i.test(msg)) return 'offline';
+  if (code === '3' || /no fill|no ad/i.test(msg)) return 'no-fill';
+  return 'error';
+}
+
 /** No forced ads between boards. */
 export const INTERSTITIALS_ENABLED = false;
 
@@ -33,6 +49,8 @@ export interface AdService {
    * callback lost) is still granted; the caller grants idempotently, so a second report changes nothing.
    */
   showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean>;
+  /** D52 PR D: how the last `showRewarded` ended (set before it resolves), for the player's message. */
+  readonly lastOutcome?: RewardedOutcome | null;
 }
 
 export interface AdCadenceState {
@@ -87,14 +105,17 @@ export class UnavailableAdService implements AdService {
 export class TestVideoAdService implements AdService {
   readonly available = true;
   readonly isStub = true;
+  lastOutcome: RewardedOutcome | null = null;
   constructor(private readonly ms = 1500) {}
   async showInterstitial(): Promise<boolean> {
     return false;
   }
   async showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
-    const ok = await fakeVideo(`Test video · ${placement}`, this.ms);
-    if (ok) onEarned?.();
-    return ok;
+    // The test video can be closed before its end (its Close button), to try the "no reward" path.
+    const outcome = await fakeVideo(`Test video · ${placement}`, this.ms);
+    this.lastOutcome = outcome;
+    if (outcome === 'earned') onEarned?.();
+    return outcome === 'earned';
   }
 }
 
@@ -108,22 +129,28 @@ export const DevStubAdService = TestVideoAdService;
 export class AdMobAdService implements AdService {
   readonly available = true;
   readonly isStub = false;
-  private ready: Promise<boolean> | null = null;
+  lastOutcome: RewardedOutcome | null = null;
+  private ready: Promise<boolean | 'consent'> | null = null;
   constructor(
     private readonly adId: string,
     private readonly testing: boolean,
   ) {}
 
-  private start(): Promise<boolean> {
+  private start(): Promise<boolean | 'consent'> {
     this.ready ??= (async () => {
       try {
         const { AdMob, AdmobConsentStatus } = await import('@capacitor-community/admob');
         await AdMob.initialize({ initializeForTesting: this.testing });
         // Privacy first: the consent form where the law requires it (UMP), then Apple's tracking question.
-        const info = await AdMob.requestConsentInfo();
-        if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) await AdMob.showConsentForm();
+        let info = await AdMob.requestConsentInfo();
+        if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) info = await AdMob.showConsentForm();
         const att = await AdMob.trackingAuthorizationStatus();
         if (att.status === 'notDetermined') await AdMob.requestTrackingAuthorization();
+        // D52 PR D: no answer to the privacy question means no ad may be requested; ask again next time.
+        if (info && info.canRequestAds === false) {
+          this.ready = null;
+          return 'consent';
+        }
         return true;
       } catch {
         this.ready = null; // try again next time
@@ -138,27 +165,39 @@ export class AdMobAdService implements AdService {
   }
 
   async showRewarded(_placement?: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
-    if (!(await this.start())) return false;
+    const started = await this.start();
+    if (started !== true) {
+      this.lastOutcome = started === 'consent' ? 'consent' : 'error';
+      return false;
+    }
     const { AdMob, RewardAdPluginEvents } = await import('@capacitor-community/admob');
     let rewarded = false;
+    let outcome: RewardedOutcome = 'closed';
     const handle = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
       rewarded = true;
       onEarned?.();
     });
     try {
-      await AdMob.prepareRewardVideoAd({ adId: this.adId, isTesting: this.testing });
+      try {
+        await AdMob.prepareRewardVideoAd({ adId: this.adId, isTesting: this.testing });
+      } catch (e) {
+        // Nothing was shown: no fill, no connection, or another load error.
+        outcome = outcomeOfError(e);
+        throw e;
+      }
       const item = await AdMob.showRewardVideoAd();
       if (item && typeof item.type === 'string') rewarded = true;
     } catch {
-      /* no fill, closed early, or a network error: no reward */
+      /* not loaded (outcome says why), or closed before the reward: no reward */
     } finally {
       await handle.remove();
     }
+    this.lastOutcome = rewarded ? 'earned' : outcome;
     return rewarded;
   }
 }
 
-function fakeVideo(label: string, ms: number): Promise<boolean> {
+function fakeVideo(label: string, ms: number): Promise<RewardedOutcome> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.className = 'fake-ad';
@@ -172,13 +211,23 @@ function fakeVideo(label: string, ms: number): Promise<boolean> {
     const sub = document.createElement('div');
     sub.className = 'fake-ad__sub';
     sub.textContent = 'Test build: a stand-in for a reward video. No ad network.';
-    box.append(l, sub);
+    // D52 PR D: a visible close, as a real video has: closing early earns nothing.
+    const close = document.createElement('button');
+    close.className = 'btn btn--quiet btn--small fake-ad__close';
+    close.textContent = 'Close (no reward)';
+    box.append(l, sub, close);
     el.appendChild(box);
     document.body.appendChild(el);
-    setTimeout(() => {
+    let done = false;
+    const end = (o: RewardedOutcome) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       el.remove();
-      resolve(true);
-    }, ms);
+      resolve(o);
+    };
+    const timer = setTimeout(() => end('earned'), ms);
+    close.addEventListener('click', () => end('closed'));
   });
 }
 
