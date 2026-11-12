@@ -2571,6 +2571,9 @@ tester page built (the plan itself says not to merge silently; his explicit requ
     now counts the Farm's news as seen first, and says so when nobody is home.
   - A tap on the barn in the first two seconds could have the hello's line land on top of the barn's own. Any tap on
     a home's screen now means the visit's hello stays away (`skipGreeting`). Tests fail without the fix.
+  - A decoration tapped while the hello played found its only animal busy, so nobody rode the tractor (CI's smoke
+    check). The tap now ends an animal's own moment first, as tricks and meals already did (D49). The test fails
+    without the fix.
 - **Local browser runs**: a dev server that hot-reloads an edited module serves it under a new URL, and a check that
   imports the module by its plain path then gets a second copy. `setMomentsEnabled(false)` and `requestMomentSoon`
   were landing on that copy, which made D46, D44 and D49 checks fail locally and only locally. Restart the dev server

@@ -89,3 +89,20 @@ describe('a tap in the first seconds is the player’s own start', () => {
     expect(document.querySelector('.sanctuary__chat.is-greeting')).not.toBeNull();
   });
 });
+
+describe('the player’s pick wins over the hello', () => {
+  it('a decoration tapped while the hello plays: the hello ends and an animal goes to use it', async () => {
+    app.save.inventory.decor.tractor = { ownedAt: NOW.toISOString() };
+    app.save.inventory.companions = { cotton: { unlockedAt: '2026-10-01T11:00:00.000Z' } };
+    const router = mount();
+    router.go({ screen: 'region', id: 'farm' });
+    await vi.advanceTimersByTimeAsync(GREET_AFTER_MS + 300);
+    // Cotton, the only one home, is saying hello…
+    expect(document.querySelector('.sanctuary__scene [data-friend="cotton"][data-trick]')).not.toBeNull();
+    // …and the tractor is tapped: she goes for a ride.
+    document.querySelector('.sanctuary__scene [data-decor="tractor"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(document.querySelector('.sanctuary__scene .sanctuary__pet.is-away')).not.toBeNull();
+    expect(document.querySelector('[data-chat] span')?.textContent).toMatch(/tractor/);
+  });
+});

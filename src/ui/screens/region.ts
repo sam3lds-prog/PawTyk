@@ -715,6 +715,8 @@ export const regionScreen: ScreenDef = {
       const dec = t.closest('.sanctuary__scene [data-decor].has-act') as HTMLElement | null;
       if (dec) {
         if (!app.save.onboarding.decorTipSeen) dismissSceneCue(el, 'decor');
+        // D50: the player's pick wins: an animal's own moment (the visit's hello, say) ends before anyone is asked.
+        director.end('moment');
         // D48 PR C: the Festival Stage hosts the Farm's big dance: everyone, together (a solo show with one animal).
         if (dec.dataset.decor === 'festivalstage' && el.querySelectorAll('.sanctuary__scene .sanctuary__pet').length > 1 && !parades.active) {
           acts?.stop();
