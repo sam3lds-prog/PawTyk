@@ -202,6 +202,11 @@ export async function d52Checks({ browser, URL, check, errors }) {
     const coins0 = await qa.evaluate(async () => (await import('/src/meta/ledger.ts')).balance(window.__pt.app.save));
     await qa.click('[data-act="trivia"]');
     await waitFor(qa, '.trivia-sheet [data-choice]');
+    // Review of #80: nothing to skip with before an answer (rendered, not just marked hidden).
+    const anotherBefore = await qa.evaluate(() => {
+      const b = document.querySelector('.trivia-sheet [data-act="another"]');
+      return !!b && getComputedStyle(b).display !== 'none';
+    });
     const id = await qa.evaluate(() => document.querySelector('[data-trivia]').dataset.trivia);
     const answer = await qa.evaluate(async (id) => (await import('/src/meta/trivia.ts')).triviaQuestions().find((q) => q.id === id).answer, id);
     await qa.click(`[data-choice="${(answer + 1) % 3}"]`);
@@ -211,9 +216,9 @@ export async function d52Checks({ browser, URL, check, errors }) {
     const id2 = await qa.evaluate(() => document.querySelector('[data-trivia]').dataset.trivia);
     const coins1 = await qa.evaluate(async () => (await import('/src/meta/ledger.ts')).balance(window.__pt.app.save));
     check(
-      'D52 PR C: an Animal question from the album: a wrong answer gets "Good guess!" and the fact, Another question asks a different one, and nothing is paid',
-      /^Good guess! /.test(wrong ?? '') && id2 !== id && coins1 === coins0 && !(await sideways(qa)),
-      JSON.stringify({ id, id2, wrong, coins0, coins1 }),
+      'D52 PR C: an Animal question from the album: no Another question before an answer; a wrong answer gets "Good guess!" and the fact, Another question asks a different one, and nothing is paid',
+      !anotherBefore && /^Good guess! /.test(wrong ?? '') && id2 !== id && coins1 === coins0 && !(await sideways(qa)),
+      JSON.stringify({ anotherBefore, id, id2, wrong, coins0, coins1 }),
     );
     await qa.close();
   }
