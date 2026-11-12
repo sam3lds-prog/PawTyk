@@ -54,8 +54,9 @@ let showing = false;
 let videos = 0;
 
 /**
- * D52 PR D: a video that never reports back (a lost close after the app was backgrounded, say) frees the button after
- * this long, so a video can never block play or the next video. A reward the network reports later is still granted.
+ * D52 PR D: a video that never reports back (a lost close after the app was backgrounded, say) is given up after this
+ * long, so a video can never block play or the next video. Giving up removes its listeners and ignores anything it
+ * reports later, so a later reward event can never be credited to it or counted twice (review of D52 PR D).
  */
 export const VIDEO_WATCHDOG_MS = 180_000;
 
@@ -88,8 +89,9 @@ export async function watchVideoFor(reward: VideoReward, ctx: { surface?: string
   track('rewarded_ad_start', { placement, ...surface });
   let granted = false;
   let refused = false;
+  let abandoned = false;
   const grantOnce = () => {
-    if (granted || refused) return;
+    if (granted || refused || abandoned) return;
     if (recordVideoReward(app.save, reward, new Date(), video)) {
       granted = true;
       app.persist();
@@ -106,7 +108,11 @@ export async function watchVideoFor(reward: VideoReward, ctx: { surface?: string
     const timedOut = new Promise<'timeout'>((resolve) => (watchdog = setTimeout(() => resolve('timeout'), VIDEO_WATCHDOG_MS)));
     const ok = await Promise.race([ads.showRewarded(placement, grantOnce), timedOut]);
     if (ok === true) grantOnce();
-    else if (ok === 'timeout') failed = 'error';
+    else if (ok === 'timeout') {
+      abandoned = true;
+      ads.abandonRewarded?.();
+      failed = 'error';
+    }
   } catch {
     failed = 'error';
   } finally {

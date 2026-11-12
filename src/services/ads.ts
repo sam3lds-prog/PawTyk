@@ -51,6 +51,11 @@ export interface AdService {
   showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean>;
   /** D52 PR D: how the last `showRewarded` ended (set before it resolves), for the player's message. */
   readonly lastOutcome?: RewardedOutcome | null;
+  /**
+   * D52 PR D (review): gives up on a video that never reported back. Its listeners are removed and a reward it reports
+   * later is ignored, so it can never be credited to the next video; the pending `showRewarded` resolves false.
+   */
+  abandonRewarded?(): void;
 }
 
 export interface AdCadenceState {
@@ -106,16 +111,21 @@ export class TestVideoAdService implements AdService {
   readonly available = true;
   readonly isStub = true;
   lastOutcome: RewardedOutcome | null = null;
+  private stop: ((o: RewardedOutcome) => void) | null = null;
   constructor(private readonly ms = 1500) {}
   async showInterstitial(): Promise<boolean> {
     return false;
   }
   async showRewarded(placement: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
     // The test video can be closed before its end (its Close button), to try the "no reward" path.
-    const outcome = await fakeVideo(`Test video · ${placement}`, this.ms);
+    const outcome = await fakeVideo(`Test video · ${placement}`, this.ms, (stop) => (this.stop = stop));
+    this.stop = null;
     this.lastOutcome = outcome;
     if (outcome === 'earned') onEarned?.();
     return outcome === 'earned';
+  }
+  abandonRewarded(): void {
+    this.stop?.('error');
   }
 }
 
@@ -164,40 +174,80 @@ export class AdMobAdService implements AdService {
     return false;
   }
 
+  /** The video showing now: how to give up on it (the watchdog), if it never reports back. */
+  private pending: { abandon: () => void } | null = null;
+
+  /**
+   * Shows a reward video and resolves when it is over (D52 PR D). The plugin resolves its show call only when the reward
+   * is earned (iOS never settles it on an early close or a failure to present), so the end comes from its events: the
+   * reward (granted at once, through `onEarned`), the dismissal (a close without the reward is `closed`), or a failure to
+   * show or to load (no fill, no connection, or another error). Listeners live for this video only.
+   */
   async showRewarded(_placement?: RewardedPlacement, onEarned?: () => void): Promise<boolean> {
     const started = await this.start();
     if (started !== true) {
       this.lastOutcome = started === 'consent' ? 'consent' : 'error';
       return false;
     }
+    this.pending?.abandon();
     const { AdMob, RewardAdPluginEvents } = await import('@capacitor-community/admob');
     let rewarded = false;
-    let outcome: RewardedOutcome = 'closed';
-    const handle = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+    let done = false;
+    const handles: Array<{ remove: () => Promise<void> }> = [];
+    let resolveEnd!: (ok: boolean) => void;
+    const ended = new Promise<boolean>((r) => (resolveEnd = r));
+    const finish = (o: RewardedOutcome) => {
+      if (done) return;
+      done = true;
+      if (this.pending === me) this.pending = null;
+      for (const h of handles) void h.remove().catch(() => {});
+      this.lastOutcome = rewarded ? 'earned' : o;
+      resolveEnd(rewarded);
+    };
+    const me = { abandon: () => finish('error') };
+    this.pending = me;
+    const listen = async (event: string, fn: (data: unknown) => void) => {
+      const h = await AdMob.addListener(event as never, ((data: unknown) => {
+        if (!done) fn(data);
+      }) as never);
+      // Finished while the listener was being added (abandoned, say): drop it at once.
+      if (done) void h.remove().catch(() => {});
+      else handles.push(h);
+    };
+    await listen(RewardAdPluginEvents.Rewarded, () => {
       rewarded = true;
       onEarned?.();
     });
+    await listen(RewardAdPluginEvents.Dismissed, () => finish('closed'));
+    await listen(RewardAdPluginEvents.FailedToShow, (e) => finish(outcomeOfError(e)));
+    if (done) return ended;
     try {
-      try {
-        await AdMob.prepareRewardVideoAd({ adId: this.adId, isTesting: this.testing });
-      } catch (e) {
-        // Nothing was shown: no fill, no connection, or another load error.
-        outcome = outcomeOfError(e);
-        throw e;
-      }
-      const item = await AdMob.showRewardVideoAd();
-      if (item && typeof item.type === 'string') rewarded = true;
-    } catch {
-      /* not loaded (outcome says why), or closed before the reward: no reward */
-    } finally {
-      await handle.remove();
+      await AdMob.prepareRewardVideoAd({ adId: this.adId, isTesting: this.testing });
+    } catch (e) {
+      // Nothing was shown: no fill, no connection, or another load error.
+      finish(outcomeOfError(e));
+      return ended;
     }
-    this.lastOutcome = rewarded ? 'earned' : outcome;
-    return rewarded;
+    if (done) return ended;
+    AdMob.showRewardVideoAd().then(
+      (item) => {
+        if (item && typeof item.type === 'string') {
+          rewarded = true;
+          finish('earned');
+        }
+      },
+      // It couldn't be shown (not ready, another ad showing): a failure, never "closed".
+      (e) => finish(outcomeOfError(e)),
+    );
+    return ended;
+  }
+
+  abandonRewarded(): void {
+    this.pending?.abandon();
   }
 }
 
-function fakeVideo(label: string, ms: number): Promise<RewardedOutcome> {
+function fakeVideo(label: string, ms: number, onStop?: (stop: (o: RewardedOutcome) => void) => void): Promise<RewardedOutcome> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.className = 'fake-ad';
@@ -228,6 +278,7 @@ function fakeVideo(label: string, ms: number): Promise<RewardedOutcome> {
     };
     const timer = setTimeout(() => end('earned'), ms);
     close.addEventListener('click', () => end('closed'));
+    onStop?.(end);
   });
 }
 
